@@ -242,6 +242,22 @@ an attack takes its facing once, on entry, so a swing cannot be steered mid-anim
 goes where the stick or the keys say, rolling *away* from the aim when there is no movement input
 at all, because rolling into what you are shooting at is not what the button means.
 
+## The chain lockout
+
+Where it lives is the interesting part. The clock is on `Player`, beside the chain bookkeeping, for
+the same reason: it outlives the attack that opened it. `PlayerAttack` starts it when a **finisher
+enters its recovery** — not when the recovery ends — so the wait is still measured from the end of
+the recovery but a stagger cannot cancel it. A debt a hit clears is a debt worth taking a hit for.
+
+`take_attack_input()` refuses a press during the lockout **without consuming it**, so the 0.15 s
+buffer keeps working across the boundary and a press a hair early still lands.
+
+The pair of `EventBus` signals — `chain_spent(seconds)` and `chain_ready` — exists because a wait
+nobody can see reads as a dropped input, and the player blames the game. `HitFeedback` listens and
+drains the body's colour for the duration; combat itself knows nothing about it. The state is shown
+for the whole lockout rather than flashed when a press is refused: seeing that the weapon is not
+ready *before* pressing is worth more than being told afterwards.
+
 ## A Node3D faces -Z
 
 The yaw that points a node along `direction` is `atan2(-direction.x, -direction.z)`, not
@@ -259,6 +275,9 @@ Two headless guards run in CI and locally:
 
 - **`tools/verify_project_config.gd`** — fails when an input action or a physics layer goes
   missing. Runs with `--script`, because it touches no autoload.
+- **`tools/verify_combat.tscn`** also covers the chain lockout: that a finished chain announces
+  itself on the bus, refuses a press without consuming it, expires, costs nothing when the player
+  stops at two attacks, waits less after a perfect finisher, and never blocks a dodge.
 - **`tools/verify_aim.tscn`** — drives a real joypad event and a real key press through the
   engine's own input path, and the real camera projection for the cursor, then asserts that holding
   a movement key still walks the body and does not follow its facing, that the body turns at a

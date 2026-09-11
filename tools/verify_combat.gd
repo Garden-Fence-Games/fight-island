@@ -37,6 +37,10 @@ func _run() -> void:
 	await _check_hit_lands()
 	await _check_perfect_hits_harder()
 	await _check_chain_window()
+	await _check_a_finished_chain_locks_out_attacking()
+	await _check_stopping_early_costs_nothing()
+	await _check_a_perfect_finisher_waits_less()
+	await _check_the_lockout_leaves_the_dodge_alone()
 	await _check_parry_negates()
 	await _check_enemy_closes_and_hits()
 	_report()
@@ -95,6 +99,92 @@ func _check_chain_window() -> void:
 	var fresh := _player.take_attack_input()
 	if int(fresh.get("index", -1)) != 0:
 		_fail("a press with no chain open should start at attack 1")
+
+
+## Three hits then a beat out of the conversation. Without this the optimal play is to hold the
+## button, which is the opposite of what the timing system is for.
+func _check_a_finished_chain_locks_out_attacking() -> void:
+	var announced := await _spend_the_chain(false)
+	if is_zero_approx(announced):
+		_fail("the lockout should announce itself on the bus, or nothing can show it")
+	if not _player.chain_locked():
+		_fail("a finished chain should leave the player unable to attack")
+		return
+	_player.press_attack()
+	if not _player.take_attack_input().is_empty():
+		_fail("attacking during the lockout should be refused")
+	# Refused, not eaten: the press has to still be there when the weapon comes back.
+	if not _player.buffered_attack_press():
+		_fail("the lockout should refuse a press, not consume it")
+	await _advance(_player.lockout_left() + 0.05)
+	if _player.chain_locked():
+		_fail("the lockout should have run out")
+		return
+	_player.press_attack()
+	if _player.take_attack_input().is_empty():
+		_fail("the player should be able to attack again once the lockout ends")
+
+
+## The tension worth having: stopping at two and stepping out stays free, so finishing is a choice.
+func _check_stopping_early_costs_nothing() -> void:
+	_reset_player()
+	for index: int in 2:
+		var attack := _player.weapon.attack_at(index)
+		_player.machine.current.transition_to(&"Attack", {"index": index, "perfect": false})
+		await _advance(attack.total_duration() + 0.1)
+		if _player.chain_locked():
+			_fail("stopping at %d attacks should cost nothing extra" % (index + 1))
+			return
+
+
+## The reward for timing belongs on the thing that costs the most.
+func _check_a_perfect_finisher_waits_less() -> void:
+	var plain := await _spend_the_chain(false)
+	await _advance(_player.lockout_left() + 0.05)
+	var perfect := await _spend_the_chain(true)
+	await _advance(_player.lockout_left() + 0.05)
+	if perfect >= plain:
+		_fail("a perfect finisher should wait %.2fs, less than %.2fs" % [perfect, plain])
+
+
+## A window where every button is dead is a death sentence in a crowd, not a design.
+func _check_the_lockout_leaves_the_dodge_alone() -> void:
+	await _spend_the_chain(false)
+	if not _player.chain_locked():
+		_fail("the player should be locked out for this check to mean anything")
+		return
+	_player.machine.current.transition_to(&"Dodge")
+	await get_tree().physics_frame
+	if _player.machine.current_name != &"Dodge":
+		_fail("the lockout should not stop the player dodging")
+	await _advance(PlayerDodge.DURATION + _player.lockout_left() + 0.05)
+
+
+## Plays a finisher through to its recovery and returns what the bus announced, so the check reads
+## the same seam the presentation does rather than a private field.
+func _spend_the_chain(perfect: bool) -> float:
+	_reset_player()
+	var announced: Array = []
+	var listener := func(seconds: float) -> void: announced.append(seconds)
+	EventBus.chain_spent.connect(listener, CONNECT_ONE_SHOT)
+	var finisher := _player.weapon.attack_at(2)
+	_player.machine.current.transition_to(&"Attack", {"index": 2, "perfect": perfect})
+	await _advance(finisher.windup + finisher.active + 0.05)
+	if EventBus.chain_spent.is_connected(listener):
+		EventBus.chain_spent.disconnect(listener)
+	return announced[0] if not announced.is_empty() else 0.0
+
+
+func _reset_player() -> void:
+	_enemy.machine.current.transition_to(&"Idle")
+	_enemy.global_position = Vector3(0.0, 0.0, -40.0)
+	_player.global_position = Vector3.ZERO
+	_player.health.current_health = _player.health.max_health
+	_player.machine.current.transition_to(&"Idle")
+	_player.close_chain()
+	_player.consume_press()
+	if _player.stamina != null:
+		_player.stamina.refund(_player.stamina.max_stamina)
 
 
 func _check_parry_negates() -> void:
@@ -169,7 +259,7 @@ func _report() -> void:
 	for _index: int in SETTLE_FRAMES:
 		await get_tree().physics_frame
 	if _failures.is_empty():
-		print("combat OK — hit, perfect, chain window, parry")
+		print("combat OK — hit, perfect, chain window, chain lockout, parry")
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:

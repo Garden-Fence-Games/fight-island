@@ -44,6 +44,39 @@ Windows are measured from the start of the attack's recovery, and **the windows 
 govern the press that produces attack N + 1**. A finisher ends the chain, so it carries no windows
 of its own.
 
+**Layer 3 — the chain costs a beat.** Finishing a chain locks out attacking for a moment, measured
+from the end of the finisher's recovery. Everything else stays available: dodge, parry, sprint and
+movement, because the point is that the player has something to do in the gap. The rhythm is
+*commit, then reposition* — the enemy's telegraph read from the other side.
+
+The lockout is charged **per finished chain, never per attack**: stopping at one or two and stepping
+out stays free and fast, which is what makes "should I finish this?" a question rather than a
+formality. A **perfect** finisher pays less than half, so the game's subject sits on the move that
+costs the most.
+
+| Weapon | After a chain | After a perfect finisher |
+|---|---|---|
+| Fists | 0.35 s | 0.15 s |
+| Stick | 0.50 s | 0.22 s |
+| Gun | — | — |
+
+**The gun has no lockout on purpose.** Its rhythm is the magazine and the 1.6 s reload, which is a
+forced pause with a far better texture than a timer. Two answers to the same question would only
+blur both.
+
+Two properties this has to keep, and `tools/verify_combat.tscn` fails if either goes:
+
+- **A press during the lockout is refused, not eaten.** A press a hair early still lands the moment
+  the weapon is ready, exactly like the input buffer everywhere else.
+- **It survives being hit.** The clock starts when the finisher enters its recovery rather than when
+  the recovery ends, so a stagger cannot clear the debt — otherwise taking a hit would be the fast
+  way out of it.
+
+**Why it is not just stamina.** A fist chain costs 29 of 100, so mashing already runs the bar dry.
+But the Fists track cuts stamina cost by 5% a level, so at level 5 stamina stops being the limiter —
+and the rhythm would quietly dissolve for exactly the player who invested in it. The lockout does
+not scale with upgrades.
+
 ## Player
 
 | | |
@@ -81,8 +114,8 @@ A finisher has no windows of its own: the press that produced it was timed again
 attack's recovery, and its perfect multiplier applies to that press.
 
 **Implemented in M1:** the fists, exactly as tabled above. `tools/verify_combat.tscn` asserts the
-jab's damage, the perfect multiplier, both chain-window boundaries and the parry outcome, so the
-table and `data/attacks/*.tres` cannot drift apart unnoticed.
+jab's damage, the perfect multiplier, both chain-window boundaries, the chain lockout and the parry
+outcome, so the table and `data/attacks/*.tres` cannot drift apart unnoticed.
 
 **Ammunition.** Magazine 6, reload 1.6 s. The reserve starts at 24 and each cleared wave grants
 **+8**. Attacks 1/2/3 cost 1/2/1 rounds; attack 2 needs at least 2 in the magazine.

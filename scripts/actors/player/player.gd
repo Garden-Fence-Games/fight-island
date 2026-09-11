@@ -18,6 +18,7 @@ var chain_index: int = -1
 
 var _chain_attack: AttackData = null
 var _chain_clock: float = -1.0
+var _lockout_clock: float = 0.0
 var _press_age: float = INF
 var _gravity: float = 9.8
 
@@ -43,6 +44,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_press_age += delta
+	if _lockout_clock > 0.0:
+		_lockout_clock = maxf(_lockout_clock - delta, 0.0)
+		if is_zero_approx(_lockout_clock):
+			EventBus.chain_ready.emit()
 	if _chain_clock >= 0.0:
 		_chain_clock += delta
 		if _chain_attack == null or _chain_clock > _chain_attack.chain_window.y:
@@ -115,6 +120,24 @@ func open_chain(from_attack: AttackData, index: int) -> void:
 	_chain_clock = 0.0
 
 
+## Pays for a finished chain: nothing may attack again until the clock runs out. Announced on the
+## bus rather than shown here, because what the body does about it is presentation and combat has
+## no business knowing.
+func spend_chain(seconds: float) -> void:
+	if seconds <= 0.0:
+		return
+	_lockout_clock = seconds
+	EventBus.chain_spent.emit(seconds)
+
+
+func chain_locked() -> bool:
+	return _lockout_clock > 0.0
+
+
+func lockout_left() -> float:
+	return _lockout_clock
+
+
 func close_chain() -> void:
 	_chain_attack = null
 	_chain_clock = -1.0
@@ -131,19 +154,26 @@ func consume_press() -> void:
 
 ## The attack a fresh press should produce right now, or an empty dictionary for none. Reading it
 ## consumes the press, so only a state about to act on it should ask.
+##
+## A press during the lockout leaves without consuming anything: the wait refuses this attack, it
+## does not eat the player's input, so a press a hair early still lands the moment the weapon is
+## ready again — the same promise the input buffer makes everywhere else.
 func take_attack_input() -> Dictionary:
-	if not buffered_attack_press() or weapon == null:
+	if not buffered_attack_press() or weapon == null or chain_locked():
 		return {}
 	if _chain_clock < 0.0 or _chain_attack == null:
 		consume_press()
 		return {"index": 0, "perfect": false}
-	if _chain_attack.is_finisher():
+	return _continue_chain()
+
+
+## The attack that follows the one just played, if the press landed inside its window.
+func _continue_chain() -> Dictionary:
+	var next := chain_index + 1
+	if _chain_attack.is_finisher() or next >= weapon.chain_length():
 		return {}
 	var window := _chain_attack.chain_window
 	if _chain_clock < window.x or _chain_clock > window.y:
-		return {}
-	var next := chain_index + 1
-	if next >= weapon.chain_length():
 		return {}
 	var perfect_window := _chain_attack.perfect_window
 	var perfect := _chain_clock >= perfect_window.x and _chain_clock <= perfect_window.y

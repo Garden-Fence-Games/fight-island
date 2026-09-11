@@ -11,5 +11,7 @@ id = &"fists"
 display_name = "Fists"
 attacks = [ExtResource("2"), ExtResource("3"), ExtResource("4")]
 is_ranged = false
+chain_lockout = 0.35
+perfect_lockout = 0.15
 magazine = 0
 reload_time = 0.0
