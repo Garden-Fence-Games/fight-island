@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fist_uppercut"
+display_name = "Uppercut"
+damage = 20.0
+stagger = 0.60
+poise_damage = 20.0
+stamina_cost = 14.0
+ammo_cost = 0
+windup = 0.28
+active = 0.12
+recovery = 0.50
+chain_window = Vector2(0.0, 0.0)
+perfect_window = Vector2(0.0, 0.0)
+perfect_multiplier = 1.35
+hitstop = 0.08
+reach = 1.6
+arc_degrees = 60.0
+animation = &"attack_fist_3"

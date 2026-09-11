@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fist_jab"
+display_name = "Jab"
+damage = 8.0
+stagger = 0.10
+poise_damage = 10.0
+stamina_cost = 6.0
+ammo_cost = 0
+windup = 0.12
+active = 0.08
+recovery = 0.22
+chain_window = Vector2(0.10, 0.45)
+perfect_window = Vector2(0.33, 0.45)
+perfect_multiplier = 1.35
+hitstop = 0.08
+reach = 1.4
+arc_degrees = 70.0
+animation = &"attack_fist_1"

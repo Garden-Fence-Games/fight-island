@@ -8,6 +8,15 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- Playable prototype: a grey-box arena, a player who moves, sprints, dodges and parries, the
+  three-attack fist chain with its chain and perfect windows, and farmhands that close the
+  distance and swing.
+- Components: health, stamina, hitbox, hurtbox, and a node-based state machine.
+- `EventBus` and `GameState` autoloads, a free-orbit camera rig, hit feedback and a debug overlay.
+- Balance as resources under `data/` — three fist attacks, the fists, and the farmhand.
+- `tools/verify_combat.tscn` — headless proof of the damage, the perfect multiplier, the chain
+  window, the parry and the enemy approach. CI now boots the game instead of parsing files.
+
 - Project configuration: full input map (26 actions, gamepad and keyboard/mouse), named 3D
   physics layers, display and rendering settings, project version.
 - `tools/verify_project_config.gd` — headless guard that fails the build when an action or a

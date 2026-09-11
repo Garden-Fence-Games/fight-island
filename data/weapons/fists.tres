@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/weapon_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/fist_jab.tres" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/fist_cross.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/fist_uppercut.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"fists"
+display_name = "Fists"
+attacks = [ExtResource("2"), ExtResource("3"), ExtResource("4")]
+is_ranged = false
+magazine = 0
+reload_time = 0.0

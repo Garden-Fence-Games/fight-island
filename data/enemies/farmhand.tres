@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/enemy_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/farmhand_swing.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"farmhand"
+display_name = "Farmhand"
+health = 45.0
+move_speed = 3.4
+poise = 15.0
+money = 2
+attack = ExtResource("2")
+aggro_radius = 18.0
+attack_range = 1.6
+is_ranged = false
+preferred_range = 1.4
+tint = Color(0.78, 0.36, 0.28, 1)
+first_wave = 1

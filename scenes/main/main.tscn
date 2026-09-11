@@ -1,0 +1,14 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/arena.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="2"]
+[ext_resource type="Script" path="res://scripts/systems/hit_feedback.gd" id="3"]
+
+[node name="Main" type="Node"]
+
+[node name="Arena" parent="." instance=ExtResource("1")]
+
+[node name="HitFeedback" type="Node" parent="."]
+script = ExtResource("3")
+
+[node name="DebugHud" parent="." instance=ExtResource("2")]

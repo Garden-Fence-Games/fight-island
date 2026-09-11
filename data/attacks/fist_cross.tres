@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fist_cross"
+display_name = "Cross"
+damage = 12.0
+stagger = 0.15
+poise_damage = 12.0
+stamina_cost = 9.0
+ammo_cost = 0
+windup = 0.16
+active = 0.09
+recovery = 0.28
+chain_window = Vector2(0.12, 0.45)
+perfect_window = Vector2(0.33, 0.45)
+perfect_multiplier = 1.35
+hitstop = 0.08
+reach = 1.5
+arc_degrees = 70.0
+animation = &"attack_fist_2"
