@@ -48,6 +48,12 @@ buttons. `ui_left/right/up/down` are *not* overridden — they already carry D-p
 **The triggers use a 0.5 deadzone.** `attack` on RT and `parry` on LT are analog; at Godot's
 default 0.2 a half-pulled trigger registers as a press, which in a parry-timing game is a lost run.
 
+**The keys still move the character; only the facing changed.** `W` `A` `S` `D` drive the body
+exactly as they did — camera-relative, so `W` is always away from the viewer — and the cursor
+decides which way it is pointing while it walks. That split is the whole feature: backing away from
+something while still aiming at it is impossible when the two are the same input.
+`tools/verify_aim.tscn` holds a key down and fails if walking ever starts following the facing.
+
 **The four `aim_*` actions have no keyboard binding, and that is not an oversight.** The mouse aims
 by where the cursor *is*; there is no key that means "look north-east". `verify_project_config`
 exempts them from the both-devices rule for exactly that reason, and the cursor is what covers the

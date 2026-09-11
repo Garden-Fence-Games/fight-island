@@ -259,8 +259,10 @@ Two headless guards run in CI and locally:
 
 - **`tools/verify_project_config.gd`** — fails when an input action or a physics layer goes
   missing. Runs with `--script`, because it touches no autoload.
-- **`tools/verify_aim.tscn`** — drives a real joypad event through the engine's own input path and
-  the real camera projection for the cursor, then asserts the body turns, turns at a capped rate,
+- **`tools/verify_aim.tscn`** — drives a real joypad event and a real key press through the
+  engine's own input path, and the real camera projection for the cursor, then asserts that holding
+  a movement key still walks the body and does not follow its facing, that the body turns at a
+  capped rate,
   goes back to facing its movement when the stick is released, does not aim before any device is
   touched, commits its attack facing, and dodges away from the aim rather than into it.
 - **`tools/verify_navigation.tscn`** — asserts the island is baked, that a route past a boulder

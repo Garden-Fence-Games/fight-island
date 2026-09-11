@@ -40,6 +40,7 @@ func _run() -> void:
 		return
 
 	await _check_nothing_aims_until_something_is_touched()
+	await _check_the_keys_still_move_the_body()
 	await _check_the_stick_turns_the_body()
 	await _check_letting_go_hands_the_facing_back()
 	await _check_a_body_turns_rather_than_snaps()
@@ -54,6 +55,31 @@ func _run() -> void:
 func _check_nothing_aims_until_something_is_touched() -> void:
 	if not _player.aim.direction().is_zero_approx():
 		_fail("the player is aiming before any device has been touched")
+	await get_tree().physics_frame
+
+
+## The whole point of splitting facing from movement is that the two stay split. The keys move the
+## body; the aim only turns it. If walking ever starts following the cursor, the player loses the
+## one thing this feature was for — backing away from something while still pointing at it.
+func _check_the_keys_still_move_the_body() -> void:
+	_reset()
+	_player.rotation.y = 0.0
+	_push_key(KEY_W, true)
+	await _advance(SETTLE)
+	var facing := -_player.global_transform.basis.z
+	var from := _player.global_position
+	await _advance(SETTLE)
+	_push_key(KEY_W, false)
+	var travelled := _player.global_position - from
+	travelled.y = 0.0
+	if travelled.length() < 0.5:
+		_fail("holding W should walk the player, it moved %.2f m" % travelled.length())
+		return
+	# Camera-relative, exactly as it was before aiming existed: W is away from the viewer.
+	if travelled.normalized().dot(_screen_forward()) < 0.9:
+		_fail("holding W should walk away from the camera, walked %s" % travelled.normalized())
+	if travelled.normalized().dot(facing) > 0.9:
+		_fail("walking should not follow the facing — the two have to stay independent")
 	await get_tree().physics_frame
 
 
@@ -160,6 +186,15 @@ func _screen_right() -> Vector3:
 	return Vector3(basis.x.x, 0.0, basis.x.z).normalized()
 
 
+## The camera's forward on the ground plane — what W has always meant.
+func _screen_forward() -> Vector3:
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return Vector3.FORWARD
+	var basis := camera.global_transform.basis
+	return Vector3(-basis.z.x, 0.0, -basis.z.z).normalized()
+
+
 func _expect_facing(direction: Vector3, complaint: String) -> void:
 	var wanted := atan2(-direction.x, -direction.z)
 	var off := absf(angle_difference(_player.rotation.y, wanted))
@@ -176,6 +211,13 @@ func _push_stick(stick: Vector2) -> void:
 		event.axis = axis
 		event.axis_value = stick.x if axis == STICK_X else stick.y
 		Input.parse_input_event(event)
+
+
+func _push_key(key: Key, pressed: bool) -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = key
+	event.pressed = pressed
+	Input.parse_input_event(event)
 
 
 func _reset() -> void:
@@ -198,7 +240,7 @@ func _fail(message: String) -> void:
 
 func _report() -> void:
 	if _failures.is_empty():
-		print("aim OK — stick turns the body, cursor lands on the ground, attack and dodge commit")
+		print("aim OK — keys still walk, stick turns, cursor lands on the ground, attack commits")
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:
