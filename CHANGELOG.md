@@ -28,6 +28,14 @@ All notable changes to this project are documented here, following
   plus an itch.io publish on tags.
 - Git LFS tracking for binary assets, configured before the first asset landed.
 
+### Added
+
+- An island: generated terrain with a real coastline, a beach, a cliff backdrop, water you can wade
+  into, and scattered palms, rocks and grass. Built by `tools/build_island.gd` and baked to a
+  scene; `tools/verify_island.tscn` enforces the composition rules combat depends on.
+- `tools/screenshot.gd` — two looks at the arena as PNGs, because judging a world by reading its
+  generator does not work.
+
 ### Changed
 
 - The camera is **fixed** and only follows the player. Framing it from one direction for the whole
