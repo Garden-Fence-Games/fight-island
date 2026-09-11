@@ -97,6 +97,8 @@ docs/          the documentation below
 | [docs/game-design.md](docs/game-design.md) | The game: loop, waves, economy, and **every balance number** |
 | [docs/architecture.md](docs/architecture.md) | Scene composition, components, state machines, autoloads, save format |
 | [docs/conventions.md](docs/conventions.md) | GDScript style and repository rules |
+| [docs/tutorial.md](docs/tutorial.md) | How the game teaches itself without a wall of text |
+| [docs/menus.md](docs/menus.md) | Title, pause, options, merchant, run summary, HUD |
 | [docs/input-map.md](docs/input-map.md) | Every action, gamepad and mouse/keyboard |
 | [docs/asset-pipeline.md](docs/asset-pipeline.md) | Primitives now, Blender → glTF later |
 | [docs/build-and-release.md](docs/build-and-release.md) | Exports, itch.io, Steam, versioning |
