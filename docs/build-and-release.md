@@ -6,20 +6,17 @@ This is a decision, not a description. Every artifact that reaches a player come
 `release.yml`, on a tagged commit, from a pinned Godot version on a clean runner.
 
 It removes a whole class of problem: no "works on my machine" build, no wondering which local
-editor produced the `.zip`, no laptop state baked into a release. It also settles the mono
-question — the only editor installed locally is `/Applications/Godot_mono.app`, which exports with
-**mono templates** and ships a .NET runtime this game never uses. Since local exports are not
-releases, that no longer matters.
+editor produced the `.zip`, no laptop state baked into a release.
 
 **Export templates are therefore optional locally.** Install them only to look at an export
 yourself. They are not installed today, and nothing is blocked by that.
 
 ## Prerequisites
 
-- **Godot 4.7.2** to open and run the project.
+- **Godot 4.7.2 standard** to open and run the project — not the .NET build.
 - **Git LFS** before the first binary asset lands.
-- Export templates *only* if you want a local export — version-locked to 4.7.2, and the mono
-  editor looks for `4.7.2.stable.mono/` rather than `4.7.2.stable/`.
+- Export templates *only* if you want a local export. They are version-locked: the 4.7.2 editor
+  reads `~/Library/Application Support/Godot/export_templates/4.7.2.stable/`.
 
 ## Versioning
 
@@ -53,7 +50,7 @@ build time.
 Not a release. See above.
 
 ```bash
-GODOT=/Applications/Godot_mono.app/Contents/MacOS/Godot
+GODOT=/Applications/Godot.app/Contents/MacOS/Godot
 
 $GODOT --headless --path . --export-release "macOS"           build/macos/FightIsland.zip
 $GODOT --headless --path . --export-release "Windows Desktop" build/windows/FightIsland.exe

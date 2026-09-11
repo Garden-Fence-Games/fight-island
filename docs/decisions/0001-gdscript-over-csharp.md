@@ -7,7 +7,7 @@
 
 The project was created with the Godot .NET editor, so `project.godot` carried a
 `[dotnet] project/assembly_name` block. No `.cs`, `.csproj` or `.sln` file was ever created, so
-nothing was committed either way. The only Godot installed locally is the mono build.
+nothing was committed either way.
 
 ## Decision
 
@@ -18,8 +18,8 @@ GDScript, statically typed. The `[dotnet]` block is removed.
 - Instant iteration: no build step between editing and running.
 - Nothing extra to sign or notarise on macOS, and no .NET runtime in the shipped bundle.
 - The whole ecosystem's examples, addons and answers are GDScript first.
-- The mono editor still runs the project fine, but it exports with mono templates and fatter
-  binaries. Prefer the standard build locally, or let CI produce shippable artifacts.
+- The .NET editor was replaced by the standard Godot 4.7.2 build, so the machine no longer
+  carries a C# toolchain this project would never use.
 - Never add C# later without superseding this record. Mixing the two doubles the conventions
   surface for no gain at this scale.
 

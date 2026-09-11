@@ -91,17 +91,18 @@ The per-change mapping is the trigger table in `docs/contributing.md`.
 
 ## Local environment
 
-- Godot lives at `/Applications/Godot_mono.app/Contents/MacOS/Godot` and is **not on PATH**.
+- Godot **4.7.2 standard** lives at `/Applications/Godot.app/Contents/MacOS/Godot` and is **not on
+  PATH**. There is no .NET/mono build installed, and none is wanted.
 - **CI is the only source of shippable binaries.** Never treat a local export as a release, and do
   not suggest installing export templates to "unblock" anything — they are optional and only serve
-  a local look. The mono build's fatter exports are irrelevant for the same reason.
+  a local look.
 - **Blender is not installed.** The prototype is built from Godot primitives on purpose; the
   Blender pipeline in `docs/asset-pipeline.md` is for the art phase.
 
 ## Commands
 
 ```bash
-GODOT=/Applications/Godot_mono.app/Contents/MacOS/Godot
+GODOT=/Applications/Godot.app/Contents/MacOS/Godot
 
 $GODOT --headless --path . --import                                   # import and validate
 $GODOT --headless --path . --script tools/verify_project_config.gd    # actions and layers
