@@ -7,12 +7,16 @@ made it, its licence, and when it was added.
 
 ## Assets
 
-The island's vegetation and stone come from one CC0 pack. The characters, the weapons and the
-terrain itself are still Godot primitives — see [asset-pipeline.md](asset-pipeline.md).
+The island's vegetation and stone come from one CC0 pack, and the player is now a modelled rig. The
+enemies, the weapons and the terrain itself are still Godot primitives — see
+[asset-pipeline.md](asset-pipeline.md).
 
 | File | Source | Author | Licence | Added |
 |---|---|---|---|---|
 | `icon.svg` | Godot project template | Godot Engine contributors | MIT | 2026-09-11 |
+| `assets/logo/fight_island_logo_1.svg` | original | — *to fill* | — *to fill* | 2026-09-11 |
+| `assets/models/char_player.glb` — rig and clips | [Mixamo](https://www.mixamo.com) | Adobe | **`prototype only`** — not CC0, see below | 2026-09-12 |
+| `assets/models/char_player.glb` — mesh, gun and textures | — *to fill* | — *to fill* | — *to fill* | 2026-09-12 |
 | `assets/fonts/badeen_display.ttf` | [Google Fonts](https://fonts.google.com/specimen/Badeen+Display) | The Badeen Project Authors | SIL OFL 1.1 | 2026-09-12 |
 | `assets/fonts/inter_semibold.ttf` | [Google Fonts](https://fonts.google.com/specimen/Inter) | The Inter Project Authors | SIL OFL 1.1 | 2026-09-12 |
 | `assets/models/nature/tree_palm.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
