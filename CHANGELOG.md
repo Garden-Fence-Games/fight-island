@@ -39,6 +39,10 @@ All notable changes to this project are documented here, following
 - Water as a shader: depth-graded colour, moving surface, and foam along the whole shoreline,
   derived from the sea floor behind it rather than authored.
 - Wading slows the player and the enemies, in proportion to depth.
+- Fixed: the six authored boulders carried colliders scaled twice — the shape was already in
+  metres and then inherited the visual's scale — so the largest one stopped the player from
+  twelve metres away, through open ground. `verify_island` now reads the collider's own scale and
+  caps its radius, which is the only way a bug that is invisible by definition gets caught.
 - Palms and the larger boulders block. Clearance between blocking props is measured as the gap
   between their surfaces, so the player can always dodge through.
 

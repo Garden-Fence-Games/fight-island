@@ -648,12 +648,14 @@ func _landmark() -> StaticBody3D:
 		visual.transform = Transform3D(Basis(Vector3.UP, turn).scaled(size), where)
 		body.add_child(visual)
 
+		# The shape is already in metres, so the collider must NOT inherit the visual's scale — doing
+		# that squared it, and the largest boulder grew a twenty-five metre invisible wall.
 		var shape := BoxShape3D.new()
-		shape.size = size
+		shape.size = size * 0.7
 		var collision := CollisionShape3D.new()
 		collision.name = "RockCollision"
 		collision.shape = shape
-		collision.transform = visual.transform
+		collision.transform = Transform3D(Basis(Vector3.UP, turn), where)
 		body.add_child(collision)
 	return body
 

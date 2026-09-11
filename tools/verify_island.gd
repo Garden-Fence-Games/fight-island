@@ -4,6 +4,11 @@ extends Node
 ## Run: godot --headless --path . res://tools/verify_island.tscn
 
 const ISLAND: String = "res://scenes/world/island.tscn"
+## No single collider may be wider than this. A prop the player is stopped by from well outside the
+## thing they can see is the most disorienting bug a world can have, and it is invisible by
+## definition — so it is checked rather than looked for.
+const WIDEST_COLLIDER: float = 4.0
+
 ## The spawn pad: flat, and clear of obstacles. Deliberately small — a large clearing in the middle
 ## of an island is the surest sign a world was composed rather than grown.
 const SPAWN_RADIUS: float = 7.0
@@ -86,18 +91,30 @@ func _check_obstacles_are_never_a_trap(island: Node) -> void:
 			var collision := node as CollisionShape3D
 			if collision == null:
 				continue
+			# The node's scale multiplies the shape, and missing that is how a boulder once carried a
+			# twenty-five metre collider while this check read five.
+			var scale := collision.global_transform.basis.get_scale()
+			var spread := maxf(absf(scale.x), absf(scale.z))
 			var cylinder := collision.shape as CylinderShape3D
 			var box := collision.shape as BoxShape3D
 			var radius := 0.0
 			if cylinder != null:
-				radius = cylinder.radius
+				radius = cylinder.radius * spread
 			elif box != null:
-				radius = maxf(box.size.x, box.size.z) * 0.5
+				radius = maxf(box.size.x, box.size.z) * 0.5 * spread
 			else:
 				continue
 			var at := (
 				collision.global_position if collision.is_inside_tree() else collision.position
 			)
+			if radius > WIDEST_COLLIDER:
+				_failures.append(
+					(
+						"a collider at %s has a %.1f m radius, the most is %.1f"
+						% [at, radius, WIDEST_COLLIDER]
+					)
+				)
+				return
 			blocking.append([Vector2(at.x, at.z), radius])
 
 	for first: int in blocking.size():
