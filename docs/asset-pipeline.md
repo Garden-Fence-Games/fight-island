@@ -103,9 +103,10 @@ Split them in Godot's import dock, not by exporting nine files.
 ## Textures
 
 PNG sources in `art-source/textures/`. Imported as **VRAM Compressed** for 3D albedo and
-**Lossless** for UI. Sizes: 2048² for the island atlas and the two characters, 1024² for weapons
-and large props, 512² for small props, 256² for UI icons. Prefer one trim sheet per material
-family over per-object textures.
+**Lossless** for UI. Sizes: 2048² for the island atlas, 2048² for the player, and 2048² shared by
+the farmer rig — the three archetypes are three materials over one UV layout, not three budgets.
+Then 1024² for weapons and large props, 512² for small props, 256² for UI icons. Prefer one trim
+sheet per material family over per-object textures.
 
 Targets: under 200 MB of texture VRAM, under 2 GB installed, under 120 k triangles on screen.
 
