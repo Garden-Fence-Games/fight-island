@@ -28,8 +28,16 @@ All notable changes to this project are documented here, following
   plus an itch.io publish on tags.
 - Git LFS tracking for binary assets, configured before the first asset landed.
 
+### Changed
+
+- The camera is **fixed** and only follows the player. Framing it from one direction for the whole
+  game means every silhouette reads the same way, the island is composed for one viewpoint, and a
+  telegraph can never hide behind geometry.
+
 ### Removed
 
 - The `[dotnet]` block from `project.godot` — this is a GDScript project.
+- Five input actions that a fixed camera has no use for: `camera_left`, `camera_right`,
+  `camera_up`, `camera_down`, `camera_recenter`.
 
 [Unreleased]: https://github.com/pepito2t/fight-island/commits/main
