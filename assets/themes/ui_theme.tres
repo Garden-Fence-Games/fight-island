@@ -1,0 +1,61 @@
+[gd_resource type="Theme" load_steps=5 format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_entry_normal"]
+content_margin_left = 26.0
+content_margin_top = 12.0
+content_margin_right = 26.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 4
+border_color = Color(1, 1, 1, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_entry_marked"]
+content_margin_left = 26.0
+content_margin_top = 12.0
+content_margin_right = 26.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0.043)
+border_width_left = 4
+border_color = Color(0.827, 0.227, 0.227, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_entry_pressed"]
+content_margin_left = 26.0
+content_margin_top = 12.0
+content_margin_right = 26.0
+content_margin_bottom = 12.0
+bg_color = Color(0.827, 0.227, 0.227, 0.164)
+border_width_left = 4
+border_color = Color(0.827, 0.227, 0.227, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 44.0
+content_margin_top = 36.0
+content_margin_right = 44.0
+content_margin_bottom = 36.0
+bg_color = Color(0.09, 0.094, 0.101, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.09)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[resource]
+default_font_size = 22
+Button/colors/font_color = Color(0.647, 0.671, 0.698, 1)
+Button/colors/font_disabled_color = Color(0.647, 0.671, 0.698, 0.35)
+Button/colors/font_focus_color = Color(0.965, 0.961, 0.953, 1)
+Button/colors/font_hover_color = Color(0.965, 0.961, 0.953, 1)
+Button/colors/font_hover_pressed_color = Color(0.965, 0.961, 0.953, 1)
+Button/colors/font_pressed_color = Color(0.965, 0.961, 0.953, 1)
+Button/font_sizes/font_size = 32
+Button/styles/disabled = SubResource("StyleBoxFlat_entry_normal")
+Button/styles/focus = SubResource("StyleBoxFlat_entry_marked")
+Button/styles/hover = SubResource("StyleBoxFlat_entry_marked")
+Button/styles/normal = SubResource("StyleBoxFlat_entry_normal")
+Button/styles/pressed = SubResource("StyleBoxFlat_entry_pressed")
+Label/colors/font_color = Color(0.647, 0.671, 0.698, 1)
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_panel")

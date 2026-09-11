@@ -8,6 +8,11 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- Title screen: Play · Options · Credits · Quit, pad-navigable from the first frame, with Play
+  becoming Continue and a New run entry appearing once a run is under way. A grey wash stands in
+  for the island until the arena is composed behind it.
+- A Garden Fence intro sting before the title, skippable with any button.
+- A shared UI theme under `assets/themes/`, and the `UI_` string table in `assets/locale/ui.csv`.
 - Playable prototype: a grey-box arena, a player who moves, sprints, dodges and parries, the
   three-attack fist chain with its chain and perfect windows, and farmhands that close the
   distance and swing.
@@ -48,6 +53,8 @@ All notable changes to this project are documented here, following
 
 ### Changed
 
+- `run/main_scene` is `boot.tscn` again, and boot now opens the intro rather than the arena.
+- The game ships in English only. The `tr()` layer stays; a second locale does not.
 - The camera is **fixed** and only follows the player. Framing it from one direction for the whole
   game means every silhouette reads the same way, the island is composed for one viewpoint, and a
   telegraph can never hide behind geometry.

@@ -21,6 +21,8 @@
 *.wav   filter=lfs diff=lfs merge=lfs -text
 *.ogg   filter=lfs diff=lfs merge=lfs -text
 *.mp3   filter=lfs diff=lfs merge=lfs -text
+*.ogv   filter=lfs diff=lfs merge=lfs -text
+
 # Binary Godot resources - generated meshes and the like. The text .tres format stays text.
 *.res   filter=lfs diff=lfs merge=lfs -text
 *.scn   filter=lfs diff=lfs merge=lfs -text
