@@ -26,6 +26,8 @@ steam_appid.txt
 # globally, and git will not descend into an excluded directory.
 !.claude/
 .claude/settings.local.json
+# Agent worktrees are checkouts of this repo, not content of it.
+.claude/worktrees/
 
 # OS
 .DS_Store
