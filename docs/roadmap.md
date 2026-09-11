@@ -3,7 +3,7 @@
 Each milestone states its goal in one sentence, what it delivers, and the exit criterion that
 proves it is done. Durations are estimates for one person working part-time.
 
-## M0 — Foundations (~1 week)
+## M0 — Foundations · **done**
 
 **Goal:** anyone opening this repository knows everything without asking.
 
@@ -20,19 +20,20 @@ proves it is done. Durations are estimates for one person working part-time.
 **Exit:** the project opens with zero errors and zero warnings, `verify_project_config` passes, and
 `docs/` answers every question a new contributor would ask.
 
-## M1 — Prototype (~3 weeks)
+## M1 — Prototype · **in progress**
 
 **Goal:** *"I can kill an enemy with my fists and it feels like something."*
 
-- `boot.tscn` → `main.tscn` → a grey-box `arena.tscn`, and `run/main_scene` finally set
-- Camera rig complete: free yaw, clamped pitch, eased zoom, occlusion
-- Player with the node FSM: move, sprint, dodge, parry
-- `HealthComponent` and `StaminaComponent`
-- The hitbox/hurtbox pattern working end to end
-- The fist three-attack chain with both timing layers and visible feedback — hitstop, flash, a
-  sound of its own
-- One enemy with the full FSM and a readable telegraph
-- A debug HUD showing health, stamina and current state
+- [x] `boot.tscn` → `main.tscn` → a grey-box `arena.tscn`, and `run/main_scene` set
+- [x] Camera rig: free yaw, clamped pitch, eased zoom, spring arm against occluders
+- [x] Player with the node FSM: idle, move, sprint, dodge, parry, attack, hurt, dead
+- [x] `HealthComponent` and `StaminaComponent`
+- [x] The hitbox/hurtbox pattern working end to end
+- [x] The fist three-attack chain with both timing layers, hitstop and a flash
+- [x] The farmhand with the full FSM, a readable telegraph and the attack-token pool
+- [x] A debug HUD showing health, stamina, state and the chain index
+- [ ] Sound — there are no audio assets yet, so the audible half of the feedback waits for M2's
+      first audio pass
 
 **Exit:** a 60-second grey-box fight where a perfect parry and a perfect chain are *felt*, not read
 off a number.

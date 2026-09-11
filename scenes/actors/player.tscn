@@ -1,0 +1,114 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/actors/player/player.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/components/stamina_component.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/components/hitbox.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/components/state_machine.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/actors/player/states/player_idle.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/actors/player/states/player_move.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/actors/player/states/player_sprint.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/actors/player/states/player_dodge.gd" id="10"]
+[ext_resource type="Script" path="res://scripts/actors/player/states/player_parry.gd" id="11"]
+[ext_resource type="Script" path="res://scripts/actors/player/states/player_attack.gd" id="12"]
+[ext_resource type="Script" path="res://scripts/actors/player/states/player_hurt.gd" id="13"]
+[ext_resource type="Script" path="res://scripts/actors/player/states/player_dead.gd" id="14"]
+[ext_resource type="Resource" path="res://data/weapons/fists.tres" id="15"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
+height = 1.8
+radius = 0.35
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
+albedo_color = Color(0.32, 0.62, 0.85, 1)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+height = 1.8
+radius = 0.35
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_2"]
+height = 1.8
+radius = 0.4
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(1.6, 1.2, 1.4)
+
+[node name="Player" type="CharacterBody3D" groups=["player"]]
+collision_layer = 2
+collision_mask = 5
+script = ExtResource("1")
+weapon = ExtResource("15")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_1")
+material_override = SubResource("StandardMaterial3D_1")
+
+[node name="Nose" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0.35, -0.4)
+mesh = SubResource("CapsuleMesh_1")
+material_override = SubResource("StandardMaterial3D_1")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2")
+max_health = 100.0
+hit_invulnerability = 0.4
+
+[node name="Stamina" type="Node" parent="."]
+script = ExtResource("3")
+max_stamina = 100.0
+regen_per_second = 20.0
+regen_delay = 0.8
+whiff_delay = 1.2
+
+[node name="Hurtbox" type="Area3D" parent="."]
+collision_layer = 32
+collision_mask = 0
+script = ExtResource("4")
+
+[node name="Shape" type="CollisionShape3D" parent="Hurtbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_2")
+
+[node name="Hitbox" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 64
+script = ExtResource("5")
+
+[node name="Shape" type="CollisionShape3D" parent="Hitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -0.7)
+shape = SubResource("BoxShape3D_1")
+disabled = true
+
+[node name="StateMachine" type="Node" parent="."]
+script = ExtResource("6")
+initial_state = &"Idle"
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("7")
+
+[node name="Move" type="Node" parent="StateMachine"]
+script = ExtResource("8")
+
+[node name="Sprint" type="Node" parent="StateMachine"]
+script = ExtResource("9")
+
+[node name="Dodge" type="Node" parent="StateMachine"]
+script = ExtResource("10")
+
+[node name="Parry" type="Node" parent="StateMachine"]
+script = ExtResource("11")
+
+[node name="Attack" type="Node" parent="StateMachine"]
+script = ExtResource("12")
+
+[node name="Hurt" type="Node" parent="StateMachine"]
+script = ExtResource("13")
+
+[node name="Dead" type="Node" parent="StateMachine"]
+script = ExtResource("14")

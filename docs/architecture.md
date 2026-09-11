@@ -171,11 +171,28 @@ capsule collision shapes only. No `get_node` per frame — `@onready` everywhere
 `_physics_process` for gameplay, `_process` for visuals. **Hit registration uses physics-frame
 state, never an interpolated visual transform.**
 
+## A Node3D faces -Z
+
+The yaw that points a node along `direction` is `atan2(-direction.x, -direction.z)`, not
+`atan2(direction.x, direction.z)`. The wrong one is off by 180° and produces an enemy that
+carefully turns its back before swinging — which looks like a broken hitbox, not a broken
+rotation. It cost an afternoon once; `tools/verify_combat.tscn` now fails if it comes back.
+
 ## Testing
 
 gdUnit4. Unit-test the pure parts that carry the design: the `WaveConfig` formulas, the `Economy`
 cost curve, `AttackData` window arithmetic, upgrade application. Do not unit-test FSM transitions —
 drive a headless scene instead.
 
-The cheapest and most valuable guard is already in place: `tools/verify_project_config.gd` fails
-the build when an input action or a physics layer goes missing.
+Two headless guards run in CI and locally:
+
+- **`tools/verify_project_config.gd`** — fails when an input action or a physics layer goes
+  missing. Runs with `--script`, because it touches no autoload.
+- **`tools/verify_combat.tscn`** — asserts that a jab deals its tabled damage, that a perfect hit
+  multiplies it, that the chain window opens and closes where the design says, that a perfect parry
+  negates, and that a farmhand left alone crosses the arena and connects. It runs as a **scene**,
+  not with `--script`: `--script` starts no autoloads, so every script touching the `EventBus`
+  would fail there for the wrong reason.
+
+Booting the game headless (`--quit-after`) and failing on any error *or warning* catches more than
+either, for a tenth of the effort.

@@ -16,3 +16,4 @@ from that note.
 | [0003](0003-gltf-over-blend.md) | glTF `.glb` as the engine-facing source, not direct `.blend` import |
 | [0004](0004-three-autoloads.md) | Three autoloads, and `SaveManager` as a static class |
 | [0005](0005-docs-split-repo-zennotes.md) | What lives in the repo and what lives in ZenNotes |
+| [0006](0006-onready-over-node-exports.md) | `@onready` for a node's own children, not `@export` |

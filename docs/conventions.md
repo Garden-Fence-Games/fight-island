@@ -63,8 +63,12 @@ one-off scene scripts: it pollutes the global scope and slows the editor's class
 ## Scenes and nodes
 
 One responsibility per scene. A scene past roughly ten direct children or a script past roughly
-250 lines gets split. Prefer `@export var target: Node3D` over `get_node("../../Foo")` — never
-reach up the tree, and never reach across it.
+250 lines gets split. Never reach up the tree, and never reach across it.
+
+A node's **own children** are resolved with `@onready var health: HealthComponent = $Health`;
+`@export` is for resources and for genuinely external references, which are found by group rather
+than by a path into a sibling scene. Node exports written by hand into a `.tscn` do not resolve,
+and they fail silently — see [ADR 0006](decisions/0006-onready-over-node-exports.md).
 
 ## Comments
 

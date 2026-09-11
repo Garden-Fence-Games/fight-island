@@ -9,10 +9,13 @@ exactly one upgrade — and a run never affords them all.
 
 ## Status
 
-**Milestone 0 — foundations.** Configuration and documentation only: there is no gameplay code
-yet, and no scenes. `project.godot` carries the full input map and physics layers; everything
-else is written down in [`docs/`](docs/). See [docs/roadmap.md](docs/roadmap.md) for what lands
-when.
+**Milestone 1 — prototype.** The game runs. Grey-box arena, a player who moves, sprints, dodges
+and parries, the three-attack fist chain with both timing layers, and farmhands who close the
+distance and swing. Everything is Godot primitives on purpose — the only question this milestone
+answers is whether the timing feels good.
+
+Still to come: the stick and the gun, waves, money and the upgrade merchant. See
+[docs/roadmap.md](docs/roadmap.md).
 
 ## Features
 

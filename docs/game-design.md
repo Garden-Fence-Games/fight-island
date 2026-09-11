@@ -39,7 +39,9 @@ player should know they nailed it without reading a number.
 
 Input is buffered for **0.15 s**, so a slightly early press still lands inside the window.
 
-Windows are measured from the start of the attack's recovery.
+Windows are measured from the start of the attack's recovery, and **the windows on attack N
+govern the press that produces attack N + 1**. A finisher ends the chain, so it carries no windows
+of its own.
 
 ## Player
 
@@ -66,16 +68,20 @@ during wave 4. Pickups last the whole run; swapping is free and instant.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Fists | 1 | Jab | 8 | 6 | 0.12 | 0.08 | 0.22 | 0.10–0.45 | 0.33–0.45 | ×1.35 | 1.4 m | 70° | 0.10 |
 | Fists | 2 | Cross | 12 | 9 | 0.16 | 0.09 | 0.28 | 0.12–0.45 | 0.33–0.45 | ×1.35 | 1.5 m | 70° | 0.15 |
-| Fists | 3 | Uppercut | 20 | 14 | 0.28 | 0.12 | 0.50 | finisher | 0.00–0.10 | ×1.35 | 1.6 m | 60° | 0.60 |
+| Fists | 3 | Uppercut | 20 | 14 | 0.28 | 0.12 | 0.50 | — | — | ×1.35 | 1.6 m | 60° | 0.60 |
 | Stick | 1 | Backhand | 14 | 10 | 0.20 | 0.12 | 0.30 | 0.14–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.15 |
 | Stick | 2 | Return | 18 | 12 | 0.22 | 0.12 | 0.34 | 0.16–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.20 |
-| Stick | 3 | Overhead | 30 | 18 | 0.45 | 0.14 | 0.65 | finisher | 0.00–0.12 | ×1.35 | 2.6 m | 45° | 0.90 |
+| Stick | 3 | Overhead | 30 | 18 | 0.45 | 0.14 | 0.65 | — | — | ×1.35 | 2.6 m | 45° | 0.90 |
 | Gun | 1 | Single shot | 22 | 0 | 0.10 | hitscan | 0.35 | 0.08–0.40 | 0.28–0.40 | ×1.25 | 25 m | 2° | 0.10 |
 | Gun | 2 | Double tap | 2 × 16 | 0 | 0.08 | hitscan | 0.55 | 0.10–0.45 | 0.33–0.45 | ×1.25 | 22 m | 3° | 0.15 |
-| Gun | 3 | Charged shot | 55 | 12 | 0.70 charge | hitscan | 0.60 | finisher | release 0.60–0.75 | ×1.50 | 30 m | 1° | 1.10 |
+| Gun | 3 | Charged shot | 55 | 12 | 0.70 charge | hitscan | 0.60 | — | — | ×1.50 | 30 m | 1° | 1.10 |
 
-A finisher has no chain window; its perfect window is on the press, timed against the previous
-attack's recovery.
+A finisher has no windows of its own: the press that produced it was timed against the previous
+attack's recovery, and its perfect multiplier applies to that press.
+
+**Implemented in M1:** the fists, exactly as tabled above. `tools/verify_combat.tscn` asserts the
+jab's damage, the perfect multiplier, both chain-window boundaries and the parry outcome, so the
+table and `data/attacks/*.tres` cannot drift apart unnoticed.
 
 **Ammunition.** Magazine 6, reload 1.6 s. The reserve starts at 24 and each cleared wave grants
 **+8**. Attacks 1/2/3 cost 1/2/1 rounds; attack 2 needs at least 2 in the magazine.

@@ -72,25 +72,25 @@ jobs:
       - name: Verify input map and physics layers
         run: godot --headless --path "$GITHUB_WORKSPACE" --script tools/verify_project_config.gd
 
-      - name: Parse every GDScript file
+      # Booting the real game is worth more than parsing files one by one: --script starts no
+      # autoloads, so any script touching the EventBus would fail there for the wrong reason.
+      - name: Boot the game headless
         run: |
-          files=$(git ls-files '*.gd')
-          if [ -z "$files" ]; then
-            echo "No GDScript files yet - skipping."
-            exit 0
+          set -o pipefail
+          godot --headless --path "$GITHUB_WORKSPACE" --quit-after 240 2>&1 | tee run.log
+          if grep -nE '^(ERROR|WARNING|SCRIPT ERROR|USER ERROR|USER SCRIPT ERROR)' run.log; then
+            echo "::error::Errors or warnings while running the game."
+            exit 1
           fi
-          status=0
-          for f in $files; do
-            if ! godot --headless --path "$GITHUB_WORKSPACE" --check-only --script "res://$f"; then
-              echo "::error file=$f::GDScript parse error"
-              status=1
-            fi
-          done
-          exit $status
+
+      - name: Verify the combat loop
+        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_combat.tscn
 
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: import-log
-          path: import.log
+          name: logs
+          path: |
+            import.log
+            run.log
           retention-days: 7
