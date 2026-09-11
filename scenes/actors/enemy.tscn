@@ -72,6 +72,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -0.8)
 shape = SubResource("BoxShape3D_1")
 disabled = true
 
+[node name="Agent" type="NavigationAgent3D" parent="."]
+path_desired_distance = 0.8
+target_desired_distance = 1.2
+path_max_distance = 6.0
+radius = 0.5
+avoidance_enabled = false
+
 [node name="StateMachine" type="Node" parent="."]
 script = ExtResource("5")
 initial_state = &"Idle"
