@@ -13,3 +13,8 @@ signal parry_late
 signal enemy_spawned(enemy: Node3D)
 signal enemy_died(enemy: Node3D, money: int)
 signal hitstop_requested(duration: float)
+## The player has finished a chain and cannot attack for `seconds`. Presentation exists because of
+## this pair: a wait nobody can see reads as a dropped input, and the player blames the game — and
+## they are right to, because nothing told them.
+signal chain_spent(seconds: float)
+signal chain_ready

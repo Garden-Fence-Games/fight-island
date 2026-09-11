@@ -28,11 +28,13 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if readout == null:
 		return
+	var locked := player.lockout_left() if player != null else 0.0
 	readout.text = (
-		"%s   chain %d   %d fps\nlast: %s"
+		"%s   chain %d   %s   %d fps\nlast: %s"
 		% [
 			_state_name,
 			player.chain_index if player != null else -1,
+			"spent %.2fs" % locked if locked > 0.0 else "ready",
 			Engine.get_frames_per_second(),
 			_last_hit
 		]

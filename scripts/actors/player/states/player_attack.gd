@@ -78,6 +78,11 @@ func _begin_recovery() -> void:
 	# A finisher that hits nothing costs the longer breath - that is what makes it a commitment.
 	if not _landed and _attack.is_finisher() and player.stamina != null:
 		player.stamina.punish_whiff()
+	# The chain is spent here rather than when the recovery ends, so the wait is measured from the
+	# end of the recovery but cannot be cancelled by being hit out of it. A debt that a stagger
+	# clears is a debt worth taking a hit for.
+	if _attack.is_finisher() and player.weapon != null:
+		player.spend_chain(_attack.recovery + player.weapon.lockout_for(_perfect))
 	player.open_chain(_attack, _index)
 
 
