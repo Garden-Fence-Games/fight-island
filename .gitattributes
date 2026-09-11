@@ -1,2 +1,31 @@
 # Normalize EOL for all files that Git considers text files.
 * text=auto eol=lf
+
+# Godot text resources — text, but they merge badly. See docs/contributing.md.
+*.tscn text
+*.tres text
+*.godot text
+*.import text
+*.gd text diff=gdscript
+
+# Binary assets go through Git LFS. Set up before the first art commit:
+#   git lfs install && git add .gitattributes
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.glb   filter=lfs diff=lfs merge=lfs -text
+*.gltf  filter=lfs diff=lfs merge=lfs -text
+*.fbx   filter=lfs diff=lfs merge=lfs -text
+*.png   filter=lfs diff=lfs merge=lfs -text
+*.jpg   filter=lfs diff=lfs merge=lfs -text
+*.exr   filter=lfs diff=lfs merge=lfs -text
+*.hdr   filter=lfs diff=lfs merge=lfs -text
+*.wav   filter=lfs diff=lfs merge=lfs -text
+*.ogg   filter=lfs diff=lfs merge=lfs -text
+*.mp3   filter=lfs diff=lfs merge=lfs -text
+
+# The project icon stays in git proper — it is tiny and it is text.
+icon.svg -filter -diff -merge text
+
+# Git's line merge produces syntactically valid but semantically wrong output on
+# these (duplicated input actions, renumbered export presets). Force a conflict.
+project.godot      -merge
+export_presets.cfg -merge

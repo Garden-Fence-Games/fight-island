@@ -1,0 +1,96 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  lint:
+    name: GDScript lint and format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install gdtoolkit
+        run: pip install "gdtoolkit>=4.3,<5"
+
+      - name: Check formatting and lint
+        run: |
+          files=$(git ls-files '*.gd')
+          if [ -z "$files" ]; then
+            echo "No GDScript files yet - skipping."
+            exit 0
+          fi
+          gdformat --check $files
+          gdlint $files
+
+  validate:
+    name: Import and validate project
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          lfs: true
+
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: false
+
+      # Godot exits 0 even when it logs import errors, so the grep below is the real gate.
+      - name: Import project resources
+        run: |
+          set -o pipefail
+          godot --headless --import --path "$GITHUB_WORKSPACE" 2>&1 | tee import.log
+
+      - name: Fail on any error or warning
+        run: |
+          if grep -nE '^(ERROR|WARNING|SCRIPT ERROR|USER ERROR|USER SCRIPT ERROR)' import.log; then
+            echo "::error::Godot reported errors or warnings while importing."
+            exit 1
+          fi
+          echo "Import clean."
+
+      - name: Verify input map and physics layers
+        run: godot --headless --path "$GITHUB_WORKSPACE" --script tools/verify_project_config.gd
+
+      - name: Parse every GDScript file
+        run: |
+          files=$(git ls-files '*.gd')
+          if [ -z "$files" ]; then
+            echo "No GDScript files yet - skipping."
+            exit 0
+          fi
+          status=0
+          for f in $files; do
+            if ! godot --headless --path "$GITHUB_WORKSPACE" --check-only --script "res://$f"; then
+              echo "::error file=$f::GDScript parse error"
+              status=1
+            fi
+          done
+          exit $status
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: import-log
+          path: import.log
+          retention-days: 7

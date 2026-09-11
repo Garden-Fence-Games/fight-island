@@ -1,3 +1,32 @@
-# Godot 4+ specific ignores
+# Godot 4+
 .godot/
 /android/
+
+# NOTE: the per-asset *.import sidecars MUST be committed - they carry resource UIDs.
+
+# Builds
+build/
+export/
+*.translation
+
+# Steam (dev-only, never commit)
+steam_appid.txt
+
+# Blender backups
+*.blend1
+*.blend2
+*.blend3
+
+# Secrets
+.env
+.env.*
+
+# Claude Code. The shared setup is versioned on purpose, so every contributor and every
+# session inherits it. The negation is needed because ~/.gitignore_global excludes .claude
+# globally, and git will not descend into an excluded directory.
+!.claude/
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
