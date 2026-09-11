@@ -18,7 +18,8 @@ res://
     autoload/     event_bus.gd, game_state.gd, audio_manager.gd
     resources/    attack_data.gd, weapon_data.gd, upgrade_track.gd, wave_config.gd
     components/   health_component.gd, stamina_component.gd, hitbox.gd, hurtbox.gd,
-                  hit_info.gd, state_machine.gd, state.gd
+                  hit_info.gd, state_machine.gd, state.gd, aim_component.gd,
+                  animation_component.gd
     actors/       player/, enemy/, merchant/ — each with its states/
     systems/      wave_director.gd, spawn_director.gd, economy.gd, save_manager.gd
     camera/       camera_rig.gd
@@ -320,6 +321,29 @@ nobody can see reads as a dropped input, and the player blames the game. `HitFee
 drains the body's colour for the duration; combat itself knows nothing about it. The state is shown
 for the whole lockout rather than flashed when a press is refused: seeing that the weapon is not
 ready *before* pressing is worth more than being told afterwards.
+
+## Animation
+
+`AnimationComponent` listens to the `StateMachine`'s `transitioned` signal and plays the clip that
+matches the state. It does not know whose skeleton it drives: the `AnimationPlayer` and the machine
+are found under its parent when its exports are left null, so a reimport that renames the glTF
+nodes does not require touching the scene.
+
+Two decisions worth keeping:
+
+- **The states do not start their own clips.** A state that had to remember would one day forget,
+  and that bug is a character frozen mid-stride with nothing in the log to explain it. Driving it
+  from the one signal the machine already emits means a new state cannot be added without the
+  animation question being answered.
+- **A state with no clip plays nothing and says nothing.** The rig arrives one animation at a time,
+  so most of the map points at clips that do not exist yet — that is the normal state of affairs,
+  not a fault. It also keeps the build green: the import gate fails on any `WARNING` line, so a
+  component that complained once per transition would turn main red for having half a rig. It
+  emits `clip_missing` instead, and falls back to the rig's `RESET` pose.
+
+The state-to-clip map is explicit rather than a lowercase of the state name, because `Move` plays
+`walk` and no rule bridges that pair. It is exported, so a state can be pointed at a clip that
+already exists while the real one is still being authored.
 
 ## A Node3D faces -Z
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/player/player.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -16,13 +16,8 @@
 [ext_resource type="Script" path="res://scripts/actors/player/states/player_dead.gd" id="14"]
 [ext_resource type="Resource" path="res://data/weapons/fists.tres" id="15"]
 [ext_resource type="Script" path="res://scripts/components/aim_component.gd" id="16"]
-
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
-height = 1.8
-radius = 0.35
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
-albedo_color = Color(0.32, 0.62, 0.85, 1)
+[ext_resource type="PackedScene" path="res://assets/models/char_player.glb" id="17"]
+[ext_resource type="Script" path="res://scripts/components/animation_component.gd" id="18"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 height = 1.8
@@ -41,15 +36,7 @@ collision_mask = 5
 script = ExtResource("1")
 weapon = ExtResource("15")
 
-[node name="Body" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-mesh = SubResource("CapsuleMesh_1")
-material_override = SubResource("StandardMaterial3D_1")
-
-[node name="Nose" type="MeshInstance3D" parent="Body"]
-transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0.35, -0.4)
-mesh = SubResource("CapsuleMesh_1")
-material_override = SubResource("StandardMaterial3D_1")
+[node name="Visual" parent="." instance=ExtResource("17")]
 
 [node name="Collision" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -69,6 +56,9 @@ whiff_delay = 1.2
 
 [node name="Aim" type="Node" parent="."]
 script = ExtResource("16")
+
+[node name="Animation" type="Node" parent="."]
+script = ExtResource("18")
 
 [node name="Hurtbox" type="Area3D" parent="."]
 collision_layer = 32
