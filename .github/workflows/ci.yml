@@ -149,6 +149,12 @@ jobs:
       - name: Verify waves
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_waves.tscn
 
+      # The rig is wired by name, and names drift: a reimport renames a glTF node, an action is
+      # exported as "mixamo.com" instead of "walk", and the character silently stops moving with
+      # nothing in the log. This asserts the lookup still resolves and that Move actually walks.
+      - name: Verify animation
+        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_animation.tscn
+
       - name: Verify navigation
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_navigation.tscn
 

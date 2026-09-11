@@ -37,7 +37,6 @@ var _gravity: float = 9.8
 @onready var hitbox: Hitbox = $Hitbox
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var machine: StateMachine = $StateMachine
-@onready var mesh: MeshInstance3D = $Body
 @onready var aim: AimComponent = $Aim
 
 
