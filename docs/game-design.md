@@ -22,7 +22,8 @@ into 3 → reset spacing.
 
 1. **Timing over inventory.** Variety comes from nine attacks with windows, not from a bigger bag.
 2. **Scarcity of choice.** One purchase per wave. The interesting decision is what you give up.
-3. **Readability.** Two characters and three weapons, all legible from a high angled camera.
+3. **Readability.** One player, three farmers and three weapons, all legible from a high angled
+   camera. Every enemy shares a silhouette; only the texture and the behaviour change.
 
 ## The timing system
 
@@ -95,29 +96,55 @@ default, the stick trades commitment for reach and crowd control, the gun is the
 
 Parry is a **tap**, not a held stance. One defensive button, and all the difficulty in the timing.
 
-## Enemy
+## Enemies
 
-| | |
-|---|---|
-| Health | 60 |
-| Contact damage | 10 |
-| Move speed | 3.0 m/s |
-| Aggro radius | 18 m |
-| Attack range | 1.8 m |
-| Windup — the telegraph | 0.55 s |
-| Active | 0.15 s |
-| Recovery | 0.70 s |
-| Poise | 20 — staggers when 20 poise damage lands within 2 s |
-| Money on kill | 2 |
+Three farmers, **one rig and one mesh, three textures**. They are behaviourally distinct — three
+identical bodies in different shirts would be decoration, not design — and together they form a
+triangle that stops any single answer from working.
+
+| | Farmhand | Reaper | Thrower |
+|---|---|---|---|
+| Role | the swarm | the bruiser | the pressure |
+| Health | 45 | 90 | 40 |
+| Damage | 8 | 16 | 10 |
+| Move speed | 3.4 m/s | 2.4 m/s | 2.8 m/s |
+| Windup — the telegraph | 0.45 s | 0.75 s | 0.60 s |
+| Active | 0.12 s | 0.18 s | projectile |
+| Recovery | 0.60 s | 0.95 s | 0.80 s |
+| Reach | 1.6 m, 60° | 2.8 m, **160°** | 14 m |
+| Poise | 15 | 30 | 10 |
+| Money on kill | 2 | 5 | 4 |
+| Enters at wave | 1 | 3 | 5 |
+
+**Farmhand.** Bare hands, quick, fragile, and always the majority of a wave. He is what teaches the
+parry, and what makes a crowd feel like a crowd.
+
+**Reaper.** A scythe on a wide horizontal sweep. The 160° arc is the point: **sidestepping does not
+work on him** — you dodge backward, dodge through, or parry. He is slow enough to be read and
+punishing enough that reading him matters. He is also the reason the stick exists.
+
+**Thrower.** Stays at range and lobs stones. The projectile is slow enough to sidestep, so he is
+never unfair, but he **never stops** — he retreats when the player comes within 5 m. He is what
+stops the player from camping one corner, and he is the single best argument for the gun.
+
+## Enemy AI
 
 States: `Spawn → Idle → Chase → Strafe → WindUp → Attack → Recover`, plus `Stagger`, `Flinch`,
-`Dead`.
+`Dead`. The thrower adds `Retreat`.
 
-Two global rules keep a crowd fair rather than unfair:
+Three global rules keep a crowd fair rather than unfair:
 
-- **Attack-token pool of 2.** Only two enemies may be in `WindUp` or `Attack` at once; the rest
-  strafe.
-- **Minimum 1.2 m separation** steering force, so bodies never stack into an unreadable blob.
+- **A melee attack-token pool of 2.** Only two melee enemies may be in `WindUp` or `Attack` at
+  once; the rest strafe.
+- **A separate ranged token of 1.** Throwers queue on their own, so at most one stone is in the
+  air. Sharing the melee pool would let throwers starve the melee enemies and make waves passive.
+- **Minimum 1.2 m separation** steering, so bodies never stack into an unreadable blob.
+
+## Elites
+
+From wave 4, any archetype can roll elite: the same scene with health ×2.0, damage ×1.4, scale
+×1.15, an emissive tint and 3× money. **No new model and no new texture** — an elite must read as
+"that one, but worse", instantly.
 
 ## Waves
 
@@ -136,8 +163,21 @@ elite_chance(n)  = n < 4 ? 0.0 : min(0.10 + 0.05 * (n - 4), 0.40)
 The telegraph shortens with the waves but never drops below 0.75 of its base. An unreadable
 telegraph is not difficulty.
 
-An **elite** is the same enemy scene with health ×2.0, damage ×1.4, scale ×1.15, an emissive tint
-and 3× money. No new model — the two-character constraint holds.
+### Composition
+
+Each spawn rolls an archetype against the wave's mix. The result is rounded to whole enemies, and
+the farmhand always takes the remainder.
+
+| Wave | Farmhand | Reaper | Thrower |
+|---|---|---|---|
+| 1–2 | 100 % | — | — |
+| 3–4 | 80 % | 20 % | — |
+| 5–7 | 65 % | 20 % | 15 % |
+| 8–11 | 50 % | 30 % | 20 % |
+| 12–15 | 40 % | 35 % | 25 % |
+
+A wave never opens with a thrower: the first spawn of every wave is melee, so the player is never
+shot at before anything is on screen.
 
 ### The intended shape
 
@@ -183,7 +223,7 @@ are **off by default** — the feedback should be felt.
 
 ## Out of scope for v1
 
-Multiplayer · a fourth weapon · a boss · a second biome · progression carried between runs. Each
+Multiplayer · a fourth weapon · a fourth enemy · a boss · a second biome · progression carried between runs. Each
 is a different game; adding one before wave 15 is tuned is how this one stops shipping.
 
 ## Tuning protocol

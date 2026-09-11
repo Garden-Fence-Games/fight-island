@@ -22,6 +22,9 @@ when.
 - **Three weapons, no more.** Fists, a wooden stick, a gun — a different range, a different
   commitment, a different rhythm each.
 - **Wave survival.** Fifteen escalating waves on a single island, then an endless mode.
+- **Three farmers who want you gone.** A bare-handed swarm, a scythe-swinging bruiser whose wide
+  arc cannot be sidestepped, and a thrower who keeps his distance and never lets you camp. One rig,
+  three textures, three very different problems.
 - **One upgrade per wave.** Health, stamina, fists, stick, gun. You cannot max them all; the
   subject of the game is what you give up.
 - **A full defensive kit.** Dodge with i-frames, sprint, and a tap parry whose perfect window

@@ -8,11 +8,13 @@ settings to get wrong.
 | Thing | Primitive |
 |---|---|
 | Player | `CapsuleMesh`, 1.8 m tall, one bright colour |
-| Enemy | the same capsule in a different colour, scaled ×1.15 for elites |
+| Enemies | the same capsule in three colours — farmhand, reaper, thrower — scaled ×1.15 for elites |
 | Merchant | a third colour, and he never moves |
 | Fists | no mesh — the hitbox is the weapon |
 | Stick | `BoxMesh` 0.06 × 0.06 × 1.2 m |
 | Gun | `BoxMesh` with a thinner box for the barrel |
+| Scythe | a long `BoxMesh` with a second angled box for the blade |
+| Thrown stone | `SphereMesh`, 0.15 m |
 | Island | `PlaneMesh` for the ground, `CSGBox3D` and `CSGCylinder3D` for rocks and trunks |
 | Water | a flat `PlaneMesh` with a scrolling shader, added in M2 |
 
@@ -49,8 +51,17 @@ Direct `.blend` import is fine during blockout. Switch before the first CI expor
 
 ## Naming
 
-Files: `char_player.glb`, `char_enemy.glb`, `char_merchant.glb`, `weapon_stick.glb`,
-`weapon_gun.glb`, `env_island.glb`, `env_palm_tree.glb`, `prop_crate.glb`.
+Files: `char_player.glb`, **`char_farmer.glb`**, `char_merchant.glb`, `weapon_stick.glb`,
+`weapon_gun.glb`, `weapon_scythe.glb`, `prop_stone.glb`, `env_island.glb`, `env_palm_tree.glb`,
+`prop_crate.glb`.
+
+**The three enemies are one file.** `char_farmer.glb` carries a single rig and a single mesh; the
+archetypes are three materials — `mat_farmer_hand`, `mat_farmer_reaper`, `mat_farmer_thrower` —
+swapped at runtime on the same `MeshInstance3D`. One rig means one animation set, one import to
+maintain, and an elite that is a tint rather than an asset.
+
+Texture direction: the three must be distinguishable **by value and hue at 20 m from a high
+camera**, not by detail nobody will ever see. Test them greyscale before texturing them properly.
 
 Meshes inside: `<asset>_<part>` — `char_player_body`, `weapon_gun_slide`.
 
@@ -83,8 +94,9 @@ Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 **Player:** `idle`, `walk`, `run`, `sprint`, `dodge_roll`, `parry`, `parry_success`, `hurt`,
 `death`, `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`.
 
-**Enemy:** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `windup`, `attack`, `stagger`,
-`death`.
+**Farmer (shared by all three):** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`,
+`death`, plus one attack set per archetype — `windup_punch` / `attack_punch`,
+`windup_sweep` / `attack_sweep`, `windup_throw` / `attack_throw` — and `retreat` for the thrower.
 
 Split them in Godot's import dock, not by exporting nine files.
 

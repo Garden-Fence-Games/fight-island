@@ -69,9 +69,14 @@ editor, can carry `@export` tuning per instance, and are reused across actors by
 machine rather than inheriting the actor.
 
 - **Player:** `Idle`, `Move`, `Sprint`, `Dodge`, `Parry`, `Attack`, `Reload`, `Hurt`, `Dead`.
-- **Enemy:** `Spawn`, `Idle`, `Chase`, `Strafe`, `WindUp`, `Attack`, `Recover`, `Stagger`, `Dead`.
+- **Enemy:** `Spawn`, `Idle`, `Chase`, `Strafe`, `WindUp`, `Attack`, `Recover`, `Stagger`, `Dead`,
+  plus `Retreat` for the thrower.
 
-`Attack` is **one** state driven by `AttackData`. The nine attacks are data, not nine states.
+`Attack` is **one** state driven by `AttackData`. The nine player attacks are data, not nine states.
+
+The same applies to the enemies: **one `enemy.tscn`, three `EnemyData` resources.** Farmhand,
+reaper and thrower differ by their stats, their attack and their material — not by three scenes to
+keep in sync. A fourth archetype would be a `.tres`, not a branch.
 
 ## Data-driven balance
 
@@ -81,6 +86,9 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   `chain_window: Vector2`, `perfect_window: Vector2`, `perfect_multiplier`, `range`,
   `arc_degrees`, `stagger`, `poise_damage`, `ammo_cost`, `animation: StringName`, `hitstop`,
   `sfx`, `vfx`.
+- **`EnemyData`** — `id`, `display_name`, `health`, `damage`, `move_speed`, `attack: AttackData`,
+  `poise`, `money`, `material: StandardMaterial3D`, `is_ranged`, `preferred_range`,
+  `first_wave`.
 - **`WeaponData`** — `id`, `display_name`, `model: PackedScene`, `attacks: Array[AttackData]`,
   `is_ranged`, `magazine`, `reload_time`, `upgrade_track: UpgradeTrack`.
 - **`UpgradeTrack`** — `id`, `display_name`, `icon`, `max_level`, `levels: Array[UpgradeLevel]`.
