@@ -3,26 +3,62 @@ extends SceneTree
 ## Run: godot --headless --path . --script tools/verify_project_config.gd
 
 const REQUIRED_ACTIONS: PackedStringArray = [
-	"move_forward", "move_back", "move_left", "move_right",
-	"camera_left", "camera_right", "camera_up", "camera_down",
-	"camera_zoom_in", "camera_zoom_out", "camera_recenter",
-	"attack", "parry", "dodge", "sprint", "reload", "interact",
-	"weapon_next", "weapon_prev", "weapon_fists", "weapon_stick", "weapon_gun",
-	"pause", "debug_overlay", "debug_skip_wave", "debug_give_money",
+	"move_forward",
+	"move_back",
+	"move_left",
+	"move_right",
+	"camera_left",
+	"camera_right",
+	"camera_up",
+	"camera_down",
+	"camera_zoom_in",
+	"camera_zoom_out",
+	"camera_recenter",
+	"attack",
+	"parry",
+	"dodge",
+	"sprint",
+	"reload",
+	"interact",
+	"weapon_next",
+	"weapon_prev",
+	"weapon_fists",
+	"weapon_stick",
+	"weapon_gun",
+	"pause",
+	"debug_overlay",
+	"debug_skip_wave",
+	"debug_give_money",
 ]
 
 const REQUIRED_LAYERS: PackedStringArray = [
-	"world", "player_body", "enemy_body", "player_hitbox", "enemy_hitbox",
-	"player_hurtbox", "enemy_hurtbox", "interactable", "camera_occluder", "spawn_blocker",
+	"world",
+	"player_body",
+	"enemy_body",
+	"player_hitbox",
+	"enemy_hitbox",
+	"player_hurtbox",
+	"enemy_hurtbox",
+	"interactable",
+	"camera_occluder",
+	"spawn_blocker",
 ]
 
 const GAMEPAD_EXEMPT: PackedStringArray = [
-	"weapon_fists", "weapon_stick", "weapon_gun",
-	"debug_overlay", "debug_skip_wave", "debug_give_money",
+	"weapon_fists",
+	"weapon_stick",
+	"weapon_gun",
+	"debug_overlay",
+	"debug_skip_wave",
+	"debug_give_money",
 ]
 
 const KEYBOARD_EXEMPT: PackedStringArray = [
-	"camera_left", "camera_right", "camera_up", "camera_down", "weapon_prev",
+	"camera_left",
+	"camera_right",
+	"camera_up",
+	"camera_down",
+	"weapon_prev",
 ]
 
 
@@ -49,13 +85,20 @@ func _init() -> void:
 		var setting := "layer_names/3d_physics/layer_%d" % (index + 1)
 		var actual := str(ProjectSettings.get_setting(setting, ""))
 		if actual != REQUIRED_LAYERS[index]:
-			failures.append("layer %d is %s, expected %s" % [index + 1, actual, REQUIRED_LAYERS[index]])
+			failures.append(
+				"layer %d is %s, expected %s" % [index + 1, actual, REQUIRED_LAYERS[index]]
+			)
 
 	if ProjectSettings.get_setting("application/config/version", "") == "":
 		failures.append("application/config/version is not set")
 
 	if failures.is_empty():
-		print("project config OK — %d actions, %d layers" % [REQUIRED_ACTIONS.size(), REQUIRED_LAYERS.size()])
+		print(
+			(
+				"project config OK — %d actions, %d layers"
+				% [REQUIRED_ACTIONS.size(), REQUIRED_LAYERS.size()]
+			)
+		)
 		quit(0)
 		return
 
