@@ -25,7 +25,7 @@ Everything else — the camera, the damage, the stamina, the feel — is the rea
 second. The player is never practising; they are already playing, and the game is choosing what to
 throw at them.
 
-## The steps
+## The seven steps
 
 Each step shows **one** prompt, and clears when the player performs the action **once**. Never two
 prompts at a time. Never a prompt for something already demonstrated.
@@ -33,19 +33,20 @@ prompts at a time. Never a prompt for something already demonstrated.
 | # | Teaches | Clears when | What the wave does |
 |---|---|---|---|
 | 1 | Move | the player has travelled 3 m | nothing spawns yet |
-| 2 | Look around | the player has turned the camera 90° | nothing spawns yet |
-| 3 | Attack | the first hit lands | one farmhand spawns, and will not attack |
-| 4 | **Chain** | attack 2 of a chain lands | that farmhand has inflated health so it survives the lesson |
-| 5 | **Perfect** | a perfect hit lands | same farmhand, still passive |
-| 6 | Dodge | a dodge passes through an attack | the farmhand starts attacking |
-| 7 | Parry | a **perfect** parry lands | the farmhand keeps telegraphing, patiently, as long as it takes |
-| 8 | Sprint | the player sprints | a second farmhand spawns further away |
+| 2 | Attack | the first hit lands | one farmhand spawns, and will not attack |
+| 3 | **Chain** | attack 2 of a chain lands | that farmhand has inflated health so it survives the lesson |
+| 4 | **Perfect** | a perfect hit lands | same farmhand, still passive |
+| 5 | Dodge | a dodge passes through an attack | the farmhand starts attacking |
+| 6 | Parry | a **perfect** parry lands | the farmhand keeps telegraphing, patiently, as long as it takes |
+| 7 | Sprint | the player sprints | a second farmhand spawns further away |
 
 Then the prompts stop for the rest of the run, and wave 2 begins on the normal formula.
 
 ### Why this order
 
-Movement and camera first, because a player who cannot aim the camera cannot read a telegraph.
+Movement first, and **there is no camera lesson** — the camera is fixed and follows on its own, so
+there is nothing to teach. That is one fewer thing standing between the player and the fight, and
+it is the clearest argument for the fixed angle.
 
 Attack before defence, because hitting something is the reward that buys attention for the rest.
 
@@ -87,7 +88,7 @@ Rules:
 ## A player who already knows
 
 Every step is **satisfied retroactively**. If the player chains three attacks before the chain
-prompt would have appeared, steps 3, 4 and 5 all close silently and the wave moves on.
+prompt would have appeared, steps 2, 3 and 4 all close silently and the wave moves on.
 
 A player who is good at action games should be able to finish wave 1 **without seeing a single
 prompt**. That is the design target, and it is the honest test of whether the game reads without

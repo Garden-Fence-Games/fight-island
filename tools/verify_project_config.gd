@@ -7,13 +7,8 @@ const REQUIRED_ACTIONS: PackedStringArray = [
 	"move_back",
 	"move_left",
 	"move_right",
-	"camera_left",
-	"camera_right",
-	"camera_up",
-	"camera_down",
 	"camera_zoom_in",
 	"camera_zoom_out",
-	"camera_recenter",
 	"attack",
 	"parry",
 	"dodge",
@@ -54,10 +49,6 @@ const GAMEPAD_EXEMPT: PackedStringArray = [
 ]
 
 const KEYBOARD_EXEMPT: PackedStringArray = [
-	"camera_left",
-	"camera_right",
-	"camera_up",
-	"camera_down",
 	"weapon_prev",
 ]
 

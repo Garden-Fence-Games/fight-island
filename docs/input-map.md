@@ -19,9 +19,7 @@ bindings.
 | Action | Keyboard / mouse | Gamepad (Xbox) | Deadzone |
 |---|---|---|---|
 | `move_forward` / `_back` / `_left` / `_right` | `W` `S` `A` `D` | Left stick | 0.2 |
-| `camera_left` / `_right` / `_up` / `_down` | mouse motion, read in code | Right stick | 0.2 |
 | `camera_zoom_in` / `_out` | wheel up / down | D-pad up / down | 0.2 |
-| `camera_recenter` | `C` | R3 | 0.2 |
 | `attack` | Left mouse | RT | **0.5** |
 | `parry` | Right mouse | LT | **0.5** |
 | `dodge` | `Space` | A | 0.2 |
@@ -49,10 +47,12 @@ buttons. `ui_left/right/up/down` are *not* overridden — they already carry D-p
 **The triggers use a 0.5 deadzone.** `attack` on RT and `parry` on LT are analog; at Godot's
 default 0.2 a half-pulled trigger registers as a press, which in a parry-timing game is a lost run.
 
-**Mouse motion cannot be bound to an action.** Godot's InputMap has no `InputEventMouseMotion`
-entry. Camera look on mouse is read in `_unhandled_input` and merged with the gamepad
-`camera_*` actions into one `Vector2`, so sensitivity and invert-Y settings apply in a single
-place.
+**There are no camera-turning actions**, because the camera never turns. The angle is fixed for the
+whole game and only the zoom is the player's. Movement stays camera-relative — `W` is always away
+from the viewer — which with a fixed angle is simply a constant mapping.
+
+Five actions were removed when the camera was fixed: `camera_left`, `camera_right`, `camera_up`,
+`camera_down` and `camera_recenter`. If a four-way snap ever comes back, they come back with it.
 
 **`physical_keycode`, never `keycode`.** Physical codes are layout-independent, so WASD stays under
 the same fingers on AZERTY and QWERTZ. Setting both would require both to match.
@@ -60,10 +60,9 @@ the same fingers on AZERTY and QWERTZ. Setting both would require both to match.
 **`device: -1`** on every event — Godot's `ALL_DEVICES`. The `device: 0` seen in older projects is
 legacy and only survives through a special case in the engine.
 
-**Cursor handling.** Captured during combat, with the reticle at screen centre projected onto the
-ground plane. Released by `Esc` and by any UI screen.
-
-**Mouse sensitivity** is stored in degrees per 100 pixels, so it is resolution-independent.
+**The cursor stays visible.** Nothing captures it, because nothing needs relative mouse motion. That
+also settles how the gun will aim: at the cursor's position on the ground plane, which is what a
+mouse player expects from this camera.
 
 **`weapon_next` shares `Tab` with `ui_focus_next`.** Harmless: weapon switching is polled in the
 gameplay state, focus traversal only matters when a `Control` has focus.

@@ -32,8 +32,8 @@ Still to come: the stick and the gun, waves, money and the upgrade merchant. See
   subject of the game is what you give up.
 - **A full defensive kit.** Dodge with i-frames, sprint, and a tap parry whose perfect window
   staggers the attacker and refunds stamina.
-- **Free-rotating top-down camera.** Continuous yaw, clamped pitch, zoom — framed like an
-  isometric RPG, played like an action game.
+- **One fixed camera angle.** Framed like an isometric RPG and never turned, so every silhouette
+  reads the same way every time and a telegraph can never hide behind geometry.
 - **Gamepad and mouse/keyboard**, both first-class, hot-swapping mid-run.
 
 ## Tech stack

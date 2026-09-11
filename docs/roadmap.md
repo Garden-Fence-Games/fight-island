@@ -25,7 +25,7 @@ proves it is done. Durations are estimates for one person working part-time.
 **Goal:** *"I can kill an enemy with my fists and it feels like something."*
 
 - [x] `boot.tscn` → `main.tscn` → a grey-box `arena.tscn`, and `run/main_scene` set
-- [x] Camera rig: free yaw, clamped pitch, eased zoom, spring arm against occluders
+- [x] Camera rig: one fixed angle that follows the player, with eased zoom
 - [x] Player with the node FSM: idle, move, sprint, dodge, parry, attack, hurt, dead
 - [x] `HealthComponent` and `StaminaComponent`
 - [x] The hitbox/hurtbox pattern working end to end

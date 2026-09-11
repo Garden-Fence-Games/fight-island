@@ -22,8 +22,9 @@ into 3 → reset spacing.
 
 1. **Timing over inventory.** Variety comes from nine attacks with windows, not from a bigger bag.
 2. **Scarcity of choice.** One purchase per wave. The interesting decision is what you give up.
-3. **Readability.** One player, three farmers and three weapons, all legible from a high angled
-   camera. Every enemy shares a silhouette; only the texture and the behaviour change.
+3. **Readability.** One player, three farmers and three weapons, all legible from **one fixed
+   camera angle**. Every enemy shares a silhouette; only the texture and the behaviour change, and
+   the world is only ever seen from one direction.
 
 ## The timing system
 

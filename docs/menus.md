@@ -55,7 +55,7 @@ behind a pause menu feels broken even though nothing is wrong.
 **Resume · Options · Restart run · Quit to title.** Restart and Quit both confirm, because both
 throw away up to forty minutes. Nothing else in the game confirms anything.
 
-The pause menu also releases the mouse cursor, and re-captures it on resume.
+The cursor is visible at all times, so the pause menu has nothing to release.
 
 ## Options
 

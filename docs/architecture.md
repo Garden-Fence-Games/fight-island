@@ -142,14 +142,18 @@ wave starts.
 
 `CameraRig (Node3D, yaw) → PitchPivot (Node3D) → SpringArm3D → Camera3D`.
 
-Yaw is free and continuous — it wraps, never clamps. Pitch is clamped **−15° to −65°**. The spring
-arm runs **6–16 m** with eased zoom and a mask of `world | camera_occluder`, so foliage never eats
-the shot. The rig follows the player through a critically damped smooth rather than being parented
-to them.
+**The angle is fixed and never turns**: yaw −45°, pitch −50°, for the whole game. The rig follows
+the player through a damped smooth rather than being parented to them, and the spring arm runs
+**6–16 m** with eased zoom.
 
-Gamepad input comes from `camera_left/right/up/down`; the mouse half is read as
-`InputEventMouseMotion` in `_unhandled_input`, because **mouse motion cannot be an InputMap
-action**. Both feed one `Vector2` so sensitivity and invert settings apply in a single place.
+Fixing it is a design decision, not a simplification. Every silhouette reads the same way every
+time; the island only has to be composed for one viewpoint; and a telegraph can never end up behind
+geometry because the player happened to have turned the camera. The cost is that the arena must be
+authored so nothing important sits in the one blind direction.
+
+Occlusion is handled by **fading** what comes between the camera and the player, not by dodging it.
+With a fixed angle the offenders are known at authoring time, which a moving camera could never
+promise.
 
 ## Save format
 
