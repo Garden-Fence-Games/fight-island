@@ -1,10 +1,14 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
 [ext_resource type="Script" path="res://scripts/camera/camera_rig.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/systems/attack_tokens.gd" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/world/island.tscn" id="5"]
+[ext_resource type="Script" path="res://scripts/systems/wave_director.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/systems/spawn_director.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/systems/enemy_pool.gd" id="8"]
+[ext_resource type="Resource" path="res://data/waves/standard.tres" id="9"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 
@@ -43,17 +47,6 @@ ranged_tokens = 1
 
 [node name="Player" parent="." instance=ExtResource("1")]
 
-[node name="Enemies" type="Node3D" parent="."]
-
-[node name="Enemy" parent="Enemies" instance=ExtResource("2")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -6)
-
-[node name="Enemy2" parent="Enemies" instance=ExtResource("2")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -4)
-
-[node name="Enemy3" parent="Enemies" instance=ExtResource("2")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -9)
-
 [node name="CameraRig" type="Node3D" parent="."]
 script = ExtResource("3")
 
@@ -66,3 +59,14 @@ collision_mask = 0
 
 [node name="Camera" type="Camera3D" parent="CameraRig/PitchPivot/Spring"]
 fov = 60.0
+
+[node name="WaveDirector" type="Node" parent="."]
+script = ExtResource("6")
+config = ExtResource("9")
+
+[node name="SpawnDirector" type="Node" parent="WaveDirector"]
+script = ExtResource("7")
+
+[node name="EnemyPool" type="Node" parent="WaveDirector/SpawnDirector"]
+script = ExtResource("8")
+enemy_scene = ExtResource("2")

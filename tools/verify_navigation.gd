@@ -7,6 +7,7 @@ extends Node
 ## Run: godot --headless --path . res://tools/verify_navigation.tscn
 
 const ARENA: String = "res://scenes/world/arena.tscn"
+const FARMHAND: String = "res://data/enemies/farmhand.tres"
 ## The first authored boulder, and its half-width once the collider's 0.7 scale is applied. The
 ## test needs a solid thing in a known place; this is the one the island guarantees.
 const BOULDER: Vector3 = Vector3(-34.0, 0.0, -26.0)
@@ -49,10 +50,9 @@ func _run() -> void:
 	await _wait_for_the_map()
 
 	_player = _arena.get_node("Player") as Player
-	var enemies := _arena.get_node("Enemies")
-	_enemy = enemies.get_child(0) as Enemy
-	for index: int in range(enemies.get_child_count() - 1, 0, -1):
-		enemies.get_child(index).free()
+	var director := _arena.get_node("WaveDirector") as WaveDirector
+	director.halt()
+	_enemy = director.spawner.spawn_at(load(FARMHAND) as EnemyData, Vector3(0.0, 1.0, -8.0))
 	if _player == null or _enemy == null:
 		_fail("the arena does not hold a player and an enemy")
 		_report()
@@ -162,13 +162,12 @@ func _check_a_crowd_fits_in_a_frame() -> void:
 	# Back on the open plateau: the previous check left the two of them wedged either side of a
 	# boulder, which is not what a wave looks like.
 	_player.global_position = Vector3(0.0, 1.0, 0.0)
-	var farmhand := load("res://scenes/actors/enemy.tscn") as PackedScene
-	var crowd := _arena.get_node("Enemies")
+	var director := _arena.get_node("WaveDirector") as WaveDirector
+	var data := load(FARMHAND) as EnemyData
 	for index: int in CROWD:
-		var extra := farmhand.instantiate() as Enemy
 		var angle := TAU * float(index) / float(CROWD)
-		extra.position = _player.global_position + Vector3(cos(angle), 1.0, sin(angle)) * 12.0
-		crowd.add_child(extra)
+		var where := _player.global_position + Vector3(cos(angle), 1.0, sin(angle)) * 12.0
+		director.spawner.spawn_at(data, where)
 	# Long enough for the crowd to have landed, found their routes and spread out. Measuring while
 	# thirty bodies are still falling into each other measures the fall.
 	await _advance(2.0)

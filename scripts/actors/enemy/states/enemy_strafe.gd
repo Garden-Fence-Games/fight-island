@@ -23,7 +23,7 @@ func physics_update(delta: float) -> void:
 	var sideways := Vector3(-to_target.z, 0.0, to_target.x) * _spin
 	var keep_distance := to_target * signf(enemy.distance_to_target() - enemy.data.preferred_range)
 	var direction := (sideways + keep_distance * 0.5).limit_length(1.0)
-	enemy.apply_motion(direction, enemy.data.move_speed * SPEED_SCALE, delta)
+	enemy.apply_motion(direction, enemy.move_speed() * SPEED_SCALE, delta)
 	enemy.face_target(delta)
 	if _elapsed < 0.3:
 		return

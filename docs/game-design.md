@@ -226,6 +226,12 @@ the farmhand always takes the remainder.
 A wave never opens with a thrower: the first spawn of every wave is melee, so the player is never
 shot at before anything is on screen.
 
+**Implemented in M2.** `data/waves/standard.tres` carries every coefficient above, and
+`tools/verify_waves.tscn` asserts the table and the resource still agree — including the floors and
+ceilings, which are what a tuning pass is most likely to break. The composition bands are in the
+resource in full; the reaper and thrower rows name archetypes that do not exist yet, and a band
+normalises over what it can actually spawn, so those rows cost nothing until #8 and #9 land.
+
 ### The intended shape
 
 Waves 1–3 teach. 4–7 add pressure through numbers. 8–11 introduce elites and force weapon

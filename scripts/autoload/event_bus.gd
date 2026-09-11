@@ -16,5 +16,10 @@ signal hitstop_requested(duration: float)
 ## The player has finished a chain and cannot attack for `seconds`. Presentation exists because of
 ## this pair: a wait nobody can see reads as a dropped input, and the player blames the game — and
 ## they are right to, because nothing told them.
+## A wave has begun, and how many bodies it will send in total.
+signal wave_started(wave: int, enemies: int)
+## The last of them is down. The reward travels with it so the economy can stay a listener rather
+## than something the director has to know about.
+signal wave_cleared(wave: int, reward: int)
 signal chain_spent(seconds: float)
 signal chain_ready

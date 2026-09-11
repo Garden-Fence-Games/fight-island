@@ -32,8 +32,9 @@ func _run() -> void:
 	add_child(_arena)
 	await get_tree().physics_frame
 	_player = _arena.get_node("Player") as Player
-	for node: Node in _arena.get_node("Enemies").get_children():
-		node.free()
+	# Nothing else on the island while the facing is measured: a farmer landing a hit sends the
+	# player to Hurt, which is not what any of these checks are about.
+	(_arena.get_node("WaveDirector") as WaveDirector).halt()
 	if _player == null or _player.aim == null:
 		_fail("the player has no aim component")
 		_report()

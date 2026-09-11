@@ -2,6 +2,12 @@ class_name Enemy
 extends CharacterBody3D
 ## A farmer. Which of the three he is comes from EnemyData and a material - not from a second
 ## scene to keep in sync.
+##
+## A body is leased and returned rather than created and freed: at thirty on screen, allocating and
+## collecting shows up in the frame. Everything that differs between one life and the next lives in
+## revive() — the wave's scaling included, which is why the shared EnemyData is never written to.
+
+signal retired(enemy: Enemy)
 
 const SEPARATION_RADIUS: float = 1.2
 const SEPARATION_FORCE: float = 2.4
@@ -13,8 +19,16 @@ const REPATH_INTERVAL: float = 0.25
 
 @export var data: EnemyData = null
 
+## Set by the pool before the body enters the tree. A hand-placed enemy wakes up fighting; a pooled
+## one waits to be leased.
+var pooled: bool = false
 var target: Node3D = null
 var poise_left: float = 0.0
+## What this wave does to him. Held per body because EnemyData is one shared resource on disk, and
+## scaling it in place would raise every farmer in the game and then save the result.
+var damage_scale: float = 1.0
+var speed_scale: float = 1.0
+var windup_scale: float = 1.0
 
 var _tokens: AttackTokens = null
 var _gravity: float = 9.8
@@ -30,21 +44,83 @@ var _repath_clock: float = 0.0
 
 
 func _ready() -> void:
-	add_to_group(&"enemies")
 	_gravity = float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
 	_tokens = get_tree().get_first_node_in_group(&"attack_tokens") as AttackTokens
 	target = get_tree().get_first_node_in_group(&"player") as Node3D
-	if data != null:
-		poise_left = data.poise
-		if health != null:
-			health.set_max_health(data.health, true)
-		if mesh != null:
-			_apply_tint()
 	if hurtbox != null:
 		hurtbox.hurt.connect(_on_hurt)
 	if health != null:
 		health.died.connect(_on_died)
+	if pooled:
+		sleep()
+		return
+	revive(global_position)
+
+
+## Wakes a body up for one life. Everything a previous life could have left behind is reset here:
+## a pooled enemy that comes back at three health, invisible, or still holding an attack token is
+## the kind of bug that only appears in the fifth wave of a long run.
+func revive(
+	where: Vector3,
+	health_boost: float = 1.0,
+	damage: float = 1.0,
+	speed: float = 1.0,
+	windup: float = 1.0
+) -> void:
+	damage_scale = damage
+	speed_scale = speed
+	windup_scale = windup
+	global_position = where
+	velocity = Vector3.ZERO
+	rotation.y = 0.0
+	target = get_tree().get_first_node_in_group(&"player") as Node3D
+	_poise_window = 0.0
+	if data != null:
+		poise_left = data.poise
+		if health != null:
+			health.set_max_health(data.health * health_boost, true)
+		if mesh != null:
+			_apply_tint()
+	if hurtbox != null:
+		hurtbox.monitorable = true
+	if hitbox != null:
+		hitbox.disarm()
+	set_collision_layer_value(3, true)
+	process_mode = Node.PROCESS_MODE_INHERIT
+	visible = true
+	add_to_group(&"enemies")
+	if machine != null and machine.current != null:
+		machine.current.transition_to(&"Idle")
 	EventBus.enemy_spawned.emit(self)
+
+
+## Out of the fight and out of the way, without announcing anything. Used for the pool's own
+## pre-warm, where thirty-two spawn notifications would be thirty-two lies.
+func sleep() -> void:
+	release_token()
+	remove_from_group(&"enemies")
+	if hurtbox != null:
+		hurtbox.monitorable = false
+	if hitbox != null:
+		hitbox.disarm()
+	set_collision_layer_value(3, false)
+	visible = false
+	velocity = Vector3.ZERO
+	process_mode = Node.PROCESS_MODE_DISABLED
+
+
+## Hands the body back to whoever is holding the lease.
+func retire() -> void:
+	sleep()
+	retired.emit(self)
+
+
+## The end of the death animation. A body nobody is pooling is a body that should stop existing.
+func finish_dying() -> void:
+	if pooled:
+		retire()
+		return
+	queue_free()
 
 
 func _process(delta: float) -> void:
@@ -52,6 +128,17 @@ func _process(delta: float) -> void:
 		_poise_window = maxf(_poise_window - delta, 0.0)
 		if is_zero_approx(_poise_window) and data != null:
 			poise_left = data.poise
+
+
+## The wave's numbers applied to the archetype's, so no state has to know a wave exists.
+func move_speed() -> float:
+	return (data.move_speed if data != null else 0.0) * speed_scale
+
+
+func windup() -> float:
+	if data == null or data.attack == null:
+		return 0.0
+	return data.attack.windup * windup_scale
 
 
 func distance_to_target() -> float:

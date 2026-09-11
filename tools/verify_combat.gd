@@ -6,6 +6,7 @@ extends Node
 ## Run: godot --headless --path . res://tools/verify_combat.tscn
 
 const ARENA: String = "res://scenes/world/arena.tscn"
+const FARMHAND: String = "res://data/enemies/farmhand.tres"
 const SETTLE_FRAMES: int = 8
 
 var _failures: PackedStringArray = []
@@ -23,10 +24,11 @@ func _run() -> void:
 	await get_tree().physics_frame
 
 	_player = arena.get_node("Player") as Player
-	var enemies := arena.get_node("Enemies")
-	_enemy = enemies.get_child(0) as Enemy
-	for index: int in range(enemies.get_child_count() - 1, 0, -1):
-		enemies.get_child(index).free()
+	# The arena runs waves now, so the sparring partner is leased rather than found: the director is
+	# halted first, or the first wave would arrive in the middle of a damage measurement.
+	var director := arena.get_node("WaveDirector") as WaveDirector
+	director.halt()
+	_enemy = director.spawner.spawn_at(load(FARMHAND) as EnemyData, Vector3(0.0, 0.0, -1.0))
 
 	if _player == null or _enemy == null:
 		_fail("arena does not hold a player and an enemy")

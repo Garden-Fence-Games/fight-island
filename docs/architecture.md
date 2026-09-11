@@ -128,15 +128,34 @@ Named as a past-tense fact, never as a command and never `on_*`:
 
 ## Wave spawning
 
-`main.tscn` → `arena.tscn` holds a `WaveDirector` and N `SpawnPoint` markers.
+`arena.tscn` holds `WaveDirector → SpawnDirector → EnemyPool`, in that nesting: the director owns
+where bodies come from, which owns the bodies. They are children rather than exported node
+references, because node exports do not resolve in a hand-written `.tscn` (ADR 0006).
 
-`WaveDirector.start_wave(n)` reads `WaveConfig`, computes the budget and emits `wave_started`. The
-`SpawnDirector` drip-feeds spawns respecting `max_alive(n)`, choosing points more than 12 m from
-the player, preferring off-camera, and rejecting any point `Ground.is_spawnable` refuses — which
-is the navigation mesh's answer, not a marker's. Each enemy is leased from a pre-warmed pool of 32. `enemy_died` decrements the counter; at
-zero the director emits `wave_cleared`, `Economy` credits the money, the upgrade screen opens,
-`upgrade_purchased` applies modifiers to the live player, and after a five-second breather the next
-wave starts.
+`WaveDirector.start_wave(n)` reads `WaveConfig`, emits `wave_started`, then **drip-feeds**: the
+count is how many arrive in total, `max_alive(n)` is how many the player faces at once, and the gap
+between those two is what makes a late wave pressure rather than a wall. `enemy_died` brings the
+director back; when nothing is owed and nothing is alive it emits `wave_cleared` with the reward and
+starts the breather. The economy and the HUD are listeners — the director does not know they exist.
+
+**Every number comes from the resource**, including the elite chance the elite pass will read. A
+table split across two files is a table that starts disagreeing.
+
+`SpawnDirector` answers *where*, under three rules that are each a thing a player would notice going
+wrong: far enough away to be seen coming, **never inside the camera's frustum** — feet *and* head,
+since the camera looks down — and on ground `Ground.is_spawnable` says the body could walk out of.
+The distance is measured **after** snapping to the navmesh, because snapping pulls a point by up to
+a metre and a rule checked on the guess is a rule the answer need not obey. When nothing passes,
+nothing spawns this tick and the body stays owed: a wave arriving a second late is invisible, a
+farmer appearing in shot is not.
+
+Nothing can spawn before the navigation map has synced, which is one more reason the first wave is
+not instant.
+
+`EnemyPool` pre-warms 32 bodies. A body is **leased and returned**, never created and freed:
+`Enemy.revive()` holds everything that differs between one life and the next — the wave's scaling
+included, held per body because `EnemyData` is one shared resource on disk and scaling it in place
+would raise every farmer in the game and then save the result.
 
 ## Camera rig
 
@@ -278,6 +297,12 @@ Two headless guards run in CI and locally:
 - **`tools/verify_combat.tscn`** also covers the chain lockout: that a finished chain announces
   itself on the bus, refuses a press without consuming it, expires, costs nothing when the player
   stops at two attacks, waits less after a perfect finisher, and never blocks a dodge.
+- **`tools/verify_waves.tscn`** — asserts the wave table and `data/waves/standard.tres` still
+  agree, then runs a wave: it arrives out of shot and more than twelve metres out, never exceeds
+  `max_alive`, clears when the last body dies, pays the tabled reward, and reuses bodies rather than
+  making them. The spawn rules are checked against **two hundred points from the search**, not
+  against the four a wave happened to use — with the "never in shot" rule deleted, a four-body wave
+  still passed, which made that check decorative.
 - **`tools/verify_aim.tscn`** — drives a real joypad event and a real key press through the
   engine's own input path, and the real camera projection for the cursor, then asserts that holding
   a movement key still walks the body and does not follow its facing, that the body turns at a

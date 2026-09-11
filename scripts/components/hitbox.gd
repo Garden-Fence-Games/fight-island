@@ -9,6 +9,9 @@ signal landed(target: Node3D, info: HitInfo)
 var attack: AttackData = null
 var source: Node3D = null
 var perfect: bool = false
+## What the wave does to this attack. On the hitbox rather than on the AttackData because the data
+## is one shared resource: scaling it would scale it for everyone, permanently.
+var damage_scale: float = 1.0
 
 var _already_hit: Array[int] = []
 
@@ -22,10 +25,13 @@ func _ready() -> void:
 		shape.disabled = true
 
 
-func arm(from_attack: AttackData, from_source: Node3D, was_perfect: bool) -> void:
+func arm(
+	from_attack: AttackData, from_source: Node3D, was_perfect: bool, scale_damage: float = 1.0
+) -> void:
 	attack = from_attack
 	source = from_source
 	perfect = was_perfect
+	damage_scale = scale_damage
 	_already_hit.clear()
 	if shape == null:
 		return
@@ -64,6 +70,6 @@ func _try_hit(area: Area3D) -> void:
 	if _already_hit.has(id):
 		return
 	_already_hit.append(id)
-	var info := HitInfo.new(attack, source, perfect)
+	var info := HitInfo.new(attack, source, perfect, damage_scale)
 	if hurtbox.take_hit(info):
 		landed.emit(hurtbox.owner, info)
