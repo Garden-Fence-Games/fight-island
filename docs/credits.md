@@ -7,12 +7,12 @@ made it, its licence, and when it was added.
 
 ## Assets
 
-_None yet. Milestones 0 to 2 are built from Godot primitives — see
-[asset-pipeline.md](asset-pipeline.md)._
-
 | File | Source | Author | Licence | Added |
 |---|---|---|---|---|
 | `icon.svg` | Godot project template | Godot Engine contributors | MIT | 2026-09-11 |
+| `assets/logo/fight_island_logo_1.svg` | original | — *to fill* | — *to fill* | 2026-09-11 |
+| `assets/models/char_player.glb` — rig and `walk` clip | [Mixamo](https://www.mixamo.com) | Adobe | **`prototype only`** — not CC0, see below | 2026-09-12 |
+| `assets/models/char_player.glb` — mesh and textures | — *to fill* | — *to fill* | — *to fill* | 2026-09-12 |
 
 ## Engine and tools
 
