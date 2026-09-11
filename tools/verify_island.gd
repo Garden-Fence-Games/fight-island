@@ -6,7 +6,7 @@ extends Node
 const ISLAND: String = "res://scenes/world/island.tscn"
 ## Nothing may stand inside this radius. A prop in the fighting core is a prop the reaper's 160°
 ## sweep will eventually trap someone against.
-const CLEAR_RADIUS: float = 15.0
+const CLEAR_RADIUS: float = 22.0
 const FLAT_TOLERANCE: float = 0.25
 ## The camera looks from -X +Z toward +X -Z, so tall geometry belongs on the far side only.
 const FAR_SIDE: Vector2 = Vector2(0.707, -0.707)

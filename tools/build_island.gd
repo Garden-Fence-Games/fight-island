@@ -16,33 +16,33 @@ const SEED: int = 20260911
 
 # --- Shape -------------------------------------------------------------------------------------
 ## The flat core. Combat happens here, it is always land, and nothing may stand in it.
-const CORE_RADIUS: float = 16.0
+const CORE_RADIUS: float = 24.0
 ## No land past here, whatever the noise says.
-const MAX_RADIUS: float = 34.0
+const MAX_RADIUS: float = 52.0
 const BEACH_DEPTH: float = -2.4
-const GRID: int = 81
+const GRID: int = 141
 const SPACING: float = 1.0
 const WATER_LEVEL: float = -1.1
 ## How far below the waterline the sea floor keeps falling.
-const SEA_DROP: float = 7.0
+const SEA_DROP: float = 9.0
 
 # --- Cliffs ------------------------------------------------------------------------------------
 ## Tall geometry only on the far side of the screen, so it reads as a backdrop and never stands
 ## between the camera and the fight. The camera looks from -X +Z toward +X -Z.
 const CLIFF_DIRECTION: Vector2 = Vector2(0.707, -0.707)
 const CLIFF_SPREAD: float = 0.45
-const CLIFF_INNER: float = 20.0
-const CLIFF_OUTER: float = 29.0
-const CLIFF_HEIGHT: float = 10.0
+const CLIFF_INNER: float = 33.0
+const CLIFF_OUTER: float = 47.0
+const CLIFF_HEIGHT: float = 12.0
 
 # --- Scatter -----------------------------------------------------------------------------------
 ## No obstacle may stand inside this radius: a prop in the fighting core is a prop the reaper's
 ## 160° sweep will eventually trap someone against. Grass is exempt — it collides with nothing and
 ## a bare disc in the middle of an island reads as a mowed lawn.
-const CLEAR_RADIUS: float = 15.0
-const PALM_COUNT: int = 54
-const ROCK_COUNT: int = 90
-const GRASS_COUNT: int = 1400
+const CLEAR_RADIUS: float = 22.0
+const PALM_COUNT: int = 130
+const ROCK_COUNT: int = 190
+const GRASS_COUNT: int = 3200
 
 const SAND: Color = Color(0.86, 0.78, 0.58)
 const GRASS_GREEN: Color = Color(0.36, 0.52, 0.27)
@@ -60,7 +60,7 @@ func _initialize() -> void:
 	_noise.frequency = 0.06
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 	_coast.seed = SEED + 7
-	_coast.frequency = 0.030
+	_coast.frequency = 0.021
 	_coast.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 	_coast.fractal_type = FastNoiseLite.FRACTAL_FBM
 	_coast.fractal_octaves = 4
@@ -113,7 +113,7 @@ func _land(x: float, z: float) -> float:
 	var falloff := 1.0 - pow(clampf(radius / MAX_RADIUS, 0.0, 1.0), 2.1)
 	var shape := _coast.get_noise_2d(x, z) * 0.62
 	# The core is guaranteed land, or a bay could cut the arena in half.
-	var guaranteed := (1.0 - smoothstep(CORE_RADIUS, CORE_RADIUS + 11.0, radius)) * 0.85
+	var guaranteed := (1.0 - smoothstep(CORE_RADIUS, CORE_RADIUS + 14.0, radius)) * 0.85
 	return falloff * 1.05 + shape - 0.40 + guaranteed
 
 
@@ -182,8 +182,6 @@ func _terrain(heights: PackedFloat32Array) -> MeshInstance3D:
 		for column: int in GRID - 1:
 			var centre_x := (float(column) + 0.5) * SPACING - half
 			var centre_z := (float(row) + 0.5) * SPACING - half
-			if Vector2(centre_x, centre_z).length() > 39.0:
-				continue
 			var corners: Array[Vector3] = []
 			for offset: Vector2i in [
 				Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, 1), Vector2i(0, 1)
@@ -241,7 +239,7 @@ func _terrain_body(heights: PackedFloat32Array) -> StaticBody3D:
 
 func _water() -> MeshInstance3D:
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(260.0, 260.0)
+	plane.size = Vector2(1200.0, 1200.0)
 
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(0.11, 0.33, 0.46, 0.88)
@@ -292,15 +290,16 @@ func _scatter() -> Node3D:
 		)
 
 	var tufts: Array[Transform3D] = []
-	for spot: Vector3 in _spots(GRASS_COUNT, 0.0, 0.35, 2.6, Vector2(0.30, 2.0)):
+	for spot: Vector3 in _spots(GRASS_COUNT, 0.0, 0.4, 2.4, Vector2(0.30, 2.0), 26.0):
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
-		var size := _rng.randf_range(0.5, 1.1)
-		tufts.append(Transform3D(turn.scaled(Vector3(size, size, size)), spot))
+		var lean := Basis(Vector3.RIGHT, _rng.randf_range(-0.18, 0.18))
+		var size := _rng.randf_range(0.6, 1.25)
+		tufts.append(Transform3D((turn * lean).scaled(Vector3(size, size, size)), spot))
 
 	props.add_child(_multi("PalmTrunks", _cylinder(0.16, 1.0), Color(0.42, 0.31, 0.2), trunks))
 	props.add_child(_multi("PalmFronds", _frond(), Color(0.25, 0.47, 0.24), fronds))
 	props.add_child(_multi("Rocks", _box(Vector3(1.0, 1.0, 1.0)), ROCK_GREY, rocks))
-	props.add_child(_multi("Grass", _box(Vector3(0.12, 0.55, 0.12)), Color(0.33, 0.5, 0.24), tufts))
+	props.add_child(_multi("Grass", _tuft(), GRASS_GREEN.darkened(0.18), tufts))
 	return props
 
 
@@ -313,9 +312,15 @@ func _scatter() -> Node3D:
 ## `keep_out` is the radius obstacles may not enter, pushed outward by noise but never inward, so
 ## the edge of the fighting core is irregular without ever shrinking. `band` is how far inland the
 ## prop belongs, in land-field units — which is what puts palms along the shore wherever the shore
-## happens to be, instead of on a circle.
+## happens to be, instead of on a circle. `centre_fade` thins a prop toward the middle without a
+## boundary, which is how grass stays off the fighting space without leaving a mown circle.
 func _spots(
-	count: int, keep_out: float, spacing: float, clumping: float, band: Vector2
+	count: int,
+	keep_out: float,
+	spacing: float,
+	clumping: float,
+	band: Vector2,
+	centre_fade: float = 0.0
 ) -> Array[Vector3]:
 	var kept: Array[Vector3] = []
 	var attempts := 0
@@ -348,6 +353,8 @@ func _spots(
 		if inland < band.x or inland > band.y:
 			continue
 		var density := (_clump.get_noise_2d(x, z) + 1.0) * 0.5
+		if centre_fade > 0.0:
+			density *= smoothstep(centre_fade * 0.25, centre_fade, radius)
 		if _rng.randf() > pow(density, clumping):
 			continue
 
@@ -422,6 +429,16 @@ func _cylinder(radius: float, height: float) -> Mesh:
 	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, height * 0.5, 0.0)))
 
 
+func _tuft() -> Mesh:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.0
+	mesh.bottom_radius = 0.17
+	mesh.height = 0.42
+	mesh.radial_segments = 4
+	mesh.rings = 0
+	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, 0.21, 0.0)))
+
+
 func _frond() -> Mesh:
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(0.22, 0.05, 2.1)
@@ -470,12 +487,12 @@ func _landmark() -> StaticBody3D:
 	material.roughness = 1.0
 
 	var placements: Array = [
-		[Vector3(-17.0, 0.0, -13.0), Vector3(4.2, 5.6, 3.6), 0.4],
-		[Vector3(-21.0, 0.0, -9.0), Vector3(3.0, 3.4, 3.0), 1.1],
-		[Vector3(16.5, 0.0, 14.0), Vector3(3.6, 2.8, 3.2), 2.2],
-		[Vector3(20.0, 0.0, 8.0), Vector3(2.6, 2.0, 2.6), 0.8],
-		[Vector3(-6.0, 0.0, 20.5), Vector3(3.2, 2.4, 3.0), 1.7],
-		[Vector3(9.0, 0.0, -20.0), Vector3(3.8, 4.4, 3.4), 0.2],
+		[Vector3(-26.0, 0.0, -19.0), Vector3(4.6, 6.0, 4.0), 0.4],
+		[Vector3(-31.0, 0.0, -12.0), Vector3(3.2, 3.6, 3.2), 1.1],
+		[Vector3(25.0, 0.0, 21.0), Vector3(3.8, 3.0, 3.4), 2.2],
+		[Vector3(30.0, 0.0, 12.0), Vector3(2.8, 2.2, 2.8), 0.8],
+		[Vector3(-9.0, 0.0, 30.0), Vector3(3.4, 2.6, 3.2), 1.7],
+		[Vector3(14.0, 0.0, -29.0), Vector3(4.0, 4.6, 3.6), 0.2],
 	]
 	for placement: Array in placements:
 		var where: Vector3 = placement[0]

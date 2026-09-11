@@ -52,6 +52,15 @@ Two things it gets right that are easy to get wrong:
 Nothing scattered collides. Getting stuck on a bush is worse than any realism it buys, and it keeps
 the navigation problem to the six authored rock formations.
 
+Two more rules the island had to learn the hard way:
+
+- **The edge of the world is never in frame.** The terrain mesh runs to the edge of its grid with no
+  clipped ring, the water plane is 1.2 km across, and depth fog closes everything past 55 m. A
+  visible boundary is worse than the triangles it would save.
+- **Grass thins toward the middle rather than stopping at a circle.** The fighting space has to stay
+  readable, but a bare disc in the centre of an island reads as a mown lawn — so density fades
+  instead of ending.
+
 ## From the art phase onward: Blender to glTF
 
 `.blend` files live in `art-source/` and are tracked by Git LFS. **`.glb` files are committed** to
