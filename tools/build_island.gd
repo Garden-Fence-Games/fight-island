@@ -15,16 +15,22 @@ const TERRAIN_MESH: String = "res://assets/models/island_terrain.res"
 const SEED: int = 20260911
 
 # --- Shape -------------------------------------------------------------------------------------
-## The flat core. Combat happens here, it is always land, and nothing may stand in it.
-const CORE_RADIUS: float = 24.0
+## Flat land where the player starts, and nothing more. It used to be a thirty-metre clearing in
+## the middle of the island, which is exactly what made the island look composed: a bare disc dead
+## centre is not something that happens. Clearings now come from the scatter's own noise, so they
+## fall where they fall.
+const CORE_RADIUS: float = 9.0
 ## No land past here, whatever the noise says.
-const MAX_RADIUS: float = 52.0
+const MAX_RADIUS: float = 88.0
 const BEACH_DEPTH: float = -2.4
-const GRID: int = 141
+const GRID: int = 221
 const SPACING: float = 1.0
 const WATER_LEVEL: float = -1.1
-## How far below the waterline the sea floor keeps falling.
+## How far below the waterline the sea floor keeps falling, once past the shelf.
 const SEA_DROP: float = 9.0
+## Width of the beach, in land-field units. The ground meets the water exactly at the shoreline and
+## climbs to the plateau over this band, so there is no step at the edge of the island.
+const SHORE_BAND: float = 0.55
 
 # --- Relief ------------------------------------------------------------------------------------
 ## Inland only, and gentle. The island rolls; it never walls. A cliff along the water would put a
@@ -34,13 +40,23 @@ const RELIEF_HEIGHT: float = 1.8
 const RELIEF_CEILING: float = 2.6
 
 # --- Scatter -----------------------------------------------------------------------------------
-## No obstacle may stand inside this radius: a prop in the fighting core is a prop the reaper's
-## 160° sweep will eventually trap someone against. Grass is exempt — it collides with nothing and
-## a bare disc in the middle of an island reads as a mowed lawn.
-const CLEAR_RADIUS: float = 22.0
-const PALM_COUNT: int = 130
-const ROCK_COUNT: int = 190
-const GRASS_COUNT: int = 3200
+## Obstacles keep out of the spawn pad and nothing else. What actually stops a pair of props
+## trapping someone against the reaper's 160° sweep is OBSTACLE_SPACING, everywhere on the island —
+## not one big empty circle in a place the player will leave in ten seconds.
+const CLEAR_RADIUS: float = 7.0
+## Clear space between the surfaces of two blocking props, anywhere on the island. Measuring the
+## gap rather than the distance between centres is the honest form of the rule: it is the same
+## question for a palm and for a boulder, and it scales with whatever the prop happens to be.
+##
+## The player is 0.7 m across. Twice that leaves room to dodge through rather than merely squeeze.
+const MIN_GAP: float = 1.5
+const PALM_RADIUS: float = 0.34
+## Rocks smaller than this are stepped over, not walked around, so they neither collide nor count.
+const BLOCKING_ROCK: float = 0.9
+const PALM_COUNT: int = 380
+const ROCK_COUNT: int = 950
+const PEBBLE_COUNT: int = 3400
+const GRASS_COUNT: int = 24000
 
 const SAND: Color = Color(0.86, 0.78, 0.58)
 const GRASS_GREEN: Color = Color(0.36, 0.52, 0.27)
@@ -51,6 +67,7 @@ var _noise := FastNoiseLite.new()
 var _coast := FastNoiseLite.new()
 var _clump := FastNoiseLite.new()
 var _relief := FastNoiseLite.new()
+var _ground := FastNoiseLite.new()
 
 
 func _initialize() -> void:
@@ -59,7 +76,7 @@ func _initialize() -> void:
 	_noise.frequency = 0.06
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 	_coast.seed = SEED + 7
-	_coast.frequency = 0.021
+	_coast.frequency = 0.013
 	_coast.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 	_coast.fractal_type = FastNoiseLite.FRACTAL_FBM
 	_coast.fractal_octaves = 4
@@ -68,8 +85,15 @@ func _initialize() -> void:
 	_clump.frequency = 0.11
 	_clump.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 	_relief.seed = SEED + 23
-	_relief.frequency = 0.035
+	_relief.frequency = 0.022
 	_relief.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	# Vegetation patches want features of thirty or forty metres on an island this size. Borrowing
+	# the relief noise gave one blob the width of the whole island.
+	_ground.seed = SEED + 29
+	_ground.frequency = 0.032
+	_ground.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	_ground.fractal_type = FastNoiseLite.FRACTAL_FBM
+	_ground.fractal_octaves = 2
 
 	var island := Node3D.new()
 	island.name = "Island"
@@ -115,19 +139,24 @@ func _land(x: float, z: float) -> float:
 	var falloff := 1.0 - pow(clampf(radius / MAX_RADIUS, 0.0, 1.0), 2.1)
 	var shape := _coast.get_noise_2d(x, z) * 0.62
 	# The core is guaranteed land, or a bay could cut the arena in half.
-	var guaranteed := (1.0 - smoothstep(CORE_RADIUS, CORE_RADIUS + 14.0, radius)) * 0.85
+	var guaranteed := (1.0 - smoothstep(CORE_RADIUS, CORE_RADIUS + 20.0, radius)) * 0.85
 	return falloff * 1.05 + shape - 0.40 + guaranteed
 
 
 ## Metres above the water plane at a point. One function, so the mesh and the collision can never
 ## disagree about where the ground is.
+##
+## The ground meets the sea exactly at the shoreline and rises to the plateau over SHORE_BAND. The
+## first version kept the land flat at plateau height right up to the coast, which put a 1.1 m step
+## around the whole island — a miniature cliff, and the reason the edge read as abrupt.
 func _height_at(x: float, z: float) -> float:
 	var value := _land(x, z)
 	var height := 0.0
 	if value >= 0.0:
-		height = _noise.get_noise_2d(x, z) * 0.3 * smoothstep(0.0, 0.35, value)
+		height = lerpf(WATER_LEVEL, 0.0, smoothstep(0.0, SHORE_BAND, value))
 	else:
-		height = BEACH_DEPTH * smoothstep(0.0, -0.22, value) + minf(value + 0.22, 0.0) * SEA_DROP
+		var shelf := lerpf(WATER_LEVEL, BEACH_DEPTH, smoothstep(0.0, -SHORE_BAND, value))
+		height = shelf + minf(value + SHORE_BAND, 0.0) * SEA_DROP
 
 	# Whatever the field says, the fighting core is flat land.
 	var core := 1.0 - smoothstep(CORE_RADIUS - 2.0, CORE_RADIUS + 5.0, Vector2(x, z).length())
@@ -157,13 +186,29 @@ func _build_heights() -> PackedFloat32Array:
 	return heights
 
 
-## Vertex colour carries the beach-to-grass gradient, keyed to how far inland a point is rather
-## than to its distance from the centre — which is what stops the green reading as a painted disc.
-func _colour_at(x: float, z: float, height: float) -> Color:
-	if height < WATER_LEVEL + 0.15:
-		return SAND.darkened(0.42).lerp(Color(0.2, 0.35, 0.4), 0.45)
+## How green the ground is here, 0 for bare sand and 1 for full grass. The colour and the grass
+## tufts both read it, so a tuft can never stand on a patch of sand.
+##
+## Inland is grass with sand showing through it rather than the reverse: the patch noise only takes
+## green away, so away from the shore the default is green.
+func _greenness(x: float, z: float) -> float:
 	var inland := _land(x, z)
-	return SAND.lerp(GRASS_GREEN, smoothstep(0.18, 0.55, inland))
+	var ashore := smoothstep(SHORE_BAND * 0.5, SHORE_BAND * 1.0, inland)
+	var patchiness := _ground.get_noise_2d(x, z) * 0.5 + 0.5
+	var bare := smoothstep(0.48, 0.72, patchiness)
+	return ashore * (1.0 - bare)
+
+
+## Sand wherever the sea can reach, and inland a mix of grass and bare sand rather than one flat
+## green. The mix is keyed to how far inland a point is, never to its distance from the centre.
+func _colour_at(x: float, z: float, height: float) -> Color:
+	if height < WATER_LEVEL + 0.05:
+		return SAND.darkened(0.4).lerp(Color(0.2, 0.35, 0.4), 0.45)
+	var inland := _land(x, z)
+	# The whole shoreline is sand, always. Grass only starts once the sea is well behind.
+	if inland < SHORE_BAND * 0.55:
+		return SAND
+	return SAND.lerp(GRASS_GREEN, _greenness(x, z))
 
 
 func _terrain(heights: PackedFloat32Array) -> MeshInstance3D:
@@ -231,7 +276,7 @@ func _terrain_body(heights: PackedFloat32Array) -> StaticBody3D:
 
 func _water() -> MeshInstance3D:
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(1200.0, 1200.0)
+	plane.size = Vector2(2000.0, 2000.0)
 
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(0.11, 0.33, 0.46, 0.88)
@@ -256,43 +301,78 @@ func _scatter() -> Node3D:
 	var props := Node3D.new()
 	props.name = "Props"
 
+	# Everything that blocks, as (position, radius), so the gap rule sees palms and boulders alike.
+	var blocking: Array = []
+
 	var trunks: Array[Transform3D] = []
 	var fronds: Array[Transform3D] = []
-	for spot: Vector3 in _spots(PALM_COUNT, CLEAR_RADIUS, 2.4, 2.0, Vector2(0.05, 0.62)):
+	for spot: Vector3 in _spots(
+		PALM_COUNT, CLEAR_RADIUS, PALM_RADIUS, 3.4, Vector2(0.08, 3.0), 0.0, blocking
+	):
 		var lean := Basis(Vector3.FORWARD, _rng.randf_range(-0.12, 0.12))
 		var height := _rng.randf_range(3.4, 5.2)
-		var trunk := Transform3D(lean.scaled(Vector3(1.0, height, 1.0)), spot)
-		trunks.append(trunk)
+		trunks.append(Transform3D(lean.scaled(Vector3(1.0, height, 1.0)), spot))
+		blocking.append([spot, PALM_RADIUS])
 		var crown := spot + lean * Vector3(0.0, height, 0.0)
 		for blade: int in 6:
 			var turn := Basis(Vector3.UP, TAU * float(blade) / 6.0 + _rng.randf_range(-0.3, 0.3))
 			var droop := Basis(Vector3.RIGHT, _rng.randf_range(0.35, 0.7))
 			fronds.append(Transform3D(turn * droop, crown))
 
+	var pebbles: Array[Transform3D] = []
+	for spot: Vector3 in _spots(PEBBLE_COUNT, 0.0, 0.0, 1.6, Vector2(-0.05, SHORE_BAND * 0.7)):
+		var size := _rng.randf_range(0.14, 0.42)
+		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
+		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(0.0, TAU))
+		pebbles.append(Transform3D((turn * tilt).scaled(Vector3.ONE * size), spot))
+
 	var rocks: Array[Transform3D] = []
-	for spot: Vector3 in _spots(ROCK_COUNT, CLEAR_RADIUS, 1.2, 2.4, Vector2(-0.02, 0.9)):
-		var size := _rng.randf_range(0.4, 1.3)
+	for spot: Vector3 in _spots(
+		ROCK_COUNT, CLEAR_RADIUS, 0.9, 2.2, Vector2(-0.02, 3.0), 0.0, blocking
+	):
+		var size := _rng.randf_range(0.4, 1.7)
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
 		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(-0.25, 0.25))
-		rocks.append(
-			Transform3D(
-				(turn * tilt).scaled(Vector3(size, size * 0.7, size * _rng.randf_range(0.7, 1.3))),
-				spot
-			)
-		)
+		var wide := size * _rng.randf_range(0.7, 1.3)
+		rocks.append(Transform3D((turn * tilt).scaled(Vector3(size, size * 0.7, wide)), spot))
+		if maxf(size, wide) >= BLOCKING_ROCK:
+			blocking.append([spot, maxf(size, wide) * 0.5])
 
 	var tufts: Array[Transform3D] = []
-	for spot: Vector3 in _spots(GRASS_COUNT, 0.0, 0.4, 2.4, Vector2(0.30, 2.0), 26.0):
+	for spot: Vector3 in _spots(
+		GRASS_COUNT, 0.0, 0.0, 1.4, Vector2(SHORE_BAND * 0.4, 3.0), 0.0, [], true
+	):
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
 		var lean := Basis(Vector3.RIGHT, _rng.randf_range(-0.18, 0.18))
 		var size := _rng.randf_range(0.6, 1.25)
 		tufts.append(Transform3D((turn * lean).scaled(Vector3(size, size, size)), spot))
 
+	props.add_child(_multi("Grass", _tuft(), GRASS_GREEN.darkened(0.18), tufts))
+	props.add_child(_multi("Pebbles", _rock_mesh(), ROCK_GREY.lightened(0.12), pebbles))
 	props.add_child(_multi("PalmTrunks", _cylinder(0.16, 1.0), Color(0.42, 0.31, 0.2), trunks))
 	props.add_child(_multi("PalmFronds", _frond(), Color(0.25, 0.47, 0.24), fronds))
-	props.add_child(_multi("Rocks", _box(Vector3(1.0, 1.0, 1.0)), ROCK_GREY, rocks))
-	props.add_child(_multi("Grass", _tuft(), GRASS_GREEN.darkened(0.18), tufts))
+	props.add_child(_multi("Rocks", _rock_mesh(), ROCK_GREY, rocks))
+	props.add_child(_colliders(blocking))
 	return props
+
+
+## One static body for everything that blocks. A palm you can walk through is not a palm.
+func _colliders(blocking: Array) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	body.name = "PropColliders"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	for entry: Array in blocking:
+		var where: Vector3 = entry[0]
+		var radius: float = entry[1]
+		var shape := CylinderShape3D.new()
+		shape.radius = radius
+		shape.height = 4.0
+		var collision := CollisionShape3D.new()
+		collision.shape = shape
+		collision.position = where + Vector3(0.0, 2.0, 0.0)
+		body.add_child(collision)
+	return body
 
 
 ## Scatter that reads as nature rather than as planting.
@@ -309,10 +389,12 @@ func _scatter() -> Node3D:
 func _spots(
 	count: int,
 	keep_out: float,
-	spacing: float,
+	radius_of_prop: float,
 	clumping: float,
 	band: Vector2,
-	centre_fade: float = 0.0
+	centre_fade: float = 0.0,
+	avoid: Array = [],
+	follow_green: bool = false
 ) -> Array[Vector3]:
 	var kept: Array[Vector3] = []
 	var attempts := 0
@@ -345,6 +427,8 @@ func _spots(
 		if inland < band.x or inland > band.y:
 			continue
 		var density := (_clump.get_noise_2d(x, z) + 1.0) * 0.5
+		if follow_green:
+			density = _greenness(x, z)
 		if centre_fade > 0.0:
 			density *= smoothstep(centre_fade * 0.25, centre_fade, radius)
 		if _rng.randf() > pow(density, clumping):
@@ -357,10 +441,21 @@ func _spots(
 
 		var spot := Vector3(x, y, z)
 		var clear := true
+		# Props that do not block only need to not interpenetrate; props that do must leave a gap
+		# the player fits through, and they must leave it from everything already placed — a palm
+		# and a boulder a metre apart is as much a trap as two boulders.
+		var own_gap := MIN_GAP if radius_of_prop > 0.0 else 0.6
 		for other: Vector3 in kept:
-			if spot.distance_to(other) < spacing:
+			if spot.distance_to(other) < radius_of_prop * 2.0 + own_gap:
 				clear = false
 				break
+		if clear:
+			for entry: Array in avoid:
+				var other: Vector3 = entry[0]
+				var other_radius: float = entry[1]
+				if spot.distance_to(other) < radius_of_prop + other_radius + MIN_GAP:
+					clear = false
+					break
 		if clear:
 			kept.append(spot)
 	return kept
@@ -421,6 +516,35 @@ func _cylinder(radius: float, height: float) -> Mesh:
 	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, height * 0.5, 0.0)))
 
 
+## A low-poly sphere with its vertices pushed about. A cube reads as a crate; this reads as a rock,
+## and it is the least work that gets there before the art phase replaces it with a textured mesh.
+func _rock_mesh() -> Mesh:
+	var sphere := SphereMesh.new()
+	sphere.radial_segments = 7
+	sphere.rings = 4
+	sphere.radius = 0.5
+	sphere.height = 1.0
+
+	var surface := SurfaceTool.new()
+	surface.create_from(_as_array(sphere), 0)
+	var arrays := surface.commit_to_arrays()
+	var points: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var lumps := RandomNumberGenerator.new()
+	lumps.seed = SEED + 41
+	for index: int in points.size():
+		var point := points[index]
+		var push := 1.0 + _relief.get_noise_3d(point.x * 9.0, point.y * 9.0, point.z * 9.0) * 0.45
+		points[index] = point * Vector3(push, push * 0.78, push)
+	arrays[Mesh.ARRAY_VERTEX] = points
+
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var smoothed := SurfaceTool.new()
+	smoothed.create_from(mesh, 0)
+	smoothed.generate_normals()
+	return smoothed.commit()
+
+
 func _tuft() -> Mesh:
 	var mesh := CylinderMesh.new()
 	mesh.top_radius = 0.0
@@ -479,26 +603,25 @@ func _landmark() -> StaticBody3D:
 	material.roughness = 1.0
 
 	var placements: Array = [
-		[Vector3(-26.0, 0.0, -19.0), Vector3(4.6, 6.0, 4.0), 0.4],
-		[Vector3(-31.0, 0.0, -12.0), Vector3(3.2, 3.6, 3.2), 1.1],
-		[Vector3(25.0, 0.0, 21.0), Vector3(3.8, 3.0, 3.4), 2.2],
-		[Vector3(30.0, 0.0, 12.0), Vector3(2.8, 2.2, 2.8), 0.8],
-		[Vector3(-9.0, 0.0, 30.0), Vector3(3.4, 2.6, 3.2), 1.7],
-		[Vector3(14.0, 0.0, -29.0), Vector3(4.0, 4.6, 3.6), 0.2],
+		[Vector3(-34.0, 0.0, -26.0), Vector3(5.0, 5.4, 4.4), 0.4],
+		[Vector3(-44.0, 0.0, -14.0), Vector3(3.4, 3.6, 3.4), 1.1],
+		[Vector3(36.0, 0.0, 30.0), Vector3(4.2, 3.2, 3.8), 2.2],
+		[Vector3(46.0, 0.0, 16.0), Vector3(3.0, 2.4, 3.0), 0.8],
+		[Vector3(-12.0, 0.0, 44.0), Vector3(3.8, 2.8, 3.4), 1.7],
+		[Vector3(20.0, 0.0, -42.0), Vector3(4.4, 4.4, 4.0), 0.2],
 	]
+	var boulder := _rock_mesh()
 	for placement: Array in placements:
 		var where: Vector3 = placement[0]
 		var size: Vector3 = placement[1]
 		var turn: float = placement[2]
 		where.y = _height_at(where.x, where.z) + size.y * 0.4
 
-		var mesh := BoxMesh.new()
-		mesh.size = size
 		var visual := MeshInstance3D.new()
 		visual.name = "Rock"
-		visual.mesh = mesh
+		visual.mesh = boulder
 		visual.material_override = material
-		visual.transform = Transform3D(Basis(Vector3.UP, turn), where)
+		visual.transform = Transform3D(Basis(Vector3.UP, turn).scaled(size), where)
 		body.add_child(visual)
 
 		var shape := BoxShape3D.new()

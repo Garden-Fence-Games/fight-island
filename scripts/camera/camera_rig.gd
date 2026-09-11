@@ -3,6 +3,11 @@ extends Node3D
 ## A fixed angle that follows the player, framed the way an isometric RPG is: the yaw and the pitch
 ## never change, so the world is only ever seen from one direction.
 ##
+## The spring arm is deliberately inert — its collision mask is zero. Letting it dodge geometry is
+## what produced sudden zoom jumps the moment the island had trees: the arm collapsed against
+## whatever stood behind the player and sprang back out when it cleared. A fixed camera has to be
+## *fixed*, so what gets in the way is faded instead.
+##
 ## The constraint buys more than it costs. Every silhouette reads the same way every time, the
 ## island only has to be composed for one viewpoint, and a telegraph can never end up hidden behind
 ## geometry because the player happened to have turned the camera. Zoom stays, because it costs

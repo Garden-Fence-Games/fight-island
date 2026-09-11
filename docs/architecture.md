@@ -155,6 +155,11 @@ Occlusion is handled by **fading** what comes between the camera and the player,
 With a fixed angle the offenders are known at authoring time, which a moving camera could never
 promise.
 
+The spring arm's collision mask is **zero**, on purpose. Letting it push the camera out of geometry
+sounds harmless and is not: the moment the island had trees, the arm collapsed against whatever
+stood behind the player and sprang back when it cleared, which reads as the camera lurching. A
+fixed camera has to actually be fixed.
+
 ## Save format
 
 JSON under `user://`:
