@@ -1,0 +1,50 @@
+name: Bug report
+description: Something behaves wrongly.
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start wave 4
+        2. Parry the second enemy
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [macOS, Windows]
+    validations:
+      required: true
+  - type: dropdown
+    id: input
+    attributes:
+      label: Input device
+      description: Half of this game's bug surface is "fine on a pad, broken on keyboard".
+      options: [Gamepad, Keyboard and mouse, Both]
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build or commit
+      placeholder: v0.2.0, or the short SHA
+  - type: textarea
+    id: log
+    attributes:
+      label: Godot output
+      render: shell

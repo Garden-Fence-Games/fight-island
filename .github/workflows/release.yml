@@ -1,0 +1,106 @@
+name: release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.7.2"
+  GAME_NAME: "FightIsland"
+  ITCH_USER: "pepito2t"
+  ITCH_GAME: "fight-island"
+
+# Godot's export templates are cross-platform, so macOS and Windows both export from one Linux
+# runner. On a private repository a macOS runner bills at ten times the rate, and it would only
+# be needed for codesigning and notarisation - neither of which is set up yet.
+jobs:
+  export:
+    name: Export macOS and Windows
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          lfs: true
+
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import
+        run: godot --headless --import --path "$GITHUB_WORKSPACE"
+
+      - name: Export
+        run: |
+          set -euo pipefail
+          mkdir -p build/macos build/windows
+          godot --headless --path "$GITHUB_WORKSPACE" \
+            --export-release "macOS" "build/macos/${GAME_NAME}.zip"
+          godot --headless --path "$GITHUB_WORKSPACE" \
+            --export-release "Windows Desktop" "build/windows/${GAME_NAME}.exe"
+          test -f "build/macos/${GAME_NAME}.zip"
+          test -f "build/windows/${GAME_NAME}.exe"
+
+      - name: Package Windows
+        run: cd build/windows && zip -r "../../${GAME_NAME}-windows-x86_64.zip" .
+
+      - name: Name the macOS archive
+        run: cp "build/macos/${GAME_NAME}.zip" "${GAME_NAME}-macos-universal.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: builds
+          path: ${{ env.GAME_NAME }}-*.zip
+          retention-days: 30
+
+  github-release:
+    name: Publish GitHub release
+    runs-on: ubuntu-24.04
+    needs: export
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: builds
+          path: artifacts
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.zip
+          generate_release_notes: true
+          draft: true
+
+  itch:
+    name: Publish to itch.io
+    runs-on: ubuntu-24.04
+    needs: export
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: builds
+          path: artifacts
+
+      # Skips cleanly until the itch.io page exists and BUTLER_API_KEY is set, so a tag never
+      # fails the release just because publishing is not wired up yet.
+      - name: Push builds with butler
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BUTLER_API_KEY:-}" ]; then
+            echo "::warning::BUTLER_API_KEY is not set - skipping the itch.io publish."
+            exit 0
+          fi
+          VERSION="${GITHUB_REF_NAME#v}"
+          curl -sL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip && chmod +x butler
+          ./butler push "artifacts/${GAME_NAME}-macos-universal.zip" \
+            "${ITCH_USER}/${ITCH_GAME}:mac" --userversion "$VERSION"
+          ./butler push "artifacts/${GAME_NAME}-windows-x86_64.zip" \
+            "${ITCH_USER}/${ITCH_GAME}:windows" --userversion "$VERSION"
