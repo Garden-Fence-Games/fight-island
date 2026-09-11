@@ -103,6 +103,13 @@ default, the stick trades commitment for reach and crowd control, the gun is the
 
 Parry is a **tap**, not a held stance. One defensive button, and all the difficulty in the timing.
 
+## The water
+
+Wading costs speed, for the player and for the enemies alike — full speed at the waterline, down to
+a third of it at the wading limit. It is the cheapest way to make the shoreline mean something: the
+beach stops being scenery and becomes somewhere you think twice about being caught. Enemies pay the
+same toll, so backing into the shallows is a real decision rather than a free escape.
+
 ## Enemies
 
 Three farmers, **one rig and one mesh, three textures**. They are behaviourally distinct — three

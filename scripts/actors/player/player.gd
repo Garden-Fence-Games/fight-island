@@ -71,8 +71,9 @@ func move_direction() -> Vector3:
 
 
 func apply_motion(direction: Vector3, speed: float, delta: float) -> void:
-	velocity.x = direction.x * speed
-	velocity.z = direction.z * speed
+	var wading := Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH)
+	velocity.x = direction.x * speed * wading
+	velocity.z = direction.z * speed * wading
 	velocity.y -= _gravity * delta
 	if is_on_floor() and velocity.y < 0.0:
 		velocity.y = 0.0

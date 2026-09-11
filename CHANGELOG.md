@@ -28,6 +28,24 @@ All notable changes to this project are documented here, following
   plus an itch.io publish on tags.
 - Git LFS tracking for binary assets, configured before the first asset landed.
 
+### Added
+
+- An island: generated terrain with a real coastline, a beach, gentle inland relief, water you can
+  wade into, and scattered palms, rocks and grass. Built by `tools/build_island.gd` and baked to a
+  scene; `tools/verify_island.tscn` enforces the composition rules combat depends on — including a
+  height ceiling, because a fixed camera cannot look around a wall.
+- `tools/screenshot.gd` — two looks at the arena as PNGs, because judging a world by reading its
+  generator does not work.
+- Water as a shader: depth-graded colour, moving surface, and foam along the whole shoreline,
+  derived from the sea floor behind it rather than authored.
+- Wading slows the player and the enemies, in proportion to depth.
+- Fixed: the six authored boulders carried colliders scaled twice — the shape was already in
+  metres and then inherited the visual's scale — so the largest one stopped the player from
+  twelve metres away, through open ground. `verify_island` now reads the collider's own scale and
+  caps its radius, which is the only way a bug that is invisible by definition gets caught.
+- Palms and the larger boulders block. Clearance between blocking props is measured as the gap
+  between their surfaces, so the player can always dodge through.
+
 ### Changed
 
 - The camera is **fixed** and only follows the player. Framing it from one direction for the whole

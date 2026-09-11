@@ -155,6 +155,11 @@ Occlusion is handled by **fading** what comes between the camera and the player,
 With a fixed angle the offenders are known at authoring time, which a moving camera could never
 promise.
 
+The spring arm's collision mask is **zero**, on purpose. Letting it push the camera out of geometry
+sounds harmless and is not: the moment the island had trees, the arm collapsed against whatever
+stood behind the player and sprang back when it cleared, which reads as the camera lurching. A
+fixed camera has to actually be fixed.
+
 ## Save format
 
 JSON under `user://`:
@@ -174,6 +179,18 @@ arbitrary code execution on a file the player can edit.
 capsule collision shapes only. No `get_node` per frame — `@onready` everywhere. Physics at 60 Hz.
 `_physics_process` for gameplay, `_process` for visuals. **Hit registration uses physics-frame
 state, never an interpolated visual transform.**
+
+## The island
+
+Generated and baked, not hand-placed: `tools/build_island.gd` → `scenes/world/island.tscn`. The
+rules it works to are in `docs/asset-pipeline.md`, and `tools/verify_island.tscn` enforces the ones
+combat depends on — a clear fighting core, a flat fighting core, tall geometry only on the far side
+of the fixed camera, and a boundary that lets the player reach the water.
+
+The boundary is **depth, not a radius**. The coastline is not a circle, so a circular fence would
+either shut off half the beach or let the player swim away on the other side. Wade in to the shins
+and the sea pushes back; nothing is ever blocked, so the edge of the world is felt as the shape of
+the place.
 
 ## A Node3D faces -Z
 
