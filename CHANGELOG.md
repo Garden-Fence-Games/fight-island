@@ -17,7 +17,7 @@ All notable changes to this project are documented here, following
 - `tools/verify_combat.tscn` — headless proof of the damage, the perfect multiplier, the chain
   window, the parry and the enemy approach. CI now boots the game instead of parsing files.
 
-- Project configuration: full input map (26 actions, gamepad and keyboard/mouse), named 3D
+- Project configuration: full input map (21 actions, gamepad and keyboard/mouse), named 3D
   physics layers, display and rendering settings, project version.
 - `tools/verify_project_config.gd` — headless guard that fails the build when an action or a
   layer goes missing.

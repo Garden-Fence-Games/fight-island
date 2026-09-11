@@ -9,7 +9,7 @@ proves it is done. Durations are estimates for one person working part-time.
 
 - Full `docs/` set, `README.md`, `CLAUDE.md`, shared `.claude/` setup
 - `project.godot`: `[dotnet]` removed, version stamped, display and rendering settings, ten named
-  physics layers, and the complete input map — 26 actions, each bound on both schemes
+  physics layers, and the complete input map — 21 actions, each bound on both schemes
 - `tools/verify_project_config.gd` as a headless guard
 - `.gitignore`, `.gitattributes` with LFS, `.editorconfig`, `export_presets.cfg`
 - GitHub Actions: lint and headless validation on every PR, exports and an itch.io publish on
