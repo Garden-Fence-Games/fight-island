@@ -12,7 +12,8 @@ proves it is done. Durations are estimates for one person working part-time.
   physics layers, and the complete input map — 26 actions, each bound on both schemes
 - `tools/verify_project_config.gd` as a headless guard
 - `.gitignore`, `.gitattributes` with LFS, `.editorconfig`, `export_presets.cfg`
-- GitHub Actions: lint and headless validation on every PR, exports and an itch.io publish on tags
+- GitHub Actions: lint and headless validation on every PR, exports and an itch.io publish on
+  tags. **CI is the only source of shippable binaries** — local export templates are optional
 - PR and issue templates
 - ZenNotes folder created
 

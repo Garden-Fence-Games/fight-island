@@ -1,16 +1,25 @@
 # Build and release
 
+## CI is the only source of shippable binaries
+
+This is a decision, not a description. Every artifact that reaches a player comes out of
+`release.yml`, on a tagged commit, from a pinned Godot version on a clean runner.
+
+It removes a whole class of problem: no "works on my machine" build, no wondering which local
+editor produced the `.zip`, no laptop state baked into a release. It also settles the mono
+question — the only editor installed locally is `/Applications/Godot_mono.app`, which exports with
+**mono templates** and ships a .NET runtime this game never uses. Since local exports are not
+releases, that no longer matters.
+
+**Export templates are therefore optional locally.** Install them only to look at an export
+yourself. They are not installed today, and nothing is blocked by that.
+
 ## Prerequisites
 
-- **Godot 4.7.2.** The only editor installed locally is `/Applications/Godot_mono.app`, the mono
-  build. It runs this GDScript project perfectly well, but it exports with **mono templates**,
-  producing larger binaries with a .NET runtime the game never uses. Prefer the standard build
-  locally, or treat CI as the only source of shippable artifacts.
-- **Export templates, version-locked to 4.7.2.** They are **not installed** right now — nothing
-  exports until they are. Install from *Editor → Manage Export Templates*, or unpack the `.tpz`
-  into `~/Library/Application Support/Godot/export_templates/4.7.2.stable/`. The mono editor looks
-  for `4.7.2.stable.mono/` instead.
+- **Godot 4.7.2** to open and run the project.
 - **Git LFS** before the first binary asset lands.
+- Export templates *only* if you want a local export — version-locked to 4.7.2, and the mono
+  editor looks for `4.7.2.stable.mono/` rather than `4.7.2.stable/`.
 
 ## Versioning
 
@@ -39,7 +48,9 @@ build time.
 `application/export_d3d12=1` on Windows is **mandatory** while `project.godot` sets
 `rendering_device/driver.windows="d3d12"`; it ships the Agility SDK DLLs next to the executable.
 
-## Local build
+## Local export, for a look
+
+Not a release. See above.
 
 ```bash
 GODOT=/Applications/Godot_mono.app/Contents/MacOS/Godot
@@ -48,8 +59,7 @@ $GODOT --headless --path . --export-release "macOS"           build/macos/FightI
 $GODOT --headless --path . --export-release "Windows Desktop" build/windows/FightIsland.exe
 ```
 
-Check the exit code. A missing template produces an error but the failure is easy to miss in the
-scroll.
+Check the exit code — a missing template errors, and the failure is easy to miss in the scroll.
 
 ## CI
 

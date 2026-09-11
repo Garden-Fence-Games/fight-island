@@ -49,8 +49,8 @@ when.
 
 - [Godot 4.7.2](https://godotengine.org/download). The version must match exactly — export
   templates are version-locked.
-- **Export templates 4.7.2**, only for producing builds. Install them from
-  *Editor → Manage Export Templates* inside Godot.
+- **Export templates are optional.** CI produces every shippable binary; install them locally only
+  if you want to look at an export yourself (*Editor → Manage Export Templates*).
 - [Git LFS](https://git-lfs.com) — required before committing any binary asset. `.gitattributes`
   already routes `*.png`, `*.glb`, `*.wav` and friends through it.
 - [Blender 4.x](https://www.blender.org) — only to edit the sources in `art-source/`. Not needed
@@ -104,13 +104,18 @@ docs/          the documentation below
 
 ## Building
 
+**Builds come from CI.** Push a `v*.*.*` tag and the release workflow exports macOS and Windows,
+drafts a GitHub Release and publishes to itch.io. Nothing on a laptop is a release artifact.
+
+To look at a local export anyway — export templates required:
+
 ```bash
 godot --headless --export-release "macOS"           build/macos/FightIsland.zip
 godot --headless --export-release "Windows Desktop" build/windows/FightIsland.exe
 ```
 
-Export templates must be installed first. Signing, notarisation, itch.io and Steam are covered
-in [docs/build-and-release.md](docs/build-and-release.md).
+Signing, notarisation, itch.io and Steam are covered in
+[docs/build-and-release.md](docs/build-and-release.md).
 
 ## Contributing
 

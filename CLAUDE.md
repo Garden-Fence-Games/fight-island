@@ -92,9 +92,9 @@ The per-change mapping is the trigger table in `docs/contributing.md`.
 ## Local environment
 
 - Godot lives at `/Applications/Godot_mono.app/Contents/MacOS/Godot` and is **not on PATH**.
-  It is the mono build; it runs this GDScript project fine, but it exports with mono templates
-  and fatter binaries — prefer CI for shippable artifacts.
-- Export templates are **not installed**. Nothing exports until they are.
+- **CI is the only source of shippable binaries.** Never treat a local export as a release, and do
+  not suggest installing export templates to "unblock" anything — they are optional and only serve
+  a local look. The mono build's fatter exports are irrelevant for the same reason.
 - **Blender is not installed.** The prototype is built from Godot primitives on purpose; the
   Blender pipeline in `docs/asset-pipeline.md` is for the art phase.
 
