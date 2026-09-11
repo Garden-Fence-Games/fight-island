@@ -219,6 +219,29 @@ Four things about the bake are not obvious, and each of them cost a debugging se
   here could walk to the player. That is the question spawning actually needs, and it rejects the
   middle of a boulder and a sandbank across a bay with the same test.
 
+## Aiming
+
+`AimComponent` under the player answers one question — where the body should be looking — and
+returns ZERO for "not aiming, face where you are going". Every caller had that behaviour already,
+so nothing had to learn a new rule and no path leaves the body pointing somewhere nobody chose.
+
+Three decisions inside it:
+
+- **The device is whichever one was touched last, and neither at launch.** Without the third state
+  a pad player would spend the whole game facing wherever the desktop cursor happened to be parked.
+  It is also the answer issue #19 needs for its button glyphs.
+- **The cursor is projected onto the ground plane at the body's own height**, not at y = 0, so the
+  aim stays true as the player walks uphill. The fixed camera is what makes this honest: one angle,
+  one ray. With a free camera the same feature is a pile of edge cases.
+- **A cursor that lands on nothing holds the last direction** rather than clearing it. Over the sea,
+  over the sky, or sitting on the character, the answer is "keep looking where you were" — never
+  "spin".
+
+Movement and facing are independent from here on, which forces two rules the combat now depends on:
+an attack takes its facing once, on entry, so a swing cannot be steered mid-animation; and a dodge
+goes where the stick or the keys say, rolling *away* from the aim when there is no movement input
+at all, because rolling into what you are shooting at is not what the button means.
+
 ## A Node3D faces -Z
 
 The yaw that points a node along `direction` is `atan2(-direction.x, -direction.z)`, not
@@ -236,6 +259,12 @@ Two headless guards run in CI and locally:
 
 - **`tools/verify_project_config.gd`** — fails when an input action or a physics layer goes
   missing. Runs with `--script`, because it touches no autoload.
+- **`tools/verify_aim.tscn`** — drives a real joypad event and a real key press through the
+  engine's own input path, and the real camera projection for the cursor, then asserts that holding
+  a movement key still walks the body and does not follow its facing, that the body turns at a
+  capped rate,
+  goes back to facing its movement when the stick is released, does not aim before any device is
+  touched, commits its attack facing, and dodges away from the aim rather than into it.
 - **`tools/verify_navigation.tscn`** — asserts the island is baked, that a route past a boulder
   bends around it, that a spawn point inside one is refused, and — the only check straight-line
   chasing cannot pass — that a farmhand with a boulder between him and the player still gets there.

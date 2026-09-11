@@ -5,7 +5,7 @@ extends PlayerState
 func physics_update(delta: float) -> void:
 	var direction := player.move_direction()
 	player.apply_motion(direction, Player.SPRINT_SPEED, delta)
-	player.face(direction, delta)
+	player.face(player.look_direction(direction), delta)
 	if player.stamina != null:
 		player.stamina.drain(Player.SPRINT_DRAIN, delta)
 	if try_common_transitions():

@@ -19,6 +19,7 @@ bindings.
 | Action | Keyboard / mouse | Gamepad (Xbox) | Deadzone |
 |---|---|---|---|
 | `move_forward` / `_back` / `_left` / `_right` | `W` `S` `A` `D` | Left stick | 0.2 |
+| `aim_left` / `_right` / `_up` / `_down` | — (the cursor aims) | Right stick | 0.2 |
 | `camera_zoom_in` / `_out` | wheel up / down | D-pad up / down | 0.2 |
 | `attack` | Left mouse | RT | **0.5** |
 | `parry` | Right mouse | LT | **0.5** |
@@ -46,6 +47,18 @@ buttons. `ui_left/right/up/down` are *not* overridden — they already carry D-p
 
 **The triggers use a 0.5 deadzone.** `attack` on RT and `parry` on LT are analog; at Godot's
 default 0.2 a half-pulled trigger registers as a press, which in a parry-timing game is a lost run.
+
+**The keys still move the character; only the facing changed.** `W` `A` `S` `D` drive the body
+exactly as they did — camera-relative, so `W` is always away from the viewer — and the cursor
+decides which way it is pointing while it walks. That split is the whole feature: backing away from
+something while still aiming at it is impossible when the two are the same input.
+`tools/verify_aim.tscn` holds a key down and fails if walking ever starts following the facing.
+
+**The four `aim_*` actions have no keyboard binding, and that is not an oversight.** The mouse aims
+by where the cursor *is*; there is no key that means "look north-east". `verify_project_config`
+exempts them from the both-devices rule for exactly that reason, and the cursor is what covers the
+other half. The right stick aims directly; released, the body goes back to facing its movement, so
+a pad player who never touches it gets the game as it played before aiming existed.
 
 **There are no camera-turning actions**, because the camera never turns. The angle is fixed for the
 whole game and only the zoom is the player's. Movement stays camera-relative — `W` is always away

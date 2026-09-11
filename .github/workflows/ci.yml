@@ -95,6 +95,11 @@ jobs:
       # The navigation mesh comes out of the same generator, and nothing about a wrong one is
       # visible in a diff or a screenshot — enemies simply walk into rocks. This walks one of them
       # around a boulder and checks a spawn point inside the rock is refused.
+      # Aiming is wiring between a device and a yaw, and wiring is what breaks. This drives a real
+      # joypad event through the engine rather than setting a field.
+      - name: Verify aiming
+        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_aim.tscn
+
       - name: Verify navigation
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_navigation.tscn
 
