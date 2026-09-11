@@ -45,7 +45,9 @@ off a number.
 - Stick and gun with their six attacks, ground pickups, instant swapping, ammo and reload
 - `WaveDirector`, `SpawnDirector`, enemy pooling
 - Waves 1 to 5 on the real formulas from `WaveConfig`
-- `Economy` and the five-track upgrade screen, with the merchant
+- `Economy` and the five-track upgrade screen, with the merchant — see [menus.md](menus.md)
+- Title, pause and options screens, all navigable on a pad
+- The tutorial director, driven by step resources — see [tutorial.md](tutorial.md)
 - Real HUD, death screen, retry, pause, options
 - Island blockout with navigable geometry
 - First audio pass
