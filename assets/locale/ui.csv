@@ -3,7 +3,6 @@ UI_PLAY,Play
 UI_CONTINUE,Continue
 UI_NEW_RUN,New run
 UI_OPTIONS,Options
-UI_CREDITS,Credits
 UI_QUIT,Quit
 UI_BACK,Back
 UI_SKIP_HINT,Press any key to skip

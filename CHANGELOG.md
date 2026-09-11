@@ -8,11 +8,15 @@ All notable changes to this project are documented here, following
 
 ### Added
 
-- Title screen: Play · Options · Credits · Quit, pad-navigable from the first frame, with Play
-  becoming Continue and a New run entry appearing once a run is under way. A grey wash stands in
-  for the island until the arena is composed behind it.
+- Title screen: Play · Options · Quit, pad-navigable from the first frame, with Play becoming
+  Continue and a New run entry appearing once a run is under way. Built to the Figma design — the
+  tokens, the 96 px margins and the 420 × 72 menu rows. A grey wash stands in for the island until
+  the arena is composed behind it.
 - A Garden Fence intro sting before the title, skippable with any button.
-- A shared UI theme under `assets/themes/`, and the `UI_` string table in `assets/locale/ui.csv`.
+- `MenuEntry`, the menu row every screen will reuse: caret, label, and the glyph that fires it.
+- A shared UI theme under `assets/themes/` carrying the design tokens, the `UI_` string table in
+  `assets/locale/ui.csv`, and Badeen Display and Inter under `assets/fonts/`.
+- `menu_options` and `menu_new_run` input actions, so the glyphs the menu prints are real.
 - Playable prototype: a grey-box arena, a player who moves, sprints, dodges and parries, the
   three-attack fist chain with its chain and perfect windows, and farmhands that close the
   distance and swing.

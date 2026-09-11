@@ -10,11 +10,15 @@ const HINT_FADE: float = 0.5
 var _leaving: bool = false
 
 @onready var video: VideoStreamPlayer = $Ratio/Video
-@onready var hint: Label = $Hint
+@onready var hint: HBoxContainer = $Hint
+@onready var hint_text: Label = $Hint/Text
 @onready var fade: ColorRect = $Fade
 
 
 func _ready() -> void:
+	# Captions are uppercase in the design system, and a Godot theme cannot carry a text transform,
+	# so the one place that needs it does it here.
+	hint_text.text = tr("UI_SKIP_HINT").to_upper()
 	video.finished.connect(_leave)
 	video.play()
 	var tween: Tween = create_tween()

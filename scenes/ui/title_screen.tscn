@@ -1,8 +1,9 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/title_screen.gd" id="1"]
 [ext_resource type="Theme" path="res://assets/themes/ui_theme.tres" id="2"]
-[ext_resource type="Texture2D" path="res://assets/logo/fight_island_logo_1_on_dark.svg" id="3"]
+[ext_resource type="Texture2D" path="res://assets/logo/fight_island_logo_1.svg" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu_entry.tscn" id="4"]
 
 [sub_resource type="Gradient" id="Gradient_vignette"]
 offsets = PackedFloat32Array(0.4, 1)
@@ -55,20 +56,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 156
+theme_override_constants/margin_left = 96
 theme_override_constants/margin_top = 96
-theme_override_constants/margin_right = 156
+theme_override_constants/margin_right = 96
 theme_override_constants/margin_bottom = 96
 
 [node name="Column" type="VBoxContainer" parent="Content"]
 layout_mode = 2
 size_flags_horizontal = 0
 mouse_filter = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 96
 alignment = 1
 
 [node name="Logo" type="TextureRect" parent="Content/Column"]
-custom_minimum_size = Vector2(340, 340)
+custom_minimum_size = Vector2(349, 349)
 layout_mode = 2
 size_flags_horizontal = 0
 mouse_filter = 2
@@ -76,72 +77,42 @@ texture = ExtResource("3")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Gap" type="Control" parent="Content/Column"]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 2
-mouse_filter = 2
-
 [node name="Menu" type="VBoxContainer" parent="Content/Column"]
 layout_mode = 2
 size_flags_horizontal = 0
 mouse_filter = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 12
 
-[node name="Play" type="Button" parent="Content/Column/Menu"]
-custom_minimum_size = Vector2(400, 64)
+[node name="Play" parent="Content/Column/Menu" instance=ExtResource("4")]
 layout_mode = 2
 size_flags_horizontal = 0
-text = "UI_PLAY"
-alignment = 0
+label_key = "UI_PLAY"
+key_hint = "[A / ENTER]"
 
-[node name="NewRun" type="Button" parent="Content/Column/Menu"]
+[node name="NewRun" parent="Content/Column/Menu" instance=ExtResource("4")]
 visible = false
-custom_minimum_size = Vector2(400, 64)
 layout_mode = 2
 size_flags_horizontal = 0
-text = "UI_NEW_RUN"
-alignment = 0
+label_key = "UI_NEW_RUN"
+key_hint = "[Y / N]"
 
-[node name="Options" type="Button" parent="Content/Column/Menu"]
-custom_minimum_size = Vector2(400, 64)
+[node name="Options" parent="Content/Column/Menu" instance=ExtResource("4")]
 layout_mode = 2
 size_flags_horizontal = 0
-text = "UI_OPTIONS"
-alignment = 0
+label_key = "UI_OPTIONS"
+key_hint = "[Y / O]"
 
-[node name="Credits" type="Button" parent="Content/Column/Menu"]
-custom_minimum_size = Vector2(400, 64)
+[node name="Quit" parent="Content/Column/Menu" instance=ExtResource("4")]
 layout_mode = 2
 size_flags_horizontal = 0
-text = "UI_CREDITS"
-alignment = 0
+label_key = "UI_QUIT"
+key_hint = "[B / ESC]"
 
-[node name="Quit" type="Button" parent="Content/Column/Menu"]
-custom_minimum_size = Vector2(400, 64)
+[node name="Version" type="Label" parent="Content/Column"]
 layout_mode = 2
-size_flags_horizontal = 0
-text = "UI_QUIT"
-alignment = 0
-
-[node name="Version" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -316.0
-offset_top = -92.0
-offset_right = -60.0
-offset_bottom = -52.0
-grow_horizontal = 0
-grow_vertical = 0
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.435, 0.451, 0.471, 1)
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"Caption"
 text = "v0.0.0"
-horizontal_alignment = 2
-vertical_alignment = 1
 auto_translate_mode = 2
 
 [node name="Panel" type="Control" parent="."]
@@ -160,7 +131,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.031, 0.035, 0.039, 0.78)
+color = Color(0, 0, 0, 0.68)
 
 [node name="Center" type="CenterContainer" parent="Panel"]
 layout_mode = 1
@@ -172,32 +143,34 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Frame" type="PanelContainer" parent="Panel/Center"]
-custom_minimum_size = Vector2(820, 0)
+custom_minimum_size = Vector2(720, 420)
 layout_mode = 2
 
 [node name="Rows" type="VBoxContainer" parent="Panel/Center/Frame"]
 layout_mode = 2
-theme_override_constants/separation = 30
+theme_override_constants/separation = 32
 
 [node name="Heading" type="Label" parent="Panel/Center/Frame/Rows"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.965, 0.961, 0.953, 1)
-theme_override_font_sizes/font_size = 44
-text = "UI_CREDITS"
+mouse_filter = 2
+theme_type_variation = &"Heading"
+auto_translate_mode = 2
 
 [node name="Body" type="Label" parent="Panel/Center/Frame/Rows"]
 layout_mode = 2
-theme_override_constants/line_spacing = 12
-theme_override_font_sizes/font_size = 24
+size_flags_vertical = 3
+mouse_filter = 2
+theme_type_variation = &"Body"
+theme_override_constants/line_spacing = 8
 autowrap_mode = 3
 auto_translate_mode = 2
 
-[node name="Back" type="Button" parent="Panel/Center/Frame/Rows"]
-custom_minimum_size = Vector2(240, 60)
+[node name="Back" parent="Panel/Center/Frame/Rows" instance=ExtResource("4")]
+custom_minimum_size = Vector2(240, 64)
 layout_mode = 2
 size_flags_horizontal = 0
-text = "UI_BACK"
-alignment = 0
+label_key = "UI_BACK"
+key_hint = "[B / ESC]"
 
 [node name="Fade" type="ColorRect" parent="."]
 layout_mode = 1

@@ -42,11 +42,14 @@ else on the screen and nothing after it but the title.
 
 ## Title
 
-Four entries, in this order: **Play · Options · Credits · Quit**.
+Three entries, in this order: **Play · Options · Quit**.
 
 Play starts a run immediately. There is no character select, no difficulty select, no save-slot
 list — a run is forty minutes and the game has one difficulty, so anything between the button and
 the fight is furniture.
+
+Credits are not a title entry. They are a page of the Options screen: the layout holds three rows
+without crowding the logo, and a fourth that nobody opens twice is not worth the height.
 
 The background is the island with the camera drifting slowly. Not a pre-rendered image: the real
 arena scene, so the title screen can never look like a different game than the one that follows.
@@ -55,6 +58,10 @@ the only thing that changes when the arena moves in.
 
 When a run is in progress and the player quit to title, Play becomes **Continue**, and a second
 entry **New run** appears below it.
+
+Every entry carries the glyph that fires it — `[A / ENTER]` on the focused row, `[Y / O]` on
+Options, `[B / ESC]` on Quit — and each of those is a real binding. New run takes `[Y / N]` and
+Options loses its badge while a run is waiting, because the pad has one Y.
 
 ## Pause
 
