@@ -6,6 +6,10 @@ extends CharacterBody3D
 const SEPARATION_RADIUS: float = 1.2
 const SEPARATION_FORCE: float = 2.4
 const TURN_SPEED_DEGREES: float = 360.0
+## How long a route is walked before it is asked for again. Re-pathing every frame for thirty
+## farmers is most of a frame spent on a query whose answer barely moves, and the player cannot get
+## far in a quarter of a second.
+const REPATH_INTERVAL: float = 0.25
 
 @export var data: EnemyData = null
 
@@ -15,12 +19,14 @@ var poise_left: float = 0.0
 var _tokens: AttackTokens = null
 var _gravity: float = 9.8
 var _poise_window: float = 0.0
+var _repath_clock: float = 0.0
 
 @onready var health: HealthComponent = $Health
 @onready var hitbox: Hitbox = $Hitbox
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var machine: StateMachine = $StateMachine
 @onready var mesh: MeshInstance3D = $Body
+@onready var agent: NavigationAgent3D = $Agent
 
 
 func _ready() -> void:
@@ -62,6 +68,28 @@ func direction_to_target() -> Vector3:
 	return to_target.normalized()
 
 
+## The way to walk to reach the target, around whatever stands in the way.
+##
+## Falls back to the straight line whenever there is no route to follow — no navigation mesh under
+## the level, a target that has stepped off it, or the first frame after asking. An arena with no
+## navigation mesh still plays exactly as it did before, which is what keeps the combat tests
+## honest about combat.
+func path_direction(delta: float) -> Vector3:
+	if target == null:
+		return Vector3.ZERO
+	_repath_clock -= delta
+	if _repath_clock <= 0.0:
+		_repath_clock = REPATH_INTERVAL
+		agent.target_position = target.global_position
+	if agent.is_navigation_finished() or agent.get_current_navigation_path().is_empty():
+		return direction_to_target()
+	var step := agent.get_next_path_position() - global_position
+	step.y = 0.0
+	if step.is_zero_approx():
+		return direction_to_target()
+	return step.normalized()
+
+
 ## Steering that keeps bodies from stacking. Cheap, and worth far more than it costs.
 func separation() -> Vector3:
 	var push := Vector3.ZERO
@@ -92,7 +120,11 @@ func apply_motion(direction: Vector3, speed: float, delta: float) -> void:
 
 
 func face_target(delta: float) -> void:
-	var direction := direction_to_target()
+	face(direction_to_target(), delta)
+
+
+## A Node3D's forward is -Z, so the yaw that points it along `direction` is atan2(-x, -z).
+func face(direction: Vector3, delta: float) -> void:
 	if direction.is_zero_approx():
 		return
 	var wanted := atan2(-direction.x, -direction.z)

@@ -132,8 +132,8 @@ Named as a past-tense fact, never as a command and never `on_*`:
 
 `WaveDirector.start_wave(n)` reads `WaveConfig`, computes the budget and emits `wave_started`. The
 `SpawnDirector` drip-feeds spawns respecting `max_alive(n)`, choosing points more than 12 m from
-the player, preferring off-camera, and rejecting any point whose `spawn_blocker` overlap test
-fails. Each enemy is leased from a pre-warmed pool of 32. `enemy_died` decrements the counter; at
+the player, preferring off-camera, and rejecting any point `Ground.is_spawnable` refuses — which
+is the navigation mesh's answer, not a marker's. Each enemy is leased from a pre-warmed pool of 32. `enemy_died` decrements the counter; at
 zero the director emits `wave_cleared`, `Economy` credits the money, the upgrade screen opens,
 `upgrade_purchased` applies modifiers to the live player, and after a five-second breather the next
 wave starts.
@@ -192,6 +192,33 @@ either shut off half the beach or let the player swim away on the other side. Wa
 and the sea pushes back; nothing is ever blocked, so the edge of the world is felt as the shape of
 the place.
 
+## Navigation
+
+The same generator bakes a `NavigationMesh` beside the terrain and hangs it on a
+`NavigationRegion3D` in the island scene; every enemy carries a `NavigationAgent3D` and walks the
+route it gives, re-asking four times a second. Straight-line chasing stays as the fallback for any
+frame with no route — an arena with no navigation mesh still plays.
+
+The navmesh gives the **route**; the existing separation steering keeps bodies apart in close
+quarters. Splitting it that way is what stops thirty agents grinding along the same line.
+
+Four things about the bake are not obvious, and each of them cost a debugging session:
+
+- **Winding is load-bearing and silent.** Recast decides what is walkable from the face normal, so
+  a reversed ground quad is not a hole in the mesh — it is *no mesh at all*, with nothing logged.
+- **Obstacles are sunk and pitched.** A collider floating even a few centimetres above the terrain
+  leaves a sliver of walkable ground under it and the hole never appears; a flat top is a floor as
+  far as recast is concerned, however high up it is.
+- **The mesh is deliberately coarse, and only the boulders are cut out of it.** Every polygon is
+  scanned linearly by the queries each agent runs per frame. Carving all thirteen hundred props
+  cost 20 ms a frame with thirty farmers; carving only what is genuinely impassable costs a
+  fraction of that and walks identically, because the island already guarantees 1.5 m of clearance
+  between any two props.
+- **Recast leaves walkable ground *inside* solid things** — floor with no way in or out. So
+  `Ground.is_spawnable` does not ask "is there navigation mesh here", it asks whether an actor put
+  here could walk to the player. That is the question spawning actually needs, and it rejects the
+  middle of a boulder and a sandbank across a bay with the same test.
+
 ## A Node3D faces -Z
 
 The yaw that points a node along `direction` is `atan2(-direction.x, -direction.z)`, not
@@ -209,6 +236,9 @@ Two headless guards run in CI and locally:
 
 - **`tools/verify_project_config.gd`** — fails when an input action or a physics layer goes
   missing. Runs with `--script`, because it touches no autoload.
+- **`tools/verify_navigation.tscn`** — asserts the island is baked, that a route past a boulder
+  bends around it, that a spawn point inside one is refused, and — the only check straight-line
+  chasing cannot pass — that a farmhand with a boulder between him and the player still gets there.
 - **`tools/verify_combat.tscn`** — asserts that a jab deals its tabled damage, that a perfect hit
   multiplies it, that the chain window opens and closes where the design says, that a perfect parry
   negates, and that a farmhand left alone crosses the arena and connects. It runs as a **scene**,

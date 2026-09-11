@@ -55,8 +55,10 @@ Two things it gets right that are easy to get wrong:
   is the most regular arrangement there is, which is exactly why it looks planted. Clumps and bare
   ground read as nature.
 
-Nothing scattered collides. Getting stuck on a bush is worse than any realism it buys, and it keeps
-the navigation problem to the six authored rock formations.
+Palms and rocks big enough to walk around collide; grass, pebbles and fronds never do — getting
+stuck on a bush is worse than any realism it buys. Only the six authored formations are cut out of
+the navigation mesh, though: a 0.2 m post is a bump a body slides off, and carving every prop makes
+the mesh expensive to query without changing where anyone walks.
 
 **The water is a shader, not a blue plane.** A translucent plane reads as a sheet of plastic; what
 says "water" is the shoreline. The depth fade and the foam band both come from comparing the sea
