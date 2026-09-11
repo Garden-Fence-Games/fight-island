@@ -8,7 +8,7 @@ Refresh the Fight Island notes in ZenNotes so they stop lying about where the pr
 2. Run `git log --oneline -30` and `gh pr list --state merged --limit 20` to see what actually
    landed since the notes were last touched.
 3. Read the hub note at
-   `~/Documents/ZenNotes/inbox/tmbk/Garden Fence/Fight Island/Fight Island.md`, in particular
+   `~/Documents/ZenNotes/inbox/Garden Fence/Fight Island/Fight Island.md`, in particular
    its `## Où en est le projet` section.
 4. Read `Documentation/Décisions à trancher.md` and check whether any listed question has since
    been answered — a closed question becomes an ADR in `docs/decisions/` and its line is

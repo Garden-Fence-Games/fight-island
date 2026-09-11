@@ -65,10 +65,11 @@ This is a decision, not drift. Do not "fix" snake_case `.gd` files. See
 ## Documentation duty
 
 Human-facing project notes live in **ZenNotes**, not only in this repo:
-`~/Documents/ZenNotes/inbox/tmbk/Garden Fence/Fight Island/`.
+`~/Documents/ZenNotes/inbox/Garden Fence/Fight Island/`.
 
 Notes are **French**, with `title` / `tags` / `dateCreated` frontmatter and bare
-`[[wikilinks]]`. Match the tone of the sibling `Folio/` and `MasterJAM/` folders.
+`[[wikilinks]]`. Tags are `[projet, garden-fence]`. Match the tone of the `inbox/tmbk/Folio/` and
+`inbox/tmbk/MasterJAM/` notes.
 
 The split: **`docs/` says how and how much; ZenNotes says where we are and why.** A ZenNotes
 note may state an intention — *"les vagues doublent la pression toutes les cinq vagues"* — but

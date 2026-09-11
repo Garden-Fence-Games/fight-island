@@ -16,7 +16,7 @@ neither.
 
 - `docs/` is English, versioned with the code, and holds the technical reference. Every balance
   number lives there and in `data/*.tres`, and nowhere else.
-- ZenNotes — `~/Documents/ZenNotes/inbox/tmbk/Garden Fence/Fight Island/` — is French and holds
+- ZenNotes — `~/Documents/ZenNotes/inbox/Garden Fence/Fight Island/` — is French and holds
   the human layer: pitch, decisions and their rationale, status, costs, deadlines. It may state an
   intention but **never a coefficient**.
 - Each ZenNotes Documentation note ends with a `## Dans le dépôt` pointer list. That is the only
