@@ -102,9 +102,15 @@ Direct `.blend` import is fine during blockout. Switch before the first CI expor
 
 - **1 Godot unit = 1 metre.** Blender scene unit scale 1.0.
 - **Apply all transforms** before exporting (`Ctrl+A → All Transforms`).
-- Godot is Y-up / −Z forward and glTF is Y-up / +Z forward; the importer converts. **Export with
-  glTF defaults and never hand-rotate in Blender.**
-- Character origin at the feet, facing −Z. Weapon origin at the grip, barrel or blade along −Z.
+- The importer converts the **up axis** — Blender's Z-up becomes Y-up — and nothing else. **Export
+  with glTF defaults and never hand-rotate in Blender** to compensate for it.
+- **It does not convert the facing, and that one is a trap.** glTF says a character's front is +Z,
+  Godot says a node's forward is −Z, and nothing reconciles them: a character authored correctly in
+  Blender, facing −Y as Blender expects, arrives in Godot facing +Z and aims out of its own back.
+  **The model instance in the scene carries the 180° yaw** — `Visual` in `player.tscn` — rather than
+  the `.blend`, so the artist's file stays natural to work in and re-exporting can never undo the
+  fix. `tools/verify_head_look.tscn` fails if a rig turns up facing the wrong way.
+- Character origin at the feet. Weapon origin at the grip, barrel or blade along −Z.
 - **Root motion off.** Movement is code-driven so it can be interrupted on frame one.
 - Normal maps must be flagged `Normal Map` in the import dock, or the lighting is subtly wrong
   forever.

@@ -19,7 +19,7 @@ res://
     resources/    attack_data.gd, weapon_data.gd, upgrade_track.gd, wave_config.gd
     components/   health_component.gd, stamina_component.gd, hitbox.gd, hurtbox.gd,
                   hit_info.gd, state_machine.gd, state.gd, aim_component.gd,
-                  animation_component.gd
+                  animation_component.gd, head_look_component.gd
     actors/       player/, enemy/, merchant/ — each with its states/
     systems/      wave_director.gd, spawn_director.gd, economy.gd, save_manager.gd
     camera/       camera_rig.gd
@@ -344,6 +344,33 @@ Two decisions worth keeping:
 The state-to-clip map is explicit rather than a lowercase of the state name, because `Move` plays
 `walk` and no rule bridges that pair. It is exported, so a state can be pointed at a clip that
 already exists while the real one is still being authored.
+
+## Head look
+
+`HeadLookComponent` points the head bone at the aim while the body does whatever its clip says. It
+is the cheap half of an upper-body split: one bone, a `LookAtModifier3D`, no `AnimationTree` and no
+second set of clips. Mixamo only ever hands over full-body animations, so any such split has to be
+made at runtime; the torso version is the same idea one layer up and can be added without moving
+this.
+
+Four things about it are not obvious, and each was measured rather than assumed:
+
+- **The modifier is built in code**, because a `SkeletonModifier3D` has to be a child of the
+  `Skeleton3D` and that skeleton lives inside the imported glTF scene. Authoring it in `player.tscn`
+  would mean editable children and the importer's node names pinned into the scene file.
+- **It is built deferred.** A parent is still setting up its children while their `_ready` runs, so
+  `add_child` on it fails and leaves the target adrift outside the tree, with a head that never
+  moves and nothing in the log to say why.
+- **The skeleton only runs its modifiers while something is playing.** With no clip the pose never
+  changes, the skeleton never updates, and the head freezes. This is why the rig imports with
+  `import_rest_as_RESET` on: a state with no clip of its own plays `RESET`, which keeps the
+  skeleton live.
+- **`get_bone_global_pose()` reports the animated pose *before* modifiers.** It shows a perfectly
+  still head no matter where the modifier is actually pointing it, so anything checking the result
+  has to read a `BoneAttachment3D` instead.
+
+The turn is clamped to 55°, and past that the head stops and the body carries the rest. Unclamped,
+a player running north while aiming south twists the neck through 180°.
 
 ## A Node3D faces -Z
 

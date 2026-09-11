@@ -111,6 +111,12 @@ jobs:
       - name: Verify animation
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_animation.tscn
 
+      # glTF puts a character's front at +Z, Godot's forward is -Z, and nothing reconciles them: a
+      # rig imported without the 180 on its instance aims out of its own back. Cheap to check,
+      # invisible in a diff, and it also guards the head-look's bone axis across a reimport.
+      - name: Verify head look
+        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_head_look.tscn
+
       - name: Verify navigation
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_navigation.tscn
 
