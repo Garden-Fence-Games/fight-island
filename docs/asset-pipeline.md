@@ -34,10 +34,16 @@ godot --headless --path . --script tools/build_island.gd
 godot --headless --path . res://tools/verify_island.tscn
 ```
 
-**The playfield is authored, the decoration is scattered.** The flat fighting core, the cliff wall
-and the six rock formations are placed by constants chosen for one fixed camera angle. Palms,
-rocks and grass are scattered from a seed and **baked into the scene** — deterministic, reviewable
-in a diff, and free at load.
+**The playfield is authored, the decoration is scattered.** The flat fighting core and the six rock
+formations are placed by constants chosen for one fixed camera angle. Palms, rocks and grass are
+scattered from a seed and **baked into the scene** — deterministic, reviewable in a diff, and free
+at load.
+
+**Nothing on the island rises above 2.8 m**, and `verify_island` fails the build if it does. The
+camera is fixed, so a wall anywhere is a wall the player can never look around — which rules out a
+cliff along the water, however good it would look. The island rolls instead: gentle relief inland,
+fading out toward both the fighting core and the shore, so the arena stays flat and the beach stays
+walkable. The six rock formations carry the orientation the landmark would have.
 
 Two things it gets right that are easy to get wrong:
 

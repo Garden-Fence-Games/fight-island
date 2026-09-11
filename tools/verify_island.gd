@@ -8,9 +8,9 @@ const ISLAND: String = "res://scenes/world/island.tscn"
 ## sweep will eventually trap someone against.
 const CLEAR_RADIUS: float = 22.0
 const FLAT_TOLERANCE: float = 0.25
-## The camera looks from -X +Z toward +X -Z, so tall geometry belongs on the far side only.
-const FAR_SIDE: Vector2 = Vector2(0.707, -0.707)
-const TALL: float = 2.5
+## Nothing on the island may rise higher than this. The camera is fixed, so a wall anywhere is a
+## wall the player can never look around.
+const CEILING: float = 2.8
 ## Only what stands at body height counts as an obstacle. Grass collides with nothing and palm
 ## fronds sit four metres up, so neither can block a dodge.
 const HARMLESS: PackedStringArray = ["Grass", "PalmFronds"]
@@ -25,11 +25,11 @@ func _ready() -> void:
 
 	_check_core_is_clear(island)
 	_check_core_is_flat(island)
-	_check_tall_geometry_is_on_the_far_side(island)
+	_check_nothing_walls_the_camera(island)
 	_check_boundary(island)
 
 	if _failures.is_empty():
-		print("island OK — clear core, flat core, backdrop on the far side, boundary in place")
+		print("island OK — clear core, flat core, nothing walls the camera, boundary in place")
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:
@@ -78,18 +78,14 @@ func _check_core_is_flat(island: Node) -> void:
 		)
 
 
-func _check_tall_geometry_is_on_the_far_side(island: Node) -> void:
+func _check_nothing_walls_the_camera(island: Node) -> void:
 	var mesh := (island.get_node("Terrain") as MeshInstance3D).mesh
 	var points: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var worst := 0.0
 	for point: Vector3 in points:
-		if point.y < TALL:
-			continue
-		var direction := Vector2(point.x, point.z).normalized()
-		if direction.dot(FAR_SIDE) < 0.3:
-			_failures.append(
-				"terrain %.1f m tall sits at %s, which is not the far side" % [point.y, point]
-			)
-			return
+		worst = maxf(worst, point.y)
+	if worst > CEILING:
+		_failures.append("the island rises %.1f m, the most is %.1f" % [worst, CEILING])
 
 
 func _check_boundary(island: Node) -> void:

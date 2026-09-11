@@ -26,14 +26,12 @@ const WATER_LEVEL: float = -1.1
 ## How far below the waterline the sea floor keeps falling.
 const SEA_DROP: float = 9.0
 
-# --- Cliffs ------------------------------------------------------------------------------------
-## Tall geometry only on the far side of the screen, so it reads as a backdrop and never stands
-## between the camera and the fight. The camera looks from -X +Z toward +X -Z.
-const CLIFF_DIRECTION: Vector2 = Vector2(0.707, -0.707)
-const CLIFF_SPREAD: float = 0.45
-const CLIFF_INNER: float = 33.0
-const CLIFF_OUTER: float = 47.0
-const CLIFF_HEIGHT: float = 12.0
+# --- Relief ------------------------------------------------------------------------------------
+## Inland only, and gentle. The island rolls; it never walls. A cliff along the water would put a
+## fixed camera behind a wall, and there would be nothing the player could do about it.
+const RELIEF_HEIGHT: float = 1.8
+## Nothing on the island may rise higher than this, or it could hide a fight.
+const RELIEF_CEILING: float = 2.6
 
 # --- Scatter -----------------------------------------------------------------------------------
 ## No obstacle may stand inside this radius: a prop in the fighting core is a prop the reaper's
@@ -52,6 +50,7 @@ var _rng := RandomNumberGenerator.new()
 var _noise := FastNoiseLite.new()
 var _coast := FastNoiseLite.new()
 var _clump := FastNoiseLite.new()
+var _relief := FastNoiseLite.new()
 
 
 func _initialize() -> void:
@@ -68,6 +67,9 @@ func _initialize() -> void:
 	_clump.seed = SEED + 13
 	_clump.frequency = 0.11
 	_clump.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	_relief.seed = SEED + 23
+	_relief.frequency = 0.035
+	_relief.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 
 	var island := Node3D.new()
 	island.name = "Island"
@@ -130,25 +132,17 @@ func _height_at(x: float, z: float) -> float:
 	# Whatever the field says, the fighting core is flat land.
 	var core := 1.0 - smoothstep(CORE_RADIUS - 2.0, CORE_RADIUS + 5.0, Vector2(x, z).length())
 	height = lerpf(height, 0.0, core)
-	return height + _cliff_at(x, z)
+	return height + _relief_at(x, z, value)
 
 
-## A wall on one side only. It is the backdrop, the orientation landmark, and the reason the player
-## can tell which way they are facing without being able to turn the camera.
-func _cliff_at(x: float, z: float) -> float:
-	var flat := Vector2(x, z)
-	var radius := flat.length()
-	if radius < CLIFF_INNER or radius > CLIFF_OUTER:
-		return 0.0
-	var towards := flat.normalized().dot(CLIFF_DIRECTION)
-	if towards < 1.0 - CLIFF_SPREAD:
-		return 0.0
-	var across := (towards - (1.0 - CLIFF_SPREAD)) / CLIFF_SPREAD
-	var t := (radius - CLIFF_INNER) / (CLIFF_OUTER - CLIFF_INNER)
-	var along := smoothstep(0.0, 0.28, t) * (1.0 - smoothstep(0.72, 1.0, t))
-	# Never raise a cliff out of open water.
-	var grounded := smoothstep(-0.1, 0.15, _land(x, z))
-	return CLIFF_HEIGHT * smoothstep(0.0, 1.0, across) * along * grounded
+## Rolling ground away from the fight, fading out toward both the core and the shore: the arena
+## stays flat and the beach stays walkable, and in between the island has some shape.
+func _relief_at(x: float, z: float, value: float) -> float:
+	var radius := Vector2(x, z).length()
+	var away_from_core := smoothstep(CORE_RADIUS - 2.0, CORE_RADIUS + 14.0, radius)
+	var inland := smoothstep(0.12, 0.55, value)
+	var rise := (_relief.get_noise_2d(x, z) * 0.5 + 0.5) * RELIEF_HEIGHT
+	return minf(rise * away_from_core * inland, RELIEF_CEILING)
 
 
 func _build_heights() -> PackedFloat32Array:
@@ -166,8 +160,6 @@ func _build_heights() -> PackedFloat32Array:
 ## Vertex colour carries the beach-to-grass gradient, keyed to how far inland a point is rather
 ## than to its distance from the centre — which is what stops the green reading as a painted disc.
 func _colour_at(x: float, z: float, height: float) -> Color:
-	if height > 1.2:
-		return ROCK_GREY.lerp(Color(0.45, 0.43, 0.4), clampf(height / 10.0, 0.0, 1.0))
 	if height < WATER_LEVEL + 0.15:
 		return SAND.darkened(0.42).lerp(Color(0.2, 0.35, 0.4), 0.45)
 	var inland := _land(x, z)
@@ -359,8 +351,8 @@ func _spots(
 			continue
 
 		var y := _height_at(x, z)
-		# Nothing below the waterline, and nothing clinging to the cliff face.
-		if y < WATER_LEVEL + 0.25 or _cliff_at(x, z) > 0.6:
+		# Nothing below the waterline, and nothing clinging to a steep slope.
+		if y < WATER_LEVEL + 0.25:
 			continue
 
 		var spot := Vector3(x, y, z)

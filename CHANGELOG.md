@@ -30,9 +30,10 @@ All notable changes to this project are documented here, following
 
 ### Added
 
-- An island: generated terrain with a real coastline, a beach, a cliff backdrop, water you can wade
-  into, and scattered palms, rocks and grass. Built by `tools/build_island.gd` and baked to a
-  scene; `tools/verify_island.tscn` enforces the composition rules combat depends on.
+- An island: generated terrain with a real coastline, a beach, gentle inland relief, water you can
+  wade into, and scattered palms, rocks and grass. Built by `tools/build_island.gd` and baked to a
+  scene; `tools/verify_island.tscn` enforces the composition rules combat depends on — including a
+  height ceiling, because a fixed camera cannot look around a wall.
 - `tools/screenshot.gd` — two looks at the arena as PNGs, because judging a world by reading its
   generator does not work.
 
