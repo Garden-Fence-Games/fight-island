@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo/fight_island_logo_1.svg" alt="Fight Island" width="240">
+</p>
+
 # Fight Island
 
 > Land alone on an island. Survive the waves. You get three things to fight with — and what
