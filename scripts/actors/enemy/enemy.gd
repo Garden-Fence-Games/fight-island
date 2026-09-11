@@ -80,8 +80,11 @@ func separation() -> Vector3:
 
 func apply_motion(direction: Vector3, speed: float, delta: float) -> void:
 	var steered := (direction + separation()).limit_length(1.0)
-	velocity.x = steered.x * speed
-	velocity.z = steered.z * speed
+	# Enemies pay the same toll as the player, so backing into the shallows is a real choice
+	# rather than a free escape.
+	var wading := Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH)
+	velocity.x = steered.x * speed * wading
+	velocity.z = steered.z * speed * wading
 	velocity.y -= _gravity * delta
 	if is_on_floor() and velocity.y < 0.0:
 		velocity.y = 0.0

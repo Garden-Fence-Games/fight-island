@@ -36,6 +36,11 @@ All notable changes to this project are documented here, following
   height ceiling, because a fixed camera cannot look around a wall.
 - `tools/screenshot.gd` — two looks at the arena as PNGs, because judging a world by reading its
   generator does not work.
+- Water as a shader: depth-graded colour, moving surface, and foam along the whole shoreline,
+  derived from the sea floor behind it rather than authored.
+- Wading slows the player and the enemies, in proportion to depth.
+- Palms and the larger boulders block. Clearance between blocking props is measured as the gap
+  between their surfaces, so the player can always dodge through.
 
 ### Changed
 

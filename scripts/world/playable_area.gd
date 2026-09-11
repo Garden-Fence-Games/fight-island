@@ -7,8 +7,10 @@ extends Node3D
 ## shins, and the sea pushes back. Nothing is ever blocked, so the edge of the world is felt as
 ## the shape of the place.
 
-## How deep the player may wade before being pushed back, measured from the water plane.
-@export var wade_depth: float = 0.45
+## How deep anyone may wade before the sea pushes back, measured from the water plane.
+const WADE_DEPTH: float = 1.1
+
+@export var wade_depth: float = WADE_DEPTH
 @export var push_speed: float = 5.0
 
 var _water_level: float = -1.1
@@ -20,6 +22,7 @@ func _ready() -> void:
 	var water := get_parent().get_node_or_null(^"Water") as Node3D
 	if water != null:
 		_water_level = water.position.y
+	Water.level = _water_level
 
 
 func _physics_process(_delta: float) -> void:

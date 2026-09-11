@@ -50,7 +50,9 @@ const CLEAR_RADIUS: float = 7.0
 ##
 ## The player is 0.7 m across. Twice that leaves room to dodge through rather than merely squeeze.
 const MIN_GAP: float = 1.5
-const PALM_RADIUS: float = 0.34
+## The trunk mesh is 0.16 m across. A collider much wider than that is felt as an invisible ring
+## around every tree, which is exactly what "it blocks far too early" means.
+const PALM_RADIUS: float = 0.2
 ## Rocks smaller than this are stepped over, not walked around, so they neither collide nor count.
 const BLOCKING_ROCK: float = 0.9
 const PALM_COUNT: int = 380
@@ -275,20 +277,22 @@ func _terrain_body(heights: PackedFloat32Array) -> StaticBody3D:
 
 
 func _water() -> MeshInstance3D:
+	# Subdivided, because the shader moves vertices and a two-triangle plane has none to move.
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(2000.0, 2000.0)
+	plane.subdivide_width = 220
+	plane.subdivide_depth = 220
 
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.11, 0.33, 0.46, 0.88)
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.roughness = 0.08
-	material.metallic = 0.35
+	var material := ShaderMaterial.new()
+	material.shader = load("res://assets/shaders/water.gdshader")
 
 	var instance := MeshInstance3D.new()
 	instance.name = "Water"
 	instance.mesh = plane
 	instance.material_override = material
 	instance.position = Vector3(0.0, WATER_LEVEL, 0.0)
+	# The waves push vertices past the mesh's own bounds, so it must not be culled on them.
+	instance.extra_cull_margin = 16384.0
 	return instance
 
 
@@ -302,17 +306,26 @@ func _scatter() -> Node3D:
 	props.name = "Props"
 
 	# Everything that blocks, as (position, radius), so the gap rule sees palms and boulders alike.
+	# `blocking` is what this function places and must build colliders for; `taken` also holds the
+	# authored formations, which are already placed and already have colliders of their own.
 	var blocking: Array = []
+	var taken: Array = []
+	for placement: Array in _formations():
+		var where: Vector3 = placement[0]
+		var size: Vector3 = placement[1]
+		where.y = _height_at(where.x, where.z)
+		taken.append([where, maxf(size.x, size.z) * 0.5])
 
 	var trunks: Array[Transform3D] = []
 	var fronds: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
-		PALM_COUNT, CLEAR_RADIUS, PALM_RADIUS, 3.4, Vector2(0.08, 3.0), 0.0, blocking
+		PALM_COUNT, CLEAR_RADIUS, PALM_RADIUS, 3.4, Vector2(0.08, 3.0), 0.0, taken
 	):
 		var lean := Basis(Vector3.FORWARD, _rng.randf_range(-0.12, 0.12))
 		var height := _rng.randf_range(3.4, 5.2)
 		trunks.append(Transform3D(lean.scaled(Vector3(1.0, height, 1.0)), spot))
 		blocking.append([spot, PALM_RADIUS])
+		taken.append([spot, PALM_RADIUS])
 		var crown := spot + lean * Vector3(0.0, height, 0.0)
 		for blade: int in 6:
 			var turn := Basis(Vector3.UP, TAU * float(blade) / 6.0 + _rng.randf_range(-0.3, 0.3))
@@ -328,15 +341,19 @@ func _scatter() -> Node3D:
 
 	var rocks: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
-		ROCK_COUNT, CLEAR_RADIUS, 0.9, 2.2, Vector2(-0.02, 3.0), 0.0, blocking
+		ROCK_COUNT, CLEAR_RADIUS, 0.9, 2.2, Vector2(-0.02, 3.0), 0.0, taken
 	):
 		var size := _rng.randf_range(0.4, 1.7)
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
 		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(-0.25, 0.25))
 		var wide := size * _rng.randf_range(0.7, 1.3)
 		rocks.append(Transform3D((turn * tilt).scaled(Vector3(size, size * 0.7, wide)), spot))
+		# The rock mesh is perturbed inward as well as outward, so a collider at its full half-width
+		# stops the player well short of the stone they can see.
 		if maxf(size, wide) >= BLOCKING_ROCK:
-			blocking.append([spot, maxf(size, wide) * 0.5])
+			var here := maxf(size, wide) * 0.34
+			blocking.append([spot, here])
+			taken.append([spot, here])
 
 	var tufts: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
@@ -370,7 +387,7 @@ func _colliders(blocking: Array) -> StaticBody3D:
 		shape.height = 4.0
 		var collision := CollisionShape3D.new()
 		collision.shape = shape
-		collision.position = where + Vector3(0.0, 2.0, 0.0)
+		collision.position = where + Vector3(0.0, 1.6, 0.0)
 		body.add_child(collision)
 	return body
 
@@ -589,6 +606,20 @@ func _shift(mesh: ArrayMesh, by: Transform3D) -> ArrayMesh:
 # ------------------------------------------------------------------------------------- authored
 
 
+## The six boulders that are placed rather than scattered. Lifted out so the scatter can keep its
+## distance from them: a palm growing out of a rock formation is the sort of thing only a machine
+## would ever do.
+func _formations() -> Array:
+	return [
+		[Vector3(-34.0, 0.0, -26.0), Vector3(5.0, 5.4, 4.4), 0.4],
+		[Vector3(-44.0, 0.0, -14.0), Vector3(3.4, 3.6, 3.4), 1.1],
+		[Vector3(36.0, 0.0, 30.0), Vector3(4.2, 3.2, 3.8), 2.2],
+		[Vector3(46.0, 0.0, 16.0), Vector3(3.0, 2.4, 3.0), 0.8],
+		[Vector3(-12.0, 0.0, 44.0), Vector3(3.8, 2.8, 3.4), 1.7],
+		[Vector3(20.0, 0.0, -42.0), Vector3(4.4, 4.4, 4.0), 0.2],
+	]
+
+
 ## The handful of things that do collide, placed rather than scattered. They sit at the edge of the
 ## plateau so the fighting core stays clear, which is also why enemies can cross it in a straight
 ## line until the navigation mesh lands.
@@ -602,14 +633,7 @@ func _landmark() -> StaticBody3D:
 	material.albedo_color = ROCK_GREY
 	material.roughness = 1.0
 
-	var placements: Array = [
-		[Vector3(-34.0, 0.0, -26.0), Vector3(5.0, 5.4, 4.4), 0.4],
-		[Vector3(-44.0, 0.0, -14.0), Vector3(3.4, 3.6, 3.4), 1.1],
-		[Vector3(36.0, 0.0, 30.0), Vector3(4.2, 3.2, 3.8), 2.2],
-		[Vector3(46.0, 0.0, 16.0), Vector3(3.0, 2.4, 3.0), 0.8],
-		[Vector3(-12.0, 0.0, 44.0), Vector3(3.8, 2.8, 3.4), 1.7],
-		[Vector3(20.0, 0.0, -42.0), Vector3(4.4, 4.4, 4.0), 0.2],
-	]
+	var placements := _formations()
 	var boulder := _rock_mesh()
 	for placement: Array in placements:
 		var where: Vector3 = placement[0]

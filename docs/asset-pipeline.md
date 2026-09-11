@@ -58,14 +58,22 @@ Two things it gets right that are easy to get wrong:
 Nothing scattered collides. Getting stuck on a bush is worse than any realism it buys, and it keeps
 the navigation problem to the six authored rock formations.
 
+**The water is a shader, not a blue plane.** A translucent plane reads as a sheet of plastic; what
+says "water" is the shoreline. The depth fade and the foam band both come from comparing the sea
+floor behind the surface with the surface itself, so they follow the coast wherever it goes without
+anything being authored — and they cost nothing to maintain when the coastline changes.
+
 Two more rules the island had to learn the hard way:
 
 - **The edge of the world is never in frame.** The terrain mesh runs to the edge of its grid with no
   clipped ring, the water plane is 1.2 km across, and depth fog closes everything past 55 m. A
   visible boundary is worse than the triangles it would save.
-- **Grass thins toward the middle rather than stopping at a circle.** The fighting space has to stay
-  readable, but a bare disc in the centre of an island reads as a mown lawn — so density fades
-  instead of ending.
+- **Clearings fall where they fall.** There is no reserved arena in the middle: a bare disc dead
+  centre is not something that happens, and it was the single thing that most made the island look
+  composed. Only a seven-metre spawn pad is kept flat and clear.
+- **Clearance is measured as a gap between surfaces, not as a distance between centres.** It is the
+  same question for a palm and for a boulder, it scales with whatever the prop is, and it is what
+  guarantees the player can always dodge through rather than merely squeeze.
 
 ## From the art phase onward: Blender to glTF
 

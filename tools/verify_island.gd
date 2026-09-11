@@ -95,7 +95,9 @@ func _check_obstacles_are_never_a_trap(island: Node) -> void:
 				radius = maxf(box.size.x, box.size.z) * 0.5
 			else:
 				continue
-			var at := collision.global_position if collision.is_inside_tree() else collision.position
+			var at := (
+				collision.global_position if collision.is_inside_tree() else collision.position
+			)
 			blocking.append([Vector2(at.x, at.z), radius])
 
 	for first: int in blocking.size():
@@ -105,12 +107,15 @@ func _check_obstacles_are_never_a_trap(island: Node) -> void:
 			var gap: float = here.distance_to(there) - blocking[first][1] - blocking[second][1]
 			if gap < MIN_GAP:
 				_failures.append(
-					"two blocking props leave a %.1f m gap at %s, the least is %.1f" % [gap, here, MIN_GAP]
+					(
+						"two blocking props leave a %.1f m gap at %s, the least is %.1f"
+						% [gap, here, MIN_GAP]
+					)
 				)
 				return
 
 
-func _check_core_is_flatfunc _check_core_is_flat(island: Node) -> void:
+func _check_core_is_flat(island: Node) -> void:
 	var mesh := (island.get_node("Terrain") as MeshInstance3D).mesh
 	var points: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 	var worst := 0.0
