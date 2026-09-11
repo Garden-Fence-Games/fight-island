@@ -94,3 +94,130 @@ jobs:
             import.log
             run.log
           retention-days: 7
+
+  guard:
+    name: Repository guard rails
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: No generated Godot cache in git
+        run: |
+          if git ls-files -- '.godot' '.godot/*' | grep -q .; then
+            echo "::error::.godot/ is tracked. It is generated cache and it holds export_credentials.cfg."
+            git ls-files -- '.godot' '.godot/*'
+            exit 1
+          fi
+
+      - name: No C# or .NET in the project
+        run: |
+          if git ls-files -- '*.cs' '*.csproj' '*.sln' | grep -q .; then
+            echo "::error::This project is GDScript only. Remove the C#/.NET files."
+            git ls-files -- '*.cs' '*.csproj' '*.sln'
+            exit 1
+          fi
+          if grep -q '^\[dotnet\]' project.godot; then
+            echo "::error::The [dotnet] block was removed from project.godot on purpose."
+            exit 1
+          fi
+
+      - name: Import sidecars stay versioned
+        run: |
+          if git check-ignore -q -- assets/_probe.png.import; then
+            echo "::error::*.import sidecars are ignored. They carry resource UIDs and must be committed."
+            exit 1
+          fi
+          echo "Sidecars are versioned."
+
+      - name: Binary assets go through Git LFS
+        # .gitattributes decides what must be LFS; this checks the blob really is a pointer,
+        # which is what a commit made without `git lfs install` silently gets wrong.
+        run: |
+          failed=0
+          while IFS= read -r -d '' path && IFS= read -r -d '' _attr && IFS= read -r -d '' value; do
+            [ "$value" = "lfs" ] || continue
+            # A pointer is ~130 bytes, so size alone separates it from a real blob.
+            if [ "$(git cat-file -s "HEAD:$path")" -gt 1024 ] \
+              || case "$(git cat-file blob "HEAD:$path")" in
+                   version\ https://git-lfs.github.com/spec/*) false ;;
+                   *) true ;;
+                 esac; then
+              echo "::error file=$path::$path is declared LFS in .gitattributes but was committed as a real blob."
+              failed=1
+            fi
+          done < <(git ls-files -z | git check-attr -z --stdin filter)
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::Run 'git lfs install', then re-add these files."
+            exit 1
+          fi
+          echo "Every LFS-declared file is a pointer."
+
+
+  pr-hygiene:
+    name: Pull request hygiene
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      CONVENTIONAL: '^(art|build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9._-]+\))?!?: [^ ].{0,62}$'
+    steps:
+      - name: Conventional Commits title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if ! printf '%s' "$PR_TITLE" | grep -qE "$CONVENTIONAL"; then
+            echo "::error::PR title is not a Conventional Commit subject: $PR_TITLE"
+            exit 1
+          fi
+
+      - name: Conventional Commits subjects, no trailers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -o pipefail
+          # Merge commits are skipped, and base64 keeps a multi-line message on one line here.
+          gh api --paginate "repos/${{ github.repository }}/pulls/$PR_NUMBER/commits" \
+            --jq '.[] | select((.parents | length) < 2) | [.sha, (.commit.message | @base64)] | @tsv' \
+            > commits.tsv
+          failed=0
+          while IFS=$'\t' read -r sha encoded; do
+            message=$(printf '%s' "$encoded" | base64 -d)
+            subject=$(printf '%s\n' "$message" | head -1)
+            short=${sha:0:8}
+            if ! printf '%s' "$subject" | grep -qE "$CONVENTIONAL"; then
+              echo "::error::$short is not a Conventional Commit subject: $subject"
+              failed=1
+            fi
+            if printf '%s\n' "$message" | grep -qiE '^(Co-authored-by|Signed-off-by):'; then
+              echo "::error::$short carries a trailer. Subject line only, no co-author trailer."
+              failed=1
+            fi
+            if [ "$(printf '%s\n' "$message" | sed '/^[[:space:]]*$/d' | wc -l)" -gt 1 ]; then
+              echo "::warning::$short has a commit body. The convention is a subject line only."
+            fi
+          done < commits.tsv
+          exit $failed
+
+  gate:
+    name: CI gate
+    runs-on: ubuntu-24.04
+    needs: [lint, validate, guard, pr-hygiene]
+    if: always()
+    steps:
+      # The single required check in the ruleset, so adding a job never means editing the ruleset.
+      - name: Every job must have succeeded
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS"
+          bad=$(printf '%s' "$NEEDS" | jq -r 'to_entries
+            | map(select(.value.result != "success" and .value.result != "skipped") | .key)
+            | join(", ")')
+          if [ -n "$bad" ]; then
+            echo "::error::These jobs did not succeed: $bad"
+            exit 1
+          fi
+          echo "CI gate green."
