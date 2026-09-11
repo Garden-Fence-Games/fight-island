@@ -2,6 +2,9 @@ class_name PlayerAttack
 extends PlayerState
 ## Windup, active frames, recovery - and the chain window that opens with the recovery. One state
 ## drives all nine attacks; which one is playing is data, not a branch.
+##
+## The facing is taken once, on entry, and never again: a swing that can be steered mid-animation
+## is a swing with no commitment, and commitment is the only thing making a windup cost anything.
 
 enum Phase { WINDUP, ACTIVE, RECOVERY }
 
@@ -27,7 +30,7 @@ func enter(message: Dictionary) -> void:
 	_elapsed = 0.0
 	_landed = false
 	player.close_chain()
-	player.snap_to_face(player.move_direction())
+	player.snap_to_face(player.look_direction(player.move_direction()))
 	if player.hitbox != null and not player.hitbox.landed.is_connected(_on_landed):
 		player.hitbox.landed.connect(_on_landed)
 

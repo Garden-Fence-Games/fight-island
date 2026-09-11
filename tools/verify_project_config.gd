@@ -7,6 +7,10 @@ const REQUIRED_ACTIONS: PackedStringArray = [
 	"move_back",
 	"move_left",
 	"move_right",
+	"aim_left",
+	"aim_right",
+	"aim_up",
+	"aim_down",
 	"camera_zoom_in",
 	"camera_zoom_out",
 	"attack",
@@ -48,8 +52,14 @@ const GAMEPAD_EXEMPT: PackedStringArray = [
 	"debug_give_money",
 ]
 
+## The mouse aims by where it *is*, not by an action — there is no key that means "look north-east".
+## So the four aim actions are the stick's alone, and the cursor covers the other device.
 const KEYBOARD_EXEMPT: PackedStringArray = [
 	"weapon_prev",
+	"aim_left",
+	"aim_right",
+	"aim_up",
+	"aim_down",
 ]
 
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/player/player.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -15,6 +15,7 @@
 [ext_resource type="Script" path="res://scripts/actors/player/states/player_hurt.gd" id="13"]
 [ext_resource type="Script" path="res://scripts/actors/player/states/player_dead.gd" id="14"]
 [ext_resource type="Resource" path="res://data/weapons/fists.tres" id="15"]
+[ext_resource type="Script" path="res://scripts/components/aim_component.gd" id="16"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
 height = 1.8
@@ -65,6 +66,9 @@ max_stamina = 100.0
 regen_per_second = 20.0
 regen_delay = 0.8
 whiff_delay = 1.2
+
+[node name="Aim" type="Node" parent="."]
+script = ExtResource("16")
 
 [node name="Hurtbox" type="Area3D" parent="."]
 collision_layer = 32

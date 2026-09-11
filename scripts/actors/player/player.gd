@@ -27,6 +27,7 @@ var _gravity: float = 9.8
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var machine: StateMachine = $StateMachine
 @onready var mesh: MeshInstance3D = $Body
+@onready var aim: AimComponent = $Aim
 
 
 func _ready() -> void:
@@ -68,6 +69,14 @@ func move_direction() -> Vector3:
 	var forward := Vector3(-basis.z.x, 0.0, -basis.z.z).normalized()
 	var right := Vector3(basis.x.x, 0.0, basis.x.z).normalized()
 	return (right * input.x - forward * input.y).limit_length(1.0)
+
+
+## Where the body should be pointing: at what the player is aiming when they are aiming, and along
+## their movement otherwise. Aiming returns ZERO when it is idle, so a pad player who never touches
+## the right stick gets exactly the facing the game had before it existed.
+func look_direction(movement: Vector3) -> Vector3:
+	var aimed := aim.direction() if aim != null else Vector3.ZERO
+	return aimed if not aimed.is_zero_approx() else movement
 
 
 func apply_motion(direction: Vector3, speed: float, delta: float) -> void:
