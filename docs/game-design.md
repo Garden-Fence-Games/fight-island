@@ -303,13 +303,13 @@ rotation. 12–15 are an endurance test of the defensive kit.
 
 ## The day and the night
 
-**A wave is one turn of the day.** It opens at seven in the morning, the sun goes down partway
+**A wave is one turn of the day.** It opens at first light, the sun climbs, goes down partway
 through, and the player finishes it in the dark. Survive the night and the wave is passed — a
 banner says so, and the next wave begins at daybreak.
 
 ```
-Day 2:45  →  Dusk 0:30  →  Night 2:45      = six minutes, one wave
-07:00        19:00         21:00           → back to 07:00
+Dawn 0:30  →  Day 2:15  →  Dusk 0:30  →  Night 2:45    = six minutes, one wave
+07:00         09:00        18:00         19:00          → back to 07:00
 ```
 
 This is what makes a wave a **ramp the player can see coming** rather than a flat block of
@@ -317,14 +317,25 @@ difficulty. They are not told the wave is about to get harder; the light tells t
 
 ### What night changes
 
-| | Day | Dusk | Night |
-|---|---|---|---|
-| Opens at | 07:00 | 19:00 | 21:00 |
-| Lasts | 2:45 | 0:30 | 2:45 |
-| Damage | ×1.00 | ×1.10 | ×1.25 |
-| Telegraph | ×1.00 | ×0.95 | ×0.88 |
-| Rousing carries | ×1.0 | ×1.4 | ×2.0 |
-| Melee attack tokens | 2 | 2 | 3 |
+| | Dawn | Day | Dusk | Night |
+|---|---|---|---|---|
+| Opens at | 07:00 | 09:00 | 18:00 | 19:00 |
+| Lasts | 0:30 | 2:15 | 0:30 | 2:45 |
+| Damage | ×1.00 | ×1.00 | ×1.10 | ×1.25 |
+| Telegraph | ×1.00 | ×1.00 | ×0.95 | ×0.88 |
+| Rousing carries | ×1.0 | ×1.0 | ×1.4 | ×2.0 |
+| Melee attack tokens | 2 | 2 | 2 | 3 |
+
+**Dawn carries the day's rules on purpose.** It is thirty seconds taken off the day, not added to
+the wave, and every rule in its column is the day's — so the ramp, the economy and how long a wave
+lasts are exactly what they were before there was a dawn. What it buys is the read: a player who
+starts in low orange light and watches the sun climb has been shown the shape of the turn before
+the first thing in it tries to kill them.
+
+**The turn only ever gets meaner, in that order.** Damage and rousing never fall from one phase to
+the next, the telegraph never lengthens, and the token pool never shrinks. A phase added for its
+look has to sit where its rules already belong — and no single number in this table looks wrong on
+the way to breaking that.
 
 **Damage and telegraph are fixed when a farmer arrives**, not looked up when he swings. A farmer who
 walked on in daylight stays a daylight farmer for the rest of his life; nightfall changes who
@@ -357,9 +368,9 @@ not the forty minutes this document used to assume. The wave length is one numbe
 
 ### The clock and the sky
 
-The HUD shows the hour. It is exact at every phase boundary — 07:00 when the wave starts, 19:00
-when the sun starts going down, 21:00 when night falls — so the face and the sky never disagree
-about the moment the rules changed.
+The HUD shows the hour. It is exact at every phase boundary — 07:00 when the wave starts, 09:00
+when the sun is properly up, 18:00 when it starts going down, 19:00 when night falls — so the face
+and the sky never disagree about the moment the rules changed.
 
 Each phase holds its look for three quarters of its span and turns into the next across the last
 quarter, which is where the sunset lives.

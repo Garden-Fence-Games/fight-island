@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"night"
 display_name = "PHASE_NIGHT"
-starts_at_hour = 21.0
+starts_at_hour = 19.0
 seconds = 165.0
 damage_scale = 1.25
 windup_scale = 0.88

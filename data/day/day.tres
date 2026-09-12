@@ -6,8 +6,8 @@
 script = ExtResource("1")
 id = &"day"
 display_name = "PHASE_DAY"
-starts_at_hour = 7.0
-seconds = 165.0
+starts_at_hour = 9.0
+seconds = 135.0
 damage_scale = 1.00
 windup_scale = 1.00
 rouse_scale = 1.00
