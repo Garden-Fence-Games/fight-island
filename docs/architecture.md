@@ -491,6 +491,34 @@ time; the island only has to be composed for one viewpoint; and a telegraph can 
 geometry because the player happened to have turned the camera. The cost is that the arena must be
 authored so nothing important sits in the one blind direction.
 
+### Height does not help visibility here. It hurts it.
+
+Worth writing down because it is backwards from every intuition about landmarks, and because it
+closed a bullet on #39 by making it impossible rather than by satisfying it.
+
+At −50° the frustum's **top** edge still points downward, so the camera sees a bounded patch of
+ground and nothing above it. A point measured against the real frustum, up-screen from the player:
+
+| up-screen | at zoom 17 (default) | at zoom 24 (furthest) |
+|---|---|---|
+| 10 m | 3 m and 6 m high are in frame, 10 m is not | 3, 6 and 10 m in frame |
+| 20 m | nothing at any height | 3 m and 6 m in frame |
+| 30 m | nothing at any height | 3 m in frame |
+| 40 m and beyond | nothing at any height | nothing at any height |
+
+So **the taller a thing is, the sooner it leaves the frame** — a thirty-metre spire is invisible at
+every distance, while a low rock thirty metres away is in shot at full zoom. A distant landmark on
+the horizon, which is how a game normally lets a player take a bearing, cannot exist under this
+camera at all.
+
+It also does not need to. A camera that never turns means **up-screen is always the same world
+direction**, so facing is never in question — the compass is nailed to the screen. What is left is
+knowing *where on the island* you are, and that is answered by scenery you walk past: the camp, the
+six formations, the shape of the coast.
+
+The practical rule for anyone placing props: nothing above about 6 m earns its height in
+legibility, and past 10 m it is scenery for the vista camera and nothing else.
+
 ### The emphasis budget
 
 `scripts/systems/emphasis.gd` is the one table that decides how loud anything in a fight is allowed
