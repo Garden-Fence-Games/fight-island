@@ -306,6 +306,25 @@ an attack takes its facing once, on entry, so a swing cannot be steered mid-anim
 goes where the stick or the keys say, rolling *away* from the aim when there is no movement input
 at all, because rolling into what you are shooting at is not what the button means.
 
+### Who does the pointing, once there is a rig
+
+The aim is one question with two answers, split the day the capsule became a character:
+
+- **While walking or standing, the body faces where it travels** — `Player.locomotion_facing`. A
+  body free to point at the cursor while travelling elsewhere plays a forward stride sideways, and
+  with one `walk` clip that is a moonwalk. This is also why there are no strafe clips yet: a
+  character who always walks the way he faces never needs one.
+- **The head carries the aim**, up to the neck's 55°. That is the whole of `HeadLookComponent`.
+- **Standing still, the body takes the remainder.** Past the neck's limit it turns just far enough
+  to bring the aim back inside the head's reach and stops, so a player can face anything without the
+  body ever swinging round for a few degrees of cursor movement.
+- **Attacks and dodges do not come through any of this.** A swing snaps to the aim in full, on
+  entry: what you point at is what you hit.
+
+The consequence to keep in view: while *moving*, an aim more than 55° off the direction of travel is
+not fully expressed. Closing that gap is what strafe clips and a torso split buy, and neither is
+worth building before the gun makes shooting-while-moving a real decision.
+
 ## The chain lockout
 
 Where it lives is the interesting part. The clock is on `Player`, beside the chain bookkeeping, for
