@@ -6,6 +6,18 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **A credits screen the player can reach**, from a discreet line beside the version number on the
+  title. It is an overlay like the options screen, scrolls on the stick and the arrows, and back
+  returns exactly one level.
+- **The screen is generated, not written.** `docs/credits.md` stays the list;
+  `tools/build_credits.gd` bakes it into `data/credits.tres`; `tools/verify_credits.tscn` fails the
+  build if the document and the resource have come apart, or if a baked row never reaches a label.
+  Adding an asset is a row in the document and a rebuild — nobody edits a scene for it. A second
+  hand-kept copy of an attribution list goes wrong in exactly one direction, which is by leaving
+  somebody out.
+
 ### Fixed
 
 - **A weapon is no longer dropped where the player cannot see it.** `PickupDirector` asked the

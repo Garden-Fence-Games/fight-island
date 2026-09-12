@@ -97,6 +97,15 @@ godot --headless --path . res://tools/verify_island.tscn
 godot --headless --path . res://tools/verify_playfield.tscn
 ```
 
+`tools/build_credits.gd` is the other generator, and it reads a document rather than a seed: it bakes
+`data/credits.tres` from the tables in [credits.md](credits.md), which is what the credits screen
+shows. Re-run it after adding a row, or `tools/verify_credits.tscn` will say so.
+
+```
+godot --headless --path . --script tools/build_credits.gd
+godot --headless --path . res://tools/verify_credits.tscn
+```
+
 **The playfield is authored, the decoration is scattered.** The flat fighting core, the six rock
 formations and the five huts are placed by constants chosen for one fixed camera angle. Palms, rocks
 and grass are scattered from a seed and **baked into the scene** — deterministic, reviewable in a

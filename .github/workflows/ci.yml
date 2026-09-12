@@ -165,6 +165,13 @@ jobs:
       - name: Verify the device-aware glyphs
         run: tools/run-check.sh res://tools/verify_glyphs.tscn
 
+      # CC0 asks for nothing, but a credit the player cannot reach is an intention rather than an
+      # attribution. Two ways this quietly stops being true — a row added to the document and never
+      # baked, or a row baked and never drawn — and both fail in the same direction, by leaving
+      # somebody out.
+      - name: Verify the credits
+        run: tools/run-check.sh res://tools/verify_credits.tscn
+
       # The stick's 120° arc is a number in a .tres and the sweep it produces is geometry: the only
       # way to know the two still agree is to stand two farmers inside one swing. The gun's half is
       # about *when* it runs dry, which is designed rather than emergent.
