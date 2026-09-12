@@ -62,9 +62,12 @@ func _check_nothing_aims_until_something_is_touched() -> void:
 	await get_tree().physics_frame
 
 
-## The whole point of splitting facing from movement is that the two stay split. The keys move the
-## body; the aim only turns it. If walking ever starts following the cursor, the player loses the
-## one thing this feature was for — backing away from something while still pointing at it.
+## The keys move the body and the cursor must never steer where it travels — backing away from
+## something while still pointing at it is the one thing this feature was for.
+##
+## What changed with the rig is *which part* does the pointing. The body now faces where it walks,
+## because a body pointing anywhere else plays a forward stride sideways; the head carries the aim
+## instead, and `tools/verify_head_look.tscn` owns that half.
 func _check_the_keys_still_move_the_body() -> void:
 	_reset()
 	_player.rotation.y = 0.0
@@ -82,17 +85,40 @@ func _check_the_keys_still_move_the_body() -> void:
 	# Camera-relative, exactly as it was before aiming existed: W is away from the viewer.
 	if travelled.normalized().dot(_screen_forward()) < 0.9:
 		_fail("holding W should walk away from the camera, walked %s" % travelled.normalized())
-	if travelled.normalized().dot(facing) > 0.9:
-		_fail("walking should not follow the facing — the two have to stay independent")
+	# The moonwalk guard, and the inversion of what this line used to assert: the stride is authored
+	# going forward, so the body has to be pointing where it travels for it to read as walking.
+	if travelled.normalized().dot(facing) < 0.9:
+		_fail("walking should face where it travels, or the forward stride plays sideways")
 	await get_tree().physics_frame
 
 
+## The division of labour changed when the rig got a head: **the body no longer points at the aim,
+## the head does**, up to the neck's limit. A body that turned to the cursor while walking elsewhere
+## played a forward stride sideways, and with one `walk` clip that is a moonwalk.
+##
+## What the body still owes is the remainder. Standing still, it turns until the aim is back inside
+## the head's reach — so a player can face anything — and stops there. `verify_head_look.tscn` owns
+## the other half of the promise.
 func _check_the_stick_turns_the_body() -> void:
 	_reset()
+	_player.snap_to_face(_screen_forward())
+	# The stick is camera-relative, so "right on the stick" is the camera's right, not world +X.
 	_push_stick(Vector2(1.0, 0.0))
 	await _advance(SETTLE)
-	# The stick is camera-relative, so "right on the stick" is the camera's right, not world +X.
-	_expect_facing(_screen_right(), "the stick should turn the body")
+	var limit := 0.0
+	if _player.head_look != null:
+		limit = deg_to_rad(_player.head_look.limit_degrees)
+	var facing := -_player.global_transform.basis.z
+	var off := absf(facing.signed_angle_to(_screen_right(), Vector3.UP))
+	if off > limit + CLOSE_ENOUGH:
+		_fail(
+			(
+				"the stick should bring the aim inside the head's %.0f° reach, it is %.0f° away"
+				% [rad_to_deg(limit), rad_to_deg(off)]
+			)
+		)
+	if off < deg_to_rad(5.0):
+		_fail("the body turned the whole way to the aim — that is the head's share now")
 
 
 ## A pad player who never touches the right stick has to get the game that shipped before aiming
@@ -150,9 +176,12 @@ func _check_an_attack_commits_to_its_facing() -> void:
 	_reset()
 	_push_stick(Vector2(1.0, 0.0))
 	await _advance(SETTLE)
-	var committed := _player.rotation.y
 	_player.machine.current.transition_to(&"Attack", {"index": 0, "perfect": false})
 	await get_tree().physics_frame
+	# Read after the swing has entered, not before: entering is exactly when an attack takes the aim
+	# in full, which is a bigger turn than before now that walking around leaves the body short of it.
+	# The guarantee is that nothing steers the swing *after* that, which is what the rest measures.
+	var committed := _player.rotation.y
 	_push_stick(Vector2(-1.0, 0.0))
 	await _advance(0.2)
 	if _player.machine.current_name != &"Attack":

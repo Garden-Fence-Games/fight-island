@@ -38,6 +38,7 @@ var _gravity: float = 9.8
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var machine: StateMachine = $StateMachine
 @onready var aim: AimComponent = $Aim
+@onready var head_look: HeadLookComponent = get_node_or_null("HeadLook") as HeadLookComponent
 
 
 func _ready() -> void:
@@ -95,6 +96,30 @@ func move_direction() -> Vector3:
 func look_direction(movement: Vector3) -> Vector3:
 	var aimed := aim.direction() if aim != null else Vector3.ZERO
 	return aimed if not aimed.is_zero_approx() else movement
+
+
+## Where the body should point while it is only walking or standing: along its own movement, never
+## at the aim. The head carries the aim now, and a body that turned to the cursor while travelling
+## somewhere else would play a forward stride sideways — the moonwalk that having one `walk` clip
+## and a free-turning body produces.
+##
+## **Standing still is the exception.** The neck stops at its limit, so an aim further round than
+## that would leave the player looking over one shoulder with no way to ever face it. The body then
+## turns just far enough to bring the aim back inside the head's reach, and not one degree further.
+## Attacks and dodges do not come through here: a swing commits to the aim itself, in full.
+func locomotion_facing(movement: Vector3) -> Vector3:
+	if not movement.is_zero_approx():
+		return movement
+	var aimed := aim.direction() if aim != null else Vector3.ZERO
+	if aimed.is_zero_approx() or head_look == null:
+		return Vector3.ZERO
+	var wanted := atan2(-aimed.x, -aimed.z)
+	var offset := angle_difference(rotation.y, wanted)
+	var limit := deg_to_rad(head_look.limit_degrees)
+	if absf(offset) <= limit:
+		return Vector3.ZERO
+	var target := wanted - signf(offset) * limit
+	return Vector3(-sin(target), 0.0, -cos(target))
 
 
 func apply_motion(direction: Vector3, speed: float, delta: float) -> void:
