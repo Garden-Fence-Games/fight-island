@@ -8,6 +8,16 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **Somebody lived on this island before it was an arena.** Five wooden huts stand off the fighting
+  core — three of them still standing on their stilts under a plank roof, two collapsed to the bare
+  post frame with their planking on the sand around them. They are placed rather than scattered,
+  they block, and a standing one fades out of the way of the camera exactly as a boulder does; a
+  wreck is a metre high and see-through, so it never fades and never hides a fight.
+- Four CC0 models out of Kenney's Survival Kit in `assets/models/camp/`, and `wood` / `woodDark` in
+  the island's palette — the pack is the Nature Kit's companion, on the same tile and in the same
+  untextured, named-part form the generator already recolours.
+- `verify_island` now checks that no hut stands in the surf, and that everything in the camera's
+  fade group is wearing a material that can actually fade.
 - **The stick and the gun.** Six attacks to the table in `docs/game-design.md`: the stick's 120°
   sweep reaches two bodies at once, which is the whole reason it exists and the answer to the
   reaper; the gun is hitscan, rationed by a magazine of six and a reserve that **only grows between
