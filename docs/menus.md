@@ -156,9 +156,15 @@ will set it and believe they are covered.
 
 ### Controls
 
-Full rebinding of every action, both devices, rebuilt into the `InputMap` at boot. Plus mouse
-sensitivity (in degrees per 100 pixels, so it survives a resolution change), stick sensitivity, and
-invert Y.
+Full rebinding of every action, both devices, rebuilt into the `InputMap` at boot. **And nothing
+else**, which is a decision rather than an omission.
+
+Mouse sensitivity, stick sensitivity and invert Y were listed here and shipped as three rows that
+moved nothing. They were written for a camera that can be turned, and this one cannot be — the yaw
+and the pitch are constants on `CameraRig`, the mouse aims by where the cursor lands on the ground
+and the stick by the direction it points. There is no look delta to scale and no pitch to invert,
+so there was never anything for the three of them to reach. A slider that persists and changes
+nothing is worse than a missing one: a player who needs it sets it and believes they are covered.
 
 **One row rebinds both devices**, and the device the player presses with decides which column
 changes. Escape cancels the capture rather than binding to it — it costs the ability to put an
