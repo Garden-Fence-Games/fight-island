@@ -41,7 +41,7 @@ script = ExtResource("3")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 
 [node name="Spring" type="SpringArm3D" parent="CameraRig/PitchPivot"]
-spring_length = 10.0
+spring_length = 17.0
 collision_mask = 0
 
 [node name="Camera" type="Camera3D" parent="CameraRig/PitchPivot/Spring"]

@@ -10,8 +10,15 @@ extends Node
 const ARENA: String = "res://scenes/world/arena.tscn"
 ## Long enough for a fade to travel its whole range at FADE_SPEED, with room to spare.
 const PATIENCE: float = 1.2
-## Where along the line from the player to the camera the test parks an occluder.
-const HALFWAY: float = 0.5
+## How far in front of the boulder the body stands, measured on the ground rather than along the
+## line to the camera. Halfway along that line used to be the answer, and it tied this check to the
+## camera's distance without saying so: at seventeen metres the halfway point lands under the sea,
+## the snap to walkable ground pulls it sideways, and the boulder is no longer between anything.
+## Four metres is close enough that the ground under it is the ground that was asked for.
+const JUST_IN_FRONT: float = 4.0
+## How far the snap to walkable ground may move the body before the test has stopped testing what it
+## says it tests. A silent mis-placement passes the fade check by never occluding anything.
+const CLOSE_ENOUGH: float = 1.5
 ## The most an occluder may fade and still be stone rather than a hole. Written out rather than read
 ## off OcclusionFader: a check that takes its bound from the class it is checking agrees with
 ## whatever that class says, and a fade of 1.0 — invisible — passed it until this was written out.
@@ -84,7 +91,20 @@ func _check_a_boulder_in_the_way_fades_and_comes_back() -> void:
 	var centres := _fader.centres()
 	if centres.is_empty():
 		return
-	await _stand_at(centres[0] - _camera_offset * HALFWAY)
+	var toward_camera := Vector3(_camera_offset.x, 0.0, _camera_offset.z).normalized()
+	var wanted := centres[0] - toward_camera * JUST_IN_FRONT
+	await _stand_at(wanted)
+	if _adrift(wanted) > CLOSE_ENOUGH:
+		_fail(
+			(
+				(
+					"the body was put %.1f m from where the boulder needed it — there is no walkable"
+					+ " ground in front of that rock, so nothing was ever between it and the camera"
+				)
+				% _adrift(wanted)
+			)
+		)
+		return
 	var faded := _fader.fades()[0]
 	if faded <= 0.0:
 		_fail("a boulder standing between the camera and the player did not fade")
@@ -112,6 +132,13 @@ func _check_the_palms_are_left_alone() -> void:
 
 ## Puts the body down and lets the rig catch up — it follows through a smooth, so the eye is not
 ## where the test wants it until a few frames have passed.
+## How far the ground snap moved the body, on the flat. Height is the ground's to decide.
+func _adrift(wanted: Vector3) -> float:
+	var offset := _player.global_position - wanted
+	offset.y = 0.0
+	return offset.length()
+
+
 func _stand_at(where: Vector3) -> void:
 	_player.global_position = Ground.closest_point(_player.get_world_3d(), where)
 	_player.velocity = Vector3.ZERO
