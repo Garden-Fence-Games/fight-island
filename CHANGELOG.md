@@ -8,6 +8,20 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **Every glyph on screen names the device in hand.** A menu row and a tutorial prompt each name an
+  *action*, never a key, and `Devices` answers with what that action is bound to on the keyboard or
+  the pad — swapping the instant the player picks up a controller, and following a rebind
+  everywhere it is shown. A pad player never reads the word "mouse".
+- `EventBus.input_device_changed` and `EventBus.bindings_changed`.
+- `TutorialStep.prompt_actions`: the movement lesson names all four of its actions and the glyph
+  deduplicates them — `W A S D` on a keyboard, one `L-STICK` on a pad, because a stick is one thing
+  to the player even though the engine reports it as four half-axes.
+- `tools/verify_glyphs.tscn` — headless proof that the badge follows the hand and the hand follows
+  the binding: a controller picked up changes the title's Quit row from `ESC` to `B` without
+  anything being reopened, no prompt names hardware the player is not holding, and every action a
+  screen names has a glyph on both devices — a list gathered from the menus and the tutorial data
+  rather than typed out, so a row added tomorrow is covered.
+
 - [ADR 0007](docs/decisions/0007-sprint-hold-or-toggle.md) closes the sprint question: hold on a
   keyboard, toggle on a pad, decided **per press** from the device the press arrived on rather than
   from a mode chosen at launch. No behaviour changed — the decision was already shipped, it just

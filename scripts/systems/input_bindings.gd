@@ -93,6 +93,7 @@ static func bind(action: String, event: InputEvent) -> void:
 	_remember_defaults()
 	_replace(action, device, event)
 	_store(action, device, event)
+	EventBus.bindings_changed.emit()
 
 
 ## Puts one device back to what `project.godot` says, for every action at once. A player who has
@@ -107,6 +108,7 @@ static func reset_device(device: Device) -> void:
 			if (stored[action] as Dictionary).is_empty():
 				stored.erase(action)
 	SaveManager.write_json(PATH, stored)
+	EventBus.bindings_changed.emit()
 
 
 ## What the chip on the row says. Empty actions read as a dash rather than as nothing, because a

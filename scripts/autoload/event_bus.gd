@@ -2,6 +2,10 @@ extends Node
 ## Cross-cutting signals only, and no state. Exists so the HUD, audio and telemetry can listen to
 ## combat without anything holding a reference to them. A component talking to its own owner uses
 ## a signal on the component instead.
+##
+## It has one piece of behaviour, and only because it is the one node that sees every event in every
+## scene: it notices which device the player just used and says so. The **answer** is kept by
+## `Devices`, not here, so the no-state rule still holds — this is the noticing, not the knowing.
 
 signal player_damaged(current: float, maximum: float)
 signal player_died
@@ -33,3 +37,14 @@ signal dodge_evaded
 ## The player's state machine moved. Cross-cutting because a sprint, a roll and a death are each
 ## something audio and the tutorial want to know about without holding the player.
 signal player_state_changed(state: StringName)
+## The hand moved from the keyboard to the pad or back. Everything that prints a glyph listens, so
+## a player who picks up a controller mid-menu never reads the word "mouse".
+signal input_device_changed(device: int)
+## An action was rebound. Every glyph on screen is now potentially wrong, and this is what tells
+## them — a badge that still says the old key is a badge the player will trust and be wrong.
+signal bindings_changed
+
+
+func _input(event: InputEvent) -> void:
+	if Devices.notice(event):
+		input_device_changed.emit(Devices.last_used())
