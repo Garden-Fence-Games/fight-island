@@ -4,6 +4,9 @@
 
 # NOTE: the per-asset *.import sidecars MUST be committed - they carry resource UIDs.
 
+# gdUnit4 writes a run report next to the project.
+reports/
+
 # Builds
 build/
 export/

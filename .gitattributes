@@ -37,3 +37,8 @@ icon.svg -filter -diff -merge text
 # these (duplicated input actions, renumbered export presets). Force a conflict.
 project.godot      -merge
 export_presets.cfg -merge
+
+# Vendored addons keep their files as plain blobs, LFS included. A test framework's nine icons are
+# a few kilobytes, they travel with whatever version of the addon is checked in, and pushing
+# somebody else's assets through LFS would turn every upgrade of it into pointer churn.
+addons/** -filter

@@ -33,7 +33,9 @@ jobs:
 
       - name: Check formatting and lint
         run: |
-          files=$(git ls-files '*.gd')
+          # addons/ is vendored third-party code. It is not ours to format, and reformatting it
+          # would turn every upgrade of it into a diff nobody can read.
+          files=$(git ls-files '*.gd' | grep -v '^addons/')
           if [ -z "$files" ]; then
             echo "No GDScript files yet - skipping."
             exit 0
@@ -76,6 +78,19 @@ jobs:
 
       - name: Verify input map and physics layers
         run: tools/run-check.sh tools/verify_project_config.gd
+
+      # The pure arithmetic, in a hundred milliseconds, before anything slow gets a chance to run.
+      # These cover the shapes the scene checks cannot: what a curve does at wave two hundred, what
+      # a save file does when the player has edited it, and the composition rule that reads the same
+      # either way round in a diff.
+      #
+      # `--ignoreHeadlessMode` is gdUnit warning that synthesised InputEvents do not travel in a
+      # headless engine. Nothing here touches input — driving real devices is exactly what the scene
+      # checks are for, and `verify_aim.tscn` does it.
+      - name: Run the unit tests
+        run: |
+          godot --headless --path "$GITHUB_WORKSPACE" \
+            -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -a res://tests
 
       # Booting the real game is worth more than parsing files one by one: --script starts no
       # autoloads, so any script touching the EventBus would fail there for the wrong reason.
