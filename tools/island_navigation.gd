@@ -62,7 +62,7 @@ static func bake(
 ) -> NavigationRegion3D:
 	var geometry := NavigationMeshSourceGeometryData3D.new()
 	geometry.add_faces(walkable_faces(heights, side, spacing, wade_limit), Transform3D.IDENTITY)
-	for path: String in ["Props/PropColliders", "RockFormations"]:
+	for path: String in ["Props/PropColliders", "RockFormations", "Huts"]:
 		var body := island.get_node_or_null(NodePath(path))
 		if body == null:
 			printerr("no colliders at " + path + " to keep the navigation mesh out of")

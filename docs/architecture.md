@@ -344,10 +344,13 @@ fixed camera has to actually be fixed.
 The camera never moves, so what stands in front of the player is faded rather than dodged.
 `OcclusionFader` drives it, and three decisions in it are worth keeping.
 
-**Only the six authored boulders.** Palms are not faded — the body reads clearly through a crown of
-fronds, and thinning several hundred trees in and out as someone walks looks stranger than the trees
-did. That is a decision rather than an omission, so `verify_camera` fails if the palms are ever put
-back in the occluder group.
+**Only the six authored boulders and the standing huts.** Palms are not faded — the body reads
+clearly through a crown of fronds, and thinning several hundred trees in and out as someone walks
+looks stranger than the trees did. That is a decision rather than an omission, so `verify_camera`
+fails if the palms are ever put back in the occluder group. A wrecked hut is left out on the same
+grounds: a metre of open post frame never hid anyone, and fading what the player already sees past
+reads as a glitch. `verify_island` fails if anything in the group is wearing a material that cannot
+fade, because `OcclusionFader` skips those silently.
 
 **Plain transparency, not a dissolve.** Six objects in the transparent queue cost nothing. The
 first version dithered pixels away, which is what a `MultiMesh` of several hundred palms would have
