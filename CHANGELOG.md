@@ -8,6 +8,19 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- Options screen: five tabs — gameplay, controls, video, audio, accessibility — reachable from the
+  title and built from one table, so the rows it draws and the settings that exist cannot drift
+  apart. Every setting applies the moment it changes and is written to `user://settings.json`.
+- Full input rebinding, both devices, from one row each: the device the player presses with decides
+  which column changes. Overrides only, stored in `user://bindings.json`, with a reset per device.
+- `OptionRow` and `KeybindRow`, the two rows every settings screen will reuse — a ten-block slider,
+  a pill toggle and a `< value >` picker, all on the same focus chrome.
+- Damage numbers, hitstop, reduce flashing and the sprint mode now read their setting live. Aim
+  assist, tutorial prompts, screen shake and the colourblind telegraphs are stored and waiting for
+  the features that will read them.
+- `menu_prev_tab` and `menu_next_tab` input actions.
+- `tools/verify_options.tscn` — headless proof that every setting has a row, that a row writes
+  through to the file, and that a rebind moves the InputMap and comes back on a reset.
 - In-run HUD: health and stamina bottom-left, ammo bottom-right with a ranged weapon in hand,
   wave and money top-right. Every element listens on the `EventBus` and holds no reference to the
   player. Damage numbers exist and are off by default.
@@ -26,6 +39,12 @@ All notable changes to this project are documented here, following
 - `MenuEntry`, the menu row every screen will reuse: caret, label, and the glyph that fires it.
 - A shared UI theme under `assets/themes/` carrying the design tokens, the `UI_` string table in
   `assets/locale/ui.csv`, and Badeen Display and Inter under `assets/fonts/`.
+
+### Fixed
+
+- A cold checkout failed to import: `project.godot` lists a translation file the CSV importer has
+  not written yet. CI now imports twice and gates on the second pass, which also proves a cold
+  import converges rather than merely surviving.
 - `menu_options` and `menu_new_run` input actions, so the glyphs the menu prints are real.
 - Playable prototype: a grey-box arena, a player who moves, sprints, dodges and parries, the
   three-attack fist chain with its chain and perfect windows, and farmhands that close the

@@ -27,6 +27,8 @@ const REQUIRED_ACTIONS: PackedStringArray = [
 	"pause",
 	"menu_options",
 	"menu_new_run",
+	"menu_prev_tab",
+	"menu_next_tab",
 	"debug_overlay",
 	"debug_skip_wave",
 	"debug_give_money",
