@@ -235,6 +235,40 @@ Named as a past-tense fact, never as a command and never `on_*`:
 **The rule:** a component talking to its owner uses a direct signal on the component. The
 `EventBus` is only for cross-cutting listeners — HUD, audio, telemetry.
 
+## Drawing the island
+
+The decoration is scattered from a seed and baked into the scene, and until recently it was baked as
+**four `MultiMesh` batches, one per population**. A `MultiMesh` is culled as a single object against
+a single bounding box, so a population that spans the island has a box that spans the island —
+something in it is always on screen, and none of it is ever discarded. Twelve thousand tufts of
+grass were submitted every frame to draw the handful in shot.
+
+`IslandScatter` splits each population across a **24 m grid**, one batch per occupied cell, sharing
+one mesh and one material between them. The camera keeps the cells it can see. Two further calls,
+both of which are judgements about what a thing is rather than tuning:
+
+- **Grass and pebbles fade out** at 55 m and 70 m. They are a few pixels each past that. Palms and
+  rocks have no range at all — they are silhouettes, and the island reading as an island depends on
+  them.
+- **Grass and pebbles cast no shadow.** The shadow pass draws the whole island, frustum or not, so
+  scatter that is invisible in shadow is paid for twice for nothing.
+
+Measured from the game's own camera at 1080p, on the island as it ships:
+
+| | objects | primitives | draw calls |
+|---|---|---|---|
+| One batch per population, everything casting shadows | 114 | 4 478 154 | 114 |
+| Chunked, grass and pebbles faded and out of the shadow pass | 162 | **1 796 286** | 162 |
+
+**Draw calls rose on purpose.** A draw call is cheap and two and a half million submitted primitives
+are not; the trade is the whole point.
+
+`tools/measure_draw.tscn` is that measurement, repeatable. It **needs a window** — the headless
+renderer is a dummy that draws nothing and reports nothing, so every figure would be nought there.
+That is why `verify_island` asserts the *shape* that makes culling possible instead: every
+population is more than one batch, and no chunk is wider than the grid plus the widest thing
+standing in it. A population shipped as one batch fails, which is the state this started in.
+
 ## Effects
 
 `EffectPool` sits in the arena and is found by group, because effects are asked for from states,

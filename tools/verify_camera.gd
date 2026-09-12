@@ -120,14 +120,27 @@ func _check_a_boulder_in_the_way_fades_and_comes_back() -> void:
 ## thinning several hundred trees in and out as someone walks looks stranger than the trees did.
 ## Written down as a check so it is a decision rather than an omission somebody later "fixes".
 func _check_the_palms_are_left_alone() -> void:
-	var palms := _arena.get_node_or_null("Island/Props/Palms") as MultiMeshInstance3D
-	if palms == null:
+	var population := _arena.get_node_or_null("Island/Props/Palms")
+	if population == null:
 		_fail("the island has no palms")
 		return
-	if palms.is_in_group(&"occluder"):
-		_fail("the palms are being faded, and they are meant not to be")
-	if palms.multimesh.use_custom_data:
-		_fail("the palms carry a per-instance fade slot nothing writes to")
+	# The scatter is chunked so the camera can cull it, so this walks every batch: one cell put back
+	# into the occluder group would be one corner of the island thinning in and out, and checking
+	# only the first would never see it.
+	var batches := 0
+	for child: Node in population.get_children():
+		var palms := child as MultiMeshInstance3D
+		if palms == null or palms.multimesh == null:
+			continue
+		batches += 1
+		if palms.is_in_group(&"occluder"):
+			_fail("the palms are being faded, and they are meant not to be")
+			return
+		if palms.multimesh.use_custom_data:
+			_fail("the palms carry a per-instance fade slot nothing writes to")
+			return
+	if batches == 0:
+		_fail("the island has no palms")
 
 
 ## Puts the body down and lets the rig catch up — it follows through a smooth, so the eye is not

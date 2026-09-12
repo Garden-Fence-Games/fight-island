@@ -33,6 +33,12 @@ const PLACED: PackedStringArray = ["RockFormations", "Huts"]
 ## a swaying boulder is worse than a still palm.
 const FOLIAGE: PackedStringArray = ["Grass", "Palms"]
 const STILL: PackedStringArray = ["Rocks", "Pebbles"]
+## Every scattered population, all of which have to be splittable.
+const SCATTERED: PackedStringArray = ["Grass", "Pebbles", "Palms", "Rocks"]
+## How wide a chunk may be. The generator cuts on a 24 m grid and a model hangs over the edge of its
+## own cell, so this is that grid with room for the widest thing standing in it. Written out rather
+## than read from the generator, which would make this agree with any grid anybody sets.
+const WIDEST_CHUNK: float = 34.0
 const FOLIAGE_SHADER: String = "res://assets/shaders/foliage.gdshader"
 ## The figures a palm's surfaces are allowed to set for themselves — how it is coloured, whether by
 ## a tint or by its own painted texture, and how far a leaf flexes. **Every wind figure falls
@@ -73,6 +79,7 @@ func _ready() -> void:
 	_check_the_palms_share_one_wind(island)
 	_check_a_palm_is_still_two_colours(island)
 	_check_the_palms_are_the_size_of_palms(island)
+	_check_the_scatter_is_split_so_it_can_be_culled(island)
 	_check_no_water_stands_inland(island)
 	_check_the_sand_clears_the_swell()
 	_check_the_huts_are_out_of_the_sea(island)
@@ -83,7 +90,8 @@ func _ready() -> void:
 			(
 				"island OK — clear core, no traps, flat core, nothing walls the camera, "
 				+ "boundary in place, the wind reaches what grows, no water stands inland, "
-				+ "the huts are on dry land and everything the camera fades can fade"
+				+ "the huts are on dry land, the scatter is split so it can be culled, and "
+				+ "everything the camera fades can fade"
 			)
 		)
 		get_tree().quit(0)
@@ -95,23 +103,26 @@ func _ready() -> void:
 
 func _check_core_is_clear(island: Node) -> void:
 	for node: Node in island.get_node("Props").get_children():
-		var instance := node as MultiMeshInstance3D
-		if instance == null or HARMLESS.has(String(instance.name)):
+		if HARMLESS.has(String(node.name)):
 			continue
-		# Read the buffer rather than get_instance_transform: on the dummy renderer the getter
-		# returns identity for every instance, which would make this check silently pass.
-		var buffer := instance.multimesh.buffer
-		var stride := _stride(instance.multimesh)
-		if buffer.size() != instance.multimesh.instance_count * stride:
-			_failures.append("%s has no instance data" % instance.name)
-			continue
-		for index: int in instance.multimesh.instance_count:
-			var where := Vector2(buffer[index * stride + 3], buffer[index * stride + 11])
-			if where.length() < SPAWN_RADIUS:
-				_failures.append(
-					"%s has an instance %.1f m from the centre" % [instance.name, where.length()]
-				)
-				break
+		for instance: MultiMeshInstance3D in _batches(island, String(node.name)):
+			# Read the buffer rather than get_instance_transform: on the dummy renderer the getter
+			# returns identity for every instance, which would make this check silently pass.
+			var buffer := instance.multimesh.buffer
+			var stride := _stride(instance.multimesh)
+			if buffer.size() != instance.multimesh.instance_count * stride:
+				_failures.append("%s has no instance data" % instance.name)
+				continue
+			for index: int in instance.multimesh.instance_count:
+				var where := Vector2(buffer[index * stride + 3], buffer[index * stride + 11])
+				if where.length() < SPAWN_RADIUS:
+					_failures.append(
+						(
+							"%s has an instance %.1f m from the centre"
+							% [instance.name, where.length()]
+						)
+					)
+					break
 	for placed: String in PLACED:
 		for node: Node in island.get_node(placed).get_children():
 			var visual := node as MeshInstance3D
@@ -215,17 +226,81 @@ func _stride(multi: MultiMesh) -> int:
 	return 16 if multi.use_custom_data else 12
 
 
+## Every batch of one population. The scatter is chunked so a camera can throw most of it away —
+## see `IslandScatter` — so a population is a parent with one `MultiMeshInstance3D` per occupied
+## grid cell, and a check that read only the first would be checking a corner of the island.
+func _batches(island: Node, name: String) -> Array[MultiMeshInstance3D]:
+	var found: Array[MultiMeshInstance3D] = []
+	var population := island.get_node_or_null("Props/" + name)
+	if population == null:
+		return found
+	for child: Node in population.get_children():
+		var batch := child as MultiMeshInstance3D
+		if batch != null and batch.multimesh != null:
+			found.append(batch)
+	return found
+
+
+## The shape that lets the camera discard anything at all. A `MultiMesh` is culled as one object
+## against one bounding box, so a population shipped as a single batch has a box the size of the
+## island — something in it is always on screen, and **none of it is ever discarded**. That was the
+## state of things at close to four million primitives a frame.
+##
+## Measured as the widest box rather than as a batch count, because the count is not the point: one
+## population split into four strips would pass a count and cull nothing.
+func _check_the_scatter_is_split_so_it_can_be_culled(island: Node) -> void:
+	for name: String in SCATTERED:
+		var batches := _batches(island, name)
+		if batches.size() < 2:
+			_failures.append("%s ships as one batch, so none of it can ever be culled" % name)
+			continue
+		var widest := 0.0
+		for batch: MultiMeshInstance3D in batches:
+			widest = maxf(widest, _footprint(batch))
+		if widest > WIDEST_CHUNK:
+			_failures.append(
+				(
+					"a chunk of %s is %.0f m across, and %.0f is the most that culls"
+					% [name, widest, WIDEST_CHUNK]
+				)
+			)
+
+
+## How far apart the instances of one batch stand, on the flat — read from the buffer rather than
+## from `get_aabb()`, which the dummy renderer answers with nothing at all. A check that measured
+## the bounding box here would read nought for every chunk and pass whatever the generator did,
+## which is what it did until this was written.
+func _footprint(batch: MultiMeshInstance3D) -> float:
+	var buffer := batch.multimesh.buffer
+	var stride := _stride(batch.multimesh)
+	if batch.multimesh.instance_count == 0 or buffer.size() < stride:
+		return 0.0
+	var least := Vector2(INF, INF)
+	var most := Vector2(-INF, -INF)
+	for index: int in batch.multimesh.instance_count:
+		var where := Vector2(buffer[index * stride + 3], buffer[index * stride + 11])
+		least = least.min(where)
+		most = most.max(where)
+	var span := most - least
+	return maxf(span.x, span.y)
+
+
 ## Every wind material on one population — one per surface of its model, because a MultiMesh takes
 ## one mesh and that mesh may be a trunk and a crown in the same breath.
 func _wind_on(island: Node, name: String) -> Array[ShaderMaterial]:
 	var found: Array[ShaderMaterial] = []
-	var instance := island.get_node_or_null("Props/" + name) as MultiMeshInstance3D
-	if instance == null or instance.multimesh == null or instance.multimesh.mesh == null:
+	var batches := _batches(island, name)
+	if batches.is_empty():
 		return found
-	if instance.material_override != null:
-		# One material for the whole mesh would flatten a modelled palm to a single colour, which is
-		# the thing buying a modelled palm was meant to stop.
-		_failures.append("%s is overridden with one material for every surface" % name)
+	# Every chunk of a population shares one mesh and one set of materials, so the first answers for
+	# all of them — but an override is per node, and one chunk overridden would be one patch of the
+	# island flattened to a single colour. Checked on all of them.
+	for batch: MultiMeshInstance3D in batches:
+		if batch.material_override != null:
+			_failures.append("%s is overridden with one material for every surface" % name)
+			return found
+	var instance := batches[0]
+	if instance.multimesh == null or instance.multimesh.mesh == null:
 		return found
 	var mesh := instance.multimesh.mesh
 	for surface: int in mesh.get_surface_count():
@@ -300,22 +375,25 @@ func _check_a_palm_is_still_two_colours(island: Node) -> void:
 ## figure wrong is silent — the island simply comes back with palms three times the size of the
 ## fight — so the size they end up is measured rather than trusted.
 func _check_the_palms_are_the_size_of_palms(island: Node) -> void:
-	var instance := island.get_node_or_null("Props/Palms") as MultiMeshInstance3D
-	if instance == null or instance.multimesh == null:
+	var batches := _batches(island, "Palms")
+	if batches.is_empty():
 		_failures.append("the island has no palms")
 		return
-	var model := instance.multimesh.mesh.get_aabb().size.y
+	var model := batches[0].multimesh.mesh.get_aabb().size.y
 	var shortest := INF
 	var tallest := 0.0
-	var buffer := instance.multimesh.buffer
-	var stride := _stride(instance.multimesh)
-	for index: int in instance.multimesh.instance_count:
-		var up := Vector3(
-			buffer[index * stride + 1], buffer[index * stride + 5], buffer[index * stride + 9]
-		)
-		var height := up.length() * model
-		shortest = minf(shortest, height)
-		tallest = maxf(tallest, height)
+	# Every chunk, not the first: the scatter is split across a grid, and one cell is a corner of
+	# the island. A palm three times the size of the fight standing anywhere else would pass.
+	for instance: MultiMeshInstance3D in batches:
+		var buffer := instance.multimesh.buffer
+		var stride := _stride(instance.multimesh)
+		for index: int in instance.multimesh.instance_count:
+			var up := Vector3(
+				buffer[index * stride + 1], buffer[index * stride + 5], buffer[index * stride + 9]
+			)
+			var height := up.length() * model
+			shortest = minf(shortest, height)
+			tallest = maxf(tallest, height)
 	if shortest < PALM_SHORTEST or tallest > PALM_TALLEST:
 		_failures.append(
 			(

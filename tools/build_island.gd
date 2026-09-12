@@ -27,6 +27,14 @@ const FADEABLE_SHADER: String = "res://assets/shaders/fadeable.gdshader"
 ## was, and a grove of them flickering as the body walks through is worse still. What hides the
 ## player outright is a five-metre boulder, and there are six of those.
 const OCCLUDER_GROUP: StringName = &"occluder"
+## How wide a chunk of scatter is. Small enough that the camera discards most of the island, wide
+## enough that it stays a few dozen batches rather than a few hundred: a draw call is cheap and a
+## million submitted vertices is not.
+const CHUNK: float = 24.0
+## Past these, a tuft and a pebble are a few pixels each. Palms and rocks get no range: they are
+## silhouettes, and the island reading as an island depends on them.
+const GRASS_FADE: float = 55.0
+const PEBBLE_FADE: float = 70.0
 ## The scattered decoration, each with its origin at its base. **The palm is ours and painted**, so
 ## it brings its own colours and the palette steps aside — see `_part_material`. The rest are
 ## Kenney's CC0 Nature Kit: untextured, cut into named parts, coloured by the island.
@@ -560,8 +568,8 @@ func _scatter() -> Node3D:
 
 	# The models carry their own colours, one material per part, so nothing here tints them. What the
 	# wind material replaces is the shading, not the palette.
-	props.add_child(_multi("Grass", _nature(GRASS_MODEL), tufts, _grass_wind()))
-	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles))
+	props.add_child(_multi("Grass", _nature(GRASS_MODEL), tufts, _grass_wind(), GRASS_FADE, false))
+	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles, {}, PEBBLE_FADE, false))
 	props.add_child(_multi("Palms", _nature(PALM_MODEL), palms, _palm_wind()))
 	props.add_child(_multi("Rocks", _nature(ROCK_MODEL), rocks))
 	props.add_child(_colliders(blocking))
@@ -673,25 +681,19 @@ func _spots(
 	return kept
 
 
-## One population of one model. `wind` names the uniforms the foliage shader should take; leave it
-## out and the model keeps the flat materials it shipped with, which is what stone wants.
+## One population of one model, split across a grid so the camera can throw most of it away — see
+## `IslandScatter`. `wind` names the uniforms the foliage shader should take; leave it out and the
+## model keeps the flat materials it shipped with, which is what stone wants.
 func _multi(
-	name: String, mesh: ArrayMesh, transforms: Array[Transform3D], wind: Dictionary = {}
+	name: String,
+	mesh: ArrayMesh,
+	transforms: Array[Transform3D],
+	wind: Dictionary = {},
+	fades_at: float = 0.0,
+	casts_shadow: bool = true
 ) -> Node3D:
 	_dress(mesh, FOLIAGE_SHADER if not wind.is_empty() else "", wind)
-
-	var multi := MultiMesh.new()
-	multi.transform_format = MultiMesh.TRANSFORM_3D
-	multi.mesh = mesh
-	multi.instance_count = transforms.size()
-	# The buffer is written directly rather than through set_instance_transform: headless runs on a
-	# dummy renderer, where the setter writes to a server that discards it and the buffer saves empty.
-	multi.buffer = _pack(transforms)
-
-	var instance := MultiMeshInstance3D.new()
-	instance.name = name
-	instance.multimesh = multi
-	return instance
+	return IslandScatter.populate(name, mesh, transforms, CHUNK, fades_at, casts_shadow)
 
 
 ## The mesh out of a packaged model, rebuilt as a plain ArrayMesh.
@@ -773,37 +775,6 @@ func _grass_wind() -> Dictionary:
 	return GRASS_WIND
 
 
-## Twelve floats per instance: the three rows of the 3x4 transform, origin last on each row.
-func _pack(transforms: Array[Transform3D]) -> PackedFloat32Array:
-	var stride := 12
-	var data := PackedFloat32Array()
-	data.resize(transforms.size() * stride)
-	for index: int in transforms.size():
-		var at := transforms[index]
-		var basis := at.basis
-		var origin := at.origin
-		var base := index * stride
-		data[base + 0] = basis.x.x
-		data[base + 1] = basis.y.x
-		data[base + 2] = basis.z.x
-		data[base + 3] = origin.x
-		data[base + 4] = basis.x.y
-		data[base + 5] = basis.y.y
-		data[base + 6] = basis.z.y
-		data[base + 7] = origin.y
-		data[base + 8] = basis.x.z
-		data[base + 9] = basis.y.z
-		data[base + 10] = basis.z.z
-		data[base + 11] = origin.z
-	return data
-
-
-# ------------------------------------------------------------------------------------- authored
-
-
-## The six boulders that are placed rather than scattered. Lifted out so the scatter can keep its
-## distance from them: a palm growing out of a rock formation is the sort of thing only a machine
-## would ever do.
 func _formations() -> Array:
 	return [
 		[Vector3(-34.0, 0.0, -26.0), Vector3(5.0, 5.4, 4.4), 0.4],
