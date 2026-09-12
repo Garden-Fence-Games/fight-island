@@ -16,6 +16,9 @@ const TERRAIN_MESH: String = "res://assets/models/island_terrain.res"
 ## mesh rebuilt at every launch is one more thing that can differ between a run and a bug report.
 const NAVIGATION_MESH: String = "res://assets/models/island_navmesh.res"
 const SEED: int = 20260911
+## Wind, for everything that grows. One shader: a MultiMesh takes one material, and a palm
+## that swayed on a different program from the grass beside it would be two winds on one island.
+const FOLIAGE_SHADER: String = "res://assets/shaders/foliage.gdshader"
 
 # --- Shape -------------------------------------------------------------------------------------
 ## Flat land where the player starts, and nothing more. It used to be a thirty-metre clearing in
@@ -112,6 +115,20 @@ const NAV_OBSTACLE_SINK: float = 4.0
 const SAND: Color = Color(0.86, 0.78, 0.58)
 const GRASS_GREEN: Color = Color(0.36, 0.52, 0.27)
 const ROCK_GREY: Color = Color(0.33, 0.31, 0.29)
+
+## Grass is short and quick: it reaches full bend in half a metre and ripples every few
+## metres. A lawn does not sway on the same clock as a five-metre palm, so it overrides the
+## palm-scale wind the shader ships with.
+const GRASS_WIND: Dictionary = {
+	"wind_strength": 0.11,
+	"wind_speed": 2.6,
+	"wave_length": 9.0,
+	"bend_height": 0.45,
+	"bend_power": 1.4,
+	"gust_length": 42.0,
+}
+## How far a frond flexes along its own length, on top of the swing it inherits from the trunk.
+const FROND_FLUTTER: float = 0.055
 
 var _rng := RandomNumberGenerator.new()
 var _noise := FastNoiseLite.new()
@@ -379,19 +396,26 @@ func _scatter() -> Node3D:
 
 	var trunks: Array[Transform3D] = []
 	var fronds: Array[Transform3D] = []
+	## Which palm each frond belongs to, so the crown can be told where its own trunk is planted.
+	var frond_roots: Array[Vector3] = []
 	for spot: Vector3 in _spots(
 		PALM_COUNT, CLEAR_RADIUS, PALM_RADIUS, 3.4, Vector2(0.08, 3.0), 0.0, taken
 	):
 		var lean := Basis(Vector3.FORWARD, _rng.randf_range(-0.12, 0.12))
 		var height := _rng.randf_range(3.4, 5.2)
-		trunks.append(Transform3D(lean.scaled(Vector3(1.0, height, 1.0)), spot))
+		var trunk := Transform3D(lean.scaled(Vector3(1.0, height, 1.0)), spot)
+		trunks.append(trunk)
 		blocking.append([spot, PALM_RADIUS])
 		taken.append([spot, PALM_RADIUS])
-		var crown := spot + lean * Vector3(0.0, height, 0.0)
+		# The tip of the trunk as it was actually placed. Leaning the bare height instead put the
+		# crowns a third of a metre downwind of the wood they sit on, because the scale in the
+		# instance is applied after the lean and flattens it.
+		var crown := trunk * Vector3(0.0, 1.0, 0.0)
 		for blade: int in 6:
 			var turn := Basis(Vector3.UP, TAU * float(blade) / 6.0 + _rng.randf_range(-0.3, 0.3))
 			var droop := Basis(Vector3.RIGHT, _rng.randf_range(0.35, 0.7))
 			fronds.append(Transform3D(turn * droop, crown))
+			frond_roots.append(spot)
 
 	var pebbles: Array[Transform3D] = []
 	for spot: Vector3 in _spots(PEBBLE_COUNT, 0.0, 0.0, 1.6, Vector2(-0.05, SHORE_BAND * 0.7)):
@@ -425,10 +449,15 @@ func _scatter() -> Node3D:
 		var size := _rng.randf_range(0.6, 1.25)
 		tufts.append(Transform3D((turn * lean).scaled(Vector3(size, size, size)), spot))
 
-	props.add_child(_multi("Grass", _tuft(), GRASS_GREEN.darkened(0.18), tufts))
+	var grass_green := GRASS_GREEN.darkened(0.18)
+	var bark := Color(0.42, 0.31, 0.2)
+	var leaf := Color(0.25, 0.47, 0.24)
+	props.add_child(_multi("Grass", _tuft(), grass_green, tufts, _grass_wind(grass_green)))
 	props.add_child(_multi("Pebbles", _rock_mesh(), ROCK_GREY.lightened(0.12), pebbles))
-	props.add_child(_multi("PalmTrunks", _cylinder(0.16, 1.0), Color(0.42, 0.31, 0.2), trunks))
-	props.add_child(_multi("PalmFronds", _frond(), Color(0.25, 0.47, 0.24), fronds))
+	props.add_child(_multi("PalmTrunks", _cylinder(0.16, 1.0), bark, trunks, _palm_wind(bark, 0.0)))
+	props.add_child(
+		_multi("PalmFronds", _frond(), leaf, fronds, _palm_wind(leaf, FROND_FLUTTER), frond_roots)
+	)
 	props.add_child(_multi("Rocks", _rock_mesh(), ROCK_GREY, rocks))
 	props.add_child(_colliders(blocking))
 	return props
@@ -539,35 +568,72 @@ func _spots(
 	return kept
 
 
-func _multi(name: String, mesh: Mesh, tint: Color, transforms: Array[Transform3D]) -> Node3D:
+## `anchors` is where each instance's plant meets the ground, and it is only needed for the parts
+## that are not planted at their own origin — the palm crowns. Leave it empty and the instances
+## carry no custom data at all, which reads in the shader as a plant standing on its own origin.
+func _multi(
+	name: String,
+	mesh: Mesh,
+	tint: Color,
+	transforms: Array[Transform3D],
+	material: Material = null,
+	anchors: Array[Vector3] = []
+) -> Node3D:
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D
+	multi.use_custom_data = not anchors.is_empty()
 	multi.mesh = mesh
 	multi.instance_count = transforms.size()
 	# The buffer is written directly rather than through set_instance_transform: headless runs on a
 	# dummy renderer, where the setter writes to a server that discards it and the buffer saves empty.
-	multi.buffer = _pack(transforms)
-
-	var material := StandardMaterial3D.new()
-	material.albedo_color = tint
-	material.roughness = 0.9
+	multi.buffer = _pack(transforms, anchors)
 
 	var instance := MultiMeshInstance3D.new()
 	instance.name = name
 	instance.multimesh = multi
-	instance.material_override = material
+	instance.material_override = material if material != null else _matte(tint)
 	return instance
 
 
-## Twelve floats per instance: the three rows of the 3x4 transform, origin last on each row.
-func _pack(transforms: Array[Transform3D]) -> PackedFloat32Array:
+func _matte(tint: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = tint
+	material.roughness = 0.9
+	return material
+
+
+## The palms stand in the wind the shader ships with, and neither call touches it. Trunk and crown
+## that disagree about the wind by so much as a coefficient pull apart in the air, so the only way
+## to set one of those figures is to change it for both.
+func _palm_wind(tint: Color, flutter: float) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = load(FOLIAGE_SHADER)
+	material.set_shader_parameter("tint", tint)
+	material.set_shader_parameter("flutter", flutter)
+	return material
+
+
+func _grass_wind(tint: Color) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = load(FOLIAGE_SHADER)
+	material.set_shader_parameter("tint", tint)
+	for parameter: String in GRASS_WIND:
+		material.set_shader_parameter(parameter, GRASS_WIND[parameter])
+	return material
+
+
+## Twelve floats per instance: the three rows of the 3x4 transform, origin last on each row. Four
+## more follow each transform when anchors are given, holding the ground the instance belongs to as
+## an offset from the instance itself — a rise and a displacement in the plane.
+func _pack(transforms: Array[Transform3D], anchors: Array[Vector3] = []) -> PackedFloat32Array:
+	var stride := 16 if not anchors.is_empty() else 12
 	var data := PackedFloat32Array()
-	data.resize(transforms.size() * 12)
+	data.resize(transforms.size() * stride)
 	for index: int in transforms.size():
 		var at := transforms[index]
 		var basis := at.basis
 		var origin := at.origin
-		var base := index * 12
+		var base := index * stride
 		data[base + 0] = basis.x.x
 		data[base + 1] = basis.y.x
 		data[base + 2] = basis.z.x
@@ -580,6 +646,13 @@ func _pack(transforms: Array[Transform3D]) -> PackedFloat32Array:
 		data[base + 9] = basis.y.z
 		data[base + 10] = basis.z.z
 		data[base + 11] = origin.z
+		if stride == 12:
+			continue
+		var ground := anchors[index]
+		data[base + 12] = origin.y - ground.y
+		data[base + 13] = ground.x - origin.x
+		data[base + 14] = ground.z - origin.z
+		data[base + 15] = 0.0
 	return data
 
 

@@ -211,6 +211,50 @@ either shut off half the beach or let the player swim away on the other side. Wa
 and the sea pushes back; nothing is ever blocked, so the edge of the world is felt as the shape of
 the place.
 
+## Wind and water
+
+Both are shaders, and both are shaders for the same reason: the thing that has to move is drawn
+thousands of times from one mesh, so nothing per-instance can drive it.
+
+**The wind** (`assets/shaders/foliage.gdshader`) runs in the vertex stage. Every plant on the
+island is one instance of a `MultiMeshInstance3D` — 380 palms, 2 280 fronds, 24 000 grass tufts
+— and instances cannot play separate animations. Phase comes from distance along the wind, so a
+gust travels across the island and neighbours are naturally out of step. **Nothing is hashed**: a
+hash is discontinuous, and a palm's crown has to agree with its own trunk to the centimetre.
+
+The crown is the hard part. A frond is a separate instance whose origin sits five metres up, so
+it has no idea how high off the ground it is — and if it bends by a different amount from the
+trunk tip it is welded to, it floats off the top of the palm. Three things hold it on:
+
+- Each frond carries, in its **`MultiMesh` custom data**, where its own palm meets the ground. The
+  shader then reads one height-above-ground for the trunk tip and the crown alike, and both bend by
+  the same amount from the same formula. An instance with no custom data reads as zero, which is
+  exactly right for anything planted at its own origin — so only the fronds carry any.
+- **Neither palm material sets a single wind figure.** Both take the shader's defaults, so there is
+  nothing a tuning pass can change on only one of them. `verify_island` fails if either starts to.
+- A frond's own **flutter is measured from its own origin outward**, so it is zero where the frond
+  meets the trunk and full at the tip — a leaf flexing along its length, not a crown sliding.
+
+Writing that check found a defect that predated it: the crowns had never been on the trunk tips at
+all. `Basis.scaled()` applies its scale *after* the rotation, so leaning the bare height and leaning
+the placed trunk are not the same lean — every palm on the island wore its crown 0.38 m downwind of
+the wood.
+
+**The water** (`assets/shaders/water.gdshader`) is where the shoreline comes from, and none of it is
+authored: the shallow tint, the foam band and the depth at which the sea floor disappears all come
+out of comparing the depth buffer with the surface, so they follow the coast wherever the generator
+puts it. Four things separate water from tinted glass, and the plane needs all four — the floor
+**refracts** as it is seen through the surface, the deep closes over it **opaquely**, the surface is
+a **mirror at a grazing angle** and clear from above, and the light breaks into sparks on **ripples
+finer than the mesh**. That last one is why the normal is built per pixel: the plane carries a
+vertex every nine metres, which facets the whole sea and loses every ripple between two of them.
+The swell moves vertices; the ripples never reach the vertex stage, where they would be sampled at
+random and read as noise.
+
+The wind costs **0.05 ms of a 4.96 ms frame** — measured against the same geometry on a plain
+material, because headless renders nothing and a vertex program's cost cannot be guessed from a
+polygon count.
+
 ## Navigation
 
 The same generator bakes a `NavigationMesh` beside the terrain and hangs it on a
@@ -309,6 +353,11 @@ Two headless guards run in CI and locally:
   capped rate,
   goes back to facing its movement when the stick is released, does not aim before any device is
   touched, commits its attack facing, and dodges away from the aim rather than into it.
+- **`tools/verify_island.tscn`** also covers the wind: that everything which grows stands in it and
+  no stone does, that no plant bends from its base, that the palms share one wind because neither
+  material overrides any of it, and that **every frond hangs off the tip of the trunk it names** to
+  within a millimetre. That last check is what found the crowns had been off their trunks since the
+  island was first generated.
 - **`tools/verify_navigation.tscn`** — asserts the island is baked, that a route past a boulder
   bends around it, that a spawn point inside one is refused, and — the only check straight-line
   chasing cannot pass — that a farmhand with a boulder between him and the player still gets there.
