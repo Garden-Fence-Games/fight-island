@@ -111,6 +111,13 @@ jobs:
       - name: Verify the combat loop
         run: tools/run-check.sh res://tools/verify_combat.tscn
 
+      # The sounds are generated, so there is no file to listen to and nothing in a diff to read.
+      # What is checked is the property the design rests on: a perfect hit rings longer *and*
+      # brighter than a plain one, a perfect parry outlasts a late one, and a swing through air has
+      # no impact in it. The first run of this caught every sound being cut off mid-ring.
+      - name: Verify the hit sounds
+        run: tools/run-check.sh res://tools/verify_audio.tscn
+
       # The HUD is nothing but bus listeners, so nothing about a broken one shows up in a diff:
       # it simply stops updating. This drives every signal it answers and reads the labels back.
       - name: Verify the in-run HUD

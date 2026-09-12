@@ -12,6 +12,10 @@ signal player_died
 signal stamina_changed(current: float, maximum: float)
 signal attack_landed(target: Node3D, damage: float, perfect: bool)
 signal perfect_timing
+## A swing whose active window closed without touching anything. It carries the attack because what
+## a whiff sounds like depends on what was swung, and because nothing else can reconstruct it once
+## the state has moved on.
+signal attack_whiffed(attack: AttackData)
 signal parry_perfect
 signal parry_late
 signal enemy_spawned(enemy: Node3D)

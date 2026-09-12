@@ -29,6 +29,7 @@ enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg")
 
 EventBus="*res://scripts/autoload/event_bus.gd"
 GameState="*res://scripts/autoload/game_state.gd"
+AudioManager="*res://scripts/autoload/audio_manager.gd"
 
 [display]
 
