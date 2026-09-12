@@ -68,7 +68,9 @@ var _repath_clock: float = 0.0
 @onready var hitbox: Hitbox = $Hitbox
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var machine: StateMachine = $StateMachine
-@onready var mesh: MeshInstance3D = $Body
+@onready var visual: Node3D = $Visual
+@onready var body_materials: BodyMaterialsComponent = $BodyMaterials
+@onready var head_look: HeadLookComponent = get_node_or_null("HeadLook") as HeadLookComponent
 @onready var agent: NavigationAgent3D = $Agent
 
 
@@ -114,6 +116,8 @@ func revive(
 	target = get_tree().get_first_node_in_group(&"player") as Node3D
 	_poise_window = 0.0
 	roused = false
+	if head_look != null:
+		head_look.watching = null
 	_stone = null
 	_token_owed = false
 	if data != null:
@@ -121,8 +125,7 @@ func revive(
 		if health != null:
 			var tougher := rank.health_multiplier if rank != null else 1.0
 			health.set_max_health(data.health * health_boost * tougher, true)
-		if mesh != null:
-			_apply_tint()
+		_apply_tint()
 	if hurtbox != null:
 		hurtbox.monitorable = true
 	if hitbox != null:
@@ -191,6 +194,11 @@ func rouse() -> void:
 	if roused:
 		return
 	roused = true
+	# The head goes to the player the moment he is noticed, and stays there while the body walks
+	# wherever the path takes it. Before that he looks where he is going, like anyone who has not
+	# seen you yet.
+	if head_look != null:
+		head_look.watching = target
 	if data == null or data.rouse_radius <= 0.0:
 		return
 	# The hour reaches the crowd here and nowhere else. Noticing is deliberately left alone: a
@@ -370,14 +378,16 @@ func is_alive() -> bool:
 ## The archetype's colour, and the elite's glow over the top of it. The mesh is scaled here and the
 ## body is not: an elite reads bigger without its swing quietly gaining reach.
 func _apply_tint() -> void:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = data.tint
-	if rank != null:
-		material.emission_enabled = true
-		material.emission = rank.glow
-		material.emission_energy_multiplier = rank.glow_energy
-	mesh.material_override = material
-	mesh.scale = Vector3.ONE * (rank.scale if rank != null else 1.0)
+	if body_materials == null or visual == null:
+		return
+	# Multiplied over the rig's own painted colours rather than replacing them. White is the farmer
+	# as he was painted; the two archetypes that have no texture of their own yet are still told
+	# apart by a wash, which is what their tint was for when all three were capsules.
+	body_materials.tint(data.tint)
+	body_materials.glow(
+		rank.glow if rank != null else Color.BLACK, rank.glow_energy if rank != null else 0.0
+	)
+	visual.scale = Vector3.ONE * (rank.scale if rank != null else 1.0)
 
 
 func _on_hurt(info: HitInfo) -> void:

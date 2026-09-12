@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/enemy/enemy.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -16,10 +16,10 @@
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_retreat.gd" id="15"]
 [ext_resource type="Resource" path="res://data/enemies/farmhand.tres" id="14"]
 [ext_resource type="PackedScene" path="res://scenes/fx/telegraph.tscn" id="16"]
-
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
-height = 1.7
-radius = 0.35
+[ext_resource type="PackedScene" path="res://assets/models/char_farmer.glb" id="17"]
+[ext_resource type="Script" path="res://scripts/components/animation_component.gd" id="18"]
+[ext_resource type="Script" path="res://scripts/components/head_look_component.gd" id="19"]
+[ext_resource type="Script" path="res://scripts/components/body_materials_component.gd" id="20"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 height = 1.7
@@ -39,13 +39,23 @@ script = ExtResource("1")
 data = ExtResource("14")
 telegraph_scene = ExtResource("16")
 
-[node name="Body" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
-mesh = SubResource("CapsuleMesh_1")
+[node name="Visual" parent="." instance=ExtResource("17")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
 
-[node name="Nose" type="MeshInstance3D" parent="Body"]
-transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0.3, -0.4)
-mesh = SubResource("CapsuleMesh_1")
+[node name="BodyMaterials" type="Node" parent="."]
+script = ExtResource("20")
+
+[node name="Animation" type="Node" parent="."]
+script = ExtResource("18")
+clips = {
+&"Chase": &"chase",
+&"Idle": &"idle",
+&"Retreat": &"walk",
+&"Strafe": &"walk"
+}
+
+[node name="HeadLook" type="Node" parent="."]
+script = ExtResource("19")
 
 [node name="Collision" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
