@@ -10,6 +10,9 @@ func enter(_message: Dictionary) -> void:
 	if attack == null or enemy.hitbox == null:
 		transition_to(&"Idle")
 		return
+	if enemy.data.is_ranged:
+		enemy.throw_at(enemy.target.global_position if enemy.target != null else Vector3.ZERO)
+		return
 	enemy.hitbox.arm(attack, enemy, false, enemy.damage_scale)
 
 

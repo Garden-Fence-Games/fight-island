@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/enemy/enemy.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_recover.gd" id="11"]
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_stagger.gd" id="12"]
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_dead.gd" id="13"]
+[ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_retreat.gd" id="15"]
 [ext_resource type="Resource" path="res://data/enemies/farmhand.tres" id="14"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
@@ -91,6 +92,9 @@ script = ExtResource("7")
 
 [node name="Strafe" type="Node" parent="StateMachine"]
 script = ExtResource("8")
+
+[node name="Retreat" type="Node" parent="StateMachine"]
+script = ExtResource("15")
 
 [node name="WindUp" type="Node" parent="StateMachine"]
 script = ExtResource("9")
