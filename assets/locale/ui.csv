@@ -1,0 +1,9 @@
+keys,en
+UI_PLAY,Play
+UI_CONTINUE,Continue
+UI_NEW_RUN,New run
+UI_OPTIONS,Options
+UI_QUIT,Quit
+UI_BACK,Back
+UI_SKIP_HINT,Press any key to skip
+UI_OPTIONS_EMPTY,"Settings arrive with the options screen. Until then the game runs on its defaults."

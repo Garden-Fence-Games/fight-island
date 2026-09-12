@@ -25,6 +25,8 @@ const REQUIRED_ACTIONS: PackedStringArray = [
 	"weapon_stick",
 	"weapon_gun",
 	"pause",
+	"menu_options",
+	"menu_new_run",
 	"debug_overlay",
 	"debug_skip_wave",
 	"debug_give_money",

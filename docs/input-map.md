@@ -33,6 +33,15 @@ bindings.
 | `pause` | `Esc` | Start | 0.2 |
 | `ui_accept` | `Enter`, numpad `Enter`, `Space` | **A** | 0.2 |
 | `ui_cancel` | `Esc` | **B** | 0.2 |
+| `menu_options` | `O` | Y | 0.2 |
+| `menu_new_run` | `N` | Y | 0.2 |
+
+`menu_options` and `menu_new_run` share Y on the pad on purpose: a title screen never shows
+both badges at once, so the run state decides which one answers. They exist because the menu
+prints those glyphs, and a printed glyph that does nothing is worse than no glyph.
+
+| Action | Keyboard / mouse | Gamepad (Xbox) | Deadzone |
+|---|---|---|---|
 | `debug_overlay` | `F3` | — | 0.2 |
 | `debug_skip_wave` | `F5` | — | 0.2 |
 | `debug_give_money` | `F6` | — | 0.2 |

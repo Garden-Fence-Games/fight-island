@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/menu_entry.gd" id="1"]
+
+[node name="MenuEntry" type="Button"]
+custom_minimum_size = Vector2(420, 72)
+offset_right = 420.0
+offset_bottom = 72.0
+script = ExtResource("1")
+
+[node name="Row" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 16.0
+offset_right = -24.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Caret" type="Label" parent="Row"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"MenuCaret"
+text = ">"
+auto_translate_mode = 2
+
+[node name="Title" type="Label" parent="Row"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"MenuTitle"
+auto_translate_mode = 2
+
+[node name="Spacer" type="Control" parent="Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Badge" type="PanelContainer" parent="Row"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"KeyBadge"
+
+[node name="Key" type="Label" parent="Row/Badge"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"KeyLabel"
+auto_translate_mode = 2
