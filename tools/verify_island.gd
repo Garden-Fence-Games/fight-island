@@ -35,6 +35,11 @@ const FOLIAGE_SHADER: String = "res://assets/shaders/foliage.gdshader"
 const PALM_OWN: PackedStringArray = ["tint", "flutter"]
 ## A millimetre. Anything looser and a crown could sit off the top of its trunk by a visible amount.
 const WELD_TOLERANCE: float = 0.001
+const GENERATOR: String = "res://tools/build_island.gd"
+const WATER_SHADER: String = "res://assets/shaders/water.gdshader"
+## The still waterline. Written out rather than read off the generator: a check that agrees with
+## whatever the thing it checks happens to say is not a check.
+const WATERLINE: float = -1.1
 
 var _failures: PackedStringArray = []
 
@@ -52,12 +57,14 @@ func _ready() -> void:
 	_check_only_what_grows_moves(island)
 	_check_the_palms_share_one_wind(island)
 	_check_every_crown_sits_on_its_own_trunk(island)
+	_check_no_water_stands_inland(island)
+	_check_the_sand_clears_the_swell()
 
 	if _failures.is_empty():
 		print(
 			(
 				"island OK — clear core, no traps, flat core, nothing walls the camera, "
-				+ "boundary in place, the wind reaches what grows"
+				+ "boundary in place, the wind reaches what grows, no water stands inland"
 			)
 		)
 		get_tree().quit(0)
@@ -291,3 +298,100 @@ func _check_every_crown_sits_on_its_own_trunk(island: Node) -> void:
 
 func _key(at: Vector3) -> String:
 	return "%.3f %.3f %.3f" % [at.x, at.y, at.z]
+
+
+## No hollow anywhere on the island holds water the open sea cannot reach. Read off the terrain's
+## own collision heights, so it is the island as shipped that is checked rather than a field
+## recomputed here — and flooded independently of the generator, because a check that borrows the
+## code it is checking only proves the code agrees with itself.
+##
+## A pool joined to the sea by a channel is a lagoon and is allowed. The whole question is whether
+## the water joins up, which is why this floods rather than measuring a distance from the coast.
+func _check_no_water_stands_inland(island: Node) -> void:
+	var collision := island.get_node_or_null("TerrainBody/Collision") as CollisionShape3D
+	var terrain := collision.shape as HeightMapShape3D if collision != null else null
+	if terrain == null:
+		_failures.append("the island has no terrain to read heights off")
+		return
+	var side := terrain.map_width
+	var heights := terrain.map_data
+	var crest := WATERLINE + _swell_height()
+
+	var sea := PackedByteArray()
+	sea.resize(heights.size())
+	var open: Array[int] = []
+	for index: int in heights.size():
+		var row := index / side
+		var column := index % side
+		var edge := row == 0 or column == 0 or row == side - 1 or column == side - 1
+		if edge and heights[index] < crest:
+			sea[index] = 1
+			open.append(index)
+	var head := 0
+	while head < open.size():
+		var index: int = open[head]
+		head += 1
+		for neighbour: int in _grid_neighbours(index, side):
+			if sea[neighbour] == 1 or heights[neighbour] >= crest:
+				continue
+			sea[neighbour] = 1
+			open.append(neighbour)
+
+	var stranded := 0
+	var worst := Vector2.ZERO
+	for index: int in heights.size():
+		if sea[index] == 1 or heights[index] >= crest:
+			continue
+		stranded += 1
+		var half := float(side - 1) * 0.5
+		worst = Vector2(float(index % side) - half, float(index / side) - half)
+	if stranded > 0:
+		_failures.append(
+			"%d cells hold water the sea cannot reach, one of them at %s" % [stranded, worst]
+		)
+
+
+## The generator lifts drained ground to clear the swell, and the swell's height lives in the water
+## shader. Two files, one number: if the shader's waves grow past what the sand was lifted by, the
+## sea washes back over ground that was raised out of it and the puddles come back.
+func _check_the_sand_clears_the_swell() -> void:
+	var generator := load(GENERATOR) as GDScript
+	if generator == null:
+		_failures.append("there is no island generator to check against the water")
+		return
+	var constants := generator.get_script_constant_map()
+	var lifted: float = constants.get("POND_CLEARANCE", 0.0)
+	var assumed: float = constants.get("WAVE_CREST", 0.0)
+	var actual := _swell_height()
+	if assumed < actual:
+		_failures.append(
+			"the generator drains against a %.2f m swell, the shader makes %.2f" % [assumed, actual]
+		)
+	if lifted <= actual:
+		_failures.append("drained sand is lifted %.2f m, under a %.2f m swell" % [lifted, actual])
+
+
+## The shader's own default, read out of its source. Its compiled defaults are not reachable from a
+## headless run, and the source is the thing that ships anyway.
+func _swell_height() -> float:
+	var text := FileAccess.get_file_as_string(WATER_SHADER)
+	var found := RegEx.create_from_string("wave_height[^=]*=\\s*([0-9.]+)").search(text)
+	if found == null:
+		_failures.append("the water shader no longer declares a wave height")
+		return 0.0
+	return found.get_string(1).to_float()
+
+
+func _grid_neighbours(index: int, side: int) -> Array[int]:
+	var row := index / side
+	var column := index % side
+	var found: Array[int] = []
+	if row > 0:
+		found.append(index - side)
+	if row < side - 1:
+		found.append(index + side)
+	if column > 0:
+		found.append(index - 1)
+	if column < side - 1:
+		found.append(index + 1)
+	return found
