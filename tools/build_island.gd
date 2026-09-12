@@ -43,6 +43,23 @@ const ROCK_MODEL_HEIGHT: float = 0.57
 const ROCK_MODEL_DEPTH: float = 1.03
 const PEBBLE_MODEL_WIDTH: float = 0.36
 const GRASS_MODEL_WIDTH: float = 0.26
+## The huts, from Kenney's CC0 Survival Kit — the Nature Kit's companion, drawn by the same hand on
+## the same half-metre tile, and shipping the same untextured, named parts the palette maps colours
+## onto. Four pieces: the posts a hut stands on, the deck they carry, the roof over it, and the
+## planks of a hut that no longer has either.
+const HUT_FRAME_MODEL: String = "res://assets/models/camp/structure.glb"
+const HUT_DECK_MODEL: String = "res://assets/models/camp/structure_base.glb"
+const HUT_ROOF_MODEL: String = "res://assets/models/camp/structure_roof.glb"
+const HUT_PLANK_MODEL: String = "res://assets/models/camp/floor.glb"
+## What the hut pieces measure as they ship. They share one square tile and each stands on its own
+## base, so the only figure that differs between them is height.
+const HUT_TILE: float = 0.5
+const HUT_FRAME_HEIGHT: float = 0.517
+const HUT_DECK_HEIGHT: float = 0.537
+const HUT_ROOF_HEIGHT: float = 0.684
+## The plank tile across, as it ships. It is a hut's one wall when it stands on edge and the
+## wreckage of a hut when it lies flat, and both need to know how wide it was drawn.
+const HUT_PLANK_WIDTH: float = 0.49
 const IslandWater := preload("res://tools/island_water.gd")
 const IslandNavigation := preload("res://tools/island_navigation.gd")
 ## How deep the enemies may follow the player in. The navigation mesh stops here, a little under the
@@ -106,6 +123,28 @@ const ROCK_COUNT: int = 950
 const PEBBLE_COUNT: int = 3400
 const GRASS_COUNT: int = 24000
 
+# --- Huts --------------------------------------------------------------------------------------
+## The kit's pieces are furniture — half a metre of drying rack. A hut is one of them widened and
+## stretched until a body fits under it, and the two figures differ on purpose: a stand made square
+## has to become a room made tall. Only the posts notice, and thicker posts suit driftwood.
+const HUT_SPREAD: float = 4.0
+const HUT_RISE: float = 1.9
+## How far a wreck leans before the planks it dropped stop being its problem.
+const HUT_LEAN: float = 0.09
+## How much of its own footprint a hut collides over. The posts stand at the corners, so unlike a
+## boulder a hut really is as wide as its box — this only keeps a shoulder from catching on air.
+const HUT_COLLIDER_INSET: float = 0.9
+## Where a wreck's fallen planks lie, in tiles from the frame they came off. Fixed rather than
+## scattered: the whole island is scattered, and two huts that fell the same way read as one prop
+## used twice — which is what turning them by the site's own heading is for.
+const HUT_DEBRIS: Array[Vector2] = [Vector2(1.05, 0.3), Vector2(-0.8, -1.0)]
+## Clear ground around a hut, standing or fallen, that nothing may grow through. It has to reach
+## past the debris as well as the hut, because a palm through a fallen roof is the same mistake.
+const HUT_KEEP_OUT: float = 3.6
+## How far above the waterline a hut has to stand. A hut in the surf is a placement that drifted
+## when a shape constant moved, and it is silent until someone looks at that part of the coast.
+const HUT_DRY_GROUND: float = 0.6
+
 # --- Navigation --------------------------------------------------------------------------------
 
 const SAND: Color = Color(0.86, 0.78, 0.58)
@@ -125,6 +164,10 @@ const NATURE_PALETTE: Dictionary = {
 	"grass": Color(0.38, 0.53, 0.3),
 	"stone": Color(0.33, 0.31, 0.29),
 	"_defaultMat": Color(0.29, 0.27, 0.26),
+	# Cut timber, not living wood: bleached a shade past the palm bark it stands among, so a hut
+	# reads as something someone built out of the island rather than as another tree.
+	"wood": Color(0.56, 0.44, 0.31),
+	"woodDark": Color(0.36, 0.27, 0.19),
 }
 
 ## Grass is short and quick: it reaches full bend in half a metre and ripples every few
@@ -188,6 +231,11 @@ func _initialize() -> void:
 	island.add_child(_water())
 	island.add_child(_scatter())
 	island.add_child(_landmark())
+	var huts := _huts()
+	if huts == null:
+		quit(1)
+		return
+	island.add_child(huts)
 	island.add_child(_boundary())
 	# Last, because it reads the colliders the two calls above just placed.
 	var navigation := IslandNavigation.bake(island, heights, GRID, SPACING, NAV_WADE_LIMIT)
@@ -208,12 +256,16 @@ func _initialize() -> void:
 		return
 	print(
 		(
-			"island built — %d verts, %d palms, %d rocks, %d tufts, %d nav polys, %d cells drained"
+			(
+				"island built — %d verts, %d palms, %d rocks, %d tufts, %d huts, "
+				+ "%d nav polys, %d cells drained"
+			)
 			% [
 				GRID * GRID,
 				PALM_COUNT,
 				ROCK_COUNT,
 				GRASS_COUNT,
+				_hut_sites().size(),
 				navigation.navigation_mesh.get_polygon_count(),
 				_drained
 			]
@@ -426,6 +478,10 @@ func _scatter() -> Node3D:
 		var size: Vector3 = placement[1]
 		where.y = _height_at(where.x, where.z)
 		taken.append([where, maxf(size.x, size.z) * 0.5])
+	for site: Array in _hut_sites():
+		var stood: Vector3 = site[0]
+		stood.y = _height_at(stood.x, stood.z)
+		taken.append([stood, HUT_KEEP_OUT])
 
 	var palms: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
@@ -776,6 +832,132 @@ func _landmark() -> StaticBody3D:
 		collision.transform = Transform3D(Basis(Vector3.UP, turn), where)
 		body.add_child(collision)
 	return body
+
+
+## Where somebody lived before the island was an arena: five huts, three of them still standing.
+##
+## They are placed rather than scattered for the same reason the formations are. A hut is something
+## to fight around, so it belongs where the player will actually reach it — well out of the spawn
+## pad, well clear of the boulders, and never close enough to another hut to make a corridor.
+func _hut_sites() -> Array:
+	return [
+		[Vector3(16.0, 0.0, -18.0), 0.6, true],
+		[Vector3(-20.0, 0.0, 14.0), 2.3, false],
+		[Vector3(-6.0, 0.0, 26.0), -1.2, true],
+		[Vector3(26.0, 0.0, 10.0), 1.9, false],
+		[Vector3(-24.0, 0.0, -8.0), 2.9, true],
+	]
+
+
+## The huts, standing and fallen, under one static body.
+##
+## **A standing hut fades and a wreck does not.** The standing one is a deck with a roof over it,
+## two and a half metres of solid planking, and that is enough to hide a fight — the same reason
+## the formations fade. A wreck is four posts and the planks that came off them: a metre of
+## see-through frame that never hid anyone, and thinning something the player can already see past
+## reads as a glitch. It is the rule the palms are left out under, applied the other way up.
+func _huts() -> StaticBody3D:
+	var body := StaticBody3D.new()
+	body.name = "Huts"
+	# The fader finds what it fades by group, not by layer — see `OcclusionFader`. The layer is
+	# here for the reason it is on the formations: it names what the camera has to reckon with.
+	body.collision_layer = 1 | 256  # world | camera_occluder
+	body.collision_mask = 0
+
+	var frame := _nature(HUT_FRAME_MODEL)
+	var deck := _nature(HUT_DECK_MODEL)
+	var roof := _nature(HUT_ROOF_MODEL)
+	var planks := _nature(HUT_PLANK_MODEL)
+	var tile := HUT_TILE * HUT_SPREAD
+
+	for site: Array in _hut_sites():
+		var where: Vector3 = site[0]
+		var turn: float = site[1]
+		var standing: bool = site[2]
+		where.y = _height_at(where.x, where.z)
+		if where.y < WATER_LEVEL + HUT_DRY_GROUND:
+			printerr("a hut at %.0f, %.0f stands in the sea" % [where.x, where.z])
+			return null
+		var facing := Basis(Vector3.UP, turn)
+		var grown := Basis.from_scale(Vector3(HUT_SPREAD, HUT_RISE, HUT_SPREAD))
+
+		if standing:
+			_hut_piece(body, "HutDeck", deck, Transform3D(facing * grown, where), true)
+			var over := where + Vector3.UP * HUT_DECK_HEIGHT * HUT_RISE
+			_hut_piece(body, "HutRoof", roof, Transform3D(facing * grown, over), true)
+			_hut_wall(body, planks, facing, where, tile)
+			_hut_collider(body, where, turn, tile, (HUT_DECK_HEIGHT + HUT_ROOF_HEIGHT) * HUT_RISE)
+			continue
+
+		var leaning := facing * Basis(Vector3.FORWARD, HUT_LEAN) * grown
+		_hut_piece(body, "HutWreck", frame, Transform3D(leaning, where), false)
+		for index: int in HUT_DEBRIS.size():
+			var offset: Vector2 = HUT_DEBRIS[index]
+			var fallen := where + facing * Vector3(offset.x * tile, 0.0, offset.y * tile)
+			fallen.y = _height_at(fallen.x, fallen.z)
+			# Turned off the hut's own heading so no two wrecks drop their planks the same way.
+			var dropped := Basis(Vector3.UP, turn + float(index) + 1.0)
+			var flat := dropped * Basis.from_scale(Vector3.ONE * HUT_SPREAD)
+			_hut_piece(body, "HutPlanks", planks, Transform3D(flat, fallen), false)
+		_hut_collider(body, where, turn, tile, HUT_FRAME_HEIGHT * HUT_RISE)
+	return body
+
+
+## A hut has exactly one wall, at the back of its bay: the deck's own planking stood on edge and
+## run from the deck up to where the roof sits.
+##
+## One wall, not four, and not for want of pieces. The camera is fixed — a player who steps behind
+## the fourth wall of a closed hut is a player nobody can see, and there is nothing they could do
+## about it. Three open sides is the same bargain the island makes everywhere else.
+func _hut_wall(
+	body: StaticBody3D, mesh: ArrayMesh, facing: Basis, where: Vector3, tile: float
+) -> void:
+	var height := HUT_FRAME_HEIGHT * HUT_RISE
+	var edgewise := Basis(Vector3.RIGHT, PI * 0.5)
+	var stretched := Vector3(tile, HUT_RISE * HUT_PLANK_WIDTH, height) / HUT_PLANK_WIDTH
+	var back := Vector3(0.0, HUT_DECK_HEIGHT * HUT_RISE + height * 0.5, -tile * 0.45)
+	_hut_piece(
+		body,
+		"HutWall",
+		mesh,
+		Transform3D(facing * edgewise * Basis.from_scale(stretched), where + facing * back),
+		true
+	)
+
+
+## One piece of one hut. The material goes on the node rather than on the mesh because the five
+## huts share four meshes between them, and a material hung on the mesh would fade every hut on
+## the island the moment one of them stood in the way.
+func _hut_piece(
+	body: StaticBody3D, name: String, mesh: ArrayMesh, at: Transform3D, fades: bool
+) -> void:
+	var visual := MeshInstance3D.new()
+	visual.name = name
+	visual.mesh = mesh
+	visual.transform = at
+	for surface: int in mesh.get_surface_count():
+		visual.set_surface_override_material(
+			surface, _part_material(mesh, surface, FADEABLE_SHADER if fades else "", {})
+		)
+	if fades:
+		visual.add_to_group(OCCLUDER_GROUP, true)
+	body.add_child(visual)
+
+
+## One box per hut, never one per piece: two boxes sharing a wall would read to the trap check as
+## two props with no gap between them, which is exactly the shape it exists to refuse.
+func _hut_collider(
+	body: StaticBody3D, where: Vector3, turn: float, width: float, height: float
+) -> void:
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(width, height, width) * HUT_COLLIDER_INSET
+	var collision := CollisionShape3D.new()
+	collision.name = "HutCollision"
+	collision.shape = shape
+	collision.transform = Transform3D(
+		Basis(Vector3.UP, turn), where + Vector3.UP * shape.size.y * 0.5
+	)
+	body.add_child(collision)
 
 
 ## The island already says no by its shape — the beach falls away into water. This only stops the

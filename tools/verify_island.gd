@@ -25,6 +25,10 @@ const CEILING: float = 2.8
 ## nothing; palm fronds sit four metres up; and a palm trunk is thirty centimetres of wood you walk
 ## past — holding those four metres apart is what made them look planted rather than grown.
 const HARMLESS: PackedStringArray = ["Grass", "Pebbles", "Palms"]
+## What is placed rather than scattered, and so what the generator is trusted to have put in the
+## right spot. Every rule the scatter obeys is checked against these too — a hut dropped by hand
+## into the spawn pad traps the player exactly as surely as a boulder scattered into it.
+const PLACED: PackedStringArray = ["RockFormations", "Huts"]
 ## Everything that grows, and so everything the wind must reach. What is left out matters as much:
 ## a swaying boulder is worse than a still palm.
 const FOLIAGE: PackedStringArray = ["Grass", "Palms"]
@@ -43,6 +47,13 @@ const WATER_SHADER: String = "res://assets/shaders/water.gdshader"
 ## The still waterline. Written out rather than read off the generator: a check that agrees with
 ## whatever the thing it checks happens to say is not a check.
 const WATERLINE: float = -1.1
+## How far above the waterline a hut has to stand. Written out rather than read off the generator,
+## like the waterline above it: a hut left in the surf by a shape constant that moved is not
+## something any other check on this island would notice.
+const HUT_DRY_GROUND: float = 0.6
+## What the camera fades, by group. Named here so the check below can ask the tree for it without
+## knowing which of the island's nodes happen to be in it.
+const OCCLUDER_GROUP: StringName = &"occluder"
 
 var _failures: PackedStringArray = []
 
@@ -63,12 +74,15 @@ func _ready() -> void:
 	_check_the_palms_are_the_size_of_palms(island)
 	_check_no_water_stands_inland(island)
 	_check_the_sand_clears_the_swell()
+	_check_the_huts_are_out_of_the_sea(island)
+	_check_every_occluder_can_fade()
 
 	if _failures.is_empty():
 		print(
 			(
 				"island OK — clear core, no traps, flat core, nothing walls the camera, "
-				+ "boundary in place, the wind reaches what grows, no water stands inland"
+				+ "boundary in place, the wind reaches what grows, no water stands inland, "
+				+ "the huts are on dry land and everything the camera fades can fade"
 			)
 		)
 		get_tree().quit(0)
@@ -97,22 +111,24 @@ func _check_core_is_clear(island: Node) -> void:
 					"%s has an instance %.1f m from the centre" % [instance.name, where.length()]
 				)
 				break
-	for node: Node in island.get_node("RockFormations").get_children():
-		var rock := node as MeshInstance3D
-		if rock == null:
-			continue
-		var flat := Vector2(rock.position.x, rock.position.z)
-		if flat.length() < SPAWN_RADIUS:
-			_failures.append("a rock formation stands %.1f m from the centre" % flat.length())
+	for placed: String in PLACED:
+		for node: Node in island.get_node(placed).get_children():
+			var visual := node as MeshInstance3D
+			if visual == null:
+				continue
+			var flat := Vector2(visual.position.x, visual.position.z)
+			if flat.length() < SPAWN_RADIUS:
+				_failures.append("%s has a piece %.1f m from the centre" % [placed, flat.length()])
 
 
 ## Read from the colliders rather than from the visuals: what can trap the player is exactly what
 ## the player can walk into, with its real radius, and a prop with no collider cannot trap anyone.
 func _check_obstacles_are_never_a_trap(island: Node) -> void:
 	var blocking: Array = []
-	for body: Node in [
-		island.get_node_or_null("Props/PropColliders"), island.get_node_or_null("RockFormations")
-	]:
+	var bodies: Array[Node] = [island.get_node_or_null("Props/PropColliders")]
+	for placed: String in PLACED:
+		bodies.append(island.get_node_or_null(placed))
+	for body: Node in bodies:
 		if body == null:
 			continue
 		for node: Node in body.get_children():
@@ -368,6 +384,43 @@ func _check_the_sand_clears_the_swell() -> void:
 		)
 	if lifted <= actual:
 		_failures.append("drained sand is lifted %.2f m, under a %.2f m swell" % [lifted, actual])
+
+
+## No hut stands in the surf. The huts are placed by hand against a coastline the noise decides, so
+## the two drift apart silently: the first anyone hears of it is a shack up to its deck in the sea
+## on a part of the island nobody framed a screenshot of.
+func _check_the_huts_are_out_of_the_sea(island: Node) -> void:
+	var huts := island.get_node_or_null("Huts")
+	if huts == null:
+		_failures.append("the island has no huts")
+		return
+	for node: Node in huts.get_children():
+		var visual := node as MeshInstance3D
+		if visual == null:
+			continue
+		if visual.position.y >= WATERLINE + HUT_DRY_GROUND:
+			continue
+		_failures.append(
+			"a hut piece stands at %.1f m, the waterline is %.1f" % [visual.position.y, WATERLINE]
+		)
+		return
+
+
+## Everything in the fade group can actually fade. `OcclusionFader` writes `faded` on a
+## ShaderMaterial and skips anything else without a word, so a piece added to the group wearing a
+## plain material is an occluder that never disappears — and the symptom is a player behind a solid
+## prop, which is the exact bug the fader exists to prevent.
+func _check_every_occluder_can_fade() -> void:
+	for node: Node in get_tree().get_nodes_in_group(OCCLUDER_GROUP):
+		var visual := node as MeshInstance3D
+		if visual == null:
+			_failures.append("a %s is in the fade group but has no mesh to fade" % node.get_class())
+			return
+		for surface: int in visual.mesh.get_surface_count():
+			if visual.get_surface_override_material(surface) as ShaderMaterial != null:
+				continue
+			_failures.append("%s is in the fade group wearing a material that cannot" % visual.name)
+			return
 
 
 ## The shader's own default, read out of its source. Its compiled defaults are not reachable from a

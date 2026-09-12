@@ -7,9 +7,9 @@ made it, its licence, and when it was added.
 
 ## Assets
 
-The island's vegetation and stone come from one CC0 pack, and the player is now a modelled rig. The
-enemies, the weapons and the terrain itself are still Godot primitives — see
-[asset-pipeline.md](asset-pipeline.md).
+The island's vegetation, stone and huts come from two CC0 packs by the same author, and the player
+is now a modelled rig. The enemies, the weapons and the terrain itself are still Godot primitives —
+see [asset-pipeline.md](asset-pipeline.md).
 
 | File | Source | Author | Licence | Added |
 |---|---|---|---|---|
@@ -23,9 +23,21 @@ enemies, the weapons and the terrain itself are still Godot primitives — see
 | `assets/models/nature/stone_largeD.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/nature/stone_smallA.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/nature/grass_leafs.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
+| `assets/models/camp/structure.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
+| `assets/models/camp/structure_base.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
+| `assets/models/camp/structure_roof.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
+| `assets/models/camp/floor.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
 
-CC0 waives every requirement, crediting included. Kenney is credited here anyway, and the pack's own
-licence file travels with the models in `assets/models/nature/`.
+CC0 waives every requirement, crediting included. Kenney is credited here anyway, and each pack's
+own licence file travels with its models — in `assets/models/nature/` and `assets/models/camp/`.
+The Survival Kit file is the current 2.0 one; its CC0 grant is word for word the 1.0 grant.
+
+**Why the hut pieces come through Poly Pizza and not from kenney.nl.** Survival Kit 2.0, the version
+the site serves today, moved the whole pack onto a shared `colormap` texture: one material per
+model, and the part names the island's palette maps colours onto are gone with them. The 1.0 export
+still carries separate, untextured `wood` and `woodDark` materials, which is the form
+[asset-pipeline.md](asset-pipeline.md) requires and the same form the Nature Kit ships in. Same
+author, same licence, same pack — an older cut of it.
 
 ## Engine and tools
 
