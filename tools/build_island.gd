@@ -41,7 +41,8 @@ const PEBBLE_FADE: float = 70.0
 const PALM_MODEL: String = "res://assets/models/nature/palm_tree.glb"
 const ROCK_MODEL: String = "res://assets/models/nature/stone_largeD.glb"
 const PEBBLE_MODEL: String = "res://assets/models/nature/stone_smallA.glb"
-const GRASS_MODEL: String = "res://assets/models/nature/grass_leafs.glb"
+const GRASS_MODEL: String = "res://assets/models/nature/grass_tuft.glb"
+const BUSH_MODEL: String = "res://assets/models/nature/bush.glb"
 ## What each model measures as it ships, so the scatter can go on thinking in metres. A palm is
 ## scaled by its height and the rest by their width, because that is the dimension each was drawn
 ## around.
@@ -52,8 +53,10 @@ const ROCK_MODEL_DEPTH: float = 1.03
 const PEBBLE_MODEL_WIDTH: float = 0.36
 ## A tuft of grass is a splay of flat leaves, and it ships four times wider than it is high — so it
 ## takes both figures. Scaled as one piece, tall grass would be a bush.
-const GRASS_MODEL_WIDTH: float = 0.26
-const GRASS_MODEL_HEIGHT: float = 0.14
+const GRASS_MODEL_WIDTH: float = 0.94
+const GRASS_MODEL_HEIGHT: float = 1.246
+const BUSH_MODEL_WIDTH: float = 1.9
+const BUSH_MODEL_HEIGHT: float = 1.2435
 ## The huts, from Kenney's CC0 Survival Kit — the Nature Kit's companion, drawn by the same hand on
 ## the same half-metre tile, and shipping the same untextured, named parts the palette maps colours
 ## onto. Four pieces: the posts a hut stands on, the deck they carry, the roof over it, and the
@@ -150,6 +153,10 @@ const GRASS_COUNT: int = 24000
 const GRASS_SHORT: Vector2 = Vector2(0.16, 0.34)
 const GRASS_TALL: Vector2 = Vector2(0.5, 0.85)
 const GRASS_TALL_SHARE: float = 0.5
+## A bush is ten times a tuft in triangles, so it is counted in dozens rather than thousands. It
+## never blocks: getting stuck on a shrub is worse than any realism it buys.
+const BUSH_COUNT: int = 90
+const BUSH_SIZE: Vector2 = Vector2(0.7, 1.5)
 ## How wide a tuft is, drawn independently of how tall it is. Tying the two together would give
 ## back the uniformity the two bands were for, one step removed: every tall tuft equally broad.
 const GRASS_WIDTH: Vector2 = Vector2(0.24, 0.46)
@@ -294,7 +301,7 @@ func _initialize() -> void:
 	print(
 		(
 			(
-				"island built — %d verts, %d palms, %d rocks, %d pebbles, %d tufts, %d huts, "
+				"island built — %d verts, %d palms, %d rocks, %d pebbles, %d tufts, %d bushes, %d huts, "
 				+ "%d nav polys, %d cells drained"
 			)
 			% [
@@ -303,6 +310,7 @@ func _initialize() -> void:
 				_placed.get("rocks", 0),
 				_placed.get("pebbles", 0),
 				_placed.get("tufts", 0),
+				_placed.get("bushes", 0),
 				_hut_sites().size(),
 				navigation.navigation_mesh.get_polygon_count(),
 				_drained
@@ -577,6 +585,15 @@ func _scatter() -> Node3D:
 		# that is not a lean any more, it is a smear.
 		tufts.append(Transform3D(turn * lean * Basis.from_scale(grown), spot))
 
+	var bushes: Array[Transform3D] = []
+	for spot: Vector3 in _spots(
+		BUSH_COUNT, CLEAR_RADIUS, 0.5, 2.4, Vector2(SHORE_BAND * 0.6, 3.0), 0.0, taken, true
+	):
+		var size := _rng.randf_range(BUSH_SIZE.x, BUSH_SIZE.y)
+		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
+		var grown := Vector3.ONE * (size / BUSH_MODEL_HEIGHT)
+		bushes.append(Transform3D(turn * Basis.from_scale(grown), spot))
+
 	# The models carry their own colours, one material per part, so nothing here tints them. What the
 	# wind material replaces is the shading, not the palette.
 	_placed = {
@@ -584,7 +601,9 @@ func _scatter() -> Node3D:
 		"rocks": rocks.size(),
 		"pebbles": pebbles.size(),
 		"tufts": tufts.size(),
+		"bushes": bushes.size(),
 	}
+	props.add_child(_multi("Bushes", _nature(BUSH_MODEL), bushes, _grass_wind(), GRASS_FADE, false))
 	props.add_child(_multi("Grass", _nature(GRASS_MODEL), tufts, _grass_wind(), GRASS_FADE, false))
 	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles, {}, PEBBLE_FADE, false))
 	props.add_child(_multi("Palms", _nature(PALM_MODEL), palms, _palm_wind()))
