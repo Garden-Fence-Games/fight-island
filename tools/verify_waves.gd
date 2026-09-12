@@ -32,6 +32,14 @@ const SHOULDER_TO_SHOULDER: float = 4.0
 const TELLS_APART: float = 0.35
 ## Enough rolls that a one-in-ten chance coming up nought would be a real result, not luck.
 const ELITE_ROLLS: int = 400
+## How finely the ring a body can arrive on is sampled.
+const RING_STEPS: int = 360
+## A body is taller than the point it stands on, and the camera looks down.
+const HEAD_HEIGHT: float = 1.8
+## How much of that ring the shot may cover before a wave has nowhere left to come from but behind
+## the player. Written out rather than derived from the zoom being checked, which would make it
+## agree with any camera anybody sets. At the shipped seventeen metres it is a quarter.
+const MOST_OF_THE_RING_IN_SHOT: float = 0.40
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -73,6 +81,7 @@ func _run() -> void:
 	EventBus.wave_cleared.connect(_on_wave_cleared)
 
 	_check_every_point_the_search_offers()
+	_check_the_camera_leaves_room_to_arrive_from()
 	await _check_a_wave_arrives_and_clears()
 	_check_nothing_spawned_in_shot_or_underfoot()
 	_check_the_bodies_were_reused()
@@ -289,6 +298,39 @@ func _shortened(config: WaveConfig, seconds: float) -> WaveConfig:
 	cycle.phases = phases
 	quick.cycle = cycle
 	return quick
+
+
+## The camera decides where a wave can come from, which is not obvious from either file. A spawn
+## point inside the shot is refused — a farmer fading into existence in frame tells the player the
+## world is a spawner rather than a place — so pulling the camera back takes arrival directions
+## away. The search has thirty-two attempts and keeps finding one long past the point where bodies
+## only ever walk in from behind the player, so a check on whether it succeeds would never fail.
+## This measures the ring instead.
+func _check_the_camera_leaves_room_to_arrive_from() -> void:
+	var camera := get_viewport().get_camera_3d()
+	if camera == null or _player == null:
+		_fail("there is no camera to measure the shot with")
+		return
+	var in_shot := 0
+	var tried := 0
+	for step: int in RING_STEPS:
+		for reach: float in [12.0, 17.0, 22.0, 26.0]:
+			var angle := TAU * float(step) / float(RING_STEPS)
+			var where := _player.global_position + Vector3(cos(angle), 0.0, sin(angle)) * reach
+			tried += 1
+			if camera.is_position_in_frustum(where + Vector3.UP * HEAD_HEIGHT):
+				in_shot += 1
+	var share := float(in_shot) / float(tried)
+	if share > MOST_OF_THE_RING_IN_SHOT:
+		_fail(
+			(
+				(
+					"the camera has %.0f%% of the spawn ring in shot, and %.0f%% is the most that"
+					+ " leaves a wave somewhere to come from"
+				)
+				% [share * 100.0, MOST_OF_THE_RING_IN_SHOT * 100.0]
+			)
+		)
 
 
 ## The rules, asserted against the search itself rather than against the handful of points one wave
