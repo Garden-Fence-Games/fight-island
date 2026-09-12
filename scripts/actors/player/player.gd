@@ -5,8 +5,10 @@ extends CharacterBody3D
 
 const INPUT_BUFFER: float = 0.15
 const TURN_SPEED_DEGREES: float = 720.0
-const MOVE_SPEED: float = 4.2
-const SPRINT_SPEED: float = 6.6
+## Slower than the farmhand's 3.4 m/s, which is deliberate: a walking player cannot break away from
+## a farmer, so retreat costs stamina rather than being the default state.
+const MOVE_SPEED: float = 3.2
+const SPRINT_SPEED: float = 5.0
 const SPRINT_DRAIN: float = 12.0
 const SPRINT_MINIMUM: float = 10.0
 

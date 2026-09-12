@@ -86,12 +86,18 @@ not scale with upgrades.
 | Hit-stun | 0.25 s |
 | Stamina | 100 |
 | Stamina regen | 20/s, after 0.8 s idle — 1.2 s after a whiffed heavy |
-| Move speed | 4.2 m/s |
-| Sprint speed | 6.6 m/s |
+| Move speed | 3.2 m/s |
+| Sprint speed | 5.0 m/s |
 | Turn rate | 720°/s |
 | Movement while attacking | none — attacks are committed |
 
 Stamina gates dodge, sprint, parry and melee attacks. It never gates the gun trigger.
+
+**Walking is slower than a farmhand.** 3.2 m/s against his 3.4, so the only thing that outruns a
+farmer is a sprint, and a sprint costs stamina — retreat is a decision with a price rather than the
+state you sit in. The dodge covers its 3.2 m faster than a sprint could, and does not become the
+way to get around: 22 stamina for 3.2 m against 6.6 for the 2.75 m a sprint covers in the same time
+is three times the price per metre.
 
 ## Weapons
 
