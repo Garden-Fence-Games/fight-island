@@ -3,14 +3,32 @@ extends EnemyState
 ## The telegraph. It shortens as waves go on but never past its floor, because a wind-up nobody
 ## can read is noise, not difficulty.
 ##
-## **Nothing draws it.** The ring that used to fill on the ground under him is gone and the wind-up
-## clip meant to replace it is not authored yet, so the tell is currently that he has planted his
-## feet: the timing still exists, the picture of it does not.
+## **He rears back.** The ring that used to fill on the ground is gone (#122), and the clip meant to
+## replace it needs a rig the farmhand does not have yet — so the tell is the body itself: it tips
+## backwards over the wind-up and snaps forward on the swing.
 ##
-## Which makes the **sound** the whole of the telegraph for now rather than half of it. It is
+## That is not a placeholder for the clip so much as the same thing done with what exists. What the
+## ring had to satisfy, this satisfies:
+##
+## - **A shape, not a colour.** It is geometry, so it survives greyscale, a colourblind player and a
+##   camera twenty metres up — and it needs no accessibility switch to do it.
+## - **The same tell for every archetype.** One lean, whoever is throwing it. A signal per farmer is
+##   one more thing to learn in the half second there is to read it.
+## - **Driven by the wind-up's own duration**, which is not a constant: the waves shorten it and the
+##   hour shortens it again. The lean is a share of `enemy.windup()` rather than a clip playing at
+##   its own rate, so the picture and the timing cannot drift apart. When the rig lands, the same
+##   share hands straight to `AnimationComponent.play_clip(clip, seconds)`.
+##
+## Which leaves the sound as the other half of the telegraph rather than the whole of it. It is
 ## announced from here because this is the one place that knows a body has committed and where it is
 ## standing, and it is announced on the bus rather than played here because a state machine has no
 ## business knowing the game has audio in it.
+
+## How far the body tips back, in degrees, at the moment the swing begins. Large on purpose: the top
+## of a capsule sits 0.85 m above its own origin, so even this only swings the silhouette about half
+## a metre — which against a body 0.7 m wide is the difference between "standing" and "loaded", and
+## is what has to carry at twenty metres.
+const LEAN_DEGREES: float = 35.0
 
 var _elapsed: float = 0.0
 
@@ -18,6 +36,13 @@ var _elapsed: float = 0.0
 func enter(_message: Dictionary) -> void:
 	_elapsed = 0.0
 	EventBus.telegraph_began.emit(enemy.global_position, enemy.data)
+
+
+## Whatever ends the wind-up — the swing, a stagger, a death — stands the body back up. A farmer
+## left leaning is the same lie the ring told when it outlived the commit it was drawn for.
+func exit() -> void:
+	if enemy.mesh != null:
+		enemy.mesh.rotation.x = 0.0
 
 
 func physics_update(delta: float) -> void:
@@ -28,5 +53,19 @@ func physics_update(delta: float) -> void:
 	if attack == null:
 		transition_to(&"Idle")
 		return
+	_lean(_elapsed / maxf(enemy.windup(), 0.001))
 	if _elapsed >= enemy.windup():
 		transition_to(&"Attack")
+
+
+## Straight in, not eased. The whole use of the picture is telling the player *when*, so how far the
+## body has tipped has to map to how much time is left — an ease would hold it upright and then rush
+## it, which reads as a shorter wind-up than the one being fought.
+##
+## A Node3D's forward is -Z, so tipping the top towards +Z is tipping it backwards, away from
+## whoever is about to be hit. Only the rotation is touched: the scale belongs to the elite rank and
+## the position to the scene, and a tell that fought either would be a tell that broke them.
+func _lean(through: float) -> void:
+	if enemy.mesh == null:
+		return
+	enemy.mesh.rotation.x = deg_to_rad(LEAN_DEGREES) * clampf(through, 0.0, 1.0)
