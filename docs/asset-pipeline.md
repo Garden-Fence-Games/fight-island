@@ -33,8 +33,8 @@ the test the second one had to pass too:
 
 - **One mesh per plant, origin at its base.** That is what the scatter and the wind shader already
   wanted — a palm in one piece bends as one piece, and nothing has to be held together.
-- **No textures at all**, only per-material colours, so the wind shader needs no sampler and the
-  island keeps its own palette.
+- **No textures at all**, only per-material colours, so the island keeps its own palette. This was
+  also once true of the shader — see *The palm is the exception* below, which is what changed.
 - **Cheap enough for a `MultiMesh`.** A palm is 186 triangles, a boulder 80, a tuft of grass 36 —
   times 380, 950 and 24 000 instances, which is a number worth checking before downloading anything.
 - **Named parts.** The generator maps colours onto `woodBark`, `leafsGreen`, `stone` and so on, so a
@@ -49,6 +49,37 @@ four tests is not a pack to work around, and this is what "check before download
 **The pack's colours are not used.** Its leaves ship as turquoise and its stone as a pale blue-white
 — a palette from another island. Taking the shapes and keeping our own colours also puts the art
 direction in one file instead of spreading it across whatever happened to be downloaded.
+
+## The palm is the exception, and it is ours
+
+The palm is no longer Kenney's. It is modelled and **painted in Blender** by the project, textured on
+a single 2048² atlas — so it brings its own colours and the palette steps aside for it.
+
+Making room for it cost one line of shader and nothing else:
+
+```glsl
+uniform sampler2D albedo_texture : source_color, hint_default_white;
+ALBEDO = tint * texture(albedo_texture, UV).rgb;
+```
+
+**`hint_default_white` is the whole trick.** A plant that sets no texture samples white, so
+`tint * white` is the flat colour the palette has always produced — the grass, the pebbles and the
+stone render exactly as before, byte for byte. One shader covers both kinds, and the painted palm
+stays in the same wind as everything else rather than becoming the one motionless tree on the island.
+
+`build_island.gd` decides per surface: a shipped material with an albedo texture keeps it and gets a
+white tint; one without is looked up in the palette by its part name, as before.
+
+**`palm_tree_palm_tree.png` is committed although it is derived.** Godot's glTF importer lifts an
+embedded texture out into a file beside the model, and the baked `island.tscn` then references that
+file by path — so a repository without it is a repository where the island does not load. Its
+sidecar imports it **VRAM Compressed**, which is the reason not to fight the extraction: the same
+texture left inside the `.glb` can only be embedded uncompressed or as Basis Universal.
+
+Two figures worth knowing before the next painted plant. The palm ships **692 triangles against
+Kenney's 186**, which at 380 instances is 263 000 triangles rather than 71 000 — on foliage that has
+no distance culling yet. And its texture is 2048², where the rest of the island's vegetation costs
+no texture memory at all.
 
 **Blender is not installed on this machine, and nothing before the art phase needs it.**
 

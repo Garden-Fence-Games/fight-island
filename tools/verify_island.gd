@@ -34,10 +34,11 @@ const PLACED: PackedStringArray = ["RockFormations", "Huts"]
 const FOLIAGE: PackedStringArray = ["Grass", "Palms"]
 const STILL: PackedStringArray = ["Rocks", "Pebbles"]
 const FOLIAGE_SHADER: String = "res://assets/shaders/foliage.gdshader"
-## The two figures a palm's surfaces are allowed to set for themselves — their own colour, and how
-## far a leaf flexes. Every wind figure falls through to the shader, so no part of a palm can bend
-## differently from the rest of the same tree.
-const PALM_OWN: PackedStringArray = ["tint", "flutter"]
+## The figures a palm's surfaces are allowed to set for themselves — how it is coloured, whether by
+## a tint or by its own painted texture, and how far a leaf flexes. **Every wind figure falls
+## through to the shader**, so no part of a palm bends differently from the rest of the same
+## tree, which is the whole of what this list guards. Colour is not wind.
+const PALM_OWN: PackedStringArray = ["tint", "albedo_texture", "flutter"]
 ## What a palm should measure, in metres. A wrong figure for the model's shipped height is silent:
 ## the island simply comes back with palms at three times the size of the fight.
 const PALM_SHORTEST: float = 3.0
@@ -274,9 +275,18 @@ func _check_the_palms_share_one_wind(island: Node) -> void:
 ## flat colour has bought nothing, and nothing else here would notice.
 func _check_a_palm_is_still_two_colours(island: Node) -> void:
 	var materials := _wind_on(island, "Palms")
+	# A painted palm answers the same question with a texture instead of with surfaces: its trunk and
+	# its leaves differ because they were drawn differing, on one material. What this check is really
+	# about is a palm that came out as one flat colour, and that is still caught below.
+	for material: ShaderMaterial in materials:
+		if material.get_shader_parameter("albedo_texture") != null:
+			return
 	if materials.size() < 2:
 		_failures.append(
-			"a palm should render as trunk and leaves, has %d surfaces" % materials.size()
+			(
+				"a palm should render as trunk and leaves, has %d surfaces and no texture"
+				% materials.size()
+			)
 		)
 		return
 	var colours := {}

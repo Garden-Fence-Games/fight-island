@@ -27,17 +27,17 @@ const FADEABLE_SHADER: String = "res://assets/shaders/fadeable.gdshader"
 ## was, and a grove of them flickering as the body walks through is worse still. What hides the
 ## player outright is a five-metre boulder, and there are six of those.
 const OCCLUDER_GROUP: StringName = &"occluder"
-## The scattered decoration, from Kenney's CC0 Nature Kit. Every one of them has its origin at its
-## base and carries no texture — only per-material colours — which is exactly what the scatter and
-## the wind shader already wanted.
-const PALM_MODEL: String = "res://assets/models/nature/tree_palm.glb"
+## The scattered decoration, each with its origin at its base. **The palm is ours and painted**, so
+## it brings its own colours and the palette steps aside — see `_part_material`. The rest are
+## Kenney's CC0 Nature Kit: untextured, cut into named parts, coloured by the island.
+const PALM_MODEL: String = "res://assets/models/nature/palm_tree.glb"
 const ROCK_MODEL: String = "res://assets/models/nature/stone_largeD.glb"
 const PEBBLE_MODEL: String = "res://assets/models/nature/stone_smallA.glb"
 const GRASS_MODEL: String = "res://assets/models/nature/grass_leafs.glb"
 ## What each model measures as it ships, so the scatter can go on thinking in metres. A palm is
 ## scaled by its height and the rest by their width, because that is the dimension each was drawn
 ## around.
-const PALM_MODEL_HEIGHT: float = 1.51
+const PALM_MODEL_HEIGHT: float = 5.29
 const ROCK_MODEL_WIDTH: float = 1.07
 const ROCK_MODEL_HEIGHT: float = 0.57
 const ROCK_MODEL_DEPTH: float = 1.03
@@ -736,24 +736,27 @@ func _dress(mesh: ArrayMesh, shader: String, uniforms: Dictionary) -> void:
 		mesh.surface_set_material(surface, _part_material(mesh, surface, shader, uniforms))
 
 
-## The material for one part of a model, in the island's colour for that part.
+## One part of a model, in the island's colour — or its own, if painted. See asset-pipeline.md.
 func _part_material(
 	mesh: ArrayMesh, surface: int, shader: String, uniforms: Dictionary
 ) -> Material:
-	var shipped := mesh.surface_get_material(surface)
+	var shipped := mesh.surface_get_material(surface) as BaseMaterial3D
+	var painted := shipped.albedo_texture if shipped != null else null
 	var part := shipped.resource_name if shipped != null else ""
-	if not NATURE_PALETTE.has(part):
+	var colour: Color = NATURE_PALETTE.get(part, Color.WHITE)
+	if painted == null and not NATURE_PALETTE.has(part):
 		printerr("no colour for the part a model calls '%s'" % part)
 		return shipped
-	var colour: Color = NATURE_PALETTE[part]
 	if shader.is_empty():
 		var matte := StandardMaterial3D.new()
 		matte.albedo_color = colour
+		matte.albedo_texture = painted
 		matte.roughness = 0.9
 		return matte
 	var material := ShaderMaterial.new()
 	material.shader = load(shader)
 	material.set_shader_parameter("tint", colour)
+	material.set_shader_parameter("albedo_texture", painted)
 	for parameter: String in uniforms:
 		material.set_shader_parameter(parameter, uniforms[parameter])
 	return material

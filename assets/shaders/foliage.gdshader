@@ -12,6 +12,10 @@ render_mode world_vertex_coords, diffuse_burley, specular_schlick_ggx;
 // two plants a metre apart must not jump to opposite ends of the cycle.
 
 uniform vec3 tint : source_color = vec3(0.36, 0.52, 0.27);
+// A plant that carries its own painted colours supplies this; every other one leaves it alone.
+// `hint_default_white` is what makes the two live in one shader: an unset sampler reads as white,
+// so `tint * white` is the flat colour the island's palette has always produced, unchanged.
+uniform sampler2D albedo_texture : source_color, hint_default_white;
 uniform float surface_roughness : hint_range(0.0, 1.0) = 0.9;
 
 uniform vec2 wind_heading = vec2(0.86, 0.51);
@@ -59,7 +63,7 @@ void vertex() {
 }
 
 void fragment() {
-	ALBEDO = tint;
+	ALBEDO = tint * texture(albedo_texture, UV).rgb;
 	ROUGHNESS = surface_roughness;
 	SPECULAR = 0.15;
 }
