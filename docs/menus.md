@@ -49,8 +49,16 @@ list — a run is forty minutes and the game has one difficulty, so anything bet
 the fight is furniture.
 
 Credits are not a title entry: the layout holds three rows without crowding the logo, and a fourth
-that nobody opens twice is not worth the height. They do not have a home yet — the Options screen
-is five tabs and a sixth would not be one of the five the design draws.
+that nobody opens twice is not worth the height. Nor are they a sixth Options tab — the design draws
+five. They sit **beside the version number**, as a discreet line under the menu, and open as an
+overlay the way Options does.
+
+What the overlay shows is not written anywhere near it. `docs/credits.md` is the list; the game
+reads `data/credits.tres`, baked from that document by `tools/build_credits.gd`; and
+`tools/verify_credits.tscn` fails the build if the two have come apart or if a baked row never
+reaches a label. Adding an asset is a row in the document and a rebuild — this screen is never
+edited for it, because a second hand-kept copy of an attribution list goes wrong by leaving somebody
+out.
 
 The background is the island with the camera drifting slowly, blurred and dimmed. Not a pre-rendered
 image: `scenes/world/vista.tscn` instances **the same `island.tscn` the fight happens on**, lit by

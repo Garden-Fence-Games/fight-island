@@ -115,12 +115,24 @@ size_flags_horizontal = 0
 label_key = "UI_QUIT"
 action = "ui_cancel"
 
-[node name="Version" type="Label" parent="Content/Column"]
+[node name="Footer" type="HBoxContainer" parent="Content/Column"]
 layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 24
+
+[node name="Version" type="Label" parent="Content/Column/Footer"]
+layout_mode = 2
+size_flags_vertical = 4
 mouse_filter = 2
 theme_type_variation = &"Caption"
 text = "v0.0.0"
 auto_translate_mode = 2
+
+[node name="Credits" parent="Content/Column/Footer" instance=ExtResource("4")]
+layout_mode = 2
+size_flags_horizontal = 0
+label_key = "UI_CREDITS"
 
 [node name="Fade" type="ColorRect" parent="."]
 layout_mode = 1
