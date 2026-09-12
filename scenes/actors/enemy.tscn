@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/enemy/enemy.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -15,6 +15,7 @@
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_dead.gd" id="13"]
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_retreat.gd" id="15"]
 [ext_resource type="Resource" path="res://data/enemies/farmhand.tres" id="14"]
+[ext_resource type="PackedScene" path="res://scenes/fx/telegraph.tscn" id="16"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
 height = 1.7
@@ -36,6 +37,7 @@ collision_layer = 4
 collision_mask = 3
 script = ExtResource("1")
 data = ExtResource("14")
+telegraph_scene = ExtResource("16")
 
 [node name="Body" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)

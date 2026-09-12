@@ -22,6 +22,10 @@ signal enemy_spawned(enemy: Node3D)
 ## The archetype travels with the death because the tally outlives the node that carried it.
 signal enemy_died(enemy: Node3D, archetype: StringName, money: int)
 signal hitstop_requested(duration: float)
+## The camera should be knocked, and by how much. A request rather than an order: the camera scales
+## it by the player's own setting, and a player who has turned shake off is not asking for less of
+## it, they are asking for none.
+signal shake_requested(strength: float)
 ## A wave has begun, and how many bodies it will send in total.
 signal wave_started(wave: int, enemies: int)
 ## The last of them is down. The reward travels with it so the economy can stay a listener rather
