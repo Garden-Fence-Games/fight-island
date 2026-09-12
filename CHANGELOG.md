@@ -8,6 +8,12 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- `tools/verify_settings.tscn` — every key in `Settings.DEFAULTS` has to be either applied by
+  `Settings` itself or read by a script that is not the options row drawing it. It reads the
+  project's own source to answer that, the way `verify_credits` reads `docs/credits.md`, because a
+  check that can only see runtime state cannot see a consumer that does not exist. Proven by
+  putting one of the dead settings back.
+
 - **One budget for the whole hit.** `scripts/systems/emphasis.gd` is now the single table deciding
   how loud anything in a fight may be, and the only thing that emits `hitstop_requested` or
   `shake_requested`. A perfect finisher that kills is **one** blow: the loudest figure on each
@@ -19,6 +25,20 @@ All notable changes to this project are documented here, following
   buffered press.
 
 ### Fixed
+
+- **Three settings persisted across launches and moved nothing**: mouse sensitivity, stick
+  sensitivity and invert Y. They were written for a camera that can be turned, and this one cannot
+  be — the yaw and the pitch are constants on `CameraRig`, the mouse aims by where its cursor lands
+  on the ground and the stick by the direction it points. There was never a look delta to scale or a
+  pitch to invert, so all three are gone along with their rows and their string-table entries. It is
+  the third time this has shipped, after the colourblind telegraphs and aim assist, and it is the
+  worst shape a settings bug has: silent, and it lands on the player who needed the setting, who
+  finds it, sets it and believes they are covered.
+- `CLAUDE.md` still told every future session that camera look reads `InputEventMouseMotion` and
+  that `camera_left/right/up/down` live in the input map. The camera was fixed and those five
+  actions removed — `docs/input-map.md` records it and `CLAUDE.md` never caught up, which is the
+  most expensive place in the repository to be wrong.
+
 
 - **Taking a hit shakes the camera.** The comment beside the shake call read "shake on the three
   finishers **and on taking damage**, and nowhere else", and taking damage shook nothing at all: the

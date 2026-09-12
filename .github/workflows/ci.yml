@@ -137,6 +137,15 @@ jobs:
       - name: Verify the options screen
         run: tools/run-check.sh res://tools/verify_options.tscn
 
+      # Three settings have now shipped that persisted across launches and moved nothing: the
+      # colourblind telegraphs after their ring went, aim assist for as long as the gun existed,
+      # and the two look sensitivities plus invert Y for a camera that cannot be turned. It is the
+      # worst shape a settings bug has — silent, and it lands on the player who needed it, who
+      # sets it and believes they are covered. This reads the source and fails on a key whose only
+      # other mention is the row drawing it.
+      - name: Verify every setting reaches something
+        run: tools/run-check.sh res://tools/verify_settings.tscn
+
       # A pause menu that forgets to pause, a dialog a stopped tree cannot process, or an Escape
       # that closes the dialog and the menu under it in the same frame: none of that shows up in a
       # diff, and all of it is a soft lock in front of the player.

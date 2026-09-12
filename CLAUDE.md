@@ -54,8 +54,13 @@ This is a decision, not drift. Do not "fix" snake_case `.gd` files. See
 
 ## Architecture notes that are easy to get wrong
 
-- **Mouse motion cannot be an InputMap action.** Camera look reads `InputEventMouseMotion` in
-  `_unhandled_input`; only the gamepad half lives in `[input]` as `camera_left/right/up/down`.
+- **There is no camera look, and nothing should add one.** The yaw and the pitch are constants on
+  `CameraRig` — the whole design rests on one viewing angle, so a telegraph can never hide behind
+  geometry the player turned into. `camera_left/right/up/down` were removed with it (see
+  `docs/input-map.md`), and so were mouse sensitivity, stick sensitivity and invert Y: a fixed
+  camera has no look delta to scale and no pitch to invert. Only zoom remains.
+- **Mouse motion cannot be an InputMap action.** The mouse *aims* rather than looks: the cursor is
+  cast onto the ground in `_unhandled_input`, which is a position and not a delta.
 - Physics layers are named in `project.godot` — reference them through a constants script, never
   as raw integers.
 - Hit registration runs on the physics frame, never on interpolated visual transforms.

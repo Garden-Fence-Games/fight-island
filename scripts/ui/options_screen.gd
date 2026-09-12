@@ -54,32 +54,12 @@ const PAGES: Array = [
 		],
 	},
 	{
+		# Rebinding and nothing else. The three rows that used to sit here — mouse sensitivity, stick
+		# sensitivity, invert Y — were for a camera that can be turned, and this one cannot be: see
+		# `CameraRig`. There is no look delta to scale and no pitch to invert.
 		"tab": "OPT_TAB_CONTROLS",
 		"bindings": true,
-		"rows":
-		[
-			{
-				"setting": &"controls_mouse_sensitivity",
-				"label": "OPT_MOUSE_SENSITIVITY",
-				"kind": OptionRow.Kind.SLIDER,
-				"minimum": 4.0,
-				"maximum": 40.0,
-				"step": 4.0,
-			},
-			{
-				"setting": &"controls_stick_sensitivity",
-				"label": "OPT_STICK_SENSITIVITY",
-				"kind": OptionRow.Kind.SLIDER,
-				"minimum": 60.0,
-				"maximum": 420.0,
-				"step": 40.0,
-			},
-			{
-				"setting": &"controls_invert_y",
-				"label": "OPT_INVERT_Y",
-				"kind": OptionRow.Kind.TOGGLE,
-			},
-		],
+		"rows": [],
 	},
 	{
 		"tab": "OPT_TAB_VIDEO",
