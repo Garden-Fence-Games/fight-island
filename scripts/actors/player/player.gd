@@ -330,6 +330,10 @@ func _on_hurt(info: HitInfo) -> void:
 		if machine != null and machine.current is PlayerDodge:
 			EventBus.dodge_evaded.emit()
 		return
+	# Taking a hit is the loudest thing that happens to the player and the only one they did not
+	# choose, so it spends from the same budget every blow they land does — see `Emphasis`. Here
+	# rather than in `Hurt`, because a blow with no stagger still arrived.
+	Emphasis.spend(Emphasis.for_hurt())
 	if machine != null and info.stagger > 0.0:
 		machine.current.transition_to(&"Hurt", {"stagger": info.stagger})
 
