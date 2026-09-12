@@ -70,8 +70,9 @@ cannot be: somebody has to play the run through on each scheme and say so.
 - Final art for the island, both characters and the three weapons — the primitives go away
 - Animation pass, VFX pass, full audio
 - Main menu, settings, credits
-- FR and EN localisation. The string table in `assets/locale/ui.csv` is already the only place UI
-  text lives, but it holds one column and that column is English
+- Every player-facing string through `tr()`, with no literal left in a scene or a script. **The
+  game ships in English and in nothing else** — see [menus.md](menus.md); the `tr()` layer is there
+  so a menu is not rewritten the day someone wants a second locale, not because one is planned
 - Balance telemetry in debug builds: time per wave, deaths per wave, upgrade pick rate
 
 **Save and load came early** and is off this list: `SaveManager`, JSON under `user://`, and
