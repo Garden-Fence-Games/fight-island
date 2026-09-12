@@ -2,11 +2,14 @@ extends Control
 ## The first thing the player touches. Nothing between the button and the fight — no character
 ## select, no difficulty, no save slots. See docs/menus.md.
 ##
-## The grey wash behind the menu is a placeholder for the live arena; everything else is authored
-## to read on top of a moving 3D scene, so swapping it is one node.
+## Behind the menu is the island itself, blurred and dimmed — the same scene the fight happens on
+## and the same shader the pause menu uses, so the title can never look like a different game than
+## the one that follows, and the two treatments cannot drift apart.
 
 const RUN_SCENE: String = "res://scenes/main/main.tscn"
 const OPTIONS_SCENE: String = "res://scenes/ui/options_screen.tscn"
+const VISTA_SCENE: String = "res://scenes/world/vista.tscn"
+const HEADLESS: String = "headless"
 const FADE_IN: float = 0.7
 const FADE_OUT: float = 0.35
 
@@ -22,6 +25,7 @@ var _options_screen: OptionsScreen = null
 
 
 func _ready() -> void:
+	_raise_the_island()
 	version.text = "v%s" % ProjectSettings.get_setting("application/config/version", "")
 	_apply_run_state()
 	play.pressed.connect(_on_play_pressed)
@@ -52,6 +56,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif not resuming and event.is_action_pressed(&"menu_options"):
 		_on_options_pressed()
 		get_viewport().set_input_as_handled()
+
+
+## In code rather than in the scene, for one reason: a headless boot has no renderer to draw an
+## island with, and the dummy one answers a material query on it with an error that is about the
+## absence of a GPU rather than about the game. It is decoration — everything the boot check is
+## actually checking is the menu in front of it.
+func _raise_the_island() -> void:
+	if DisplayServer.get_name() == HEADLESS:
+		return
+	var vista := (load(VISTA_SCENE) as PackedScene).instantiate()
+	add_child(vista)
+	# Behind everything, including the blur that softens it.
+	move_child(vista, 0)
 
 
 func _apply_run_state() -> void:

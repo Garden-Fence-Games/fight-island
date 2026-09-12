@@ -17,3 +17,4 @@ from that note.
 | [0004](0004-three-autoloads.md) | Three autoloads, and `SaveManager` as a static class |
 | [0005](0005-docs-split-repo-zennotes.md) | What lives in the repo and what lives in ZenNotes |
 | [0006](0006-onready-over-node-exports.md) | `@onready` for a node's own children, not `@export` |
+| [0007](0007-sprint-hold-or-toggle.md) | Sprint is hold on a keyboard and toggle on a pad, per press |

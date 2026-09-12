@@ -7,8 +7,11 @@ extends Resource
 ## the two cannot drift apart while nobody is looking.
 
 @export_group("Size")
-@export var base_count: int = 3
-@export var count_per_wave: float = 1.6
+## The roster is a budget the island draws on to stay populated for a whole six-minute wave, not a
+## queue to be emptied — `max_alive` is what the player actually faces at once. It is generous on
+## purpose: a wave that runs out of farmers halfway through its night is a wave that stops.
+@export var base_count: int = 12
+@export var count_per_wave: float = 6.0
 @export var base_alive: int = 4
 @export var alive_per_wave: float = 0.8
 @export var fewest_alive: int = 4
@@ -43,6 +46,9 @@ extends Resource
 
 @export_group("Composition")
 @export var bands: Array[WaveBand] = []
+## The turn of the day, which is also how long a wave lasts. It lives here because a wave *is* a
+## turn of the day: asking how long one takes and asking when night falls are the same question.
+@export var cycle: DayCycle = null
 
 
 func enemy_count(wave: int) -> int:
@@ -58,16 +64,25 @@ func health_multiplier(wave: int) -> float:
 	return 1.0 + health_per_wave * float(wave - 1)
 
 
-func damage_multiplier(wave: int) -> float:
-	return 1.0 + damage_per_wave * float(wave - 1)
+## The phase is optional so the wave curve can still be read on its own — which is what the design
+## document tabulates and what the headless check compares against.
+func damage_multiplier(wave: int, phase: DayPhase = null) -> float:
+	var grown := 1.0 + damage_per_wave * float(wave - 1)
+	return grown * (phase.damage_scale if phase != null else 1.0)
 
 
 func speed_multiplier(wave: int) -> float:
 	return minf(1.0 + speed_per_wave * float(wave - 1), speed_ceiling)
 
 
-func windup_multiplier(wave: int) -> float:
-	return maxf(1.0 - windup_per_wave * float(wave - 1), windup_floor)
+## Night shortens the telegraph before the floor is applied and never after it. The floor is the
+## point past which a wind-up stops being readable, and an unreadable telegraph is not difficulty
+## whatever time it is — so night bites in the early waves and the floor wins in the late ones.
+func windup_multiplier(wave: int, phase: DayPhase = null) -> float:
+	var shortened := 1.0 - windup_per_wave * float(wave - 1)
+	if phase != null:
+		shortened *= phase.windup_scale
+	return maxf(shortened, windup_floor)
 
 
 func elite_chance(wave: int) -> float:

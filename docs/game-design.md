@@ -226,10 +226,12 @@ From wave 4, any archetype can roll elite: the same scene with health ×2.0, dam
 
 ## Waves
 
-`n` is the wave index, 1-based.
+`n` is the wave index, 1-based. **A wave lasts six minutes** — see *The day and the night* below —
+so `enemy_count` is a budget the island draws on to stay populated for that long, not a queue to be
+emptied. `max_alive(n)` is what the player actually faces at once, and it is the real pressure dial.
 
 ```
-enemy_count(n)   = 3 + floor(n * 1.6)                    # w1=4  w5=11  w10=19  w15=27
+enemy_count(n)   = 12 + floor(n * 6)                     # w1=18  w5=42  w10=72  w15=102
 max_alive(n)     = clamp(4 + floor(n * 0.8), 4, 12)
 hp_mult(n)       = 1.0 + 0.18 * (n - 1)                  # w15 = 3.52
 dmg_mult(n)      = 1.0 + 0.10 * (n - 1)                  # w15 = 2.40
@@ -267,6 +269,76 @@ normalises over what it can actually spawn, so those rows cost nothing until #8 
 
 Waves 1–3 teach. 4–7 add pressure through numbers. 8–11 introduce elites and force weapon
 rotation. 12–15 are an endurance test of the defensive kit.
+
+## The day and the night
+
+**A wave is one turn of the day.** It opens at seven in the morning, the sun goes down partway
+through, and the player finishes it in the dark. Survive the night and the wave is passed — a
+banner says so, and the next wave begins at daybreak.
+
+```
+Day 2:45  →  Dusk 0:30  →  Night 2:45      = six minutes, one wave
+07:00        19:00         21:00           → back to 07:00
+```
+
+This is what makes a wave a **ramp the player can see coming** rather than a flat block of
+difficulty. They are not told the wave is about to get harder; the light tells them.
+
+### What night changes
+
+| | Day | Dusk | Night |
+|---|---|---|---|
+| Opens at | 07:00 | 19:00 | 21:00 |
+| Lasts | 2:45 | 0:30 | 2:45 |
+| Damage | ×1.00 | ×1.10 | ×1.25 |
+| Telegraph | ×1.00 | ×0.95 | ×0.88 |
+| Rousing carries | ×1.0 | ×1.4 | ×2.0 |
+| Melee attack tokens | 2 | 2 | 3 |
+
+**Damage and telegraph are fixed when a farmer arrives**, not looked up when he swings. A farmer who
+walked on in daylight stays a daylight farmer for the rest of his life; nightfall changes who
+arrives next. Nobody's wind-up changes halfway through itself.
+
+**Rousing and the token pool are global, and they change the moment the sun does.** Rousing is the
+one that changes the shape of the fight rather than its numbers: in daylight the player can pick
+off the edge of a crowd, after dark one farmer noticing turns the whole beach. The third melee
+token is the other — two farmers committing at once is a fight you can answer, three is one you
+have to give ground to.
+
+**Noticing is deliberately not scaled.** A farmer arrives between 12 m and 26 m away and the
+thrower already notices at 12 m — any night bonus and every wave charges from the horizon again.
+
+**The telegraph floor wins.** Night multiplies the wind-up *before* `windup_floor`, never after, so
+it shortens telegraphs in the early waves and does nothing at all past wave 9. An unreadable
+telegraph is not difficulty whatever time it is; late-night pressure is the damage and the third
+token instead.
+
+### Ending a wave
+
+A wave ends when its night does, or earlier if the roster runs out and nothing is left standing —
+which is what a player fast enough to outpace the island has earned. Bodies still on their feet at
+daybreak are **sent home rather than killed**: the wave is passed, and nobody is paid for a fight
+that did not happen.
+
+**Consequence, stated plainly:** fifteen waves at six minutes is about an hour and a half of play,
+not the forty minutes this document used to assume. The wave length is one number in
+`data/day/`, and shortening the run is a matter of changing it or of shipping fewer waves.
+
+### The clock and the sky
+
+The HUD shows the hour. It is exact at every phase boundary — 07:00 when the wave starts, 19:00
+when the sun starts going down, 21:00 when night falls — so the face and the sky never disagree
+about the moment the rules changed.
+
+Each phase holds its look for three quarters of its span and turns into the next across the last
+quarter, which is where the sunset lives.
+
+**Night has to stay readable.** Ambient energy goes *up* at night to compensate for a black sky,
+and `tools/verify_day_night.tscn` holds night's total light above a floor — a telegraph nobody can
+see is not difficulty either.
+
+**Implemented in M2.** The table above is `data/day/`, and the headless check asserts the two still
+agree.
 
 ## Economy
 

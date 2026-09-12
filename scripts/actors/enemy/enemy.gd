@@ -173,11 +173,15 @@ func rouse() -> void:
 	roused = true
 	if data == null or data.rouse_radius <= 0.0:
 		return
+	# The hour reaches the crowd here and nowhere else. Noticing is deliberately left alone: a
+	# farmer arrives no closer than twelve metres and the thrower already notices at twelve, so a
+	# night bonus on that would have every wave charging from the horizon again.
+	var carries := data.rouse_radius * GameState.rouse_scale()
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		var other := node as Enemy
 		if other == null or other == self or other.roused or not other.is_alive():
 			continue
-		if global_position.distance_to(other.global_position) <= data.rouse_radius:
+		if global_position.distance_to(other.global_position) <= carries:
 			other.rouse()
 
 

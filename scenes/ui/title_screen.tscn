@@ -1,9 +1,16 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/title_screen.gd" id="1"]
 [ext_resource type="Theme" path="res://assets/themes/ui_theme.tres" id="2"]
 [ext_resource type="Texture2D" path="res://assets/logo/fight_island_logo_1.svg" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/ui/menu_entry.tscn" id="4"]
+
+[ext_resource type="Shader" path="res://assets/shaders/pause_blur.gdshader" id="6"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_blur"]
+shader = ExtResource("6")
+shader_parameter/radius = 3.0
+shader_parameter/darken = 0.68
 
 [sub_resource type="Gradient" id="Gradient_vignette"]
 offsets = PackedFloat32Array(0.4, 1)
@@ -35,7 +42,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.169, 0.176, 0.188, 1)
+material = SubResource("ShaderMaterial_blur")
 
 [node name="Vignette" type="TextureRect" parent="."]
 layout_mode = 1

@@ -8,6 +8,17 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- [ADR 0007](docs/decisions/0007-sprint-hold-or-toggle.md) closes the sprint question: hold on a
+  keyboard, toggle on a pad, decided **per press** from the device the press arrived on rather than
+  from a mode chosen at launch. No behaviour changed — the decision was already shipped, it just
+  had no written record.
+
+- **The island is behind the title screen**, blurred and dimmed, with the camera drifting through a
+  narrow arc. The grey wash is gone. It is the same `island.tscn` the fight happens on, lit by the
+  same sky, softened by the pause menu's own shader — three things that now cannot drift apart.
+- `scenes/world/island_sky.tscn`, the environment and sun lifted out of `arena.tscn` so the title
+  and the arena cannot be lit differently.
+
 - **Wave 1 is the tutorial.** A `TutorialDirector` in the arena reads seven `TutorialStep`
   resources, hand-drives that one wave, then hands the island back — wave 2 arrives on the formula
   like every other. Every step closes retroactively, so a player who lands a chained perfect hit

@@ -97,15 +97,23 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   `is_ranged`, `magazine`, `reload_time`, `upgrade_track: UpgradeTrack`.
 - **`UpgradeTrack`** — `id`, `display_name`, `icon`, `max_level`, `levels: Array[UpgradeLevel]`.
 - **`WaveConfig`** — every coefficient from the scaling formulas, exported so waves are tuned in
-  the inspector.
+  the inspector. It also carries the `DayCycle`, because which wave is a night wave is a question
+  about the wave table.
+- **`DayPhase`** — one stretch of the day: how many seconds it lasts, the hour it opens on, what it
+  does to damage, telegraphs, rousing and the melee token pool, and the whole of its look.
+- **`DayCycle`** — `phases: Array[DayPhase]`, in order. Their seconds add up to **one wave**. It
+  answers three questions off the same array: whose *rules* are in force this far into the wave,
+  what the *clock* reads, and how far the *sky* has turned toward the next phase.
 
 ## Autoloads — three, and why not four
 
 - **`EventBus`** — signals only, zero state. It exists so the wave director and the HUD never hold
   a reference to each other.
 - **`GameState`** — the *current run*: wave index, money, upgrade levels, equipped weapon, ammo
-  reserve, seed, run stats. It owns run data and nothing else: no gameplay logic, no node
-  references.
+  reserve, seed, run stats, and the time of day. It owns run data and nothing else: no gameplay
+  logic, no node references. The day phase lives here rather than being reached for through the
+  wave director because the sky, the clock, the token pool and every enemy want it, and none of
+  them should have to find a director to ask.
 - **`AudioManager`** — bus setup, a pool of `AudioStreamPlayer3D`, music crossfade. Genuinely
   global because a sound outlives the scene that triggered it.
 
@@ -201,6 +209,32 @@ starts the breather. The economy and the HUD are listeners — the director does
 
 **Every number comes from the resource**, including the elite chance the elite pass will read. A
 table split across two files is a table that starts disagreeing.
+
+## Day and night
+
+**A wave is one turn of the day**, so the director is a clock as well as a queue. It counts seconds
+into the wave and each frame writes `GameState.day_elapsed`, `GameState.hour` and
+`GameState.day_phase` from the cycle. The wave ends when the elapsed time reaches
+`DayCycle.wave_seconds()`, or earlier if the roster is spent and nothing is standing.
+
+`WaveConfig.damage_multiplier(wave, phase)` and `windup_multiplier(wave, phase)` are read **at the
+moment a body is sent**, so what a farmer hits for is fixed by the light he walked on in. The floor
+under the telegraph is applied after the phase, never before.
+
+Everything downstream is a listener or a reader, and none of them knows a director exists:
+
+- `AttackTokens` resizes its melee pool on `day_phase_changed`. Shrinking it back needs no
+  unwinding — a body holding a token keeps it, and the pool refuses the next claim until enough
+  have let go.
+- `Enemy.rouse()` multiplies its radius by `GameState.rouse_scale()`. **Noticing is deliberately
+  left alone**: a farmer arrives no closer than twelve metres and the thrower already notices at
+  twelve, so scaling that would put every night wave back to charging from the horizon.
+- `DayNight` owns the sun and the `WorldEnvironment` as children and reads `GameState.day_elapsed`
+  — the same clock the rules read, so the light and the damage change together. It duplicates the
+  environment on `_ready`, because a scene sub-resource is shared by every instance of the scene
+  and the headless checks make two arenas in one process.
+- The HUD polls the hour rather than being signalled: it moves every frame, and a signal per frame
+  is a signal nobody wants. It also listens for `wave_cleared` to put the passed-wave banner up.
 
 `SpawnDirector` answers *where*, under three rules that are each a thing a player would notice going
 wrong: far enough away to be seen coming, **never inside the camera's frustum** — feet *and* head,

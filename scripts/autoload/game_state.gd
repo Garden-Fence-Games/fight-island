@@ -11,6 +11,9 @@ signal debug_overlay_toggled(visible: bool)
 ## state and the bus holds none — anything that wants to show money is already able to reach an
 ## autoload. `delta` is carried so a display can count up to the new figure rather than snap to it.
 signal money_changed(balance: int, delta: int)
+## The rules of the day have changed. Emitted only on a real change, so a listener can size a pool
+## or swap a look without checking whether anything actually moved.
+signal day_phase_changed(phase: DayPhase)
 ## A track went up a level. Carried rather than polled so the body that has to grow can listen and
 ## the merchant does not need to know a player exists.
 signal upgrade_purchased(track: UpgradeTrack, level: int)
@@ -31,6 +34,17 @@ var money: int = 0
 ## What the run summary reads. Kept while the run happens, because half of these numbers leave no
 ## trace to reconstruct them from once the fight is over.
 var stats: RunStats = RunStats.new()
+## The turn of the day this run is on, and where in it the run has got to. The cycle is here rather
+## than reached for through the wave director because the sky, the clock and the enemies all want
+## it and none of them should have to find a director to ask.
+var day_cycle: DayCycle = null
+var day_phase: DayPhase = null
+## Nought to twenty-four — what the clock face reads.
+var hour: float = 0.0
+## Seconds into the wave, which is the same fact the hour is but in the unit the cycle is written
+## in. Both are kept because the face wants one and the sky wants the other, and deriving either
+## from the other means every reader carrying the conversion.
+var day_elapsed: float = 0.0
 ## Track id to how many levels of it are owned. Levels rather than effects, so the body can always
 ## recompute from its own base instead of carrying a running total that drifts.
 var upgrade_levels: Dictionary = {}
@@ -74,6 +88,9 @@ func begin_run() -> void:
 	wave = 0
 	wave_in_progress = false
 	money = 0
+	hour = 0.0
+	day_elapsed = 0.0
+	set_day_phase(null)
 	stats = RunStats.new()
 	upgrade_levels = {}
 	_bought_in_wave = -1
@@ -216,6 +233,19 @@ func discard_run() -> void:
 
 func best_wave() -> int:
 	return int(SaveManager.read_progress().get(BEST_WAVE_KEY, 0))
+
+
+func set_day_phase(phase: DayPhase) -> void:
+	if phase == day_phase:
+		return
+	day_phase = phase
+	day_phase_changed.emit(phase)
+
+
+## How far one farmer noticing the fight carries to the ones beside him, as the hour makes it.
+## Null-handling lives here so no caller has to remember that a cycle is optional.
+func rouse_scale() -> float:
+	return day_phase.rouse_scale if day_phase != null else 1.0
 
 
 func toggle_debug_overlay() -> void:
