@@ -166,8 +166,26 @@ triangle that stops any single answer from working.
 | Recovery | 0.60 s | 0.95 s | 0.80 s |
 | Reach | 1.6 m, 60° | 2.8 m, **160°** | 14 m |
 | Poise | 15 | 30 | 10 |
+| Notices the player at | 9 m | 9 m | 12 m |
+| Rouses others within | 7 m | 7 m | 7 m |
 | Money on kill | 2 | 5 | 4 |
 | Enters at wave | 1 | 3 | 5 |
+
+**A farmer minds his own business until he notices you.** He stands where he appeared; he does not
+set off from the horizon. This is what lets a wave build instead of arriving as one flat press — the
+player sees a farmer before the farmer sees them, and distance carries information again.
+
+Three rules make that read as calm rather than as broken:
+
+- **Noticing spreads.** A roused farmer rouses everyone within 7 m, so a group turns together. One
+  waking alone while the two beside him keep staring at the sea looks like a bug.
+- **Being hit always wakes him**, whatever the distance. Without it the thrower could plink at
+  someone from outside their own notice radius forever.
+- **Noticing is one way.** He does not lose interest because the player stepped back. A leash would
+  make the edge of every crowd breathe in and out.
+
+The radius has to stay well under the twelve metres the spawn search keeps bodies away from the
+player, or farmers arrive already awake and none of this exists.
 
 **Farmhand.** Bare hands, quick, fragile, and always the majority of a wave. He is what teaches the
 parry, and what makes a crowd feel like a crowd.
