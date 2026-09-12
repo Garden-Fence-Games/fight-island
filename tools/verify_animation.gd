@@ -59,6 +59,7 @@ func _run() -> void:
 	await _check_walking_outlasts_one_cycle(machine, anim)
 	await _check_idle_plays_idle(machine, anim)
 	await _check_clipless_state_rests(anim)
+	await _check_sprint_runs_the_walk_faster(anim)
 	_check_the_body_can_be_tinted(player)
 	await _check_the_fist_combo_animates(player, machine, anim)
 	_check_the_gun_starts_hidden(player)
@@ -139,8 +140,8 @@ func _check_idle_plays_idle(machine: StateMachine, anim: AnimationComponent) -> 
 		_fail("Idle plays %s, expected idle" % [anim.current_clip()])
 
 
-## Sprint, Dodge, Parry and Dead have no clip yet, which is the ordinary state of a rig that arrives
-## one animation at a time rather than an edge case. Driven through `play_state` rather than a real
+## Dodge, Parry and Dead have no clip yet, which is the ordinary state of a rig that arrives one
+## animation at a time rather than an edge case. Driven through `play_state` rather than a real
 ## transition so the check does not depend on which clips happen to exist this week.
 ## The guard is that it stays silent: the gate in CI fails on any WARNING line.
 func _check_clipless_state_rests(anim: AnimationComponent) -> void:
@@ -148,14 +149,47 @@ func _check_clipless_state_rests(anim: AnimationComponent) -> void:
 	anim.clip_missing.connect(
 		func(state: StringName, _clip: StringName) -> void: missing.append(state)
 	)
-	var played := anim.play_state(&"Sprint")
+	var played := anim.play_state(&"Dodge")
 	await get_tree().physics_frame
 	if played:
-		_fail("Sprint reports a clip, so this check is no longer testing a clipless state")
+		_fail("Dodge reports a clip, so this check is no longer testing a clipless state")
 	if anim.current_clip() != &"":
-		_fail("Sprint has no clip yet but the component reports %s" % [anim.current_clip()])
+		_fail("Dodge has no clip yet but the component reports %s" % [anim.current_clip()])
 	if missing.is_empty():
 		_fail("a state with no clip should emit clip_missing")
+
+
+## Sprint borrows the walk cycle played faster, so the two states share a clip and differ only by
+## speed. That is exactly the case a "has the clip changed?" check would miss, leaving a sprinting
+## player strolling — so this asserts the speed, not just the name.
+func _check_sprint_runs_the_walk_faster(anim: AnimationComponent) -> void:
+	var walk: StringName = anim.clips.get(&"Move", &"")
+	var sprint: StringName = anim.clips.get(&"Sprint", &"")
+	if sprint != walk:
+		_fail(
+			(
+				"Sprint plays %s and Move plays %s — this check assumes they share a clip"
+				% [sprint, walk]
+			)
+		)
+		return
+	anim.play_state(&"Move")
+	await get_tree().physics_frame
+	var walking := anim.animation_player.get_playing_speed()
+	anim.play_state(&"Sprint")
+	await get_tree().physics_frame
+	var running := anim.animation_player.get_playing_speed()
+	if anim.current_clip() != sprint:
+		_fail("Sprint plays %s, expected %s" % [anim.current_clip(), sprint])
+		return
+	var wanted: float = anim.clip_speeds.get(&"Sprint", 1.0)
+	if not is_equal_approx(running, walking * wanted):
+		_fail(
+			(
+				"sprinting runs the cycle at %.2f, walking at %.2f — expected %.1f times faster"
+				% [running, walking, wanted]
+			)
+		)
 
 
 ## `HitFeedback` drains the body's colour while a chain is spent, and it lives in `main.tscn` — so
@@ -269,6 +303,7 @@ func _report() -> void:
 		print(
 			(
 				"animation OK — the cycles loop, Move walks past one cycle, Idle idles, "
+				+ "Sprint runs the same cycle faster, "
 				+ "the three punches play their own clip at the attack's speed, "
 				+ "the gun stays hidden, the body can be tinted"
 			)
