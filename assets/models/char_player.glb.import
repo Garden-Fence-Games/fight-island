@@ -46,6 +46,9 @@ _subresources={
 },
 "walk": {
 "settings/loop_mode": 1
+},
+"walk_gun": {
+"settings/loop_mode": 1
 }
 }
 }
