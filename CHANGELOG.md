@@ -20,7 +20,22 @@ All notable changes to this project are documented here, following
   silhouette swings far enough to read at twenty metres (0.49 m, against a body 0.7 m wide), that
   the lean only ever grows — a body that tips and untips is a flicker, not a fill — and that every
   way out of a wind-up stands the body back up, including a wave cleared mid-commit.
+- **A bed that lifts with the island.** Three loops on the Music bus, driven by how full the island
+  is rather than by how far through the wave it is — a wave five minutes through is not a tense wave
+  if nobody is left. Measured against what *this* wave allows at once, so a full island sounds full
+  at wave 1 and at wave 15, and the breather between waves is silent.
+- **A telegraph outranks the bed.** The Music bus drops 14 dB while anything is winding up and eases
+  back after, the same rule that already refuses a camera knock over a wind-up.
+- **The merchant, the victory and the death have a sound.** A screen arriving in silence reads as
+  the game having stopped rather than as the fight having paused. Victory and defeat are the same
+  three notes in the same order, and the whole difference is which way they go — one shape, two
+  readings, nothing new to learn.
+- `EventBus.merchant_opened` and `EventBus.run_ended(victory)`.
+- `tools/verify_music.tscn`, which walks the whole mix rather than sampling it: the bed never falls
+  as the island fills, a fight never starts in silence, a wind-up ducks it and it comes back, the
+  three layers are one length, and **nothing the player needs plays on a bus they may mute**.
 
+### Added
 
 - **The thrower test from #39, walked and passed.** `tools/verify_sightlines.tscn` puts a thrower at
   the ten metres he prefers on 36 bearings from every stance a fight can happen on — sixty thousand

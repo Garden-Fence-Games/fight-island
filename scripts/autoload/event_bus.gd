@@ -42,6 +42,13 @@ signal hitstop_requested(duration: float)
 ## it, they are asking for none.
 signal shake_requested(strength: float)
 ## A wave has begun, and how many bodies it will send in total.
+## The counter is open. The one moment in a run where nothing is trying to kill the player, and it
+## had no sound at all — a screen arriving in silence reads as the game having stopped rather than
+## as the fight having paused.
+signal merchant_opened
+## The run is over, and which way. Separate from `player_died` because a victory and a death are the
+## same screen and the opposite feeling, and the only thing that can say so is a sound.
+signal run_ended(victory: bool)
 signal wave_started(wave: int, enemies: int)
 ## The last of them is down. The reward travels with it so the economy can stay a listener rather
 ## than something the director has to know about.

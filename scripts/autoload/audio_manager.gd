@@ -137,6 +137,35 @@ const SURF_SECONDS: float = 6.0
 ## three and two seconds, which do not divide into each other — so the water never settles into a
 ## rhythm the ear can count, and a wave every three seconds is a metronome.
 const SURF_SWELLS: int = 2
+## What a music layer is normalised to. Well under the bed, which is itself well under the fight: a
+## layer that competes with a wind-up has put atmosphere in front of information.
+## How far apart the three notes of an ending fall, and how long the last one holds. Slower than the
+## wave sting: a run finishing is the one moment in the game nobody is in a hurry.
+const ENDING_STEP: float = 0.22
+const ENDING_RING: float = 0.55
+## The one looping sound that is not music. Named so a check can tell the bed apart from a one-shot
+## without knowing what a surf is.
+const BED_SOUND: StringName = &"surf"
+const MUSIC_PEAK: float = 0.22
+## How long every layer runs before it comes round. **The same for all of them**, or they drift out
+## of phase within a minute and the lift stops being one piece of music getting louder.
+const MUSIC_SECONDS: float = 8.0
+## How far the second voice of each pair is pushed off the first. Three cents: slow enough that the
+## beating reads as movement rather than as tuning, and small enough that it is still one note.
+const DETUNE: float = 1.003
+## The three layers, and what each is for. A **share of the pressure** rather than a threshold:
+## `ground` is the sound of a fight happening at all, `pulse` arrives as the island fills, and
+## `edge` only ever reaches full at the top. `from` and `to` are the pressure either side of the
+## layer's own fade, so the three hand over rather than switching.
+##
+## The root is 55 Hz — A, low enough to sit under every partial in the game. Nothing here shares a
+## frequency with the perfect signature at 1320 Hz or with any wind-up, which is the whole reason a
+## music bed is allowed to exist during a fight.
+const LAYERS: Dictionary = {
+	&"music_ground": {"root": 55.0, "voices": 2, "from": 0.0, "to": 0.15, "swells": 2},
+	&"music_pulse": {"root": 82.5, "voices": 3, "from": 0.2, "to": 0.55, "swells": 5},
+	&"music_edge": {"root": 220.0, "voices": 4, "from": 0.6, "to": 0.95, "swells": 8},
+}
 ## How much of the bed's tail is folded back over its head to make the seam. A loop assembled from
 ## noise has no natural join; this is what stops the wrap being an audible tick every few seconds.
 const SURF_SEAM: float = 0.25
@@ -185,6 +214,8 @@ func _ready() -> void:
 	EventBus.weapon_dry_fired.connect(_on_weapon_dry_fired)
 	EventBus.weapon_fired.connect(_on_weapon_fired)
 	EventBus.wave_cleared.connect(_on_wave_cleared)
+	EventBus.merchant_opened.connect(_on_merchant_opened)
+	EventBus.run_ended.connect(_on_run_ended)
 
 
 ## The bed is the one sound still going when the game is asked to close, and a stream left playing
@@ -289,7 +320,12 @@ func _build() -> void:
 	_register(&"pickup", _pickup(), INCIDENTAL_PEAK)
 	_register(&"telegraph", _telegraph(), TELEGRAPH_PEAK)
 	_register(&"wave_cleared", _sting(), STING_PEAK)
+	_register(&"merchant", _merchant(), INCIDENTAL_PEAK)
+	_register(&"victory", _ending(true), STING_PEAK)
+	_register(&"defeat", _ending(false), STING_PEAK)
 	_register(&"surf", _surf(), SURF_PEAK)
+	for layer: StringName in LAYERS:
+		_register(layer, _layer(layer), MUSIC_PEAK)
 
 
 func _register(id: StringName, stream: AudioStreamWAV, peak: float) -> void:
@@ -510,6 +546,38 @@ func _sting() -> AudioStreamWAV:
 	return _bake(samples, STING_PEAK)
 
 
+## The counter opening. Two notes a fifth apart and nothing above them — quiet, warm and over
+## quickly, because the merchant is a pause rather than an event and a sting here would tell the
+## player something happened when what happened is that nothing is happening.
+func _merchant() -> AudioStreamWAV:
+	var samples := _silence(0.30, 0.09)
+	_tone(samples, 392.0, 0.6, 0.22)
+	_tone(samples, 587.0, 0.45, 0.30, 0.09)
+	_soften(samples, 0.25)
+	return _bake(samples, INCIDENTAL_PEAK)
+
+
+## The end of a run, either way. **The same three notes in the same order**, and the whole
+## difference is where they go: up for a victory, down for a death. One shape, two readings —
+## a player does not have to learn two sounds to know which one they got, and a summary screen that
+## arrives in silence reads as the game having crashed rather than ended.
+func _ending(victory: bool) -> AudioStreamWAV:
+	var notes: Array[float] = [523.0, 392.0, 262.0]
+	if victory:
+		notes = [392.0, 523.0, 784.0]
+	var samples := _silence(ENDING_RING, ENDING_STEP * 2.0)
+	for index: int in notes.size():
+		var last := index == notes.size() - 1
+		_tone(
+			samples,
+			notes[index],
+			0.5,
+			ENDING_RING if last else ENDING_STEP * 1.6,
+			ENDING_STEP * float(index)
+		)
+	return _bake(samples, STING_PEAK)
+
+
 ## The surf, and nothing else. It is the only sound here with no event behind it, and the only one
 ## that loops.
 ##
@@ -526,6 +594,32 @@ func _surf() -> AudioStreamWAV:
 	_breathe(samples, SURF_SWELLS, 0.55)
 	_breathe(samples, SURF_SWELLS + 1, 0.30)
 	return _bake_loop(samples, SURF_PEAK)
+
+
+## One layer of the music: a chord that breathes, built on the same seam the surf uses.
+##
+## Detuned rather than in unison. Two sines a few cents apart beat slowly against each other, which
+## is the difference between a drone that is a sound and a drone that is a test tone — and it is
+## free, where a filter sweep would not be.
+##
+## **Nothing here is rhythmic in the sense a fight is.** The swells are slow and their counts do not
+## divide into each other, for the reason the surf's do not: a bed the ear can count against is a
+## metronome, and a metronome is a thing the player starts fighting to instead of reading.
+func _layer(id: StringName) -> AudioStreamWAV:
+	var voice: Dictionary = LAYERS[id]
+	var samples := _span(MUSIC_SECONDS + SURF_SEAM)
+	var root := float(voice["root"])
+	for step: int in int(voice["voices"]):
+		# A fifth above each time, which stacks without ever landing on a third — a bed with a mode
+		# in it is a bed that has an opinion about the scene, and this one has to survive six
+		# minutes of whatever the player is doing.
+		var hertz := root * pow(1.5, float(step))
+		_tone(samples, hertz, 0.7 / float(step + 1), INF)
+		_tone(samples, hertz * DETUNE, 0.7 / float(step + 1), INF)
+	var looped := _join(samples)
+	_breathe(looped, int(voice["swells"]), 0.45)
+	_breathe(looped, int(voice["swells"]) + 1, 0.2)
+	return _bake_loop(looped, MUSIC_PEAK)
 
 
 ## Sized from the slowest decay the sound is about to use, and from how late the last of it starts,
@@ -779,6 +873,14 @@ func _on_footstep_taken(wading: bool) -> void:
 ## From where he is standing, and pitched a little differently each time. Three farmers committing
 ## together on one waveform would arrive as a single louder farmer, which is the opposite of what
 ## the sound is for.
+func _on_merchant_opened() -> void:
+	play(&"merchant")
+
+
+func _on_run_ended(victory: bool) -> void:
+	play(&"victory" if victory else &"defeat")
+
+
 func _on_telegraph_began(where: Vector3, archetype: EnemyData) -> void:
 	var id := archetype.telegraph_sound if archetype != null else &""
 	play_at(id if _sounds.has(id) else &"telegraph", where, JITTER)
