@@ -8,6 +8,20 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **A farmer rears back before he swings.** The ring under a winding-up enemy went in #122 and
+  nothing replaced it — a wind-up read as a body that had planted its feet, which left the sound
+  carrying the whole telegraph and left a player with SFX at zero no warning in any channel. The
+  body now tips 35° backwards over the wind-up and snaps forward on the swing.
+- It is a **shape, not a colour**, so it survives greyscale, a colourblind player and a camera
+  twenty metres up with no accessibility switch of its own; it is the **same tell for every
+  archetype**; and it is **a share of the wind-up's own duration** rather than a clip at its own
+  rate, so the waves and the hour cannot drift the picture away from the timing.
+- `verify_vfx` gained the claim the ring used to carry, and two the ring never did: that the
+  silhouette swings far enough to read at twenty metres (0.49 m, against a body 0.7 m wide), that
+  the lean only ever grows — a body that tips and untips is a flicker, not a fill — and that every
+  way out of a wind-up stands the body back up, including a wave cleared mid-commit.
+
+
 - **The thrower test from #39, walked and passed.** `tools/verify_sightlines.tscn` puts a thrower at
   the ten metres he prefers on 36 bearings from every stance a fight can happen on — sixty thousand
   lines from sixteen hundred places — and holds the island to a **band**, because the composition

@@ -83,6 +83,19 @@ machine rather than inheriting the actor.
 - **Enemy:** `Spawn`, `Idle`, `Chase`, `Strafe`, `WindUp`, `Attack`, `Recover`, `Stagger`, `Dead`,
   plus `Retreat` for the thrower.
 
+`WindUp` carries the telegraph, and since #122 took the ring off the ground it carries it **on the
+body**: the farmer tips backwards over the wind-up and snaps forward on the swing. It is geometry
+rather than colour, so it survives greyscale, a colourblind player and a camera twenty metres up
+without needing a switch of its own — and it is the same lean for every archetype, because a signal
+per farmer is one more thing to learn in the half second there is to read it.
+
+**The lean is a share of `enemy.windup()`, not a clip playing at its own rate.** That number is not
+a constant — the waves shorten it and the hour shortens it again — so a tell running on its own
+clock would finish early and lie about when the swing lands. `verify_vfx` holds exactly that by
+halving a wind-up and requiring the body to still arrive: a fixed-rate tell lands near half, and
+was measured at 48% when tried on purpose. When the enemy rig exists, the same share hands straight
+to `AnimationComponent.play_clip(clip, seconds)` and nothing else has to move.
+
 `Attack` is **one** state driven by `AttackData`. The nine player attacks are data, not nine states.
 
 The same applies to the enemies: **one `enemy.tscn`, three `EnemyData` resources.** Farmhand,
