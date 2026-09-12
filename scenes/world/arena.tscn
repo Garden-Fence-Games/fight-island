@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/systems/spawn_director.gd" id="7"]
 [ext_resource type="Script" path="res://scripts/systems/enemy_pool.gd" id="8"]
 [ext_resource type="Resource" path="res://data/waves/standard.tres" id="9"]
+[ext_resource type="Script" path="res://scripts/camera/occlusion_fader.gd" id="10"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 
@@ -59,6 +60,9 @@ collision_mask = 0
 
 [node name="Camera" type="Camera3D" parent="CameraRig/PitchPivot/Spring"]
 fov = 60.0
+
+[node name="Occlusion" type="Node" parent="CameraRig"]
+script = ExtResource("10")
 
 [node name="WaveDirector" type="Node" parent="."]
 script = ExtResource("6")

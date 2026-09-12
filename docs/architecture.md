@@ -204,6 +204,27 @@ sounds harmless and is not: the moment the island had trees, the arm collapsed a
 stood behind the player and sprang back when it cleared, which reads as the camera lurching. A
 fixed camera has to actually be fixed.
 
+## Occlusion
+
+The camera never moves, so what stands in front of the player is faded rather than dodged.
+`OcclusionFader` drives it, and three decisions in it are worth keeping.
+
+**Only the six authored boulders.** Palms are not faded — the body reads clearly through a crown of
+fronds, and thinning several hundred trees in and out as someone walks looks stranger than the trees
+did. That is a decision rather than an omission, so `verify_camera` fails if the palms are ever put
+back in the occluder group.
+
+**Plain transparency, not a dissolve.** Six objects in the transparent queue cost nothing. The
+first version dithered pixels away, which is what a `MultiMesh` of several hundred palms would have
+required — and it looked like a dissolve effect rather than like stone. Dropping the palms dropped
+the need for it.
+
+**The detector is geometry, not physics.** A ray on the `camera_occluder` layer is the obvious
+implementation and the wrong one: a boulder's collider is a box seven tenths its size sunk into the
+ground, and what hides the player is the silhouette. Each occluder is a sphere around what actually
+blocks the view, tested against the segment from the eye to the player's chest, with one distance
+check first so nothing beyond the camera is considered at all.
+
 ## Save format
 
 JSON under `user://`:
@@ -411,6 +432,10 @@ Two headless guards run in CI and locally:
   distances are written out rather than derived from the radius being tested — deriving the far one
   from the data would place it outside any value at all, and the check could never fail. It did not,
   until that was fixed.
+- **`tools/verify_camera.tscn`** — parks the body behind a boulder and asserts it goes pale, comes
+  back when the body walks out, never fades with nothing in the way, never fades to nothing, and
+  that the palms are left alone. The renderer draws nothing headless, so this checks the decision —
+  which occluder fades and by how much — not the pixels.
 - **`tools/verify_navigation.tscn`** — asserts the island is baked, that a route past a boulder
   bends around it, that a spawn point inside one is refused, and — the only check straight-line
   chasing cannot pass — that a farmhand with a boulder between him and the player still gets there.

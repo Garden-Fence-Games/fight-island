@@ -118,6 +118,12 @@ jobs:
       - name: Verify navigation
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_navigation.tscn
 
+      # The renderer draws nothing here, so this asserts which occluder should fade and by how much
+      # — the decision — rather than the pixels. The dither that turns a fade into holes has no
+      # decisions in it.
+      - name: Verify camera occlusion
+        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_camera.tscn
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
