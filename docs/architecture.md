@@ -613,6 +613,22 @@ gdUnit4. Unit-test the pure parts that carry the design: the `WaveConfig` formul
 cost curve, `AttackData` window arithmetic, upgrade application. Do not unit-test FSM transitions —
 drive a headless scene instead.
 
+**Every check runs through `tools/run-check.sh`**, in CI and locally, and never as a bare
+`godot --headless`. A GDScript file that fails to parse does not fail the check that uses it: the
+scene loads without the script, `_ready` never runs, nothing calls `quit()`, and the process sits
+in its idle loop forever. The same happens when a runtime error aborts the check halfway — GDScript
+abandons the function, so `_report()` is never reached — or when an `await` never resolves. All
+three look like a slow machine rather than a broken check.
+
+The runner turns each of them into a failure that says so: a wall clock (`CHECK_SECONDS`, 300 by
+default), a scan of the log for parse and compile errors, and one more rule that costs nothing —
+**a check that exits cleanly without printing its `OK —` line has not passed, it has stopped.**
+
+```
+tools/run-check.sh res://tools/verify_waves.tscn      # a scene
+tools/run-check.sh tools/verify_project_config.gd     # a script, run with --script
+```
+
 Two headless guards run in CI and locally:
 
 - **`tools/verify_project_config.gd`** — fails when an input action or a physics layer goes
