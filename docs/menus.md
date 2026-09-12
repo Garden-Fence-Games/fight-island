@@ -130,7 +130,7 @@ numbers, hitstop, reduce flashing and the sprint mode already have something lis
 
 | Setting | Default | Why it exists |
 |---|---|---|
-| Sprint | **auto** — hold on keyboard, toggle on pad | The two audiences genuinely expect different things, and a player who disagrees can say so |
+| Sprint | **auto** — hold on keyboard, toggle on pad, decided per press | The two audiences genuinely expect different things, and a player who disagrees can say so — [ADR 0007](decisions/0007-sprint-hold-or-toggle.md) |
 | Aim assist | soft | The gun is unplayable on a stick without it, and unsatisfying with too much |
 | Show tutorial prompts | on until completed once | See [tutorial.md](tutorial.md) |
 | Damage numbers | **off** | The design says the hit should be felt; the numbers are a debugging comfort |
