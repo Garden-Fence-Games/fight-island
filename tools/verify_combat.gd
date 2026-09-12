@@ -86,6 +86,9 @@ func _run() -> void:
 	await _check_he_backs_away_when_crowded()
 	await _check_only_one_stone_is_ever_in_the_air()
 	await _check_the_ranged_token_is_held_until_the_stone_lands()
+	# Last of the checks, because it is the one that kills the sparring partner on purpose — and
+	# before the run goes back, because it pays money into the wallet on its way through.
+	await _check_a_finisher_pays_double()
 	_put_the_run_back()
 	_report()
 
@@ -268,6 +271,75 @@ func _check_enemy_closes_and_hits() -> void:
 		_fail("the farmhand should have landed a hit within six seconds")
 
 
+## Three claims on one body, measured on the bus because the bus is what the wallet hears.
+##
+## The third is the one worth spelling out. A body is leased and returned, and `last_hit_worth` is
+## written by every hit that lands — so killing with a jab after an uppercut proves only that the
+## jab overwrote it, not that the pool cleans up. The case that proves the reset is a body killed by
+## **no swing at all**: damage applied straight to the health, the way the wave checks do it.
+## Without the reset in `revive()` that body would still be paying for somebody else's combo.
+func _check_a_finisher_pays_double() -> void:
+	var uppercut := _player.weapon.attack_at(2)
+	if uppercut == null or not uppercut.is_finisher():
+		_fail("the third fist attack should be the chain's finisher")
+		return
+	if is_equal_approx(uppercut.money_multiplier, 1.0):
+		_fail("the finisher should be worth more money than the swings before it")
+		return
+
+	var paid: Array[int] = []
+	var purse := func(_body: Node3D, _archetype: StringName, money: int) -> void: paid.append(money)
+	EventBus.enemy_died.connect(purse)
+	await _kill_with(0)
+	await _kill_with(2)
+	await _kill_with(0)
+	await _kill_with(2)
+	await _kill_without_a_swing()
+	EventBus.enemy_died.disconnect(purse)
+
+	if paid.size() != 5:
+		_fail("five dead farmhands should pay five times, paid %d" % paid.size())
+		return
+	var wanted := roundi(float(paid[0]) * uppercut.money_multiplier)
+	if paid[1] != wanted:
+		_fail("a finisher should pay %d against a jab's %d, paid %d" % [wanted, paid[0], paid[1]])
+	if paid[2] != paid[0]:
+		_fail("a jab after a finisher paid %d, and a jab is worth %d" % [paid[2], paid[0]])
+	if paid[4] != paid[0]:
+		_fail(
+			(
+				"a recycled body killed by no swing paid %d, and it should pay a plain %d"
+				% [paid[4], paid[0]]
+			)
+		)
+
+
+## One body, brought back and knocked down by the attack asked for. Revived rather than replaced,
+## because reuse is exactly what the second claim above is about.
+func _kill_with(index: int) -> void:
+	_enemy.revive(Vector3(0.0, 0.0, -1.0))
+	await _advance(0.1)
+	_place_enemy_in_front()
+	# One point of health, so whichever swing lands is the one that killed him.
+	_enemy.health.current_health = 1.0
+	await _advance(0.1)
+	_player.machine.current.transition_to(&"Attack", {"index": index, "perfect": false})
+	var attack := _player.weapon.attack_at(index)
+	await _advance(attack.windup + attack.active + 0.1)
+
+
+## Killed by nothing the player threw, which is how the wave checks and a drowning would do it. The
+## body has just been brought back from a life that ended on a finisher, so what it pays here is the
+## whole question.
+func _kill_without_a_swing() -> void:
+	_enemy.revive(Vector3(0.0, 0.0, -1.0))
+	await _advance(0.1)
+	var killing := HitInfo.new()
+	killing.damage = _enemy.health.max_health * 2.0
+	_enemy.health.apply(killing)
+	await _advance(0.1)
+
+
 ## Drives one attack to completion and returns the health the enemy lost.
 func _damage_from(message: Dictionary) -> float:
 	_place_enemy_in_front()
@@ -306,7 +378,7 @@ func _report() -> void:
 		print(
 			(
 				"combat OK — hit, perfect, chain, lockout, parry, the reaper's arc, the thrower's stone, "
-				+ "and a farmer who waits until he notices you"
+				+ "a combo finished for double money, and a farmer who waits until he notices you"
 			)
 		)
 		get_tree().quit(0)

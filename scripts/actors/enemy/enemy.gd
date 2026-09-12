@@ -41,6 +41,10 @@ var windup_scale: float = 1.0
 ## multipliers because the money and the look need it too, and a body that is worth triple has to
 ## still know that when it dies.
 var rank: EliteRank = null
+## What the last swing to land on this body was worth, which is the one that matters: by the time
+## the payout happens the swing is over. One rather than zero, so a body killed by anything that is
+## not a player's attack — a headless check applying damage straight to the health — still pays.
+var last_hit_worth: float = 1.0
 ## He comes, he circles, and he never swings. The first two tutorial steps need something to hit
 ## that will not hit back — and a farmer standing still would teach the player that farmers do.
 var passive: bool = false
@@ -93,6 +97,9 @@ func revive(
 	# Assigned before anything reads it: the health below, the tint and the money all ask, and a
 	# pooled body that kept a previous life's rank would come back an elite nobody rolled.
 	rank = elite
+	# A finisher's bonus belongs to the life it was earned in. Left behind, a recycled body would
+	# pay a combo nobody threw the next time a jab knocked it over.
+	last_hit_worth = 1.0
 	damage_scale = damage * (rank.damage_multiplier if rank != null else 1.0)
 	speed_scale = speed
 	windup_scale = windup
@@ -194,12 +201,14 @@ func rouse() -> void:
 			other.rouse()
 
 
-## What this body is worth to the wallet, the elite multiplier included. Private because the wallet
-## learns it from the death on the bus, which is the only place it is ever asked.
+## What this body is worth to the wallet: what the archetype pays, what being an elite multiplies it
+## by, and what the swing that finished it was worth. Private because the wallet learns it from the
+## death on the bus, which is the only place it is ever asked.
 func _money() -> int:
 	if data == null:
 		return 0
-	return data.money * (rank.money_multiplier if rank != null else 1)
+	var paid := data.money * (rank.money_multiplier if rank != null else 1)
+	return roundi(float(paid) * last_hit_worth)
 
 
 ## Whether the player has come close enough to be noticed. Being hit does not go through here —
@@ -370,6 +379,9 @@ func _apply_tint() -> void:
 func _on_hurt(info: HitInfo) -> void:
 	if not is_alive():
 		return
+	# Recorded here rather than on death because the hurtbox reports the contact before the health
+	# is spent, so this is the last moment the killing blow is still identifiable.
+	last_hit_worth = info.money_multiplier
 	rouse()
 	_poise_window = 2.0
 	poise_left -= info.poise_damage

@@ -10,6 +10,9 @@ var stagger: float = 0.0
 var poise_damage: float = 0.0
 var perfect: bool = false
 var hitstop: float = 0.0
+## Carried on the contact rather than asked for afterwards: by the time a body is paying out, the
+## swing that killed it is over and the attack that threw it is already gone.
+var money_multiplier: float = 1.0
 ## Set by a listener on Hurtbox.hurt - a parry, a shield - before the health component sees it.
 var negated: bool = false
 
@@ -29,6 +32,7 @@ func _init(
 		damage *= from_attack.perfect_multiplier
 	stagger = from_attack.stagger
 	poise_damage = from_attack.poise_damage
+	money_multiplier = from_attack.money_multiplier
 	hitstop = from_attack.hitstop if was_perfect else 0.0
 	if from_source != null:
 		direction = -from_source.global_transform.basis.z
