@@ -34,7 +34,6 @@ const DEFAULTS: Dictionary = {
 	&"audio_ambience": 100,
 	&"access_screen_shake": 100,
 	&"access_hitstop": true,
-	&"access_colourblind_telegraphs": false,
 	&"access_hold_to_confirm": false,
 	&"access_reduce_flashing": false,
 }

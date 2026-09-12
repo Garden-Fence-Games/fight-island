@@ -30,7 +30,8 @@ proves it is done. Durations are estimates for one person working part-time.
 - [x] `HealthComponent` and `StaminaComponent`
 - [x] The hitbox/hurtbox pattern working end to end
 - [x] The fist three-attack chain with both timing layers, hitstop and a flash
-- [x] The farmhand with the full FSM, a readable telegraph and the attack-token pool
+- [x] The farmhand with the full FSM, a wind-up that shortens with the waves, and the attack-token
+  pool
 - [x] A debug HUD showing health, stamina, state and the chain index
 - [x] Sound — five hit-and-parry signatures, **synthesised at startup rather than shipped as
       files**, so the perfect window is recognisable with the screen off. It was the last box, and
@@ -68,7 +69,7 @@ cannot be: somebody has to play the run through on each scheme and say so.
 
 - Fifteen waves, tuned; elites
 - Final art for the island, both characters and the three weapons — the primitives go away
-- Animation pass, VFX pass, full audio
+- Animation pass, VFX pass, full audio — **the enemy wind-up is owed an animation**, see below
 - Main menu, settings, credits
 - Every player-facing string through `tr()`, with no literal left in a scene or a script. **The
   game ships in English and in nothing else** — see [menus.md](menus.md); the `tr()` layer is there
@@ -78,6 +79,13 @@ cannot be: somebody has to play the run through on each scheme and say so.
 **Save and load came early** and is off this list: `SaveManager`, JSON under `user://`, and
 `verify_save` in CI. It arrived with the run flow in M2 because a run you cannot resume is a run
 nobody plays twice.
+
+**The wind-up has no picture at the moment.** The ring that used to fill on the ground under a
+farmer committing has been taken out, and nothing has replaced it: the timing is intact and every
+check of it still passes, but a player reads a wind-up as a body that has stopped moving. The
+replacement is an animation on the enemy rig, which is why this sits here rather than in M2 — and
+until it lands the game is harder to read than the numbers in
+[game-design.md](game-design.md) describe.
 
 **The art has not started, whatever the screenshots suggest.** The player's rig and the island's
 vegetation, stone and huts are prototype dressing: CC0 stand-ins, on a Mixamo skeleton whose

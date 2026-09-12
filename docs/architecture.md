@@ -328,19 +328,23 @@ check can only watch it fail to. A perfect hit differs from a plain one in **thr
 more debris, thrown further, for longer, plus a brighter flare. Any single difference is one the
 player has to be told about.
 
-**The telegraph is a shape, not a colour.** A ring on the ground under whoever is committing, filling
-as the wind-up runs. Colour alone fails a colourblind player, every greyscale screenshot, and any
-camera far enough away that a tint is a few pixels; a filling ring survives all three. It lies on the
-ground because from this camera the ground under a farmer is always in shot and his chest may not
-be, and the fill is driven by the same number as the wind-up, so the two cannot drift.
+**Nothing draws the wind-up.** There was a ring on the ground under whoever was committing, filling
+as the telegraph ran; it is gone, and the clip that replaces it is not authored yet. The timing is
+untouched — `WindUp` still holds for `enemy.windup()` seconds and every check of that still passes —
+but a player currently reads a wind-up as a farmer who has planted his feet and nothing more. When
+the tell comes back it comes back **on the body**, which is where a rigged enemy carries it: no
+ground decal, and no separate thing to keep in step with the number.
+
+Whatever draws it will still owe the rule the ring was built for: **a shape, not a colour.** Colour
+alone fails a colourblind player, every greyscale screenshot, and any camera far enough away that a
+tint is a few pixels.
 
 ### The accessibility settings are consumers
 
 Three were stored, persisted and shown in the options screen with **nothing reading them**. Two are
-read now:
+read now, and the third — `access_colourblind_telegraphs` — went out with the ring it thickened
+rather than staying on the screen as a switch that moves nothing.
 
-- `access_colourblind_telegraphs` thickens the ring and takes it to full contrast — redundancy on
-  top of a cue that already works, for a player who wants the shape to shout.
 - `access_screen_shake` scales every knock, and **nought means none**. Scaling happens on the camera
   rather than at each emitter, so no emitter has to remember the setting exists.
 - `access_reduce_flashing` damps the flare and **leaves the debris alone**: debris is motion, not

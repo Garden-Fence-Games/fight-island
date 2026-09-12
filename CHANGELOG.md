@@ -18,6 +18,17 @@ All notable changes to this project are documented here, following
 - `EventBus.rounds_scavenged`, and the HUD's ammo panel answers it the way the money chip answers a
   payout — rounds arrive mid-fight, which is exactly when a counter in the corner goes unread.
 
+### Removed
+
+- **The ring under a winding-up enemy.** The red circle that filled on the ground while a farmer
+  committed is gone, along with its scene, its shader and `Enemy.telegraph_scene`. The wind-up
+  itself is untouched — it still shortens with the waves and with the hour, and still stops at its
+  floor — but until the enemy rig carries the tell in an animation, a wind-up reads only as a body
+  that has planted its feet.
+- The `access_colourblind_telegraphs` setting and its options row, which existed to thicken that
+  ring and had nothing else to reach. A toggle that persists and moves nothing is worse than a
+  missing one: a player who needs it sets it and believes they are covered.
+
 ### Added
 
 - **No corner of the island answers the reaper's sweep with nothing.** `tools/verify_playfield.tscn`

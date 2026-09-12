@@ -126,10 +126,15 @@ child and get it back the same way, so neither loses what is behind it. It runs 
 `PROCESS_MODE_ALWAYS`, because from pause the tree is stopped and a frozen options screen is a soft
 lock.
 
-**A setting whose feature does not exist yet still exists here and still persists.** Aim assist,
-tutorial prompts, screen shake and the colourblind telegraphs are stored and waiting; the code that
-reads them arrives with the gun, the tutorial, the camera shake and the wind-up flash. Damage
-numbers, hitstop, reduce flashing and the sprint mode already have something listening.
+**A setting whose feature does not exist yet still exists here and still persists.** Aim assist and
+tutorial prompts are stored and waiting; the code that reads them arrives with the gun and the
+tutorial. Damage numbers, hitstop, screen shake, reduce flashing and the sprint mode already have
+something listening.
+
+**A setting whose feature is taken away goes with it.** There was a colourblind-telegraph toggle
+here, and it thickened the ring the wind-up used to draw. The ring is gone, so the toggle is gone:
+a switch that persists and moves nothing is worse than a missing one, because a player who needs it
+will set it and believe they are covered.
 
 ### Gameplay
 
@@ -185,7 +190,6 @@ readable at a glance and reachable in ten presses on a pad.
 |---|---|
 | Screen shake | 100 %, sliding to 0 |
 | Hitstop | on |
-| Colourblind-safe telegraphs | off — adds a shape cue to the wind-up flash, not only a colour |
 | Hold-to-confirm | off |
 | Reduce flashing | off |
 
