@@ -65,10 +65,12 @@ func _check_head_forward_is_plus_z(skel: Skeleton3D) -> void:
 	if rest.basis.z.normalized().dot(Vector3(0.0, 0.0, 1.0)) < 0.9:
 		_fail(
 			(
-				"the head bone's +Z is no longer its forward — it is %s. LookAtModifier3D's"
-				+ " forward_axis in head_look_component.gd needs to change with it."
+				(
+					"the head bone's +Z is no longer its forward — it is %s. LookAtModifier3D's"
+					+ " forward_axis in head_look_component.gd needs to change with it."
+				)
+				% [rest.basis.z]
 			)
-			% [rest.basis.z]
 		)
 
 
@@ -109,7 +111,9 @@ func _check_the_head_turns_and_stops(
 	var centred := await _settled_yaw(player, probe, Vector2.ZERO)
 
 	if right <= deg_to_rad(5.0):
-		_fail("aiming right turned the head %.1f° — it is not following the aim" % [rad_to_deg(right)])
+		_fail(
+			"aiming right turned the head %.1f° — it is not following the aim" % [rad_to_deg(right)]
+		)
 	if left >= deg_to_rad(-5.0):
 		_fail("aiming left turned the head %.1f° — the yaw axis is flipped" % [rad_to_deg(left)])
 	for yaw: float in [right, left]:

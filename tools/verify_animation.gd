@@ -88,8 +88,9 @@ func _check_idle_plays_idle(machine: StateMachine, anim: AnimationComponent) -> 
 ## The guard is that it stays silent: the gate in CI fails on any WARNING line.
 func _check_clipless_state_rests(anim: AnimationComponent) -> void:
 	var missing: Array[StringName] = []
-	anim.clip_missing.connect(func(state: StringName, _clip: StringName) -> void:
-		missing.append(state))
+	anim.clip_missing.connect(
+		func(state: StringName, _clip: StringName) -> void: missing.append(state)
+	)
 	var played := anim.play_state(&"Sprint")
 	await get_tree().physics_frame
 	if played:
@@ -120,7 +121,9 @@ func _check_the_body_can_be_tinted(player: Player) -> void:
 			if override == null:
 				continue
 			if mesh.mesh.surface_get_material(surface) == override:
-				_fail("surface %d of %s is tinted in place, not through a copy" % [surface, mesh.name])
+				_fail(
+					"surface %d of %s is tinted in place, not through a copy" % [surface, mesh.name]
+				)
 	# Handing back a fresh set each call would leave the tween animating materials nothing draws.
 	if player.body_materials() != materials:
 		_fail("body_materials() hands back a different set each call")
