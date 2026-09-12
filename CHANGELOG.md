@@ -8,6 +8,19 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The thrower test from #39, walked and passed.** `tools/verify_sightlines.tscn` puts a thrower at
+  the ten metres he prefers on 36 bearings from every stance a fight can happen on — sixty thousand
+  lines from sixteen hundred places — and holds the island to a **band**, because the composition
+  has two opposite failures. Too little open ground and a ranged enemy is decoration throwing into
+  rock; no cover at all and his stone is a tax rather than something the player answers by breaking
+  his line while closing. The shipped island measures 79.3% clear and 20.7% blocked.
+- It casts the ray the stone actually flies — the `world` layer, chest to chest — rather than a
+  navigation query or a walkability grid, because what stops a stone is not what stops a body: a
+  wreck a metre high is cover and a walkable dip is not. Proven to answer the world rather than its
+  own arithmetic by flying the same walk at ankle height (39.3% clear, threat floor trips) and above
+  everything (100% clear, cover floor trips).
+
+
 - `tools/verify_data_surface.tscn` — every field `docs/architecture.md` names on a balance resource
   has to be a field that resource actually has. Asked of a fresh instance's property list rather
   than of the source text, so a name that only appears in a comment cannot satisfy it. Fields the
