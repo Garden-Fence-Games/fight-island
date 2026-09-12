@@ -8,6 +8,15 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- `tools/verify_bus.tscn` — every signal on the bus has to be raised by something **and** heard by
+  something. It is the same shape as a settings row that reaches nothing, one layer down, and it is
+  the worst kind of dead code: declared, documented, emitted at exactly the right moment, and
+  doing nothing. **A headless check counts as a listener** — `enemy_spawned` has no gameplay
+  consumer at all and exists so `verify_waves` and `verify_day_night` can watch bodies arrive
+  instead of polling a group; a rule that only read `scripts/` would have called it dead and
+  deleted what two checks are built on.
+
+
 - **A farmer rears back before he swings.** The ring under a winding-up enemy went in #122 and
   nothing replaced it — a wind-up read as a body that had planted its feet, which left the sound
   carrying the whole telegraph and left a player with SFX at zero no warning in any channel. The
@@ -87,6 +96,12 @@ All notable changes to this project are documented here, following
   survived the first sweep.
 
 ### Fixed
+
+- **`EventBus.perfect_timing` was raised on every perfect hit and heard by nobody.** It had a
+  declaration, a docstring, a line in `docs/architecture.md` and an emitter in `PlayerAttack` — and
+  no connection anywhere in the project, because everything that cares already reads the `perfect`
+  flag on `attack_landed`. Removed, along with its line in the document.
+
 
 - **A distant orientation landmark cannot exist under this camera**, and #39 had been asking for one
   since before the blockout. Measured against the real frustum rather than argued: at −50° the top

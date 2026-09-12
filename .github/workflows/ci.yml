@@ -146,6 +146,14 @@ jobs:
       - name: Verify every setting reaches something
         run: tools/run-check.sh res://tools/verify_settings.tscn
 
+      # The same shape as a dead setting, one layer down. A signal can be declared, documented and
+      # emitted from exactly the right moment, and if nobody connected to it the fight goes on as
+      # if the line were not there — `perfect_timing` did that for as long as it existed. A check
+      # counts as a listener: `enemy_spawned` has no gameplay consumer and exists so two headless
+      # checks can watch bodies arrive, which is a real use.
+      - name: Verify every bus signal has both ends
+        run: tools/run-check.sh res://tools/verify_bus.tscn
+
       # `data/` is the balance surface and architecture.md enumerates it, which makes that list the
       # thing somebody reads before touching balance. It had drifted into describing a design that
       # was never built: `UpgradeTrack` as an icon and an Array[UpgradeLevel], an `sfx` nothing ever

@@ -15,7 +15,6 @@ signal stamina_changed(current: float, maximum: float)
 ## one that does not would otherwise have to ask the bag what is in hand at the moment of contact,
 ## and a swap during a swing would make that a lie.
 signal attack_landed(target: Node3D, damage: float, perfect: bool, attack: AttackData)
-signal perfect_timing
 ## A swing whose active window closed without touching anything. It carries the attack because what
 ## a whiff sounds like depends on what was swung, and because nothing else can reconstruct it once
 ## the state has moved on.
