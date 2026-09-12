@@ -46,6 +46,7 @@ var visual: WeaponVisualComponent = get_node_or_null("WeaponVisual") as WeaponVi
 @onready var machine: StateMachine = $StateMachine
 @onready var aim: AimComponent = $Aim
 @onready var head_look: HeadLookComponent = get_node_or_null("HeadLook") as HeadLookComponent
+@onready var animation: AnimationComponent = get_node_or_null("Animation") as AnimationComponent
 
 
 func _ready() -> void:
@@ -345,6 +346,11 @@ func _on_weapon_equipped(equipped: WeaponData) -> void:
 	close_chain()
 	if visual != null:
 		visual.armed = weapon != null and weapon.is_ranged
+	# The clips were authored with the gun modelled into the rig, so how the body is carried is part
+	# of which weapon is in hand — read off the weapon rather than off `is_ranged`, because a second
+	# melee weapon with its own cycles is a `.tres` value and not another branch here.
+	if animation != null:
+		animation.clip_suffix = weapon.clip_suffix if weapon != null else &""
 
 
 func _on_state_transitioned(state: StringName) -> void:

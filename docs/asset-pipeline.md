@@ -202,6 +202,12 @@ are their own clips rather than a layer over the unarmed ones.
 It is hidden rather than detached when the player is unarmed — see `WeaponVisualComponent` in
 [architecture.md](architecture.md).
 
+**The `_gun` ending is a suffix the code appends, not a separate table.** `WeaponData.clip_suffix`
+carries it — `_gun` on the gun, empty on the fists and, for now, the stick — and
+`AnimationComponent` tries `<clip><suffix>` before falling back to `<clip>`. So authoring
+`walk_stick` and `idle_stick` and setting `clip_suffix = &"_stick"` is the whole job, and a set that
+is only half authored degrades one clip at a time instead of leaving a state with nothing to play.
+
 **Farmer (shared by all three):** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`,
 `death`, plus one attack set per archetype — `windup_punch` / `attack_punch`,
 `windup_sweep` / `attack_sweep`, `windup_throw` / `attack_throw` — and `retreat` for the thrower.

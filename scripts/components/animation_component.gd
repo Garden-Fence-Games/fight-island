@@ -47,6 +47,16 @@ signal clip_missing(state_name: StringName, clip: StringName)
 @export var animation_player: AnimationPlayer = null
 @export var state_machine: StateMachine = null
 
+## Appended to a state's clip name when the rig carries that variant. `walk` becomes `walk_gun` with
+## a gun in hand, and the suffix falls away again the moment a variant is missing — so a weapon may
+## have a walk cycle authored and no idle, and the idle simply stays the empty-handed one.
+##
+## **A suffix, not a weapon.** The component still does not know what a weapon is: whoever puts one
+## in the hand sets this, the same way `WeaponVisualComponent` takes a flag rather than a
+## `WeaponData`. It is also what lets a `_stick` set arrive with no code change at all.
+var clip_suffix: StringName = &"":
+	set = set_clip_suffix
+
 var _current_clip: StringName = &""
 var _current_speed: float = 1.0
 
@@ -67,6 +77,25 @@ func _ready() -> void:
 		play_state(state_machine.current_name)
 
 
+## Puts a weapon's locomotion set in force, and re-evaluates the state already running so the change
+## is visible now. Picking a gun up while walking has to change the stride there and then — waiting
+## for the next transition would leave the player carrying a rifle with their arms swinging free
+## until they happened to stop.
+##
+## A state that named its own clip is deliberately left alone: an attack mid-swing belongs to the
+## weapon that threw it, and restarting it here would cancel a hit that is already in the air.
+func set_clip_suffix(suffix: StringName) -> void:
+	if suffix == clip_suffix:
+		return
+	clip_suffix = suffix
+	if state_machine == null or state_machine.current_name == &"":
+		return
+	var state := state_machine.current
+	if state != null and state.has_method("clip_name") and state.call("clip_name") != &"":
+		return
+	play_state(state_machine.current_name)
+
+
 ## The clip currently playing, or an empty name when the state has none. Readable from outside so
 ## the headless checks can assert on it without reaching into the AnimationPlayer.
 func current_clip() -> StringName:
@@ -79,7 +108,7 @@ func current_clip() -> StringName:
 ## not snap the stride back to its first frame. A clip a state names for itself goes through
 ## `play_clip` instead, which always restarts — a second jab has to look like a second jab.
 func play_state(state_name: StringName) -> bool:
-	var clip: StringName = clips.get(state_name, &"")
+	var clip := _variant_of(clips.get(state_name, &""))
 	if clip == &"" or animation_player == null or not animation_player.has_animation(String(clip)):
 		_rest()
 		clip_missing.emit(state_name, clip)
@@ -129,6 +158,16 @@ func _on_state_machine_transitioned(state_name: StringName) -> void:
 			play_clip(named, seconds)
 			return
 	play_state(state_name)
+
+
+## The weapon's version of a clip when the rig has one, and the plain clip otherwise. The fallback
+## is the whole point: a rig with `walk_gun` and no `idle_gun` gets an armed walk and a plain idle
+## rather than a state with nothing to play, which is how this rig arrives — one clip at a time.
+func _variant_of(clip: StringName) -> StringName:
+	if clip == &"" or clip_suffix == &"" or animation_player == null:
+		return clip
+	var variant := StringName(String(clip) + String(clip_suffix))
+	return variant if animation_player.has_animation(String(variant)) else clip
 
 
 ## Back to the imported rest pose. Without it a state with no clip would hold whatever frame the
