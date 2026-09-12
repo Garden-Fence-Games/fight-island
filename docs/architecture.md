@@ -193,8 +193,13 @@ The rules worth stating, because each is a thing a player would notice going wro
   the bag and cannot cycle onto an empty hand.
 - **The magazine is the gate on a shot, not the reserve.** A shot the magazine cannot pay for is a
   reload the player has to choose to make.
-- **The reserve grows on a cleared wave and at no other moment.** That is the gun's rhythm; see
+- **Nothing refills the pocket on a clock, and it never holds more than its ceiling — magazine
+  included.** Rounds enter a run off the bodies of the dead and across the merchant's counter, and
+  a bag already at the ceiling takes none of either. That is the gun's rhythm; see
   `docs/game-design.md`.
+- **The scavenge roll arrives rather than being made in the bag.** A one-in-eight that rolls its
+  own dice can only be checked by firing it ten thousand times and squinting at the total; one that
+  is handed a number can be asked the question with a known answer.
 - **A pickup already in the bag does nothing.** Walking over the gun twice must not re-arm one the
   player has half emptied.
 
@@ -228,6 +233,7 @@ Named as a past-tense fact, never as a command and never `on_*`:
 `wave_started(index)` · `wave_cleared(index, reward)` · `enemy_spawned(enemy)` ·
 `enemy_died(enemy, archetype, money)` · `player_damaged(current, max)` · `player_died()` ·
 `stamina_changed(current, max)` · `weapon_equipped(data)` · `ammo_changed(mag, reserve)` ·
+`rounds_scavenged(rounds)` ·
 `attack_landed(target, damage, perfect)` · `perfect_timing()` · `parry_perfect()` ·
 `money_changed(amount)` ·
 `upgrade_purchased(track_id, level)` · `run_started(seed)` · `run_ended(victory, wave)`
