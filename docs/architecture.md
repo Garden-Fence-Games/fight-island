@@ -193,8 +193,13 @@ The rules worth stating, because each is a thing a player would notice going wro
   the bag and cannot cycle onto an empty hand.
 - **The magazine is the gate on a shot, not the reserve.** A shot the magazine cannot pay for is a
   reload the player has to choose to make.
-- **The reserve grows on a cleared wave and at no other moment.** That is the gun's rhythm; see
+- **Nothing refills the pocket on a clock, and it never holds more than its ceiling — magazine
+  included.** Rounds enter a run off the bodies of the dead and across the merchant's counter, and
+  a bag already at the ceiling takes none of either. That is the gun's rhythm; see
   `docs/game-design.md`.
+- **The scavenge roll arrives rather than being made in the bag.** A one-in-eight that rolls its
+  own dice can only be checked by firing it ten thousand times and squinting at the total; one that
+  is handed a number can be asked the question with a known answer.
 - **A pickup already in the bag does nothing.** Walking over the gun twice must not re-arm one the
   player has half emptied.
 
@@ -228,12 +233,39 @@ Named as a past-tense fact, never as a command and never `on_*`:
 `wave_started(index)` · `wave_cleared(index, reward)` · `enemy_spawned(enemy)` ·
 `enemy_died(enemy, archetype, money)` · `player_damaged(current, max)` · `player_died()` ·
 `stamina_changed(current, max)` · `weapon_equipped(data)` · `ammo_changed(mag, reserve)` ·
+`rounds_scavenged(rounds)` ·
 `attack_landed(target, damage, perfect)` · `perfect_timing()` · `parry_perfect()` ·
 `money_changed(amount)` ·
 `upgrade_purchased(track_id, level)` · `run_started(seed)` · `run_ended(victory, wave)`
 
 **The rule:** a component talking to its owner uses a direct signal on the component. The
 `EventBus` is only for cross-cutting listeners — HUD, audio, telemetry.
+
+## Measuring the crowd
+
+`tools/stress_enemies.tscn` puts a crowd on the island, wakes it, and reports the physics and
+process time at several sizes **in one process** — because a machine with a second Godot on it
+drifts between runs by more than any of these differences are worth. It prints the median and the
+worst frame, and says so out loud when the two are far enough apart that the run should not be
+compared to anything.
+
+It runs headless, so nothing about drawing is measured and nothing about drawing should be read
+into it. What it does measure is the side the crowd rules live on.
+
+**What it found, and what was not done because of it.** The two suspects named in #31 were
+`Enemy._separation()`, which is every body against every other, and the hitbox polling
+`get_overlapping_areas()`. Neither is measurable at the budget:
+
+- The whole physics step is **1–2.5 ms against the 16.7 ms a 60 Hz frame has**, from zero bodies to
+  forty.
+- The cost does **not** rise with the square of the crowd. An every-body-against-every-other rule
+  only matters if it does.
+- A spatial grid was written, measured against the scan it replaced, and **reverted**: it made no
+  difference at thirty bodies and cost a static cache and more code to say the same thing.
+
+The run-to-run noise on a busy machine is larger than the gap between no enemies and forty of them,
+which is the most useful single fact here: **nothing on this side is close to the budget**, and the
+remaining question in #31 is the GPU, on the two reference machines, with a window.
 
 ## Drawing the island
 

@@ -130,14 +130,20 @@ damage, the perfect multiplier, both chain-window boundaries, the chain lockout 
 outcome; `tools/verify_weapons.tscn` asserts the stick's and the gun's figures, that one 120° sweep
 reaches two bodies standing inside it, and that the ammunition behaves as written below.
 
-**Ammunition.** Magazine 6, reload 1.6 s. The reserve starts at 24 and each cleared wave grants
-**+8**. Attacks 1/2/3 cost 1/2/1 rounds; attack 2 needs at least 2 in the magazine.
+**Ammunition.** Magazine 6, reload 1.6 s. **The player never holds more than 30 rounds, magazine
+included** — the gun arrives at exactly that, 6 in it and 24 in the pocket. Attacks 1/2/3 cost
+1/2/1 rounds; attack 2 needs at least 2 in the magazine.
 
-**The reserve grows on a cleared wave and at no other moment.** That is the whole of the gun's
-rhythm: the magazine decides how long one fight lasts, the reserve decides how many fights there
-are, and a player who empties the pocket in wave 6 carries that into wave 7 and has to answer it
-with the stick. It is also why the gun has no chain lockout — two answers to the same question
-would be one too many.
+**Nothing refills on a clock.** A cleared wave pays money and not one round. Ammunition enters a
+run two ways: **one body in eight leaves a round behind**, and the gun track hands over **+6** the
+moment it is bought. That is the whole of the gun's rhythm, and it points the opposite way to the
+usual one: an empty pocket is a reason to close on the next farmer rather than to back away from
+him. A player who empties it in wave 6 carries that into wave 7 and answers it with the stick until
+the bodies pay him back. It is also why the gun has no chain lockout — two answers to the same
+question would be one too many.
+
+**The ceiling counts the magazine**, which is what makes the gun track's +1 magazine a rhythm
+upgrade rather than a supply one: one more shot before a reload, out of the same thirty.
 
 **The charged shot is held, and letting go early cancels it.** The windup only advances while the
 button is down; releasing before it completes abandons the shot and hands the round back, but not
@@ -414,7 +420,7 @@ Level cap 5, one purchase per wave, bought from the merchant. Leftover money car
 | Stamina | +15 max stamina, +2/s regen | 175 stamina, 30/s |
 | Fists | +15 % damage, −5 % stamina cost | ×1.75 damage, −25 % cost |
 | Stick | +15 % damage, +5 % range and arc | ×1.75 damage, 3.0 m reach |
-| Gun | +15 % damage, +1 magazine, +6 reserve | ×1.75 damage, magazine 11 |
+| Gun | +15 % damage, +1 magazine, +6 rounds handed over on purchase | ×1.75 damage, magazine 11 |
 
 ## Win and lose
 

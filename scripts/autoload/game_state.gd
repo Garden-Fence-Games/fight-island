@@ -168,6 +168,11 @@ func buy(track: UpgradeTrack) -> bool:
 	var level := level_of(track) + 1
 	upgrade_levels[track.id] = level
 	_bought_in_wave = wave
+	# The rounds land now rather than growing a per-wave grant, because there is no longer a
+	# per-wave grant to grow. The merchant is one of the two ways ammunition enters a run.
+	var handed := loadout.take(track.reserve)
+	if handed > 0:
+		EventBus.rounds_scavenged.emit(handed)
 	upgrade_purchased.emit(track, level)
 	save_run()
 	return true
@@ -286,13 +291,19 @@ func _on_wave_cleared(_index: int, reward: int) -> void:
 	wave_in_progress = false
 	stats.waves_cleared += 1
 	earn(reward)
-	loadout.restock(_reserve_bonus())
 	save_run()
 
 
+## A kill pays twice, and the second payment is the one that keeps the gun alive: rounds come off
+## the bodies of the people who came to kill you, a round at a time, and from nowhere else but the
+## merchant. An empty pocket is therefore a reason to close rather than to back away, which is the
+## opposite of what an ammunition counter usually does to a player.
 func _on_enemy_died(_enemy: Node3D, archetype: StringName, reward: int) -> void:
 	stats.record_kill(archetype)
 	earn(reward)
+	var scavenged := loadout.scavenge(_rng.randf())
+	if scavenged > 0:
+		EventBus.rounds_scavenged.emit(scavenged)
 
 
 func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool) -> void:
@@ -302,13 +313,6 @@ func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool) -> void:
 
 func _on_parry_perfect() -> void:
 	stats.perfect_parries += 1
-
-
-## The extra pocket a cleared wave pays out, on the same rule as the magazine. Applied whether or
-## not the gun is in hand: the wave paid for it, not the hand.
-func _reserve_bonus() -> int:
-	var track := Upgrades.find(&"gun")
-	return track.reserve * level_of(track) if track != null else 0
 
 
 ## The only thing that outlives a run. It is written on the way out rather than as the waves pass,
