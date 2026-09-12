@@ -1,7 +1,7 @@
 class_name DebugHud
 extends CanvasLayer
-## The prototype's only interface: enough to tell whether the timing works, and nothing more.
-## F3 hides it.
+## The timing readout, and nothing a player is meant to see: the real HUD is scenes/ui/hud.tscn.
+## F3 shows it, it starts hidden, and a release build never carries it at all.
 
 var player: Player = null
 
@@ -15,6 +15,10 @@ var _wave: String = "-"
 
 
 func _ready() -> void:
+	if not OS.is_debug_build():
+		queue_free()
+		return
+	visible = GameState.debug_overlay_visible
 	player = get_tree().get_first_node_in_group(&"player") as Player
 	EventBus.player_damaged.connect(_on_player_damaged)
 	EventBus.stamina_changed.connect(_on_stamina_changed)

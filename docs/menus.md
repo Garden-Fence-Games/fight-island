@@ -48,8 +48,9 @@ Play starts a run immediately. There is no character select, no difficulty selec
 list — a run is forty minutes and the game has one difficulty, so anything between the button and
 the fight is furniture.
 
-Credits are not a title entry. They are a page of the Options screen: the layout holds three rows
-without crowding the logo, and a fourth that nobody opens twice is not worth the height.
+Credits are not a title entry: the layout holds three rows without crowding the logo, and a fourth
+that nobody opens twice is not worth the height. They do not have a home yet — the Options screen
+is five tabs and a sixth would not be one of the five the design draws.
 
 The background is the island with the camera drifting slowly. Not a pre-rendered image: the real
 arena scene, so the title screen can never look like a different game than the one that follows.
@@ -76,27 +77,50 @@ The cursor is visible at all times, so the pause menu has nothing to release.
 
 ## Options
 
-Five categories. Each is a tab, navigable with the shoulder buttons on a pad.
+Five categories. Each is a tab, navigable with the shoulder buttons on a pad or Q and E on a
+keyboard.
+
+The screen is an **overlay, not a scene of its own**: the title and the pause menu each add it as a
+child and get it back the same way, so neither loses what is behind it. It runs on
+`PROCESS_MODE_ALWAYS`, because from pause the tree is stopped and a frozen options screen is a soft
+lock.
+
+**A setting whose feature does not exist yet still exists here and still persists.** Aim assist,
+tutorial prompts, screen shake and the colourblind telegraphs are stored and waiting; the code that
+reads them arrives with the gun, the tutorial, the camera shake and the wind-up flash. Damage
+numbers, hitstop, reduce flashing and the sprint mode already have something listening.
 
 ### Gameplay
 
 | Setting | Default | Why it exists |
 |---|---|---|
-| Sprint | hold on keyboard, toggle on pad | The two audiences genuinely expect different things |
+| Sprint | **auto** — hold on keyboard, toggle on pad | The two audiences genuinely expect different things, and a player who disagrees can say so |
 | Aim assist | soft | The gun is unplayable on a stick without it, and unsatisfying with too much |
 | Show tutorial prompts | on until completed once | See [tutorial.md](tutorial.md) |
 | Damage numbers | **off** | The design says the hit should be felt; the numbers are a debugging comfort |
 
 ### Controls
 
-Full rebinding of every action, both devices, written as serialised `InputEvent`s into
-`settings.json` and rebuilt into the `InputMap` at boot. Plus mouse sensitivity (in degrees per 100
-pixels, so it survives a resolution change), stick sensitivity, and invert Y.
+Full rebinding of every action, both devices, rebuilt into the `InputMap` at boot. Plus mouse
+sensitivity (in degrees per 100 pixels, so it survives a resolution change), stick sensitivity, and
+invert Y.
 
-Debug actions are not listed and not rebindable.
+**One row rebinds both devices**, and the device the player presses with decides which column
+changes. Escape cancels the capture rather than binding to it — it costs the ability to put an
+action on Escape and buys a way out of a capture opened by accident.
+
+Bindings live in `bindings.json`, next to `settings.json` rather than inside it: one file is a flat
+table of scalars and the other is a tree of serialised events, and keeping them apart means neither
+write can clobber the other. **Only what the player changed is stored**, so an action that gains a
+better default in a later build reaches a player who already has a file.
+
+The list is whatever the `InputMap` holds, minus anything named `ui_*` or `debug_*` — one is what
+makes the menus work and the other is not the player's business. Nothing is hand-listed, so a new
+action appears on the screen the moment it exists.
 
 A **Reset to defaults** entry per device, because a player who has bound two things to the same key
-needs a way out that is not deleting a file.
+needs a way out that is not deleting a file — and needs it without losing the half that still
+works.
 
 ### Video
 
@@ -108,7 +132,10 @@ wants for a game, and the difference shows up as input latency.
 ### Audio
 
 Master, Music, SFX, Ambience. Four sliders against the four buses, in decibels internally and
-0–100 on screen.
+0–100 on screen, all four defaulting to 100 until the audio pass has something to balance.
+
+Sliders are **ten blocks, not a bar with a thumb**: a value that only ever moves in tenths is
+readable at a glance and reachable in ten presses on a pad.
 
 ### Accessibility
 
@@ -152,14 +179,29 @@ Victory adds a single line unlocking endless, and nothing else. No score screen,
 ## HUD during the fight
 
 The least possible. Health and stamina bottom-left, ammo bottom-right when the gun is held, wave
-number and money top-right. Everything else is the world.
+number and money top-right — each **96 px in from its own corner**, nothing anywhere else.
 
-The debug overlay from M1 stays behind `F3` in debug builds and is stripped from release.
+Every element listens on the `EventBus` and holds no reference to the player, so the HUD survives a
+death, a restart and a player that does not exist yet. The health figure is the one thing allowed
+to raise its voice: under a third of maximum it turns red.
+
+**The ammo panel only exists with a ranged weapon in hand.** A melee player never sees a magazine
+of zero — the panel is absent, not empty.
+
+Damage numbers float off the enemy that was hit and are **off by default**. The design says the hit
+should be felt; the numbers are a debugging comfort, and they live in Options → Gameplay.
+
+The debug overlay from M1 stays behind `F3` in debug builds, starts hidden, and a release build
+never carries it at all.
 
 ## Localisation
 
 Every string on every screen goes through `tr()` with a key from the first line of code, prefixed
 `UI_`, `HUD_`, `OPT_` or `TUT_`. The keys live in `assets/locale/ui.csv`.
+
+**Numerals are never set in Badeen Display.** Its Latin digits are composites of the
+Arabic-Indic forms — `0` draws `٠` — so any string carrying a number is set in Inter. Badeen is for
+words.
 
 **The game ships in English and in nothing else.** The `tr()` layer stays because a menu built with
 literals is a menu that gets rewritten the day a second locale is wanted — but no second locale is

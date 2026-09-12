@@ -21,7 +21,8 @@ res://
     components/   health_component.gd, stamina_component.gd, hitbox.gd, hurtbox.gd,
                   hit_info.gd, state_machine.gd, state.gd
     actors/       player/, enemy/, merchant/ — each with its states/
-    systems/      wave_director.gd, spawn_director.gd, economy.gd, save_manager.gd
+    systems/      wave_director.gd, spawn_director.gd, economy.gd, save_manager.gd,
+                  settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
     camera/       camera_rig.gd
     ui/
   tests/
@@ -111,8 +112,13 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
 node in the tree, without `_ready` ordering, and without another singleton to mock in tests.
 See [ADR 0004](decisions/0004-three-autoloads.md).
 
-Rejected outright: `Settings` (folded into `SaveManager` and `GameState`), `SceneManager` (a
-forty-line `main.gd` covers four scenes), `DebugManager` (a scene behind an action).
+Rejected outright: `Settings`, `SceneManager` (a forty-line `main.gd` covers four scenes),
+`DebugManager` (a scene behind an action).
+
+**`Settings` and `InputBindings` are static classes too**, next to `SaveManager`. Nothing subscribes to a setting:
+every reader asks for the value at the moment it needs it, which is why no signal is missing.
+The first read loads the file and applies everything, so a scene launched straight from the
+editor behaves exactly like one reached through boot.
 
 ## The wallet
 
@@ -136,9 +142,10 @@ tuning pass that keeps the shape passes and one that flattens the choice does no
 Named as a past-tense fact, never as a command and never `on_*`:
 
 `wave_started(index)` · `wave_cleared(index, reward)` · `enemy_spawned(enemy)` ·
-`enemy_died(enemy, money)` · `player_damaged(current, max)` · `player_died()` ·
+`enemy_died(enemy, archetype, money)` · `player_damaged(current, max)` · `player_died()` ·
 `stamina_changed(current, max)` · `weapon_equipped(data)` · `ammo_changed(mag, reserve)` ·
-`attack_landed(info)` · `perfect_timing()` · `parry_perfect()` · `money_changed(amount)` ·
+`attack_landed(target, damage, perfect)` · `perfect_timing()` · `parry_perfect()` ·
+`money_changed(amount)` ·
 `upgrade_purchased(track_id, level)` · `run_started(seed)` · `run_ended(victory, wave)`
 
 **The rule:** a component talking to its owner uses a direct signal on the component. The

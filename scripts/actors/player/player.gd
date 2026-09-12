@@ -22,6 +22,8 @@ var _chain_attack: AttackData = null
 var _chain_clock: float = -1.0
 var _lockout_clock: float = 0.0
 var _press_age: float = INF
+var _sprint_toggle: bool = false
+var _sprint_latched: bool = false
 var _gravity: float = 9.8
 
 @onready var health: HealthComponent = $Health
@@ -59,6 +61,8 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"attack"):
 		press_attack()
+	if event.is_action_pressed(&"sprint"):
+		_on_sprint_pressed(InputBindings.device_of(event) == InputBindings.Device.GAMEPAD)
 
 
 ## The one way a press enters the buffer, so a headless check can drive the chain like a player.
@@ -154,6 +158,20 @@ func consume_press() -> void:
 	_press_age = INF
 
 
+## True while the player is asking to sprint. A keyboard holds and a pad toggles, because that is
+## what each audience expects — and the setting lets either of them say otherwise. The latch lives
+## on the body rather than in the sprint state, because it has to survive that state ending.
+func wants_sprint() -> bool:
+	if _sprint_toggle:
+		return _sprint_latched
+	return Input.is_action_pressed(&"sprint")
+
+
+## Drops the latch, whatever ended the sprint — a stop, an empty bar, or an attack.
+func release_sprint() -> void:
+	_sprint_latched = false
+
+
 ## The attack a fresh press should produce right now, or an empty dictionary for none. Reading it
 ## consumes the press, so only a state about to act on it should ask.
 ##
@@ -185,6 +203,12 @@ func _continue_chain() -> Dictionary:
 
 func is_alive() -> bool:
 	return health == null or health.is_alive()
+
+
+func _on_sprint_pressed(from_gamepad: bool) -> void:
+	_sprint_toggle = Settings.sprint_is_toggle(from_gamepad)
+	if _sprint_toggle:
+		_sprint_latched = not _sprint_latched
 
 
 func _on_hurt(info: HitInfo) -> void:
