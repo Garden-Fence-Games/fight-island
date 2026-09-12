@@ -6,6 +6,7 @@
 script = ExtResource("1")
 id = &"dodge"
 prompt_key = "TUTORIAL_DODGE"
+prompt_actions = PackedStringArray("dodge")
 trigger = 2
 condition = 0
 enemies = 1

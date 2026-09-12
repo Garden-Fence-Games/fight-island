@@ -77,9 +77,14 @@ resumed between two waves reopens the merchant it had not spent yet; one resumed
 wave fights that wave again from its start. A run that ended, in a death or in a victory, is not
 resumable and the file is gone.
 
-Every entry carries the glyph that fires it — `[A / ENTER]` on the focused row, `[Y / O]` on
-Options, `[B / ESC]` on Quit — and each of those is a real binding. New run takes `[Y / N]` and
-Options loses its badge while a run is waiting, because the pad has one Y.
+Every entry carries the glyph that fires it, **for the device in hand** — `ENTER` or `A` on the
+focused row, `O` or `Y` on Options, `ESC` or `B` on Quit. New run takes `N` or `Y`, and Options
+loses its badge entirely while a run is waiting, because the pad has one Y.
+
+**A row names an action, never a key.** The badge prints whatever that action is bound to right
+now, so it follows a rebind, and it swaps the moment the player picks up a controller — a menu
+telling a pad player to press `Space` has sent them looking for a key that is not in their hands.
+See [the glyphs](#glyphs) below.
 
 ## Pause
 
@@ -249,6 +254,36 @@ should be felt; the numbers are a debugging comfort, and they live in Options �
 
 The debug overlay from M1 stays behind `F3` in debug builds, starts hidden, and a release build
 never carries it at all.
+
+## Glyphs
+
+**A player on a pad must never read the word "mouse."** That is the whole rule, and it is not a
+nicety: a glyph naming hardware the player is not holding sends them looking for a key that is not
+there, which is worse than showing nothing.
+
+So nothing on screen holds a key name. A menu row and a tutorial prompt each name an **action**, and
+`Devices` answers with what that action is bound to on the device in hand. Two things make it
+change, and both are signals on the bus: `input_device_changed` when the hand moves, and
+`bindings_changed` when a rebind lands.
+
+**The device is the last one touched**, not one picked at launch. Someone with a keyboard and a pad
+in front of them is the normal case. A mouse *moving* counts — it is the clearest statement there is
+that the hand left the pad — while a stick must travel past half its range, or a controller resting
+with drift would flip every badge on screen for ever.
+
+Three display rules, all in `Devices` rather than in `InputBindings`, because the options screen has
+a column to print a long name in and a badge does not:
+
+- A stick is **one thing**. `L-STICK X +` and `L-STICK Y -` are the same thumb, so the direction and
+  the axis letter come off and four movement actions dedupe to a single `L-STICK`.
+- Long key names are shortened on a badge: `ESCAPE` reads `ESC`, matching the design's chip.
+- Xbox naming is the default. A pad that calls its buttons something else still reports the same
+  indices, so a PlayStation glyph set is a second table and no new code.
+
+One row in the game names a **different action per device**, and it is the pause menu's Resume:
+`Esc` on a keyboard and `A` on a pad. Those are not two names for one binding, they are two bindings
+that both mean *get me out of here*, which is why `MenuEntry` carries a `gamepad_action` override at
+all. Nothing else uses it.
 
 ## Localisation
 

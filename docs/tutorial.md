@@ -152,9 +152,18 @@ Two details worth stating, because they are not obvious from the table:
 The protection during wave 1 is `HealthComponent.minimum_health`, raised to one and dropped again
 after. Everything else — the flash, the numbers, the stagger — behaves normally.
 
-**Not yet device-aware.** The prompts name both glyphs, the way the menus do, because the
-device-aware glyph set is its own piece of work. A pad player currently reads `[SPACE / A]` rather
-than `A` alone. That is a known deviation from the rule above, not a decision.
+**The glyph is device-aware.** A step names **actions**, not keys — `prompt_actions` — and the line
+is rendered with whatever those actions are bound to on the device in hand, then re-rendered when
+the hand moves or a binding changes. The string itself carries a `{0}` and nothing else, so a
+translator never has to know what a controller is called.
+
+Movement names all four of its actions and the glyph deduplicates them: `W A S D` on a keyboard, a
+single `L-STICK` on a pad. A stick is one thing to the player even though the engine reports it as
+four half-axes, and a prompt listing all four describes a shape nobody has.
+
+A lesson about **timing** names no action at all — the chain and the perfect window have no button
+to press that the previous lesson did not already teach — so those strings have no `{0}` and are
+shown exactly as written.
 
 ## The test
 

@@ -78,7 +78,11 @@ func _check_vitals() -> void:
 		_fail("health should switch to the alert variation under a third")
 
 
+## From a fresh run, deliberately. `GameState` restores a saved run at boot, so a developer with a
+## run on this machine would start this check with their own money already in the purse — the
+## check would fail for a reason that has nothing to do with the HUD.
 func _check_wave_and_money() -> void:
+	GameState.begin_run()
 	EventBus.wave_started.emit(7, 12)
 	GameState.earn(1450)
 	if _label("Root/TopRight/WaveChip/Wave").text != "WAVE 07":

@@ -76,7 +76,7 @@ func _apply_run_state() -> void:
 	play.label_key = "UI_CONTINUE" if resuming else "UI_PLAY"
 	new_run.visible = resuming
 	# Y is spent on New run once there is a run to leave behind, so Options stops claiming it.
-	options.key_hint = "" if resuming else "[Y / O]"
+	options.action = "" if resuming else "menu_options"
 
 
 func _start_run(fresh: bool) -> void:
