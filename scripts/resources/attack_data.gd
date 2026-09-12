@@ -26,6 +26,11 @@ extends Resource
 @export var perfect_window: Vector2 = Vector2(0.33, 0.45)
 @export var perfect_multiplier: float = 1.35
 @export var hitstop: float = 0.08
+## Which impact family this blow lands with — `fist`, `stick`, `gun`. A name rather than a stream,
+## the way `animation` is a name rather than a clip: the waveforms are synthesised at startup and
+## nothing on disk could be pointed at. Empty falls back to the generic thud, which is what an enemy
+## attack wants — what the player hears when they are hit is `hurt`, not the farmer's arm.
+@export var impact_sound: StringName = &""
 
 @export_group("Reward")
 ## What a body killed by this attack is worth, over what it would otherwise pay. It sits on the

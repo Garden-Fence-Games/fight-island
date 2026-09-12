@@ -19,6 +19,7 @@ chain_window = Vector2(0.0, 0.0)
 perfect_window = Vector2(0.0, 0.0)
 perfect_multiplier = 1.35
 hitstop = 0.08
+impact_sound = &"fist"
 money_multiplier = 2.0
 reach = 1.6
 arc_degrees = 60.0

@@ -17,7 +17,7 @@ var _elapsed: float = 0.0
 
 func enter(_message: Dictionary) -> void:
 	_elapsed = 0.0
-	EventBus.telegraph_began.emit(enemy.global_position)
+	EventBus.telegraph_began.emit(enemy.global_position, enemy.data)
 
 
 func physics_update(delta: float) -> void:

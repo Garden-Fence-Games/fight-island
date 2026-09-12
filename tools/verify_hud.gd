@@ -121,12 +121,12 @@ func _check_damage_numbers() -> void:
 	var numbers := _hud.get_node("Root/Numbers") as Control
 	var restore: Variant = Settings.get_value(&"gameplay_damage_numbers")
 	Settings.set_value(&"gameplay_damage_numbers", false)
-	EventBus.attack_landed.emit(_target, 12.0, false)
+	EventBus.attack_landed.emit(_target, 12.0, false, null)
 	await get_tree().process_frame
 	if numbers.get_child_count() != 0:
 		_fail("a damage number appeared while the setting was off")
 	Settings.set_value(&"gameplay_damage_numbers", true)
-	EventBus.attack_landed.emit(_target, 12.0, true)
+	EventBus.attack_landed.emit(_target, 12.0, true, null)
 	await get_tree().process_frame
 	if numbers.get_child_count() != 1:
 		_fail("the setting is on and no damage number appeared")
@@ -238,7 +238,7 @@ func _check_the_banner_announces_the_wave() -> void:
 
 func _check_stats_are_tallied() -> void:
 	GameState.begin_run()
-	EventBus.attack_landed.emit(_target, 12.0, true)
+	EventBus.attack_landed.emit(_target, 12.0, true, null)
 	EventBus.parry_perfect.emit()
 	EventBus.enemy_died.emit(_target, &"farmhand", 5)
 	EventBus.wave_cleared.emit(1, 50)

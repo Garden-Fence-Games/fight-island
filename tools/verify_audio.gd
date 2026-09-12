@@ -57,7 +57,16 @@ const EXPECTED: Array[StringName] = [
 	&"pickup",
 	&"telegraph",
 	&"wave_cleared",
+	&"low_ammo",
 ]
+## The impact families, and the wind-ups. Listed here rather than read off `AudioManager.IMPACTS`,
+## for the reason the mutation sweep exists: a check that takes its list from the thing it is
+## checking passes on a table with a row missing.
+## The fists are the base and keep the plain `hit` and `perfect` ids, so they are not in this list —
+## they are already two rows above it.
+const FAMILIES: Array[StringName] = [&"stick", &"gun"]
+## The farmhand is the base and keeps the plain `telegraph` id, so he is not in this list either.
+const ARCHETYPES: Array[StringName] = [&"reaper", &"thrower"]
 ## The one looping sound, checked on its own terms.
 const BED: StringName = &"surf"
 ## How close a baked peak has to be to the peak it declared. Tight: this is arithmetic, not taste,
@@ -84,6 +93,27 @@ const DRAINS_WITHIN: int = 120
 ## and a check that expects nothing has nothing to stop on.
 const SPEAKS_UP_WITHIN: int = 20
 
+## How much of the signature a perfect hit has to carry at the partial's own frequency, and how
+## little a plain one may. Both as a share of the tail's own energy, so they mean the same thing on
+## a loud weapon and a quiet one.
+const SIGNATURE_CARRIES: float = 0.2
+const SIGNATURE_ABSENT: float = 0.25
+
+## The first slice of a blow, where the body lives. The tail after it is the perfect partial, which
+## is identical across families on purpose.
+const BODY_WINDOW: float = 0.03
+## How far apart two bodies have to measure before the ear would call them different sounds, and how
+## far apart two wind-ups have to end up. Both in the same units as `_brightness`, which is roughly
+## how much of the waveform is edge rather than tone.
+const BODIES_DIFFER_BY: float = 0.02
+const ARCHETYPES_DIFFER_BY: float = 0.01
+## How closely the perfect rings have to agree across weapons. It is the same partial in all of
+## them, so the only reason to allow any slack at all is the different body underneath it.
+const RINGS_ALIKE_WITHIN: float = 0.25
+
+const ATTACKS: String = "res://data/attacks"
+const ENEMIES: String = "res://data/enemies"
+
 var _failures: PackedStringArray = []
 
 
@@ -100,12 +130,17 @@ func _run() -> void:
 	_check_a_swing_reads_as_a_pass()
 	_check_the_mix_is_ordered()
 	_check_the_telegraph_is_the_one_sound_that_climbs()
+	_check_every_weapon_lands_differently()
+	_check_the_perfect_ring_is_the_same_in_every_family()
+	_check_every_archetype_announces_itself_differently()
+	_check_the_data_names_sounds_that_exist()
 	_check_the_bed_comes_round_cleanly()
 	_check_nothing_clips_or_clicks()
 	_check_nothing_is_cut_off()
 	await _check_the_right_sound_answers_each_signal()
 	await _check_the_telegraph_comes_from_somewhere()
 	await _check_a_missed_shot_does_not_swish()
+	await _check_the_last_round_announces_itself()
 	# Nothing left ringing. A voice still playing when the engine tears down is two objects it
 	# reports as leaked, and a check that ends in a warning is a check nobody trusts the next time
 	# a warning means something.
@@ -114,7 +149,7 @@ func _run() -> void:
 
 
 func _check_every_sound_exists() -> void:
-	for id: StringName in EXPECTED:
+	for id: StringName in _every_sound():
 		var stream := AudioManager.sound(id) as AudioStreamWAV
 		if stream == null:
 			_fail("there is no %s sound" % id)
@@ -127,8 +162,8 @@ func _check_every_sound_exists() -> void:
 ## seventeen sounds in the log and one in the ear. It is the cheap way a set of sounds rots: a
 ## `_build` that forgets a line leaves an id resolving to whatever was registered before it.
 func _check_none_of_them_is_another() -> void:
-	for first: StringName in EXPECTED:
-		for second: StringName in EXPECTED:
+	for first: StringName in _every_sound():
+		for second: StringName in _every_sound():
 			if first == second:
 				continue
 			var one := AudioManager.sound(first) as AudioStreamWAV
@@ -138,6 +173,18 @@ func _check_none_of_them_is_another() -> void:
 			if one.data == other.data:
 				_fail("%s and %s are the same waveform" % [first, second])
 				return
+
+
+## Every id there is, the per-family ones included. The originals are a written-out list on purpose;
+## these are built from two written-out lists for the same reason.
+func _every_sound() -> Array[StringName]:
+	var all: Array[StringName] = EXPECTED.duplicate()
+	for family: StringName in FAMILIES:
+		all.append(StringName("hit_%s" % family))
+		all.append(StringName("perfect_%s" % family))
+	for archetype: StringName in ARCHETYPES:
+		all.append(StringName("telegraph_%s" % archetype))
+	return all
 
 
 ## The whole design in one place. The eye is on the enemy, so what says "that one counted" has to
@@ -253,6 +300,167 @@ func _check_the_telegraph_is_the_one_sound_that_climbs() -> void:
 		_fail("the telegraph opens at %.2f and closes at %.2f — it does not rise" % [opens, closes])
 
 
+## Three weapons, three bodies. The bodies are what the ear reads as *what hit me*, and two families
+## that only differed in level would be one sound with a volume knob — which is the thing this whole
+## family of sounds exists to avoid.
+##
+## Measured on the body rather than on the whole buffer: the tail is where the perfect partial lives
+## and it is deliberately identical across families, so comparing whole waveforms would find a
+## difference that is not the one being claimed.
+func _check_every_weapon_lands_differently() -> void:
+	var bodies: Dictionary = {}
+	for id: StringName in _every_impact():
+		bodies[id] = _brightness(id, 0.0, BODY_WINDOW)
+	for first: StringName in bodies:
+		for second: StringName in bodies:
+			if first == second:
+				continue
+			var gap := absf(float(bodies[first]) - float(bodies[second]))
+			if gap < BODIES_DIFFER_BY:
+				_fail(
+					(
+						(
+							"%s and %s land with the same body (%.4f against %.4f) — a weapon you "
+							+ "cannot hear is a weapon that only changed the number"
+						)
+						% [first, second, float(bodies[first]), float(bodies[second])]
+					)
+				)
+				return
+
+
+## And the other half, which matters more: **the perfect window sounds the same whatever is in
+## hand**. It is the signature of the entire game, a player who learns it on fists has to have
+## learnt it on the gun, and three signatures would be three things to learn in the half second
+## there is to read one.
+##
+## Measured at the partial's own frequency rather than on the brightness of the tail. Brightness
+## reported the stick as a third duller than the fists and was right to: its body rings for twice as
+## long and is still under the tail. That is a true fact about the body and says nothing about
+## whether the signature is there, which is the only thing being claimed.
+func _check_the_perfect_ring_is_the_same_in_every_family() -> void:
+	for id: StringName in _every_perfect():
+		var plain := StringName(String(id).replace("perfect", "hit"))
+		var rung := _partial(id, AudioManager.PERFECT_PARTIAL, TAIL_FROM, TAIL_TO)
+		var silent := _partial(plain, AudioManager.PERFECT_PARTIAL, TAIL_FROM, TAIL_TO)
+		if rung < SIGNATURE_CARRIES:
+			_fail(
+				(
+					(
+						"%s carries %.3f of the signature at %.0f Hz — the reward is missing on that "
+						+ "weapon"
+					)
+					% [id, rung, AudioManager.PERFECT_PARTIAL]
+				)
+			)
+		if silent > rung * SIGNATURE_ABSENT:
+			_fail(
+				(
+					(
+						"%s already carries %.3f at %.0f Hz against %s's %.3f — a plain hit that rings "
+						+ "is a perfect window nobody can hear"
+					)
+					% [plain, silent, AudioManager.PERFECT_PARTIAL, id, rung]
+				)
+			)
+
+
+## A reaper's wind-up and a thrower's must not sound alike. The thrower is the one the player may
+## never see coming, and sound is the only warning the design gives them — so his is the one that
+## has to be furthest from everybody else's.
+func _check_every_archetype_announces_itself_differently() -> void:
+	var pitches: Dictionary = {}
+	for id: StringName in _every_telegraph():
+		var length := float(_samples(id).size()) / float(AudioManager.MIX_RATE)
+		# Both windows sit past the contact noise. Measured from the first sample, the burst of
+		# hiss at the head reads brighter than any pitch the climb ever reaches, and all three
+		# wind-ups looked like they were falling.
+		var opens := _brightness(id, length * 0.35, length * 0.5)
+		var closes := _brightness(id, length * 0.6, length * 0.85)
+		if opens >= closes:
+			_fail(
+				(
+					(
+						"%s reads %.4f a third of the way through and %.4f near the end — every "
+						+ "wind-up has to rise"
+					)
+					% [id, opens, closes]
+				)
+			)
+		pitches[id] = closes
+	for first: StringName in pitches:
+		for second: StringName in pitches:
+			if first == second:
+				continue
+			if absf(float(pitches[first]) - float(pitches[second])) < ARCHETYPES_DIFFER_BY:
+				_fail(
+					(
+						"%s and %s climb to the same place (%.4f against %.4f)"
+						% [first, second, float(pitches[first]), float(pitches[second])]
+					)
+				)
+				return
+	var thrower := float(pitches.get(&"telegraph_thrower", 0.0))
+	for id: StringName in pitches:
+		if id != &"telegraph_thrower" and float(pitches[id]) >= thrower:
+			_fail(
+				(
+					(
+						"%s climbs as high as the thrower's — his is the one warning that has to stand "
+						+ "out, because he is the one the player cannot see coming"
+					)
+					% id
+				)
+			)
+			return
+
+
+## A `.tres` naming a sound nothing registered is silence where a signature should be, and it fails
+## as a typo rather than as a missing noise nobody noticed. Both fallbacks are deliberate, so what
+## is checked is that the name **resolves**, not that it is non-empty.
+func _check_the_data_names_sounds_that_exist() -> void:
+	for file_name: String in DirAccess.get_files_at(ATTACKS):
+		var attack := load("%s/%s" % [ATTACKS, file_name.trim_suffix(".remap")]) as AttackData
+		if attack == null or attack.impact_sound.is_empty():
+			continue
+		if not _resolves(attack.impact_sound, "hit_%s", AudioManager.BASE_IMPACT):
+			_fail('%s lands with "%s", which is not a sound' % [file_name, attack.impact_sound])
+	for file_name: String in DirAccess.get_files_at(ENEMIES):
+		var data := load("%s/%s" % [ENEMIES, file_name.trim_suffix(".remap")]) as EnemyData
+		if data == null or data.telegraph_sound.is_empty():
+			continue
+		if AudioManager.sound(data.telegraph_sound) == null:
+			_fail('%s winds up with "%s", which is not a sound' % [file_name, data.telegraph_sound])
+
+
+## Whether a family name reaches a waveform — either its own, or the base pair it shares.
+func _resolves(family: StringName, pattern: String, base: StringName) -> bool:
+	if family == base:
+		return true
+	return AudioManager.sound(StringName(pattern % family)) != null
+
+
+func _every_impact() -> Array[StringName]:
+	var all: Array[StringName] = [&"hit"]
+	for family: StringName in FAMILIES:
+		all.append(StringName("hit_%s" % family))
+	return all
+
+
+func _every_perfect() -> Array[StringName]:
+	var all: Array[StringName] = [&"perfect"]
+	for family: StringName in FAMILIES:
+		all.append(StringName("perfect_%s" % family))
+	return all
+
+
+func _every_telegraph() -> Array[StringName]:
+	var all: Array[StringName] = [&"telegraph"]
+	for archetype: StringName in ARCHETYPES:
+		all.append(StringName("telegraph_%s" % archetype))
+	return all
+
+
 ## A swing through air is something **passing**: it swells, peaks and falls. A sound that is loudest
 ## at its first sample is a sound that began with contact, and the transient check above cannot see
 ## the difference between a quiet snap and a burst of noise that merely starts at full level.
@@ -340,8 +548,8 @@ func _check_nothing_clips_or_clicks() -> void:
 ## notice it.
 func _check_the_right_sound_answers_each_signal() -> void:
 	var cases: Array[Array] = [
-		[&"perfect", func() -> void: EventBus.attack_landed.emit(null, 12.0, true)],
-		[&"hit", func() -> void: EventBus.attack_landed.emit(null, 8.0, false)],
+		[&"perfect", func() -> void: EventBus.attack_landed.emit(null, 12.0, true, null)],
+		[&"hit", func() -> void: EventBus.attack_landed.emit(null, 8.0, false, null)],
 		[&"whiff", func() -> void: EventBus.attack_whiffed.emit(null)],
 		[&"parry_perfect", func() -> void: EventBus.parry_perfect.emit()],
 		[&"parry_late", func() -> void: EventBus.parry_late.emit()],
@@ -374,6 +582,41 @@ func _check_the_right_sound_answers_each_signal() -> void:
 	cases.clear()
 
 
+## Running dry is a **designed** moment, and the answer to it is to close on the next farmer rather
+## than back away from him. A player who only finds out when the trigger stops answering has been
+## told one round too late to do anything with it.
+##
+## Both halves: the round that leaves one behind speaks, and the ones before it do not. Without the
+## second, a warning on every shot would pass — and a warning on every shot is no warning.
+func _check_the_last_round_announces_itself() -> void:
+	var kept := GameState.loadout.magazine
+	for rounds: int in [4, 2, 1]:
+		GameState.loadout.magazine = rounds
+		EventBus.weapon_fired.emit(_an_attack(false))
+		for _frame: int in DRAINS_WITHIN:
+			if _anything_playing():
+				break
+			await get_tree().process_frame
+		var warned := _voice_playing(&"low_ammo") != null
+		if rounds == 1 and not warned:
+			_fail("the shot that left one round behind said nothing about it")
+		elif rounds != 1 and warned:
+			_fail("the gun warned about running dry with %d rounds still in it" % rounds)
+		await _silence_everything()
+	GameState.loadout.magazine = kept
+
+
+## The voice carrying one particular sound, or null. `_now_playing` answers with whatever it finds
+## first, which is no use when two sounds are deliberately in the air at once.
+func _voice_playing(id: StringName) -> AudioStreamPlayer:
+	var wanted := AudioManager.sound(id) as AudioStreamWAV
+	for child: Node in AudioManager.get_children():
+		var voice := child as AudioStreamPlayer
+		if voice != null and voice.playing and voice.stream == wanted:
+			return voice
+	return null
+
+
 ## An `AttackData` standing in for a round, built rather than loaded: what the sound branches on is
 ## two flags, and a check that loaded the real gun would be asserting the data file instead of the
 ## wiring — `verify_weapons` is where the gun's own figures are held to the table.
@@ -393,7 +636,7 @@ func _an_attack(charged: bool) -> AttackData:
 ## almost anywhere and be wrong everywhere.
 func _check_the_telegraph_comes_from_somewhere() -> void:
 	var where := Vector3(7.0, 0.0, -11.0)
-	EventBus.telegraph_began.emit(where)
+	EventBus.telegraph_began.emit(where, null)
 	for _frame: int in DRAINS_WITHIN:
 		if _anything_playing():
 			break
@@ -508,6 +751,32 @@ func _tail(id: StringName) -> float:
 ## How high the sound sits, without an FFT: the derivative of a sine grows with its frequency, so
 ## the ratio of the differentiated signal's level to the signal's own stands in for pitch. A 150 Hz
 ## thud lands near 0.04 at this rate; a 1320 Hz ring near 0.38.
+## How much of a window is ringing at one frequency, as a share of everything in it. A single bin
+## rather than a whole transform: there is exactly one partial anybody is asking about, and the
+## question is whether it is there.
+func _partial(id: StringName, hertz: float, from: float, to: float) -> float:
+	var samples := _samples(id)
+	var first := maxi(int(from * float(AudioManager.MIX_RATE)), 0)
+	var after := mini(int(to * float(AudioManager.MIX_RATE)), samples.size())
+	if after - first < 2:
+		return 0.0
+	var step := TAU * hertz / float(AudioManager.MIX_RATE)
+	var cosine := 0.0
+	var sine := 0.0
+	var energy := 0.0
+	for index: int in range(first, after):
+		var angle := step * float(index - first)
+		cosine += samples[index] * cos(angle)
+		sine += samples[index] * sin(angle)
+		energy += samples[index] * samples[index]
+	if energy <= 0.0:
+		return 0.0
+	# Two over N is what a full-amplitude sine at this frequency would score, so a pure tone reads
+	# as one and the figure means the same thing whatever the window length is.
+	var span := float(after - first)
+	return sqrt(cosine * cosine + sine * sine) * 2.0 / span / sqrt(energy / span) / sqrt(2.0)
+
+
 func _brightness(id: StringName, from: float, to: float) -> float:
 	var samples := _samples(id)
 	var first := maxi(int(from * float(AudioManager.MIX_RATE)), 1)
@@ -616,11 +885,11 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"audio OK — every sound is its own waveform at the peak it declared, the perfect "
-				+ "hit and the perfect parry ring longer than their plain versions, a swing "
-				+ "through air passes rather than snapping, the telegraph is the one sound that "
-				+ "climbs and it arrives from where the farmer is standing, and the surf comes "
-				+ "back round without a tick"
+				"audio OK — every sound is its own waveform at the peak it declared, three "
+				+ "weapons land with three bodies and one signature, three archetypes wind up "
+				+ "from three pitches and the thrower's stands highest, the last round says so, "
+				+ "a swing through air passes rather than snapping, and the surf comes back "
+				+ "round without a tick"
 			)
 		)
 		get_tree().quit(0)

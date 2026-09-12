@@ -19,7 +19,28 @@ All notable changes to this project are documented here, following
   wreck a metre high is cover and a walkable dip is not. Proven to answer the world rather than its
   own arithmetic by flying the same walk at ankle height (39.3% clear, threat floor trips) and above
   everything (100% clear, cover floor trips).
+- **A weapon you can hear.** Fists, stick and gun each land with their own body — 150 Hz gone in
+  35 ms, 240 Hz for twice as long, 320 Hz over at once. What they do **not** differ in is the
+  partial the perfect window adds: 1320 Hz in all three, because it is the signature of the whole
+  game and a player who learns it on fists has to have learnt it on the gun.
+- **A warning you can place.** The farmhand, the reaper and the thrower wind up from three different
+  pitches. The thrower's is the highest and the only climb crossing an octave: he strikes from
+  fourteen metres and is the one archetype the player may never see coming, so sound is the only
+  warning the design gives them.
+- **The last round says so.** The shot that leaves one in the magazine plays two dry clicks. Running
+  out is a designed moment and the answer is to close on the next farmer — a decision the player has
+  to be able to make before the trigger stops answering.
+- `AttackData.impact_sound` and `EnemyData.telegraph_sound`, so a blow's sound is named by the data
+  that throws it, the way its burst already is.
 
+### Changed
+
+- `EventBus.attack_landed` carries the `AttackData` and `telegraph_began` carries the `EnemyData`.
+  Five of the six listeners ignore them; the one that does not would otherwise have to ask the bag
+  what is in hand at the moment of contact, and a weapon swapped during a swing would make that
+  a lie.
+
+### Added
 
 - `tools/verify_data_surface.tscn` — every field `docs/architecture.md` names on a balance resource
   has to be a field that resource actually has. Asked of a fresh instance's property list rather

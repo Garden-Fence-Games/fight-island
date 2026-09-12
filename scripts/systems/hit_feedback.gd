@@ -53,7 +53,7 @@ func _exit_tree() -> void:
 	Engine.time_scale = 1.0
 
 
-func _on_attack_landed(target: Node3D, _damage: float, perfect: bool) -> void:
+func _on_attack_landed(target: Node3D, _damage: float, perfect: bool, _attack: AttackData) -> void:
 	var enemy := target as Enemy
 	if enemy == null or enemy.mesh == null:
 		return

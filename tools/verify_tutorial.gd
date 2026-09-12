@@ -126,7 +126,7 @@ func _check_one_blow_closes_three_lessons() -> void:
 		return
 	# The second blow of a chain, landed inside the perfect window.
 	_player.chain_index = 1
-	EventBus.attack_landed.emit(_player, 10.0, true)
+	EventBus.attack_landed.emit(_player, 10.0, true, null)
 	await get_tree().process_frame
 	var step := _director.current_step()
 	if step == null:

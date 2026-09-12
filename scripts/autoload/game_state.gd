@@ -306,7 +306,7 @@ func _on_enemy_died(_enemy: Node3D, archetype: StringName, reward: int) -> void:
 		EventBus.rounds_scavenged.emit(scavenged)
 
 
-func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool) -> void:
+func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool, _attack: AttackData) -> void:
 	if perfect:
 		stats.perfect_hits += 1
 

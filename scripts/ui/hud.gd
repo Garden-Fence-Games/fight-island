@@ -152,7 +152,7 @@ func _on_ammo_changed(magazine: int, reserve: int) -> void:
 	ammo_reserve.text = str(reserve)
 
 
-func _on_attack_landed(target: Node3D, damage: float, perfect: bool) -> void:
+func _on_attack_landed(target: Node3D, damage: float, perfect: bool, _attack: AttackData) -> void:
 	if not bool(Settings.get_value(&"gameplay_damage_numbers")):
 		return
 	var variation := &"DamageNumberPerfect" if perfect else &"DamageNumber"

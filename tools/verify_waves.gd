@@ -160,8 +160,8 @@ func _check_the_elite_still_reads_after_being_hit(plain: Enemy, elite: Enemy) ->
 	var feedback := HitFeedback.new()
 	add_child(feedback)
 	var before := _brightness(elite.mesh.material_override)
-	EventBus.attack_landed.emit(elite, 10.0, true)
-	EventBus.attack_landed.emit(plain, 10.0, true)
+	EventBus.attack_landed.emit(elite, 10.0, true, null)
+	EventBus.attack_landed.emit(plain, 10.0, true, null)
 	await _let_the_flash_finish()
 	var after := _brightness(elite.mesh.material_override)
 	if after < before - 0.001:

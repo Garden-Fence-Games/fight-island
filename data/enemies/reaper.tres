@@ -16,6 +16,7 @@ notice_radius = 9.0
 rouse_radius = 7.0
 attack_range = 2.8
 is_ranged = false
+telegraph_sound = &"telegraph_reaper"
 preferred_range = 2.4
 tint = Color(0.2, 0.22, 0.3, 1)
 first_wave = 3

@@ -242,7 +242,7 @@ func _bodies_expected() -> int:
 	return most
 
 
-func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool) -> void:
+func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool, _attack: AttackData) -> void:
 	var body := _player() as Player
 	# The chain index is the player's own bookkeeping, and the second blow of a chain is index 1.
 	if body != null and body.chain_index > 0:

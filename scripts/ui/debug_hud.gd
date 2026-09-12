@@ -77,7 +77,7 @@ func _on_stamina_changed(current: float, maximum: float) -> void:
 	stamina_bar.value = current
 
 
-func _on_attack_landed(_target: Node3D, damage: float, perfect: bool) -> void:
+func _on_attack_landed(_target: Node3D, damage: float, perfect: bool, _attack: AttackData) -> void:
 	_last_hit = "%.0f damage%s" % [damage, "  PERFECT" if perfect else ""]
 
 
