@@ -224,6 +224,13 @@ jobs:
       - name: Verify camera occlusion
         run: tools/run-check.sh res://tools/verify_camera.tscn
 
+      # A tuning record nobody can trust is worse than none: a column that silently carries the run's
+      # running total instead of the wave's own reads perfectly plausible and would send a balance
+      # pass the wrong way. This also holds the release build's half of the promise — a recorder
+      # nobody armed leaves no file behind.
+      - name: Verify the telemetry record
+        run: tools/run-check.sh res://tools/verify_telemetry.tscn
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

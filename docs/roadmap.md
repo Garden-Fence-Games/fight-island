@@ -76,6 +76,11 @@ cannot be: somebody has to play the run through on each scheme and say so.
   so a menu is not rewritten the day someone wants a second locale, not because one is planned
 - Balance telemetry in debug builds: time per wave, deaths per wave, upgrade pick rate
 
+**Balance telemetry came early** and is off this list: `Telemetry`, one CSV row per wave under
+`user://` in debug builds, and `verify_telemetry` in CI. It has to precede the tuning pass rather
+than accompany it — *fifteen waves, tuned* is the first item above, and tuning them off the formulas
+instead of off what players did is the thing this milestone exists to stop.
+
 **Save and load came early** and is off this list: `SaveManager`, JSON under `user://`, and
 `verify_save` in CI. It arrived with the run flow in M2 because a run you cannot resume is a run
 nobody plays twice.
