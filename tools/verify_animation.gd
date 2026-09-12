@@ -48,7 +48,9 @@ func _run() -> void:
 				)
 
 	var machine := player.get_node("StateMachine") as StateMachine
+	_check_the_cycles_loop(anim)
 	await _check_move_walks(machine, anim)
+	await _check_walking_outlasts_one_cycle(machine, anim)
 	await _check_idle_plays_idle(machine, anim)
 	await _check_clipless_state_rests(anim)
 	_check_the_body_can_be_tinted(player)
@@ -70,6 +72,53 @@ func _check_move_walks(machine: StateMachine, anim: AnimationComponent) -> void:
 		_fail("Move selected walk but the AnimationPlayer is not playing")
 	Input.action_release(&"move_forward")
 	await get_tree().physics_frame
+
+
+## glTF carries no looping flag, so Godot imports every clip as a one-shot unless the `.import` says
+## otherwise. A walk cycle imported that way plays once and freezes mid-stride while the machine
+## still reports `Move` — no error, no warning, and `is_playing()` is true for the whole first
+## cycle, which is why every other check here passed while the character stood still on screen.
+##
+## The setting lives in `_subresources` of `assets/models/char_player.glb.import`; a reimport that
+## loses it brings the bug straight back, so it is asserted rather than trusted.
+func _check_the_cycles_loop(anim: AnimationComponent) -> void:
+	if anim.animation_player == null:
+		return
+	for clip: String in ["walk", "idle"]:
+		var cycle := anim.animation_player.get_animation(clip)
+		if cycle == null:
+			continue
+		if cycle.loop_mode == Animation.LOOP_NONE:
+			_fail("%s does not loop — it plays once and the character freezes mid-cycle" % clip)
+	var hurt := anim.animation_player.get_animation("hurt")
+	if hurt != null and hurt.loop_mode != Animation.LOOP_NONE:
+		_fail("hurt loops, but a reaction has to play once and end")
+
+
+## The symptom itself rather than the setting behind it: keep walking for longer than the cycle
+## lasts and the legs must still be moving.
+func _check_walking_outlasts_one_cycle(machine: StateMachine, anim: AnimationComponent) -> void:
+	var cycle := anim.animation_player.get_animation("walk")
+	if cycle == null:
+		return
+	Input.action_press(&"move_forward")
+	var elapsed := 0.0
+	while elapsed < cycle.length + 0.5:
+		await get_tree().physics_frame
+		elapsed += 1.0 / 60.0
+	var still_walking := anim.animation_player.is_playing()
+	var where := anim.animation_player.current_animation_position
+	Input.action_release(&"move_forward")
+	await get_tree().physics_frame
+	if machine.current_name != &"Move":
+		return
+	if not still_walking:
+		_fail(
+			(
+				"the walk stopped after one %.2fs cycle, frozen at %.2fs, while the state was still Move"
+				% [cycle.length, where]
+			)
+		)
 
 
 ## Letting go has to land back on the idle cycle rather than freezing on the last stride.
@@ -139,8 +188,8 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"animation OK — walk, idle and hurt on the rig, Move walks, Idle idles, "
-				+ "Sprint rests, the body can be tinted"
+				"animation OK — walk, idle and hurt on the rig, the cycles loop, Move walks "
+				+ "past one cycle, Idle idles, Sprint rests, the body can be tinted"
 			)
 		)
 		get_tree().quit(0)
