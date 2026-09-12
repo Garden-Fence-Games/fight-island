@@ -675,6 +675,28 @@ either shut off half the beach or let the player swim away on the other side. Wa
 and the sea pushes back; nothing is ever blocked, so the edge of the world is felt as the shape of
 the place.
 
+### Composed for one viewpoint, and checked for it
+
+The camera never turns, so the island is laid out for a single angle — and every rule that buys is
+a rule a screenshot from the wrong angle cannot confirm. Three checks hold the composition, each
+answering a question the others cannot:
+
+- **`verify_view`** measures where the blind side *is*, by marching 36 bearings outward until the
+  ground leaves the frame, then holds what depends on the answer: a melee swing begins on screen at
+  every zoom the wheel reaches, and a dropped weapon lands where the player can see it.
+- **`verify_playfield`** walks every square metre the fight can reach and fails on a corner where a
+  160° sweep leaves nowhere to dodge — the reaper's question.
+- **`verify_sightlines`** is the thrower's, and it is a **band rather than a floor**, because it has
+  two opposite failures. Too little open ground and a ranged enemy is decoration, throwing into rock
+  from ten metres. No cover at all and he is a tax rather than a threat that can be answered, since
+  there is nothing to break his line behind while closing. The shipped island sits at 79% clear and
+  21% blocked.
+
+`verify_sightlines` casts **the ray the stone actually flies** — the `world` layer, chest to chest,
+flat — rather than a navigation query or the walkability grid `verify_playfield` rasterises. That
+distinction is the whole accuracy of it: a wreck a metre high is cover to a stone and is not a wall
+to a body, and a walkable dip is neither.
+
 ## Wind and water
 
 Both are shaders, and both are shaders for the same reason: the thing that has to move is drawn
