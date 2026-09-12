@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -23,6 +23,8 @@
 [ext_resource type="PackedScene" path="res://scenes/world/island_sky.tscn" id="21"]
 [ext_resource type="Script" path="res://scripts/systems/pickup_director.gd" id="22"]
 [ext_resource type="Script" path="res://scripts/systems/effect_pool.gd" id="23"]
+[ext_resource type="Script" path="res://scripts/systems/bird_flock.gd" id="24"]
+[ext_resource type="PackedScene" path="res://scenes/world/bird.tscn" id="25"]
 
 [node name="Arena" type="Node3D"]
 
@@ -65,6 +67,10 @@ script = ExtResource("7")
 [node name="EnemyPool" type="Node" parent="WaveDirector/SpawnDirector"]
 script = ExtResource("8")
 enemy_scene = ExtResource("2")
+
+[node name="BirdFlock" type="Node" parent="."]
+script = ExtResource("24")
+bird_scene = ExtResource("25")
 
 [node name="PickupDirector" type="Node" parent="."]
 script = ExtResource("22")
