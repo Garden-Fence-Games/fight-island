@@ -22,10 +22,6 @@ const THROW_HEIGHT: float = 1.1
 const CHEST_HEIGHT: float = 1.0
 
 @export var data: EnemyData = null
-## The ring drawn under him while he winds up. A `PackedScene` export, which resolves in a
-## hand-written scene where a node export would not (ADR 0006). Null simply draws nothing, which is
-## what every headless check that does not care about the look gets.
-@export var telegraph_scene: PackedScene = null
 
 ## Set by the pool before the body enters the tree. A hand-placed enemy wakes up fighting; a pooled
 ## one waits to be leased.

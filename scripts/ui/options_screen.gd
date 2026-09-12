@@ -138,11 +138,6 @@ const PAGES: Array = [
 			},
 			{"setting": &"access_hitstop", "label": "OPT_HITSTOP", "kind": OptionRow.Kind.TOGGLE},
 			{
-				"setting": &"access_colourblind_telegraphs",
-				"label": "OPT_COLOURBLIND",
-				"kind": OptionRow.Kind.TOGGLE,
-			},
-			{
 				"setting": &"access_hold_to_confirm",
 				"label": "OPT_HOLD_TO_CONFIRM",
 				"kind": OptionRow.Kind.TOGGLE,

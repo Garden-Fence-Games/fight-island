@@ -442,11 +442,17 @@ with a brighter flare. Three differences at once, because damage numbers are off
 effect is what carries the information instead — and any single difference is one the player has to
 be told about rather than one they notice.
 
-An enemy winding up draws a **ring on the ground that fills as the telegraph runs**. It is a shape
-rather than a colour on purpose: colour alone fails a colourblind player, a greyscale screenshot and
-a camera twenty metres up, and the wind-up is the one thing in the game the player has half a second
-to read. The ring is the same warning colour for every archetype — a hue per farmer would be one
-more thing to learn in that half second, and the shape already carries it.
+**An enemy winding up currently shows nothing.** There was a ring on the ground that filled as the
+telegraph ran; it has been taken out, and the wind-up animation meant to replace it is not authored.
+Until it is, the only tell is that the farmer has stopped moving — the timings in this document are
+unchanged, and every one of them is harder to answer than the numbers say.
+
+When it comes back it comes back on the body, and it owes three things the ring paid: it must be a
+**shape rather than a colour**, because colour alone fails a colourblind player, a greyscale
+screenshot and a camera twenty metres up; it must be **the same tell for every archetype**, because
+a signal per farmer is one more thing to learn in the half second there is to read it; and it must
+be **driven by the wind-up's own duration**, which shortens with the waves and with the hour, so the
+picture and the timing cannot drift apart.
 
 ### The ring is the reward
 

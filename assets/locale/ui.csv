@@ -50,7 +50,6 @@ OPT_SFX,SFX
 OPT_AMBIENCE,Ambience
 OPT_SCREEN_SHAKE,Screen shake
 OPT_HITSTOP,Hitstop
-OPT_COLOURBLIND,Colourblind telegraphs
 OPT_HOLD_TO_CONFIRM,Hold to confirm
 OPT_REDUCE_FLASHING,Reduce flashing
 OPT_ACTION,Action
