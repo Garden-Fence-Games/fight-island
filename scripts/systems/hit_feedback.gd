@@ -8,10 +8,20 @@ const HITSTOP_SCALE: float = 0.05
 const FLASH_DURATION: float = 0.18
 const PERFECT_COLOR: Color = Color(1.0, 0.96, 0.7)
 const NORMAL_COLOR: Color = Color(1.0, 0.58, 0.3)
+## How hard each flares before settling back. A perfect hit outshines an elite's own glow by nearly
+## twice, which is what keeps the timing readable on the body it matters most on.
+const PERFECT_FLASH: float = 3.0
+const NORMAL_FLASH: float = 1.2
 ## What the body goes while it cannot attack. Drained rather than tinted a new colour: the player
 ## reads "spent" off it without having to learn what a colour means, and it cannot be mistaken for
 ## the damage flash, which goes the other way.
-const SPENT_COLOR: Color = Color(0.2, 0.28, 0.36)
+##
+## **It multiplies a texture, so it cannot be read as a colour on its own.** These numbers were
+## chosen against a white capsule, where 0.2 was a slate blue. The same value over the rig's albedo
+## map takes the character to a fifth of his own brightness, which is not a drained man — it is a
+## silhouette, and the third punch of every combo turned the player black. Dulled and cooled to a
+## bit over half, which still reads as spent on a body that is already coloured.
+const SPENT_COLOR: Color = Color(0.52, 0.58, 0.68)
 const SPENT_FADE: float = 0.06
 const READY_FADE: float = 0.14
 
@@ -41,11 +51,19 @@ func _on_attack_landed(target: Node3D, _damage: float, perfect: bool) -> void:
 		return
 	if bool(Settings.get_value(&"access_reduce_flashing")):
 		return
+	# Emission is not this system's to own. An elite wears its rank in the same slot, and flashing
+	# to nought used to take that away for the rest of the body's life — one hit, and the only cue
+	# that reads at a glance and in greyscale was gone. So the flash settles back to whatever the
+	# body was wearing rather than to zero, which for an ordinary farmer is nothing at all.
+	var resting := enemy.rank.glow if enemy.rank != null else Color.BLACK
+	var settles_to := enemy.rank.glow_energy if enemy.rank != null else 0.0
 	material.emission_enabled = true
 	material.emission = PERFECT_COLOR if perfect else NORMAL_COLOR
-	material.emission_energy_multiplier = 3.0 if perfect else 1.2
+	material.emission_energy_multiplier = PERFECT_FLASH if perfect else NORMAL_FLASH
 	var tween := create_tween()
-	tween.tween_property(material, "emission_energy_multiplier", 0.0, FLASH_DURATION)
+	tween.set_parallel(true)
+	tween.tween_property(material, "emission_energy_multiplier", settles_to, FLASH_DURATION)
+	tween.tween_property(material, "emission", resting, FLASH_DURATION)
 
 
 ## The state, held for as long as it lasts, rather than a flash when a press is refused. Seeing

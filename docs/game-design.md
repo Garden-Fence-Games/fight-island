@@ -418,6 +418,19 @@ Hitstop on perfect hits and perfect parries only. Screenshake on the three finis
 damage, with a slider in the options. Camera kick on the charged shot. Damage numbers exist but
 are **off by default** — the feedback should be felt.
 
+### The visible half
+
+A landed hit throws debris and a flare; a **perfect** one throws more of it, further, for longer,
+with a brighter flare. Three differences at once, because damage numbers are off by default and the
+effect is what carries the information instead — and any single difference is one the player has to
+be told about rather than one they notice.
+
+An enemy winding up draws a **ring on the ground that fills as the telegraph runs**. It is a shape
+rather than a colour on purpose: colour alone fails a colourblind player, a greyscale screenshot and
+a camera twenty metres up, and the wind-up is the one thing in the game the player has half a second
+to read. The ring is the same warning colour for every archetype — a hue per farmer would be one
+more thing to learn in that half second, and the shape already carries it.
+
 ### The ring is the reward
 
 The subject of this game is timing, and **the eye is on the enemy** — not on the player, and not on

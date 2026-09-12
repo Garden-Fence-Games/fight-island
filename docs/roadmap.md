@@ -20,7 +20,7 @@ proves it is done. Durations are estimates for one person working part-time.
 **Exit:** the project opens with zero errors and zero warnings, `verify_project_config` passes, and
 `docs/` answers every question a new contributor would ask.
 
-## M1 — Prototype · **in progress**
+## M1 — Prototype · **done**
 
 **Goal:** *"I can kill an enemy with my fists and it feels like something."*
 
@@ -32,28 +32,35 @@ proves it is done. Durations are estimates for one person working part-time.
 - [x] The fist three-attack chain with both timing layers, hitstop and a flash
 - [x] The farmhand with the full FSM, a readable telegraph and the attack-token pool
 - [x] A debug HUD showing health, stamina, state and the chain index
-- [ ] Sound — there are no audio assets yet, so the audible half of the feedback waits for M2's
-      first audio pass
+- [x] Sound — five hit-and-parry signatures, **synthesised at startup rather than shipped as
+      files**, so the perfect window is recognisable with the screen off. It was the last box, and
+      it waited on nothing: there is still not an audio asset in the repository
 
 **Exit:** a 60-second grey-box fight where a perfect parry and a perfect chain are *felt*, not read
 off a number.
 
-## M2 — Vertical slice (~4 weeks)
+## M2 — Vertical slice · **in progress**
 
 **Goal:** one complete ten-minute run.
 
-- Stick and gun with their six attacks, ground pickups, instant swapping, ammo and reload
-- `WaveDirector`, `SpawnDirector`, enemy pooling
-- Waves 1 to 5 on the real formulas from `WaveConfig`
-- `Economy` and the five-track upgrade screen, with the merchant — see [menus.md](menus.md)
-- Title, pause and options screens, all navigable on a pad
-- The tutorial director, driven by step resources — see [tutorial.md](tutorial.md)
-- Real HUD, death screen, retry, pause, options
-- Island blockout with navigable geometry
-- First audio pass
+- [x] Stick and gun with their six attacks, ground pickups, instant swapping, ammo and reload
+- [x] `WaveDirector`, `SpawnDirector`, enemy pooling
+- [x] Waves 1 to 5 on the real formulas from `WaveConfig`
+- [x] `Economy` and the five-track upgrade screen, with the merchant — see [menus.md](menus.md)
+- [x] Title, pause and options screens, all navigable on a pad
+- [x] The tutorial director, driven by step resources — see [tutorial.md](tutorial.md)
+- [x] Real HUD, death screen, retry, pause, options
+- [x] Island blockout with navigable geometry
+- [ ] First audio pass — `AudioManager` voices the player's own timing and nothing else yet. No
+      music, no ambience, no enemy or menu sound, and `assets/audio/` holds a bus layout and
+      nothing else
 
 **Exit:** the run plays start to finish on a gamepad **and** on keyboard and mouse, and the balance
 table in `docs/game-design.md` matches the shipped `.tres` values.
+
+The second half of that exit is machine-checked — `verify_combat`, `verify_waves` and
+`verify_day_night` read the document and fail on a figure that drifted. The first half is not, and
+cannot be: somebody has to play the run through on each scheme and say so.
 
 ## M3 — Content (~6 weeks)
 
@@ -63,8 +70,18 @@ table in `docs/game-design.md` matches the shipped `.tres` values.
 - Final art for the island, both characters and the three weapons — the primitives go away
 - Animation pass, VFX pass, full audio
 - Main menu, settings, credits
-- Save and load; FR and EN localisation
+- FR and EN localisation. The string table in `assets/locale/ui.csv` is already the only place UI
+  text lives, but it holds one column and that column is English
 - Balance telemetry in debug builds: time per wave, deaths per wave, upgrade pick rate
+
+**Save and load came early** and is off this list: `SaveManager`, JSON under `user://`, and
+`verify_save` in CI. It arrived with the run flow in M2 because a run you cannot resume is a run
+nobody plays twice.
+
+**The art has not started, whatever the screenshots suggest.** The player's rig and the island's
+vegetation, stone and huts are prototype dressing: CC0 stand-ins, on a Mixamo skeleton whose
+redistribution terms [`credits.md`](credits.md) flags `prototype only`. Both are replaced here, so
+counting the primitives that have already gone counts the wrong thing.
 
 **Exit:** three people who have never played reach wave 5 without being told the rules, and at
 least one reaches wave 15.

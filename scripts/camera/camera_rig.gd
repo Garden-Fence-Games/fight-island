@@ -30,6 +30,21 @@ const MIN_ZOOM: float = 6.0
 const MAX_ZOOM: float = 24.0
 const ZOOM_STEP: float = 1.5
 const ZOOM_SMOOTHING: float = 10.0
+## How far the fiercest shake tips the eye, in degrees, at the full setting. Small on purpose: a
+## fixed camera that lurches stops being fixed, and the whole argument for this angle is that a
+## silhouette reads the same way every time.
+##
+## **A tip and not a shove.** The spring arm owns its child's *position* — it rewrites it every
+## frame to hold the camera at the end of the arm — so a shake written there is a shake the arm
+## undoes, and in the meantime it drags the camera back down the arm towards the player. It cost an
+## afternoon: the first version passed every effect check and quietly broke the occlusion one,
+## because the eye was no longer where anything thought it was. Rotation is left alone by the arm,
+## and a kick is what a camera does anyway.
+const SHAKE_REACH: float = 0.8
+## How fast a knock dies away. Quick enough to be over before the next input matters.
+const SHAKE_DECAY: float = 6.0
+## The setting is a percentage, and nought means none — not a little.
+const FULL_SHAKE: float = 100.0
 const FOLLOW_SMOOTHING: float = 12.0
 
 ## The one viewing direction of the entire game. Changing either re-frames every scene at once,
@@ -39,9 +54,14 @@ const FOLLOW_SMOOTHING: float = 12.0
 @export var target: Node3D = null
 
 var _wanted_zoom: float = 10.0
+## How hard the camera is still shaking, nought to one, and the source of the jitter. Seeded from
+## the run so two players who see the same fight see the same knock.
+var _shake: float = 0.0
+var _jolt := RandomNumberGenerator.new()
 
 @onready var pitch_pivot: Node3D = $PitchPivot
 @onready var spring: SpringArm3D = $PitchPivot/Spring
+@onready var camera: Camera3D = $PitchPivot/Spring/Camera
 
 
 func _ready() -> void:
@@ -53,6 +73,21 @@ func _ready() -> void:
 	_wanted_zoom = DEFAULT_ZOOM
 	if target != null:
 		global_position = target.global_position
+	_jolt.seed = GameState.run_seed
+	EventBus.shake_requested.connect(_on_shake_requested)
+
+
+## How much knock is left, nought to one. Read by the headless check, which cannot see a camera
+## move but can ask whether it was asked to.
+func shake_left() -> float:
+	return _shake
+
+
+## Requests are scaled here rather than at the callers: a player who has turned shake off is not
+## asking for less of it, and every emitter would otherwise have to remember that.
+func _on_shake_requested(strength: float) -> void:
+	var wanted := float(Settings.get_value(&"access_screen_shake")) / FULL_SHAKE
+	_shake = maxf(_shake, strength * clampf(wanted, 0.0, 1.0))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -65,6 +100,25 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	_follow(delta)
 	_zoom(delta)
+	_shudder(delta)
+
+
+## The knock is put on the camera's own rotation, so it never moves what the rig is following and
+## never argues with the spring arm about where the eye belongs.
+func _shudder(delta: float) -> void:
+	if _shake <= 0.0:
+		if camera.rotation != Vector3.ZERO:
+			camera.rotation = Vector3.ZERO
+		return
+	_shake = maxf(_shake - SHAKE_DECAY * delta * _shake, 0.0)
+	if _shake < 0.001:
+		_shake = 0.0
+		camera.rotation = Vector3.ZERO
+		return
+	var reach := deg_to_rad(SHAKE_REACH * _shake)
+	camera.rotation = Vector3(
+		_jolt.randf_range(-reach, reach), _jolt.randf_range(-reach, reach), 0.0
+	)
 
 
 ## The ground direction the player reads as "up the screen". Movement stays camera-relative even

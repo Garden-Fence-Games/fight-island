@@ -235,6 +235,45 @@ Named as a past-tense fact, never as a command and never `on_*`:
 **The rule:** a component talking to its owner uses a direct signal on the component. The
 `EventBus` is only for cross-cutting listeners — HUD, audio, telemetry.
 
+## Effects
+
+`EffectPool` sits in the arena and is found by group, because effects are asked for from states,
+components and listeners alike and none of them should hold a path to it. Each scene is warmed in
+**one batch the first time it is wanted**; every instance after that has already been used. Thirty
+enemies on screen is the budget and an effect instanced per hit is the easiest way to lose it —
+a `PackedScene` unpacked and a particle system configured inside the frame the player is meant to be
+feeling. An effect hands itself back with a `spent` signal, the same shape as `Projectile` and the
+enemy pool.
+
+**`AttackData.vfx` names the effect a landed hit plays**, and it is played from
+`PlayerAttack._on_landed` — the one place that knows the attack, the body and whether the timing was
+perfect, and the place both the melee hitbox and the gun's hitscan arrive through.
+
+**The impact is `CPUParticles3D`, deliberately.** A burst is a dozen quads at most and costs
+nothing, while the GPU kind cannot be asked what it did — it draws or it does not, and a headless
+check can only watch it fail to. A perfect hit differs from a plain one in **three ways at once**:
+more debris, thrown further, for longer, plus a brighter flare. Any single difference is one the
+player has to be told about.
+
+**The telegraph is a shape, not a colour.** A ring on the ground under whoever is committing, filling
+as the wind-up runs. Colour alone fails a colourblind player, every greyscale screenshot, and any
+camera far enough away that a tint is a few pixels; a filling ring survives all three. It lies on the
+ground because from this camera the ground under a farmer is always in shot and his chest may not
+be, and the fill is driven by the same number as the wind-up, so the two cannot drift.
+
+### The accessibility settings are consumers
+
+Three were stored, persisted and shown in the options screen with **nothing reading them**. Two are
+read now:
+
+- `access_colourblind_telegraphs` thickens the ring and takes it to full contrast — redundancy on
+  top of a cue that already works, for a player who wants the shape to shout.
+- `access_screen_shake` scales every knock, and **nought means none**. Scaling happens on the camera
+  rather than at each emitter, so no emitter has to remember the setting exists.
+- `access_reduce_flashing` damps the flare and **leaves the debris alone**: debris is motion, not
+  flashing, and removing it would take the hit's readability away in the name of protecting the
+  player from it.
+
 ## Wave spawning
 
 `arena.tscn` holds `WaveDirector → SpawnDirector → EnemyPool`, in that nesting: the director owns
@@ -566,6 +605,13 @@ nobody can see reads as a dropped input, and the player blames the game. `HitFee
 drains the body's colour for the duration; combat itself knows nothing about it. The state is shown
 for the whole lockout rather than flashed when a press is refused: seeing that the weapon is not
 ready *before* pressing is worth more than being told afterwards.
+
+**The drain multiplies the albedo, so its colour cannot be read on its own.** A value that was a
+slate blue over a white capsule takes a textured rig to a fifth of its own brightness — which is how
+the third punch of every combo once turned the player black. `tests/test_hit_feedback.gd` holds the
+drain between a floor and a ceiling for that reason: dark enough that the lockout is visible, light
+enough that the body is still a body. A wait nobody can see reads as a dropped input, and a player
+who has turned into a silhouette is not reading anything at all.
 
 ## Animation
 
