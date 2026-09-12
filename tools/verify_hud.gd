@@ -8,6 +8,10 @@ extends Node
 
 const HUD: String = "res://scenes/ui/hud.tscn"
 const SETTLE_FRAMES: int = 4
+## Longer than the chip's punch, which grows for 0.08 and settles back over 0.2.
+const PULSE_SETTLE: float = 0.4
+## Inside the growing half of that punch, so the scale read is one the player would see.
+const PULSE_SAMPLE: float = 0.04
 
 var _failures: PackedStringArray = []
 var _hud: CanvasLayer = null
@@ -38,6 +42,8 @@ func _run() -> void:
 	await _check_the_clock()
 	await _check_ammo_follows_the_weapon()
 	await _check_damage_numbers()
+	await _check_credit_numbers()
+	await _check_the_chip_answers_money_arriving()
 	await _check_the_banner_announces_the_wave()
 	_check_stats_are_tallied()
 	_put_the_run_back()
@@ -127,6 +133,94 @@ func _check_damage_numbers() -> void:
 	Settings.set_value(&"gameplay_damage_numbers", restore)
 
 
+## The opposite default to the damage numbers, and the reason is the design rather than symmetry:
+## a player has to learn that killing pays, and that is one number per body where damage is one per
+## hit. A body worth nothing is the case worth checking — the tutorial's farmhands pay no money, and
+## a `+$0` over every one of them would be the first thing anyone ever learns about the economy.
+func _check_credit_numbers() -> void:
+	if not Settings.DEFAULTS[&"gameplay_credit_numbers"]:
+		_fail("credit numbers must default to on")
+	var numbers := _hud.get_node("Root/Numbers") as Control
+	var restore: Variant = Settings.get_value(&"gameplay_credit_numbers")
+	_clear(numbers)
+
+	Settings.set_value(&"gameplay_credit_numbers", false)
+	EventBus.enemy_died.emit(_target, &"farmhand", 5)
+	await get_tree().process_frame
+	if numbers.get_child_count() != 0:
+		_fail("a credit number appeared while the setting was off")
+
+	Settings.set_value(&"gameplay_credit_numbers", true)
+	EventBus.enemy_died.emit(_target, &"farmhand", 5)
+	await get_tree().process_frame
+	if numbers.get_child_count() != 1:
+		_fail("the setting is on and no credit number appeared")
+	elif (numbers.get_child(0) as Label).text != "+$5":
+		_fail("a credit number reads %s, expected +$5" % (numbers.get_child(0) as Label).text)
+
+	_clear(numbers)
+	EventBus.enemy_died.emit(_target, &"farmhand", 0)
+	await get_tree().process_frame
+	if numbers.get_child_count() != 0:
+		_fail("a body worth nothing still floated a number")
+	Settings.set_value(&"gameplay_credit_numbers", restore)
+	_clear(numbers)
+
+
+## Money arriving has to be visible on the chip too: a two-digit number changing in the corner of a
+## fight is not something the eye catches on its own. Spending stays silent, and a player who asked
+## for less flashing gets the text without the punch.
+func _check_the_chip_answers_money_arriving() -> void:
+	var chip := _hud.get_node("Root/TopRight/MoneyChip") as PanelContainer
+	var restore: Variant = Settings.get_value(&"access_reduce_flashing")
+
+	Settings.set_value(&"access_reduce_flashing", false)
+	await _settle(chip)
+	GameState.earn(25)
+	await _sample()
+	if chip.scale.x <= 1.0:
+		_fail("the money chip did not answer money arriving")
+
+	# Spending is the player's own doing, and they watched the price while they did it.
+	await _settle(chip)
+	GameState.spend(25)
+	await _sample()
+	if chip.scale.x > 1.0:
+		_fail("the money chip punched on a purchase, which the player already watched")
+
+	await _settle(chip)
+	Settings.set_value(&"access_reduce_flashing", true)
+	GameState.earn(25)
+	await _sample()
+	if chip.scale.x > 1.0:
+		_fail("the chip punched with reduced flashing asked for")
+	Settings.set_value(&"access_reduce_flashing", restore)
+	await _settle(chip)
+
+
+## Waits out a pulse and puts the chip back, so one case's tween can never be read as the next
+## case's answer. Frames would not do it: a punch lasts most of a third of a second and a headless
+## frame is worth almost no time at all.
+func _settle(chip: Control) -> void:
+	await get_tree().create_timer(PULSE_SETTLE, true, false, true).timeout
+	chip.scale = Vector2.ONE
+
+
+## Read while the punch is still growing rather than a frame after the press. A single headless
+## frame can be worth so little time that a real pulse has not visibly moved yet, which would read
+## as no pulse at all.
+func _sample() -> void:
+	await get_tree().create_timer(PULSE_SAMPLE, true, false, true).timeout
+
+
+## Numbers are freed by their own tween, which outlives the frame a check looks at. Clearing by hand
+## keeps each case counting only the labels it caused.
+func _clear(numbers: Control) -> void:
+	for child: Node in numbers.get_children():
+		numbers.remove_child(child)
+		child.free()
+
+
 ## The one thing in the HUD that announces rather than reports, and the whole reward for surviving
 ## a night. Run after the money check, because passing a wave pays on the way through, and before
 ## the tally, which clears a wave of its own.
@@ -171,7 +265,12 @@ func _report() -> void:
 	for _index: int in SETTLE_FRAMES:
 		await get_tree().process_frame
 	if _failures.is_empty():
-		print("hud OK — vitals, wave, money, ammo, damage numbers, run tally")
+		print(
+			(
+				"hud OK — vitals, wave, money, ammo, damage numbers, a kill paying where the player "
+				+ "can see it, and the run tally"
+			)
+		)
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:

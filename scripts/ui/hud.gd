@@ -8,6 +8,18 @@ extends CanvasLayer
 const DAMAGE_RISE: float = 56.0
 const DAMAGE_LIFE: float = 0.7
 const DAMAGE_HEIGHT: float = 1.6
+## Money leaves the body slower and travels less far than damage does. A kill is one event where a
+## hit is one of many, so the number that reports it can afford to be read rather than glimpsed.
+const CREDIT_RISE: float = 38.0
+const CREDIT_LIFE: float = 0.95
+## Above the head rather than at it, so a killing blow's damage number and its payout do not start
+## life on top of each other.
+const CREDIT_HEIGHT: float = 2.1
+## A punch, not a throb: the chip grows for a twelfth of a second and settles back over a fifth.
+## Asymmetric on purpose — the eye catches the arrival and is not held by the departure.
+const PULSE_SCALE: float = 1.12
+const PULSE_UP: float = 0.08
+const PULSE_DOWN: float = 0.2
 const LOW_HEALTH: float = 0.35
 const MINUTES_IN_AN_HOUR: float = 60.0
 ## How long "wave one passed" stays up. Long enough to read at a glance while the merchant is
@@ -15,8 +27,11 @@ const MINUTES_IN_AN_HOUR: float = 60.0
 const BANNER_LIFE: float = 2.2
 const BANNER_FADE: float = 0.4
 
+var _pulse: Tween = null
+
 @onready var wave_chip: PanelContainer = $Root/TopRight/WaveChip
 @onready var wave: Label = $Root/TopRight/WaveChip/Wave
+@onready var money_chip: PanelContainer = $Root/TopRight/MoneyChip
 @onready var money: Label = $Root/TopRight/MoneyChip/Money
 @onready var clock: Label = $Root/TopRight/ClockChip/Clock
 @onready var banner: Label = $Root/Banner
@@ -44,6 +59,7 @@ func _ready() -> void:
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	EventBus.ammo_changed.connect(_on_ammo_changed)
 	EventBus.attack_landed.connect(_on_attack_landed)
+	EventBus.enemy_died.connect(_on_enemy_died)
 	ammo.visible = false
 	# Captions are capitals in the design system and a Godot theme carries no text transform.
 	for caption: Label in captions:
@@ -74,8 +90,29 @@ func _on_stamina_changed(current: float, maximum: float) -> void:
 	stamina_value.text = "%d%%" % roundi(current / maximum * 100.0) if maximum > 0.0 else "0%"
 
 
-func _on_money_changed(balance: int, _delta: int) -> void:
+func _on_money_changed(balance: int, delta: int) -> void:
 	money.text = "$%s" % _grouped(balance)
+	if delta > 0:
+		_pulse_the_chip()
+
+
+## The chip answers when money arrives, because the counter alone does not: a two-digit number
+## changing in the corner of a fight is not something the eye is going to catch on its own.
+##
+## Spending is deliberately silent. The player pressed the button and watched the price — being
+## punched at about it afterwards tells them nothing they did not just do.
+func _pulse_the_chip() -> void:
+	if bool(Settings.get_value(&"access_reduce_flashing")):
+		return
+	if _pulse != null and _pulse.is_valid():
+		_pulse.kill()
+	# Read every time rather than cached in _ready: the chip is laid out after the first frame, and
+	# it resizes when the balance gains a digit or a translation lengthens the string.
+	money_chip.pivot_offset = money_chip.size * 0.5
+	money_chip.scale = Vector2.ONE
+	_pulse = create_tween()
+	_pulse.tween_property(money_chip, "scale", Vector2.ONE * PULSE_SCALE, PULSE_UP)
+	_pulse.tween_property(money_chip, "scale", Vector2.ONE, PULSE_DOWN)
 
 
 ## Nothing before the first wave: a chip reading zero is furniture, and the director takes a
@@ -107,28 +144,56 @@ func _on_ammo_changed(magazine: int, reserve: int) -> void:
 
 
 func _on_attack_landed(target: Node3D, damage: float, perfect: bool) -> void:
-	if not bool(Settings.get_value(&"gameplay_damage_numbers")) or target == null:
+	if not bool(Settings.get_value(&"gameplay_damage_numbers")):
+		return
+	var variation := &"DamageNumberPerfect" if perfect else &"DamageNumber"
+	_float_over(target, DAMAGE_HEIGHT, str(roundi(damage)), variation, DAMAGE_RISE, DAMAGE_LIFE)
+
+
+## What the body was worth, off the same signal the wallet is paid by — so the number on screen and
+## the money in the purse can never disagree, elite multiplier included.
+##
+## A body worth nothing says nothing: the tutorial's farmhands pay no money, and a `+$0` over each
+## of them would be the first thing the player ever learns about the economy.
+func _on_enemy_died(enemy: Node3D, _archetype: StringName, money_paid: int) -> void:
+	if money_paid <= 0 or not bool(Settings.get_value(&"gameplay_credit_numbers")):
+		return
+	var text := "+$%s" % _grouped(money_paid)
+	_float_over(enemy, CREDIT_HEIGHT, text, &"CreditNumber", CREDIT_RISE, CREDIT_LIFE)
+
+
+## A label that starts over a point in the world and rises off the top of it. Screen space rather
+## than a `Label3D`: these are HUD text, they must not be scaled by distance or turned by a camera,
+## and the theme carries their look with the rest of the interface.
+func _float_over(
+	subject: Node3D, height: float, text: String, variation: StringName, rise: float, life: float
+) -> void:
+	if subject == null or not is_instance_valid(subject):
 		return
 	var camera := get_viewport().get_camera_3d()
 	if camera == null:
 		return
-	var head := target.global_position + Vector3.UP * DAMAGE_HEIGHT
-	if camera.is_position_behind(head):
+	var over := subject.global_position + Vector3.UP * height
+	# Behind the camera unprojects to a point in front of it, which would put the number on the
+	# wrong side of the screen rather than nowhere.
+	if camera.is_position_behind(over):
 		return
-	_spawn_number(camera.unproject_position(head), damage, perfect)
+	_spawn_number(camera.unproject_position(over), text, variation, rise, life)
 
 
-func _spawn_number(at: Vector2, damage: float, perfect: bool) -> void:
+func _spawn_number(
+	at: Vector2, text: String, variation: StringName, rise: float, life: float
+) -> void:
 	var label := Label.new()
-	label.theme_type_variation = &"DamageNumberPerfect" if perfect else &"DamageNumber"
-	label.text = str(roundi(damage))
+	label.theme_type_variation = variation
+	label.text = text
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.position = at
 	numbers.add_child(label)
 	var tween := create_tween()
 	tween.set_parallel()
-	tween.tween_property(label, "position:y", at.y - DAMAGE_RISE, DAMAGE_LIFE)
-	tween.tween_property(label, "modulate:a", 0.0, DAMAGE_LIFE)
+	tween.tween_property(label, "position:y", at.y - rise, life)
+	tween.tween_property(label, "modulate:a", 0.0, life)
 	tween.chain().tween_callback(label.queue_free)
 
 

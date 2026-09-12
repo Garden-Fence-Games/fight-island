@@ -18,6 +18,9 @@ const DEFAULTS: Dictionary = {
 	&"gameplay_aim_assist": "soft",
 	&"gameplay_tutorial_prompts": true,
 	&"gameplay_damage_numbers": false,
+	## On, where damage numbers are off: a kill paying is a rule the player has to learn, and it is
+	## one number per body rather than one per hit.
+	&"gameplay_credit_numbers": true,
 	&"controls_mouse_sensitivity": 12.0,
 	&"controls_stick_sensitivity": 180.0,
 	&"controls_invert_y": false,
