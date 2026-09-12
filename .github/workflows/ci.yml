@@ -100,6 +100,11 @@ jobs:
       - name: Verify aiming
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_aim.tscn
 
+      # A wave is the one thing a player experiences end to end, and every number in it comes from
+      # a resource the design document also describes. This asserts the two still agree.
+      - name: Verify waves
+        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_waves.tscn
+
       - name: Verify navigation
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_navigation.tscn
 

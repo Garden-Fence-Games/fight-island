@@ -7,6 +7,7 @@ var player: Player = null
 
 var _state_name: StringName = &""
 var _last_hit: String = "-"
+var _wave: String = "-"
 
 @onready var health_bar: ProgressBar = $Panel/Rows/Health
 @onready var stamina_bar: ProgressBar = $Panel/Rows/Stamina
@@ -20,6 +21,8 @@ func _ready() -> void:
 	EventBus.attack_landed.connect(_on_attack_landed)
 	EventBus.parry_perfect.connect(_on_parry_perfect)
 	EventBus.parry_late.connect(_on_parry_late)
+	EventBus.wave_started.connect(_on_wave_started)
+	EventBus.wave_cleared.connect(_on_wave_cleared)
 	GameState.debug_overlay_toggled.connect(_on_toggled)
 	if player != null and player.machine != null:
 		player.machine.transitioned.connect(_on_transitioned)
@@ -30,12 +33,14 @@ func _process(_delta: float) -> void:
 		return
 	var locked := player.lockout_left() if player != null else 0.0
 	readout.text = (
-		"%s   chain %d   %s   %d fps\nlast: %s"
+		"%s   chain %d   %s   %d fps\nwave %s   alive %d\nlast: %s"
 		% [
 			_state_name,
 			player.chain_index if player != null else -1,
 			"spent %.2fs" % locked if locked > 0.0 else "ready",
 			Engine.get_frames_per_second(),
+			_wave,
+			get_tree().get_nodes_in_group(&"enemies").size(),
 			_last_hit
 		]
 	)
@@ -70,6 +75,14 @@ func _on_stamina_changed(current: float, maximum: float) -> void:
 
 func _on_attack_landed(_target: Node3D, damage: float, perfect: bool) -> void:
 	_last_hit = "%.0f damage%s" % [damage, "  PERFECT" if perfect else ""]
+
+
+func _on_wave_started(wave: int, enemies: int) -> void:
+	_wave = "%d (%d coming)" % [wave, enemies]
+
+
+func _on_wave_cleared(wave: int, reward: int) -> void:
+	_wave = "%d cleared, +%d" % [wave, reward]
 
 
 func _on_parry_perfect() -> void:

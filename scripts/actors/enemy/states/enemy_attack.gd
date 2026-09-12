@@ -10,7 +10,7 @@ func enter(_message: Dictionary) -> void:
 	if attack == null or enemy.hitbox == null:
 		transition_to(&"Idle")
 		return
-	enemy.hitbox.arm(attack, enemy, false)
+	enemy.hitbox.arm(attack, enemy, false, enemy.damage_scale)
 
 
 func exit() -> void:

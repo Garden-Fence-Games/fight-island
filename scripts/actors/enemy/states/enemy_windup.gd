@@ -18,5 +18,5 @@ func physics_update(delta: float) -> void:
 	if attack == null:
 		transition_to(&"Idle")
 		return
-	if _elapsed >= attack.windup:
+	if _elapsed >= enemy.windup():
 		transition_to(&"Attack")

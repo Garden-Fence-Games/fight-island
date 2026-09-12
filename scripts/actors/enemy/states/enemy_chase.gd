@@ -12,7 +12,7 @@ func physics_update(delta: float) -> void:
 		enemy.apply_motion(Vector3.ZERO, 0.0, delta)
 		return
 	var direction := enemy.path_direction(delta)
-	enemy.apply_motion(direction, enemy.data.move_speed, delta)
+	enemy.apply_motion(direction, enemy.move_speed(), delta)
 	enemy.face(direction, delta)
 	if enemy.distance_to_target() > enemy.data.aggro_radius:
 		transition_to(&"Idle")

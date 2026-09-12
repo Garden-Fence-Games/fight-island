@@ -15,13 +15,18 @@ var negated: bool = false
 
 
 func _init(
-	from_attack: AttackData = null, from_source: Node3D = null, was_perfect: bool = false
+	from_attack: AttackData = null,
+	from_source: Node3D = null,
+	was_perfect: bool = false,
+	damage_scale: float = 1.0
 ) -> void:
 	if from_attack == null:
 		return
 	source = from_source
 	perfect = was_perfect
-	damage = from_attack.damage * (from_attack.perfect_multiplier if was_perfect else 1.0)
+	damage = from_attack.damage * damage_scale
+	if was_perfect:
+		damage *= from_attack.perfect_multiplier
 	stagger = from_attack.stagger
 	poise_damage = from_attack.poise_damage
 	hitstop = from_attack.hitstop if was_perfect else 0.0
