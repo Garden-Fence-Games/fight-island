@@ -93,18 +93,28 @@ keep in sync. A fourth archetype would be a `.tres`, not a branch.
 
 Custom `Resource` classes are the tuning surface. Changing a weapon never touches a script.
 
-- **`AttackData`** — `id`, `damage`, `stamina_cost`, `windup`, `active`, `recovery`,
-  `chain_window: Vector2`, `perfect_window: Vector2`, `perfect_multiplier`, `range`,
-  `arc_degrees`, `stagger`, `poise_damage`, `ammo_cost`, `animation: StringName`, `hitstop`,
-  `sfx`, `vfx`.
-- **`EnemyData`** — `id`, `display_name`, `health`, `damage`, `move_speed`, `attack: AttackData`,
-  `poise`, `money`, `material: StandardMaterial3D`, `is_ranged`, `preferred_range`,
-  `first_wave`.
-- **`WeaponData`** — `id`, `display_name`, `model: PackedScene`, `attacks: Array[AttackData]`,
-  `is_ranged`, `magazine`, `reload_time`, `upgrade_track: UpgradeTrack`, and `clip_suffix` — the
-  ending appended to a locomotion clip while this weapon is held, so `walk` becomes `walk_gun`
-  without the animation component ever learning what a weapon is.
-- **`UpgradeTrack`** — `id`, `display_name`, `icon`, `max_level`, `levels: Array[UpgradeLevel]`.
+- **`AttackData`** — `id`, `display_name`, `damage`, `stagger`, `poise_damage`, `stamina_cost`,
+  `ammo_cost`, `windup`, `active`, `recovery`, `chain_window: Vector2`, `perfect_window: Vector2`,
+  `perfect_multiplier`, `hitstop`, `money_multiplier`, `reach`, `arc_degrees`, `is_hitscan`,
+  `shots`, `charges`, `animation: StringName`, `vfx`.
+  The distance is **`reach`** and not "range", which is a GDScript built-in — and it is measured
+  centre to centre, which is why `Hitbox` adds half a body on top of it.
+- **`EnemyData`** — `id`, `display_name`, `health`, `move_speed`, `poise`, `money`,
+  `attack: AttackData`, `notice_radius`, `rouse_radius`, `attack_range`, `is_ranged`,
+  `preferred_range`, `retreat_range`, `projectile: PackedScene`, `tint`, `first_wave`.
+  **There is no damage here** — a farmer's damage belongs to the swing he throws, so it lives on
+  the `AttackData` and the wave scales it per body.
+- **`WeaponData`** — `id`, `display_name`, `attacks: Array[AttackData]`, `is_ranged`,
+  `found_at_wave`, `clip_suffix`, `chain_lockout`, `perfect_lockout`, `magazine`, `reload_time`,
+  `reserve_start`, `ammo_cap`, `scavenge_chance`.
+  `clip_suffix` is the ending appended to a locomotion clip while this weapon is held, so "walk"
+  becomes "walk_gun" without the animation component ever learning what a weapon is.
+- **`UpgradeTrack`** — `id`, `display_name`, `next_level_key`, `max_health`, `heals_on_purchase`,
+  `max_stamina`, `stamina_regen`, `weapon`, `damage`, `stamina_cost`, `reach`, `magazine`,
+  `reserve`.
+  **Flat fields, not a list of levels.** Every track carries what one level of it is worth and the
+  body computes `base + level × step`, so a track is a step size rather than a table — which is
+  what keeps re-applying an upgrade from drifting, and what makes the level the only thing saved.
 - **`WaveConfig`** — every coefficient from the scaling formulas, exported so waves are tuned in
   the inspector. It also carries the `DayCycle`, because which wave is a night wave is a question
   about the wave table.

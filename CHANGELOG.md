@@ -8,6 +8,13 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- `tools/verify_data_surface.tscn` — every field `docs/architecture.md` names on a balance resource
+  has to be a field that resource actually has. Asked of a fresh instance's property list rather
+  than of the source text, so a name that only appears in a comment cannot satisfy it. Fields the
+  document leaves out are not failures: a bullet is a summary and choosing what to omit is editing,
+  while naming something that is not there is being wrong.
+
+
 - `tools/verify_settings.tscn` — every key in `Settings.DEFAULTS` has to be either applied by
   `Settings` itself or read by a script that is not the options row drawing it. It reads the
   project's own source to answer that, the way `verify_credits` reads `docs/credits.md`, because a
@@ -25,6 +32,16 @@ All notable changes to this project are documented here, following
   buffered press.
 
 ### Fixed
+
+- **`docs/architecture.md` listed nine fields that do not exist**, on the one document the project
+  treats as the reference for what `data/` carries. `UpgradeTrack` was written up as an `icon`, a
+  `max_level` and an `Array[UpgradeLevel]` — a level-table design that was never built, and
+  `UpgradeLevel` has never existed as a type. `AttackData` was credited with an `sfx` nothing ever
+  had and a `range` that is really `reach`. `EnemyData` had a `damage` it does not carry (a
+  farmer's damage belongs to the swing he throws) and a `material` that is really `tint`.
+  `WeaponData` had a `model` and an `upgrade_track`, neither real. All four lists now match the
+  resources, and say what is interesting about the difference rather than only correcting it.
+
 
 - **Three settings persisted across launches and moved nothing**: mouse sensitivity, stick
   sensitivity and invert Y. They were written for a camera that can be turned, and this one cannot

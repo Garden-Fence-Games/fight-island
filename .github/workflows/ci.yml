@@ -146,6 +146,14 @@ jobs:
       - name: Verify every setting reaches something
         run: tools/run-check.sh res://tools/verify_settings.tscn
 
+      # `data/` is the balance surface and architecture.md enumerates it, which makes that list the
+      # thing somebody reads before touching balance. It had drifted into describing a design that
+      # was never built: `UpgradeTrack` as an icon and an Array[UpgradeLevel], an `sfx` nothing ever
+      # had, a `range` that is really `reach`. A wrong field list is worse than none, because it is
+      # trusted enough that nobody checks it. This holds the table to the code.
+      - name: Verify the documented balance surface exists
+        run: tools/run-check.sh res://tools/verify_data_surface.tscn
+
       # A pause menu that forgets to pause, a dialog a stopped tree cannot process, or an Escape
       # that closes the dialog and the menu under it in the same frame: none of that shows up in a
       # diff, and all of it is a soft lock in front of the player.
