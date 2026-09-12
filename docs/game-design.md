@@ -515,6 +515,52 @@ hits, *what* is ringing: the perfect one carries a partial the plain one does no
 to outlast its plain version by at least twice, the perfect hit's tail has to be three times
 brighter than the plain one's, and a whiff's opening must stay well under a hit's.
 
+### The body is the weapon, the ring is the timing
+
+A fist, a stick and a round do not land alike, so each has its own **body** — pitch, how long it
+rings, how much contact grain sits on top:
+
+| | body |
+|---|---|
+| Fists | 150 Hz, gone in 35 ms — a dull knock on a body |
+| Stick | 240 Hz, twice as long, and more contact — wood that cracks and carries |
+| Gun | 320 Hz, over in 22 ms — sharp, and the crack that threw it was a separate sound |
+
+What they must **never** differ in is the partial the perfect window adds. It is 1320 Hz in all
+three, because it is the signature of the entire game: a player who learns it on fists has to have
+learnt it on the gun, and three signatures would be three things to learn in the half second there
+is to read one. The check measures that partial at its own frequency rather than as brightness —
+brightness reported the stick a third duller and was right to, because its body is still ringing
+under the tail, which is a true fact about the body and says nothing about the signature.
+
+The fists keep the plain `hit` and `perfect` ids rather than getting a fourth waveform. They are the
+weapon the player never puts down and never runs out of, so a blow in this game sounds like a fist
+landing unless something else is in hand.
+
+### Three archetypes, three warnings
+
+Every wind-up **climbs** — a warning that does not rise reads as a drone — and they differ in where
+they climb from and to, which is the one thing that survives three of them at once in a crowd at
+night:
+
+| | climbs | over |
+|---|---|---|
+| Farmhand | 300 → 690 Hz | 0.30 s |
+| Reaper | 150 → 300 Hz | 0.42 s |
+| **Thrower** | **520 → 1240 Hz** | 0.36 s |
+
+The thrower is the outlier on purpose. He strikes from fourteen metres and is the one archetype the
+player may never see coming, so sound is the only warning the design gives them: his is the highest,
+the longest climb, and the only one that crosses an octave. The check fails if any other archetype
+climbs as high as his.
+
+### Running dry is announced a round early
+
+The shot that leaves **one** round in the magazine plays two short dry clicks a semitone apart.
+Running out is a designed moment and the answer to it is to close on the next farmer rather than
+back away from him — which is a decision the player has to be able to make before the trigger stops
+answering, not after. Two rounds would be a warning heard most of a wave before it mattered.
+
 ## Out of scope for v1
 
 Multiplayer · a fourth weapon · a fourth enemy · a boss · a second biome · progression carried between runs. Each

@@ -47,3 +47,10 @@ scripts/systems/devices.gd|const STICK_WAKE: float = 0.5|const STICK_WAKE: float
 
 # Audio
 scripts/autoload/audio_manager.gd|const PEAK: float = 0.9|const PEAK: float = 0.02|verify_audio
+scripts/autoload/audio_manager.gd|const PERFECT_PARTIAL: float = 1320.0|const PERFECT_PARTIAL: float = 150.0|verify_audio
+# The whole row, not just the pitch. A stick at the fist's pitch with the stick's own envelope
+# still measures as a different body, and it is — the first version of this line claimed
+# otherwise and survived, which is exactly what a line nobody ran in the broken state does.
+scripts/autoload/audio_manager.gd|&"stick": {"hertz": 240.0, "decay": 0.075, "contact": 0.72, "snap": 0.010|&"stick": {"hertz": 150.0, "decay": 0.035, "contact": 0.5, "snap": 0.018|verify_audio
+scripts/autoload/audio_manager.gd|&"thrower": {"from": 520.0, "to": 1240.0|&"thrower": {"from": 300.0, "to": 500.0|verify_audio
+scripts/autoload/audio_manager.gd|const LAST_ROUNDS: int = 1|const LAST_ROUNDS: int = 4|verify_audio

@@ -24,6 +24,10 @@ extends Resource
 @export var rouse_radius: float = 7.0
 @export var attack_range: float = 1.6
 @export var is_ranged: bool = false
+## Which wind-up this archetype announces itself with. Empty falls back to the generic one, and that
+## is a fallback rather than a default: three archetypes that sound alike are one warning wearing
+## three coats, and the thrower is the one the player cannot see coming.
+@export var telegraph_sound: StringName = &""
 ## How far the archetype wants to stay from the player. Melee archetypes close to attack_range.
 @export var preferred_range: float = 1.4
 ## Closer than this and the archetype backs away instead of fighting. Zero for anyone who stands
