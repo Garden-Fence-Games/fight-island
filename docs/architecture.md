@@ -23,8 +23,8 @@ res://
                   animation_component.gd, head_look_component.gd,
                   weapon_visual_component.gd
     actors/       player/, enemy/, merchant/ — each with its states/
-    systems/      wave_director.gd, spawn_director.gd, economy.gd, save_manager.gd,
-                  settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
+    systems/      wave_director.gd, spawn_director.gd, tutorial_director.gd, economy.gd,
+                  save_manager.gd, settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
     camera/       camera_rig.gd
     ui/
   tests/
@@ -139,6 +139,22 @@ throw, release, and assert the pool still shows the token held.
 
 The stone is parented to the thrower's **parent**, not to the thrower. A projectile owned by a body
 that dies mid-flight would be freed in the air.
+
+## The tutorial, and what it proves about the bus
+
+Wave 1 is hand-driven by a `TutorialDirector` reading `TutorialStep` resources — see
+[tutorial.md](tutorial.md). It is worth stating here because it is the **bus paying for itself**:
+the tutorial watches the whole fight without a single combat system knowing it exists, and deleting
+the node cannot break anything. `attack_landed` already carries the perfect flag, `parry_perfect`
+already fires, and two signals were added for lessons nothing else had a reason to announce —
+`dodge_evaded`, a blow arriving while the player rolls through it, and `player_state_changed`.
+
+`dodge_evaded` is not "the player dodged". The lesson is the moment, not the button, and only a hit
+that was actually refused says the moment was right.
+
+Movement is the one lesson with no event behind it, and that is the honest answer rather than a gap:
+nothing else in this game cares that the player walked, so there is nothing to listen to and the
+director measures the distance itself.
 
 ## The wallet
 
@@ -271,13 +287,31 @@ check first so nothing beyond the camera is considered at all.
 
 ## Save format
 
-JSON under `user://`:
+JSON under `user://`, four files with three lifetimes:
 
-- `settings.json` — audio buses, input remaps, display, camera sensitivity and invert, accessibility
-- `progress.json` — best wave, runs played, victories, endless unlocked
-- `run.json` — the between-waves snapshot
+- `settings.json` — every row of the options screen, written the moment it changes
+- `bindings.json` — **overrides only**, so changing a default binding later does not need a
+  migration and does not strand a player on the old one
+- `progress.json` — what outlives a run. Best wave today; the tutorial's cleared steps join it
+- `run.json` — the between-waves snapshot, and the only file that is deleted when a run ends
 
-Every file carries `"version": 1` and passes through a `migrate()` switch on load.
+Every file carries `"version"`, stamped on write. An **older** file goes through `_migrate`; a
+**newer** one is discarded rather than guessed at, because nothing in this build can know what a
+field it has never heard of means, and a wrong guess corrupts a save the player can still open with
+the build that wrote it. Version 0 is every file written before the stamp existed, and it is
+accepted as-is — refusing it would silently reset the options of everyone who updates.
+
+Anything unreadable — missing, truncated, not an object — falls back to defaults with a warning.
+The run file is *deleted* when it cannot be read, so a broken save fails once instead of every
+launch, and the title screen does not offer a Continue that does nothing.
+
+**The run seed travels as text.** JSON has one number type and it is a double; a 64-bit seed loses
+its low bits in one, and the run would come back on a different island.
+
+A snapshot is taken when a wave starts, when one is cleared, and when an upgrade is bought — so an
+interrupted wave is fought again from its start, and the purchase it paid for is not lost with the
+window. The run clock counts only while a wave is being fought: a run suspended on the title screen
+must not accumulate time nobody spent playing.
 
 **Never `ResourceLoader.load()` from `user://`.** A `.tres` can carry a script path, and that is
 arbitrary code execution on a file the player can edit.

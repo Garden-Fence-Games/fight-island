@@ -37,9 +37,11 @@ var _health_seen: float = -1.0
 
 func _ready() -> void:
 	_rng.seed = GameState.run_seed + 1
-	# A run the player quit to the title comes back where it was: the wave the state remembers is
-	# the one already cleared, so the next one is the one that was interrupted.
-	wave = GameState.wave
+	# A resumed run comes back where it was, and the two cases are not the same wave: one that was
+	# still being fought is fought again from its start, one that was cleared hands over to the
+	# next. Reading the state's wave for both is what used to skip a wave when a player quit
+	# halfway through one.
+	wave = GameState.wave - 1 if GameState.wave_in_progress else GameState.wave
 	EventBus.enemy_died.connect(_on_enemy_died)
 	EventBus.player_damaged.connect(_on_player_damaged)
 	if autostart:
@@ -83,6 +85,15 @@ func halt() -> void:
 	_next_wave_in = 0.0
 	if spawner != null:
 		spawner.clear()
+
+
+## Takes the island back from whatever drove a wave by hand — the tutorial today, scripted waves
+## later. The breather runs as usual afterwards, so the next wave arrives exactly like every other.
+func hand_over(after_wave: int) -> void:
+	wave = after_wave
+	_running = false
+	_left_to_send = 0
+	_next_wave_in = breather
 
 
 func is_running() -> bool:

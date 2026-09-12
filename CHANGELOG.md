@@ -8,6 +8,36 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **Wave 1 is the tutorial.** A `TutorialDirector` in the arena reads seven `TutorialStep`
+  resources, hand-drives that one wave, then hands the island back — wave 2 arrives on the formula
+  like every other. Every step closes retroactively, so a player who lands a chained perfect hit
+  before being asked closes three lessons at once and never sees a prompt. Cleared steps live in
+  `progress.json`; a second run skips the whole thing.
+- One prompt at a time, bottom-centre, fading in after a beat of silence. It never blocks, never
+  pauses, never repeats.
+- The on-demand spawn hook: `SpawnDirector.spawn` and `spawn_at` take `harmless`, and a harmless
+  farmer is refused the attack token — he closes and circles but cannot swing.
+- `HealthComponent.minimum_health`, raised to one during wave 1 and dropped after. Silently: the
+  flash, the numbers and the stagger all behave normally.
+- `EventBus.dodge_evaded` — a blow arriving while the player rolls through it, which is the dodge
+  lesson. Distinct from a dodge that merely happened.
+- `EventBus.player_state_changed`.
+- `tools/verify_tutorial.tscn` — headless proof that a chained perfect hit closes three lessons
+  with no prompt shown, that a harmless farmer cannot claim a token, that the player cannot be
+  taken below one hit point during wave 1, that the parry holds the wave open, and that a second
+  run skips the tutorial.
+
+- Saving and resuming a run. `run.json` is written when a wave starts, when one is cleared and when
+  an upgrade is bought, so Continue survives closing the game and a run resumed between two waves
+  still gets the merchant it had not spent. A finished run deletes its file.
+- `progress.json`, holding what outlives a run — the best wave reached today, the tutorial's steps
+  next.
+- Every file under `user://` now carries a version and passes through a migration on read. A file
+  from an older build is accepted, one from a newer build is refused, and an unreadable run file is
+  deleted rather than left to fail every launch.
+- `tools/verify_save.tscn` — headless proof that a run survives the round trip whole, that a
+  missing, truncated, incomplete or future-dated file falls back instead of crashing, and that an
+  interrupted wave is fought again rather than skipped.
 - Merchant between waves: five cards driven by `UpgradeTrack` resources, one purchase a wave, and
   leftover money that carries. Effects reach the living player the moment they are bought,
   including the heal to full on a health purchase.
@@ -59,6 +89,10 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- A run quit halfway through a wave came back at the **next** wave, silently skipping the one that
+  was interrupted: the wave director read the state's current wave as if it were the last cleared
+  one.
+- The run clock counted time spent on the title screen with a run suspended behind it.
 - Strings with a comma in them were cut short on screen: the locale CSV was written without
   quoting, so the merchant's card copy stopped at its first clause.
 - A cold checkout failed to import: `project.godot` lists a translation file the CSV importer has

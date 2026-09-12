@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="TutorialStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/tutorial_step.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"parry"
+prompt_key = "TUTORIAL_PARRY"
+trigger = 3
+condition = 0
+enemies = 1
+passive = false
+health_multiplier = 4.0
+windup_multiplier = 1.6
+holds_wave = true

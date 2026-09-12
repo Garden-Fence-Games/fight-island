@@ -51,6 +51,8 @@ func _ready() -> void:
 		health.died.connect(_on_died)
 	if stamina != null:
 		stamina.stamina_changed.connect(_on_stamina_changed)
+	if machine != null:
+		machine.transitioned.connect(_on_state_transitioned)
 
 
 func _process(delta: float) -> void:
@@ -288,9 +290,17 @@ func _on_hurt(info: HitInfo) -> void:
 			parry.resolve(info)
 			return
 	if health != null and health.is_invulnerable():
+		# Rolling through a swing rather than merely rolling. Announced here because this is the one
+		# place that knows the blow arrived and was refused.
+		if machine != null and machine.current is PlayerDodge:
+			EventBus.dodge_evaded.emit()
 		return
 	if machine != null and info.stagger > 0.0:
 		machine.current.transition_to(&"Hurt", {"stagger": info.stagger})
+
+
+func _on_state_transitioned(state: StringName) -> void:
+	EventBus.player_state_changed.emit(state)
 
 
 func _on_health_changed(current: float, maximum: float) -> void:

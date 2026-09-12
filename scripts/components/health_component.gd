@@ -9,6 +9,11 @@ signal died
 @export var max_health: float = 100.0
 ## Granted automatically after every hit that lands, so a player is never chain-stunned to death.
 @export var hit_invulnerability: float = 0.4
+## Damage stops here instead of at zero. Raised to one for wave 1 and dropped again after: a player
+## who dies during the parry lesson has learned that parrying is dangerous, which is the opposite
+## of true. Everything else — the flash, the numbers, the stagger — behaves normally, and they
+## never find out.
+@export var minimum_health: float = 0.0
 
 var current_health: float = 0.0
 
@@ -40,7 +45,7 @@ func make_invulnerable(duration: float) -> void:
 func apply(info: HitInfo) -> bool:
 	if not is_alive() or is_invulnerable():
 		return false
-	current_health = maxf(current_health - info.damage, 0.0)
+	current_health = maxf(current_health - info.damage, minimum_health)
 	health_changed.emit(current_health, max_health)
 	damaged.emit(info)
 	if current_health <= 0.0:

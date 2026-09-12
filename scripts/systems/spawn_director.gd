@@ -44,23 +44,28 @@ func spawn(
 	health: float = 1.0,
 	damage: float = 1.0,
 	speed: float = 1.0,
-	windup: float = 1.0
+	windup: float = 1.0,
+	harmless: bool = false
 ) -> Enemy:
 	var where := find_point()
 	if where == Vector3.INF:
 		return null
-	return spawn_at(data, where, health, damage, speed, windup)
+	return spawn_at(data, where, health, damage, speed, windup, harmless)
 
 
 ## The same, at a point somebody else chose. The tutorial and the headless checks need to say
 ## exactly where a farmer stands; the wave formula never does.
+##
+## `harmless` is the tutorial's: a body that closes and circles but never swings. It is a parameter
+## rather than a mode on the director, because the wave formula must not be able to reach it.
 func spawn_at(
 	data: EnemyData,
 	where: Vector3,
 	health: float = 1.0,
 	damage: float = 1.0,
 	speed: float = 1.0,
-	windup: float = 1.0
+	windup: float = 1.0,
+	harmless: bool = false
 ) -> Enemy:
 	if pool == null or data == null:
 		return null
@@ -68,7 +73,7 @@ func spawn_at(
 	if enemy == null:
 		return null
 	enemy.data = data
-	enemy.revive(where, health, damage, speed, windup)
+	enemy.revive(where, health, damage, speed, windup, harmless)
 	return enemy
 
 

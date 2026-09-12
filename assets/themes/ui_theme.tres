@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=49 format=3]
+[gd_resource type="Theme" load_steps=50 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/inter_semibold.ttf" id="1"]
 [ext_resource type="FontFile" path="res://assets/fonts/badeen_display.ttf" id="2"]
@@ -598,6 +598,17 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_prompt"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.0667, 0.0667, 0.0706, 0.78)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
 [resource]
 default_font = ExtResource("1")
 default_font_size = 16
@@ -873,6 +884,11 @@ TogglePill/base_type = &"Panel"
 TogglePill/styles/panel = SubResource("StyleBoxFlat_toggle_off")
 TogglePillOn/base_type = &"Panel"
 TogglePillOn/styles/panel = SubResource("StyleBoxFlat_toggle_on")
+TutorialPrompt/base_type = &"PanelContainer"
+TutorialPrompt/styles/panel = SubResource("StyleBoxFlat_prompt")
+TutorialPromptLabel/base_type = &"Label"
+TutorialPromptLabel/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
+TutorialPromptLabel/font_sizes/font_size = 20
 UpgradeCard/base_type = &"Button"
 UpgradeCard/colors/font_color = Color(1, 1, 1, 1)
 UpgradeCard/colors/font_focus_color = Color(1, 1, 1, 1)
