@@ -35,18 +35,22 @@ func _run() -> void:
 	if anim.state_machine == null:
 		_fail("the component did not find a StateMachine under the player")
 
+	# The clips exported so far. Each is named by the contract in docs/asset-pipeline.md, and the
+	# usual way one goes missing is an action still called "mixamo.com" in the .blend.
 	if anim.animation_player != null:
-		if not anim.animation_player.has_animation("walk"):
-			_fail(
-				(
-					"the rig carries no clip named walk — has %s"
-					% [anim.animation_player.get_animation_list()]
+		for clip: String in ["walk", "idle", "hurt"]:
+			if not anim.animation_player.has_animation(clip):
+				_fail(
+					(
+						"the rig carries no clip named %s — it has %s"
+						% [clip, anim.animation_player.get_animation_list()]
+					)
 				)
-			)
 
 	var machine := player.get_node("StateMachine") as StateMachine
 	await _check_move_walks(machine, anim)
-	await _check_clipless_state_rests(machine, anim)
+	await _check_idle_plays_idle(machine, anim)
+	await _check_clipless_state_rests(anim)
 	_report()
 
 
@@ -67,16 +71,30 @@ func _check_move_walks(machine: StateMachine, anim: AnimationComponent) -> void:
 	await get_tree().physics_frame
 
 
-## Every clip but walk is still unexported, so this is the ordinary case rather than an edge one.
-## The guard is that it stays silent: the import gate in CI fails on any WARNING line.
-func _check_clipless_state_rests(machine: StateMachine, anim: AnimationComponent) -> void:
+## Letting go has to land back on the idle cycle rather than freezing on the last stride.
+func _check_idle_plays_idle(machine: StateMachine, anim: AnimationComponent) -> void:
+	for _index: int in 4:
+		await get_tree().physics_frame
+	if machine.current_name != &"Idle":
+		_fail("releasing the keys left the machine in %s" % [machine.current_name])
+	elif anim.current_clip() != &"idle":
+		_fail("Idle plays %s, expected idle" % [anim.current_clip()])
+
+
+## Sprint, Dodge, Parry and Dead have no clip yet, which is the ordinary state of a rig that arrives
+## one animation at a time rather than an edge case. Driven through `play_state` rather than a real
+## transition so the check does not depend on which clips happen to exist this week.
+## The guard is that it stays silent: the gate in CI fails on any WARNING line.
+func _check_clipless_state_rests(anim: AnimationComponent) -> void:
 	var missing: Array[StringName] = []
 	anim.clip_missing.connect(func(state: StringName, _clip: StringName) -> void:
 		missing.append(state))
-	machine.current.transition_to(&"Idle")
+	var played := anim.play_state(&"Sprint")
 	await get_tree().physics_frame
+	if played:
+		_fail("Sprint reports a clip, so this check is no longer testing a clipless state")
 	if anim.current_clip() != &"":
-		_fail("Idle has no clip yet but the component reports %s" % [anim.current_clip()])
+		_fail("Sprint has no clip yet but the component reports %s" % [anim.current_clip()])
 	if missing.is_empty():
 		_fail("a state with no clip should emit clip_missing")
 
@@ -89,7 +107,7 @@ func _report() -> void:
 	for _index: int in SETTLE_FRAMES:
 		await get_tree().physics_frame
 	if _failures.is_empty():
-		print("animation OK — rig found, walk on the rig, Move walks, clipless state rests")
+		print("animation OK — walk, idle and hurt on the rig, Move walks, Idle idles, Sprint rests")
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:
