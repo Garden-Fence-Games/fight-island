@@ -25,9 +25,11 @@ func _ready() -> void:
 	EventBus.hitstop_requested.connect(_on_hitstop_requested)
 	EventBus.chain_spent.connect(_on_chain_spent)
 	EventBus.chain_ready.connect(_on_chain_ready)
-	var material := _player_material()
-	if material != null:
-		_ready_color = material.albedo_color
+	# The rig's own albedo, which is white: the textures carry the colour and this only multiplies
+	# them. Read here rather than assumed, so a rig that ships already tinted comes back to itself.
+	var materials := _player_materials()
+	if not materials.is_empty():
+		_ready_color = materials[0].albedo_color
 
 
 func _on_attack_landed(target: Node3D, _damage: float, perfect: bool) -> void:
@@ -57,23 +59,26 @@ func _on_chain_ready() -> void:
 
 
 func _fade_body_to(colour: Color, seconds: float) -> void:
-	var material := _player_material()
-	if material == null:
+	var materials := _player_materials()
+	if materials.is_empty():
 		return
 	if _spent_tween != null and _spent_tween.is_valid():
 		_spent_tween.kill()
 	_spent_tween = create_tween()
-	_spent_tween.tween_property(material, "albedo_color", colour, seconds)
+	_spent_tween.set_parallel(true)
+	for material: StandardMaterial3D in materials:
+		_spent_tween.tween_property(material, "albedo_color", colour, seconds)
 
 
-## The player's body material, which the Nose shares — so the whole silhouette answers, not a patch
-## of it. Looked up each time rather than cached: the player outlives no scene change yet, and a
-## stale material is a bug that only shows up much later.
-func _player_material() -> StandardMaterial3D:
+## Every material the body is drawn with, so the whole silhouette answers rather than a patch of it.
+## A rig has one per surface where the capsule had a single override, which is why this is a list.
+## Looked up each time rather than cached here: the player owns the copies and hands back the same
+## ones, and a stale material is a bug that only shows up much later.
+func _player_materials() -> Array[StandardMaterial3D]:
 	var player := get_tree().get_first_node_in_group(&"player") as Player
-	if player == null or player.mesh == null:
-		return null
-	return player.mesh.material_override as StandardMaterial3D
+	if player == null:
+		return []
+	return player.body_materials()
 
 
 func _on_hitstop_requested(duration: float) -> void:
