@@ -33,6 +33,20 @@ licence file travels with the models in `assets/models/nature/`.
 |---|---|
 | [Godot Engine](https://godotengine.org) 4.7.2 | MIT |
 | [Jolt Physics](https://github.com/jrouwe/JoltPhysics) | MIT |
+| [gdUnit4](https://github.com/MikeSchulze/gdUnit4) 6.2.1, vendored in `addons/gdUnit4` | MIT |
+
+gdUnit4 is committed rather than fetched, because a build machine that has to reach the network to
+run the tests is a build machine that stops running them the day the network moves. Its own licence
+travels with it in `addons/gdUnit4/LICENSE`. Nothing in `addons/` is linted, formatted, or pushed
+through Git LFS by this project — it is not ours to reformat, and somebody else's nine icons in LFS
+would turn every upgrade of the addon into pointer churn.
+
+**One file of it is deliberately not vendored:** `src/dotnet/GdUnit4CSharpApi.cs`, the bridge for
+projects that write their tests in C#. This one is GDScript only ([ADR 0001](decisions/0001-gdscript-over-csharp.md)),
+and the repository guard rails refuse a `.cs` file anywhere — a rule worth more kept absolute than
+carved out for a directory. Its loader never reaches it here: it returns early unless the engine is
+a .NET build *and* `project.godot` names a C# assembly *and* that `.csproj` exists on disk, and
+none of the three is true. Re-add the file if this project ever takes on C#, which it will not.
 
 ## Note on Mixamo
 

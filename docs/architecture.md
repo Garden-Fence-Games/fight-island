@@ -609,9 +609,24 @@ rotation. It cost an afternoon once; `tools/verify_combat.tscn` now fails if it 
 
 ## Testing
 
-gdUnit4. Unit-test the pure parts that carry the design: the `WaveConfig` formulas, the `Economy`
-cost curve, `AttackData` window arithmetic, upgrade application. Do not unit-test FSM transitions —
-drive a headless scene instead.
+**gdUnit4, vendored in `addons/gdUnit4`** and run in CI before anything slow gets a chance to. The
+suites live in `tests/` and cover the pure parts that carry the design: the `WaveConfig` curves, the
+`Economy` cost curve, `AttackData` window arithmetic, and every way a save file can be wrong.
+
+```
+godot --headless --path . -s res://addons/gdUnit4/bin/GdUnitCmdTool.gd \
+  --ignoreHeadlessMode -a res://tests
+```
+
+**They assert properties, not the table.** `tools/verify_waves.tscn` already checks the shipped
+numbers against `docs/game-design.md`; a second copy of that table would be a second thing to keep
+in step. What the unit tests own instead is what the numbers cannot say: that every curve is the
+identity at wave one, that none of them escapes its floor or ceiling at wave two hundred, that no
+day phase can push a telegraph under the floor whatever it is tuned to, and that a save file from a
+build that does not exist yet is refused rather than half-read.
+
+**Do not unit-test FSM transitions** — drive a headless scene instead, which is what the checks in
+`tools/` already do. And nothing in `addons/` is linted or formatted: it is vendored, not ours.
 
 **Every check runs through `tools/run-check.sh`**, in CI and locally, and never as a bare
 `godot --headless`. A GDScript file that fails to parse does not fail the check that uses it: the
