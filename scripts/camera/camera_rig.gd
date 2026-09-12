@@ -24,7 +24,16 @@ extends Node3D
 ## rather than a place. Measured on the island: ten metres puts 6% of that ring on screen, thirteen
 ## 14%, seventeen 25%, twenty-four 49%. Past twenty the arrivals start coming only from behind.
 const DEFAULT_ZOOM: float = 17.0
-const MIN_ZOOM: float = 6.0
+## How close the wheel may come, and it is a **readability floor rather than a taste**. The ground
+## that stays in shot on the blind bearing is very nearly half the arm: six metres showed 2.75 m of
+## it, nine 4.25, eleven 5.25, seventeen 8.50. A reaper strikes from 2.8 m and covers 1.8 m more
+## while he winds up, so under 4.6 m of visible ground his swing begins off-screen — which made the
+## old floor of six a setting that quietly took the fight away from whoever chose it.
+##
+## Eleven is the first step of the wheel clear of that bound. `tools/verify_view.tscn` winds the
+## wheel all the way in and re-measures, so a change to the pitch, the field of view or the reaper
+## fails here rather than in someone's hands.
+const MIN_ZOOM: float = 11.0
 ## Room to pull further back when a crowd closes in. The cost of doing so is the ring above, and it
 ## is the player's to pay for a moment rather than the game's to pay for a whole run.
 const MAX_ZOOM: float = 24.0
@@ -46,6 +55,10 @@ const SHAKE_DECAY: float = 6.0
 ## The setting is a percentage, and nought means none — not a little.
 const FULL_SHAKE: float = 100.0
 const FOLLOW_SMOOTHING: float = 12.0
+## Where a wind-up reads on a body — the chest, which is what the swing comes off and what the
+## camera is already looking at. The feet are as likely to be behind the bottom edge of the frame as
+## the body is to be off screen entirely.
+const TELEGRAPH_HEIGHT: float = 1.1
 
 ## The one viewing direction of the entire game. Changing either re-frames every scene at once,
 ## which is why they live here and not on each arena.
@@ -83,11 +96,42 @@ func shake_left() -> float:
 	return _shake
 
 
+## Back to rest at once. For a check measuring one knock, which has to know the reading it takes
+## came from the blow it just struck and not from the one before it.
+func settle() -> void:
+	_shake = 0.0
+
+
 ## Requests are scaled here rather than at the callers: a player who has turned shake off is not
 ## asking for less of it, and every emitter would otherwise have to remember that.
+##
+## **A telegraph outranks every knock.** The camera is fixed precisely so a wind-up can never end up
+## hidden, and a screen that jumps while a farmer is committing gives that back — it steals the one
+## frame the player needed, and there is no amount of feel worth that. So a request that arrives
+## while something in shot is winding up is refused outright rather than softened: half a shake over
+## a telegraph is still a shake over a telegraph.
 func _on_shake_requested(strength: float) -> void:
+	if _something_in_shot_is_winding_up():
+		return
 	var wanted := float(Settings.get_value(&"access_screen_shake")) / FULL_SHAKE
 	_shake = maxf(_shake, strength * clampf(wanted, 0.0, 1.0))
+
+
+## Only what is on screen. A farmer committing behind the player is a telegraph nobody could read
+## anyway, and refusing every knock while anyone anywhere on the island winds up would mean refusing
+## most of them.
+func _something_in_shot_is_winding_up() -> bool:
+	if camera == null:
+		return false
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		var enemy := node as Enemy
+		if enemy == null or enemy.machine == null:
+			continue
+		if not enemy.machine.current is EnemyWindUp:
+			continue
+		if camera.is_position_in_frustum(enemy.global_position + Vector3.UP * TELEGRAPH_HEIGHT):
+			return true
+	return false
 
 
 func _unhandled_input(event: InputEvent) -> void:

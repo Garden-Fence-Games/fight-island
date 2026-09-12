@@ -40,7 +40,10 @@ still carries separate, untextured `wood` and `woodDark` materials, which is the
 author, same licence, same pack — an older cut of it.
 
 No third-party file is used by the effects or the sounds: the impacts are Godot primitives driven by
-`CPUParticles3D`, the telegraph is a shader, and the five combat sounds are synthesised at startup.
+`CPUParticles3D`, and **every sound in the game is synthesised at startup** — the combat signatures,
+the footfalls, the wind-up, the gunshots, the stings and the surf bed alike. There is still not one
+audio file in the repository, so there is nothing to credit here and nothing that can ship without
+a row.
 There is nothing to credit and nothing to clear before release.
 
 ## Engine and tools

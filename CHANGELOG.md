@@ -6,7 +6,188 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- `tools/verify_data_surface.tscn` — every field `docs/architecture.md` names on a balance resource
+  has to be a field that resource actually has. Asked of a fresh instance's property list rather
+  than of the source text, so a name that only appears in a comment cannot satisfy it. Fields the
+  document leaves out are not failures: a bullet is a summary and choosing what to omit is editing,
+  while naming something that is not there is being wrong.
+- `tools/verify_settings.tscn` — every key in `Settings.DEFAULTS` has to be either applied by
+  `Settings` itself or read by a script that is not the options row drawing it. It reads the
+  project's own source to answer that, the way `verify_credits` reads `docs/credits.md`, because a
+  check that can only see runtime state cannot see a consumer that does not exist. Proven by
+  putting one of the dead settings back.
+- **`tools/mutate.sh`** — breaks one constant at a time and reports which breakages no check
+  notices, because reading for a guard that cannot fail does not work. Twenty-four mutations in
+  `tools/mutations.txt`, run weekly in CI and by hand when a guard is written. Seven of them
+  survived the first sweep.
+
+### Fixed
+
+- **A dodge that granted no invulnerability passed every check in the project.** `IFRAME_LENGTH` set
+  to nought: the roll still moved, still went where the keys said, still survived the chain lockout,
+  and no longer avoided anything. The dodge is one of the two defensive tools and the half that
+  matters was held by nothing. `verify_combat` now rolls through a real swing, checks a blow before
+  the window still lands, and refuses a roll that ends before its own window opens.
+- **A sprint that cost nothing passed every check.** `SPRINT_DRAIN` at zero leaves a player who
+  outruns the wave for ever, and the design rests on the opposite — a walking player cannot break
+  away from a farmhand, so retreat costs breath. `verify_combat` now runs until the breath gives out.
+- **Three guards that took their bound from the thing they were guarding**, and so agreed with
+  whatever it said: the body's turn cap (passed at ten times the rate, two revolutions a frame), the
+  stick's wake threshold (passed at a thousandth), and the emphasis ceiling (passed at a full
+  second). Each writes its figure out now and asserts the constant against it first.
+- **A camera knock that never died away passed every check.** `SHAKE_DECAY` at a thousandth leaves a
+  camera that never stops moving, which is the opposite of the entire argument for a fixed angle.
+
+### Added
+
+- **One budget for the whole hit.** `scripts/systems/emphasis.gd` is now the single table deciding
+  how loud anything in a fight may be, and the only thing that emits `hitstop_requested` or
+  `shake_requested`. A perfect finisher that kills is **one** blow: the loudest figure on each
+  channel wins and nothing is summed. Summed it would stop for 0.20 s and shake at 0.9; it stops for
+  0.18 and shakes at 0.6.
+- **A ceiling of twelve frames** on any single blow, in frames because that is the unit a stop is
+  felt in.
+- `tools/verify_feel.tscn`, holding all of it — including that a hitstop never costs the player a
+  buffered press.
+
+### Fixed
+
+- **`docs/architecture.md` listed nine fields that do not exist**, on the one document the project
+  treats as the reference for what `data/` carries. `UpgradeTrack` was written up as an `icon`, a
+  `max_level` and an `Array[UpgradeLevel]` — a level-table design that was never built, and
+  `UpgradeLevel` has never existed as a type. `AttackData` was credited with an `sfx` nothing ever
+  had and a `range` that is really `reach`. `EnemyData` had a `damage` it does not carry (a
+  farmer's damage belongs to the swing he throws) and a `material` that is really `tint`.
+  `WeaponData` had a `model` and an `upgrade_track`, neither real. All four lists now match the
+  resources, and say what is interesting about the difference rather than only correcting it.
+
+
+- **Three settings persisted across launches and moved nothing**: mouse sensitivity, stick
+  sensitivity and invert Y. They were written for a camera that can be turned, and this one cannot
+  be — the yaw and the pitch are constants on `CameraRig`, the mouse aims by where its cursor lands
+  on the ground and the stick by the direction it points. There was never a look delta to scale or a
+  pitch to invert, so all three are gone along with their rows and their string-table entries. It is
+  the third time this has shipped, after the colourblind telegraphs and aim assist, and it is the
+  worst shape a settings bug has: silent, and it lands on the player who needed the setting, who
+  finds it, sets it and believes they are covered.
+- `CLAUDE.md` still told every future session that camera look reads `InputEventMouseMotion` and
+  that `camera_left/right/up/down` live in the input map. The camera was fixed and those five
+  actions removed — `docs/input-map.md` records it and `CLAUDE.md` never caught up, which is the
+  most expensive place in the repository to be wrong.
+
+
+- **Taking a hit shakes the camera.** The comment beside the shake call read "shake on the three
+  finishers **and on taking damage**, and nowhere else", and taking damage shook nothing at all: the
+  code had been describing a design it did not implement. It is the loudest figure in the table now.
+- **The perfect parry is the longest stop in the game again.** It was 6 frames and the charged shot
+  was 11, so the most skilful input in the game was quieter than a held trigger. It is 12 — the
+  whole budget, and nothing else may draw level.
+- **Nothing shouts over a telegraph.** A shake requested while anything *in shot* is winding up is
+  refused outright. The camera is fixed precisely so a wind-up can never be hidden, and a screen
+  that jumps while a farmer commits hands that back. A farmer committing off screen refuses nothing.
+
+### Removed
+
+- `HitInfo.hitstop`, which nothing read once `Emphasis` owned the decision.
+
+### Fixed
+
+- **Aim assist does something.** It has been a row in the options screen, a key in
+  `Settings.DEFAULTS` and a value that persisted since the settings landed, and **nothing has ever
+  read it** — `docs/menus.md` said the code would arrive with the gun, the gun arrived, and nobody
+  came back. That is the failure the same document calls worse than a missing setting, because a
+  player who needs it sets it and believes they are covered.
+- `AimComponent` now turns the aim towards the nearest body in angle, inside a 12° cone and inside
+  the reach of the attack in hand: `soft` takes half the error, `strong` takes all of it. Applied in
+  `direction()`, so the head, the body, the swing and the shot never disagree about where the player
+  is pointing.
+
+### Added
+
+- **A credits screen the player can reach**, from a discreet line beside the version number on the
+  title. It is an overlay like the options screen, scrolls on the stick and the arrows, and back
+  returns exactly one level.
+- **The screen is generated, not written.** `docs/credits.md` stays the list;
+  `tools/build_credits.gd` bakes it into `data/credits.tres`; `tools/verify_credits.tscn` fails the
+  build if the document and the resource have come apart, or if a baked row never reaches a label.
+  Adding an asset is a row in the document and a rebuild — nobody edits a scene for it. A second
+  hand-kept copy of an attribution list goes wrong in exactly one direction, which is by leaving
+  somebody out.
+
+### Fixed
+
+- **`docs/architecture.md` said the crowd's cost does not rise with the square of the crowd. It
+  does.** The measurement behind that claim read the whole physics step, which is mostly
+  `move_and_slide` and the navigation agents, and it stopped at forty bodies — so a term worth a
+  millisecond stayed buried under the ones worth two or three and the total read flat. Isolated and
+  taken past the budget, separation costs 17 µs per body at ten bodies and 77 µs at sixty, and a
+  per-body cost that climbs with the crowd is the square term by definition.
+  **The decision not to fix it stands** — at thirty bodies the pass is about 1.3 ms of a 16.7 ms
+  frame — but *not quadratic* would have meant never looking again, and past about sixty bodies a
+  grid wins by roughly four to one. Only the reason changed.
+- `stress_enemies` reports the separation pass on its own, and at sixty and a hundred and twenty
+  bodies as well as inside the budget, so the shape is re-measurable instead of asserted. Its
+  passes are spread one to a frame: two hundred in one frame is a 678 ms frame, which made the
+  tool's own busy-machine warning fire at every size — correctly, about itself.
+- **A weapon is no longer dropped where the player cannot see it.** `PickupDirector` asked the
+  camera whether a point *a metre above* the ground was in shot, then laid the weapon on the ground
+  — and the two answers differ exactly at the bottom edge of the frame, which is the blind side. It
+  now asks at `WeaponPickup.RESTING_HEIGHT`, the height the thing actually lies at. One drop in
+  roughly two hundred was landing out of shot; CI found the first one, not the machine it was
+  written on.
+- **The wheel no longer winds in close enough to hide a swing.** `CameraRig.MIN_ZOOM` goes from 6 m
+  to 11 m. The ground that stays in shot on the blind bearing is very nearly half the arm — six
+  metres showed 2.75 m of it — and a reaper strikes from 2.8 m after covering 1.8 m during his
+  wind-up, so under 4.6 m his swing began off-screen. The old floor was a setting that quietly took
+  the fight away from whoever chose it.
+
+### Added
+
+- `tools/verify_view.tscn`, which answers where the fixed camera's blind side is by measuring it:
+  36 bearings marched outward until the ground leaves the frame. It then holds the two rules that
+  depend on the answer — a melee swing begins on screen at **every** zoom the wheel reaches, and a
+  weapon dropped in the grass lands where the player can see it — 768 of them, from 96 places around
+  the island. Proven by breaking both: inverting `PickupDirector`'s view test put 179 of 192 weapons
+  out of shot, and winding the wheel to the old floor of six metres left 2.8 m of ground against the
+  4.6 m a reaper needs.
+
+- **The island makes a sound now.** Footfalls on sand and in the surf, a roll, a reload, a dry
+  trigger, the two gunshots, taking a hit, a body going down, finding a weapon, a wave-cleared
+  sting, and a surf bed on the `Ambience` bus. Still not one audio file in the repository — all of
+  it is synthesised at startup beside the five combat signatures.
+- **The wind-up is audible, and it comes from a direction.** A second pool of
+  `AudioStreamPlayer3D` voices carries the sounds that belong to the world rather than to the
+  player, and the telegraph is the reason it exists. With the ring gone and the clip that should
+  replace it not authored yet, **this is currently the only telegraph the game has** — and the one
+  it could never have drawn anyway, for the two farmers behind the player, with three able to
+  commit at once at night. It is also the only sound in the game that **climbs**: everything else
+  reports something already over, so it falls away, and a rise is what an ear reads as a thing
+  arriving.
+- Footfalls are counted in **metres covered, not on a timer**, so a sprint's steps come faster than
+  a walk's without either speed knowing about the other, wading slows them because wading costs
+  speed, and leaning into a boulder makes no sound at all.
+- Loudness is now **declared per sound** rather than normalised to one shared peak, and the mix is
+  asserted as an ordering — footfall under swing under hit under telegraph. A footfall at a hit's
+  level walks over the fight it is walking through.
+- `EventBus.footstep_taken`, `telegraph_began` and `weapon_fired`.
+- `verify_audio` grew from five sounds to seventeen and a loop, and gained the claims that are not
+  about waveforms: that the telegraph plays positionally and at the farmer's own position, that a
+  missed shot plays nothing, that the mix is ordered, and that the surf comes back round without a
+  step in level at its seam.
+
 ### Changed
+
+- **The island's loose stone is thinned out.** Scattered rocks drop from 424 placed to 200 and
+  pebbles from 3 400 to 1 200. The six authored formations are untouched — they are what the island
+  is supposed to say "stone" with, and a fighting floor peppered with boulders nobody ever has to
+  think about was reading as litter in front of the fight.
+- `tools/build_island.gd` reports what the scatter **laid down** rather than what it was asked for.
+  The counts are targets: `_spots` gives up after `count * 120` throws, so a figure past what the
+  gap rule can fit is simply never reached. Rocks sat at 950 and were placing 424 — which is why
+  lowering that number did nothing until it dropped under the ceiling. Grass asks for 24 000 and
+  places 11 898.
 
 - **The gun is rationed by a ceiling and fed by the dead.** The player never holds more than 30
   rounds, magazine included, and **a cleared wave no longer hands over any**. Ammunition enters a
@@ -17,6 +198,17 @@ All notable changes to this project are documented here, following
   track's `reserve` now pays once, at the counter, instead of topping up every wave.
 - `EventBus.rounds_scavenged`, and the HUD's ammo panel answers it the way the money chip answers a
   payout — rounds arrive mid-fight, which is exactly when a counter in the corner goes unread.
+
+### Removed
+
+- **The ring under a winding-up enemy.** The red circle that filled on the ground while a farmer
+  committed is gone, along with its scene, its shader and `Enemy.telegraph_scene`. The wind-up
+  itself is untouched — it still shortens with the waves and with the hour, and still stops at its
+  floor — but until the enemy rig carries the tell in an animation, a wind-up reads only as a body
+  that has planted its feet.
+- The `access_colourblind_telegraphs` setting and its options row, which existed to thicken that
+  ring and had nothing else to reach. A toggle that persists and moves nothing is worse than a
+  missing one: a player who needs it sets it and believes they are covered.
 
 ### Added
 
@@ -176,6 +368,25 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- **One swing shrank another.** Every body in the pool was handed the same hitbox box — it is a
+  sub-resource of the enemy scene, and `Hitbox` resizes it to the reach of whatever is swinging. So
+  a farmhand arming during a reaper's active frames pulled the reaper's own box in to 1.6 m, and a
+  player who stepped inside the scythe's 2.8 m after that was never reported to the sweep at all.
+  From wave 3, where the reaper joins the band, with three men able to commit at once at night. A
+  hitbox now owns the shape it resizes, and `verify_combat` swings two reaches at once.
+- A hitstop freed mid-beat left the game running at a twentieth of speed for good: the `await` that
+  restores the clock belongs to a node a scene change can take away.
+- **A swing through empty air was as loud as one that connected**, came out of nowhere at full
+  level, and then washed for 540 ms over whatever the player did next — a decay of 0.09 ran its
+  buffer six time constants deep. It is now a sixth of a second, darker, under a hit, and shaped
+  like something passing: it swells, peaks in the middle and falls away.
+- **A missed gunshot played a swish.** `attack_whiffed` fires for a hitscan too, so the gun swung an
+  arm it does not have — and meanwhile the gun had no report at all, so a shot that connected was a
+  thud with no bang in front of it and a shot that missed was a whoosh. Rounds now crack when they
+  leave the barrel, per round, so the double tap cracks twice.
+- The anti-click ramp was applied after normalising, so every short sound came out under the peak it
+  was aimed at — the dry trigger landed at 0.33 against 0.55, because a click is loudest inside the
+  two milliseconds the ramp fades.
 - Four headless checks read whatever run happened to be saved on the machine. `GameState` restores
   a run at boot, so a developer carrying the gun ran `verify_combat` against gun damage and
   `verify_animation` against an empty magazine. CI never saw it — a clean checkout has no `user://`.

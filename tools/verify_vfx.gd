@@ -1,19 +1,15 @@
 extends Node
 ## Headless proof of the decisions in the effects, not of the pixels — the renderer draws nothing
 ## here, and what matters is checkable without it: that a perfect hit is a different effect and not
-## a louder one, that the telegraph is a shape rather than a colour, that nothing is built in the
-## middle of a fight, and that the two accessibility settings are actually read.
+## a louder one, that nothing is built in the middle of a fight, and that the two accessibility
+## settings are actually read.
 ## Run: godot --headless --path . res://tools/verify_vfx.tscn
 
 const ARENA: String = "res://scenes/world/arena.tscn"
 const IMPACT: String = "res://scenes/fx/impact.tscn"
-const TELEGRAPH: String = "res://scenes/fx/telegraph.tscn"
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
 ## More bursts than a wave can ask for at once, to see whether the pool holds.
 const A_LOT_OF_HITS: int = 40
-## Where the ring has to still be a ring: a fifth of the way through a wind-up, before any fill
-## could account for it being visible.
-const EARLY: float = 0.2
 ## Long enough for a knock to run most of its course.
 const SHAKEN_FRAMES: int = 20
 ## How far the eye may drift along its own arm while being shaken. It should be nothing at all; a
@@ -60,8 +56,6 @@ func _run() -> void:
 	_check_every_attack_names_an_effect()
 	_check_a_perfect_hit_is_a_different_effect()
 	await _check_a_fight_never_builds_an_effect()
-	_check_the_telegraph_is_a_shape_and_not_a_colour()
-	_check_the_telegraph_fills_with_the_windup()
 	_check_reduce_flashing_damps_the_flare_and_leaves_the_debris()
 	await _check_a_player_who_turned_shake_off_gets_none()
 	# The dust goes first on purpose: it is the only check here that needs the player standing on the
@@ -136,54 +130,6 @@ func _check_a_fight_never_builds_an_effect() -> void:
 				% [A_LOT_OF_HITS, _pool.made_count() - warmed]
 			)
 		)
-
-
-## The one that a check has to carry, because nobody notices it by looking: a telegraph drawn as a
-## colour is invisible to a colourblind player, to a greyscale screenshot, and at twenty metres.
-## What is asserted is that the ring is *drawn at all* before any of it has filled — which only a
-## shape can be.
-func _check_the_telegraph_is_a_shape_and_not_a_colour() -> void:
-	var ring := _lease_a_ring()
-	if ring == null:
-		return
-	var material := _ring_material(ring)
-	if material == null:
-		_fail("the telegraph has no shader to read")
-		return
-	if float(material.get_shader_parameter(&"rail")) <= 0.0:
-		_fail("the telegraph draws nothing until it has filled — there is no shape to read")
-	if (
-		float(material.get_shader_parameter(&"outer"))
-		<= float(material.get_shader_parameter(&"inner"))
-	):
-		_fail("the telegraph's ring has no width")
-	# And the setting that exists for exactly this has to reach it.
-	Settings.set_value(&"access_colourblind_telegraphs", true)
-	var shouting := _lease_a_ring()
-	if shouting != null:
-		var loud := _ring_material(shouting)
-		if loud == null or float(loud.get_shader_parameter(&"high_contrast")) <= 0.0:
-			_fail("access_colourblind_telegraphs is on and the telegraph did not answer")
-		shouting.finish()
-	Settings.set_value(&"access_colourblind_telegraphs", false)
-	ring.finish()
-
-
-## The fill and the wind-up are the same number, or the ring lies about when the swing lands.
-func _check_the_telegraph_fills_with_the_windup() -> void:
-	var ring := _lease_a_ring()
-	if ring == null:
-		return
-	var material := _ring_material(ring)
-	for share: float in [0.0, EARLY, 1.0]:
-		ring.fill(share)
-		var drawn := float(material.get_shader_parameter(&"progress"))
-		if absf(drawn - share) > 0.001:
-			_fail("the ring reads %.2f when the wind-up is %.2f through" % [drawn, share])
-	ring.fill(4.0)
-	if float(material.get_shader_parameter(&"progress")) > 1.0:
-		_fail("the ring fills past full")
-	ring.finish()
 
 
 ## Reduce-flashing damps the flare and **leaves the debris alone**. The debris is motion, not
@@ -363,20 +309,6 @@ func _birds(flock: Node) -> Array[Bird]:
 	return found
 
 
-func _lease_a_ring() -> Telegraph:
-	var ring := _pool.lease(load(TELEGRAPH) as PackedScene) as Telegraph
-	if ring == null:
-		_fail("the pool would not lease a telegraph")
-		return null
-	ring.begin(_arena.get_node("Player") as Node3D, Color.RED)
-	return ring
-
-
-func _ring_material(ring: Telegraph) -> ShaderMaterial:
-	var mesh := ring.get_node_or_null("Ring") as MeshInstance3D
-	return mesh.material_override as ShaderMaterial if mesh != null else null
-
-
 ## The director and the tutorial both want to run a wave, and this check is not about either.
 func _stand_everything_down() -> void:
 	var director := _arena.get_node_or_null("WaveDirector") as WaveDirector
@@ -403,9 +335,9 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"vfx OK — every attack names an effect, a perfect hit differs three ways, the "
-				+ "telegraph is a shape, a fight builds nothing, the birds stand on sand and leave "
-				+ "when walked into, and a sprint kicks up more dust than a walk"
+				"vfx OK — every attack names an effect, a perfect hit differs three ways, a fight "
+				+ "builds nothing, the birds stand on sand and leave when walked into, and a "
+				+ "sprint kicks up more dust than a walk"
 			)
 		)
 		get_tree().quit(0)

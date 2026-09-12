@@ -49,8 +49,16 @@ list — a run is forty minutes and the game has one difficulty, so anything bet
 the fight is furniture.
 
 Credits are not a title entry: the layout holds three rows without crowding the logo, and a fourth
-that nobody opens twice is not worth the height. They do not have a home yet — the Options screen
-is five tabs and a sixth would not be one of the five the design draws.
+that nobody opens twice is not worth the height. Nor are they a sixth Options tab — the design draws
+five. They sit **beside the version number**, as a discreet line under the menu, and open as an
+overlay the way Options does.
+
+What the overlay shows is not written anywhere near it. `docs/credits.md` is the list; the game
+reads `data/credits.tres`, baked from that document by `tools/build_credits.gd`; and
+`tools/verify_credits.tscn` fails the build if the two have come apart or if a baked row never
+reaches a label. Adding an asset is a row in the document and a rebuild — this screen is never
+edited for it, because a second hand-kept copy of an attribution list goes wrong by leaving somebody
+out.
 
 The background is the island with the camera drifting slowly, blurred and dimmed. Not a pre-rendered
 image: `scenes/world/vista.tscn` instances **the same `island.tscn` the fight happens on**, lit by
@@ -126,26 +134,37 @@ child and get it back the same way, so neither loses what is behind it. It runs 
 `PROCESS_MODE_ALWAYS`, because from pause the tree is stopped and a frozen options screen is a soft
 lock.
 
-**A setting whose feature does not exist yet still exists here and still persists.** Aim assist,
-tutorial prompts, screen shake and the colourblind telegraphs are stored and waiting; the code that
-reads them arrives with the gun, the tutorial, the camera shake and the wind-up flash. Damage
-numbers, hitstop, reduce flashing and the sprint mode already have something listening.
+**Every setting here has something listening.** That was once an aspiration — aim assist and
+tutorial prompts were stored and waiting for the gun and the tutorial to arrive. Both arrived and
+nobody came back, so aim assist spent several milestones persisting and moving nothing. It is read
+now, by `AimComponent`, and `verify_aim` fails if it stops being.
+
+**A setting whose feature is taken away goes with it.** There was a colourblind-telegraph toggle
+here, and it thickened the ring the wind-up used to draw. The ring is gone, so the toggle is gone:
+a switch that persists and moves nothing is worse than a missing one, because a player who needs it
+will set it and believe they are covered.
 
 ### Gameplay
 
 | Setting | Default | Why it exists |
 |---|---|---|
 | Sprint | **auto** — hold on keyboard, toggle on pad, decided per press | The two audiences genuinely expect different things, and a player who disagrees can say so — [ADR 0007](decisions/0007-sprint-hold-or-toggle.md) |
-| Aim assist | soft | The gun is unplayable on a stick without it, and unsatisfying with too much |
+| Aim assist | soft | The gun is unplayable on a stick without it, and unsatisfying with too much. `soft` takes half the error off, `strong` takes all of it, and neither reaches outside a 12° cone or past what the weapon in hand can hit — a wider one starts choosing targets, which is worse than missing |
 | Show tutorial prompts | on until completed once | See [tutorial.md](tutorial.md) |
 | Damage numbers | **off** | The design says the hit should be felt; the numbers are a debugging comfort |
 | Credit numbers | **on** | The opposite default, and for the opposite reason: that a kill pays is a rule the player has to learn, and it is one number per body rather than one per hit |
 
 ### Controls
 
-Full rebinding of every action, both devices, rebuilt into the `InputMap` at boot. Plus mouse
-sensitivity (in degrees per 100 pixels, so it survives a resolution change), stick sensitivity, and
-invert Y.
+Full rebinding of every action, both devices, rebuilt into the `InputMap` at boot. **And nothing
+else**, which is a decision rather than an omission.
+
+Mouse sensitivity, stick sensitivity and invert Y were listed here and shipped as three rows that
+moved nothing. They were written for a camera that can be turned, and this one cannot be — the yaw
+and the pitch are constants on `CameraRig`, the mouse aims by where the cursor lands on the ground
+and the stick by the direction it points. There is no look delta to scale and no pitch to invert,
+so there was never anything for the three of them to reach. A slider that persists and changes
+nothing is worse than a missing one: a player who needs it sets it and believes they are covered.
 
 **One row rebinds both devices**, and the device the player presses with decides which column
 changes. Escape cancels the capture rather than binding to it — it costs the ability to put an
@@ -185,7 +204,6 @@ readable at a glance and reachable in ten presses on a pad.
 |---|---|
 | Screen shake | 100 %, sliding to 0 |
 | Hitstop | on |
-| Colourblind-safe telegraphs | off — adds a shape cue to the wind-up flash, not only a colour |
 | Hold-to-confirm | off |
 | Reduce flashing | off |
 

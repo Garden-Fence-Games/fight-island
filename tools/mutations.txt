@@ -1,0 +1,49 @@
+# Constants worth breaking, and the checks that should notice. See tools/mutate.sh.
+#
+# A line here is a claim: "if somebody changed this by accident, one of these checks would say so."
+# Every line was run and every one of them fails without its guard — that is the whole point of the
+# file, and a line added without being run once in the broken state is a line that means nothing.
+#
+# <file>|<original>|<replacement>|<checks>
+
+# The player: a body that snaps rather than turns, a buffer that drops presses, a walk speed
+scripts/actors/player/player.gd|const TURN_SPEED_DEGREES: float = 720.0|const TURN_SPEED_DEGREES: float = 7200.0|verify_aim
+scripts/actors/player/player.gd|const INPUT_BUFFER: float = 0.15|const INPUT_BUFFER: float = 0.001|verify_feel
+scripts/actors/player/player.gd|const MOVE_SPEED: float = 3.2|const MOVE_SPEED: float = 0.3|verify_aim
+scripts/actors/player/player.gd|const SPRINT_DRAIN: float = 12.0|const SPRINT_DRAIN: float = 0.0|verify_combat
+
+# The dodge: the roll that grants nothing, the roll that ends before its own window opens
+scripts/actors/player/states/player_dodge.gd|const IFRAME_LENGTH: float = 0.30|const IFRAME_LENGTH: float = 0.0|verify_combat
+scripts/actors/player/states/player_dodge.gd|const IFRAME_START: float = 0.05|const IFRAME_START: float = 0.0|verify_combat
+scripts/actors/player/states/player_dodge.gd|const DURATION: float = 0.55|const DURATION: float = 0.05|verify_combat
+scripts/actors/player/states/player_dodge.gd|const DISTANCE: float = 3.2|const DISTANCE: float = 0.0|verify_aim
+
+# The parry
+scripts/actors/player/states/player_parry.gd|const PERFECT_END: float = 0.12|const PERFECT_END: float = 0.0|verify_combat
+
+# The camera: a knock that never dies, a follow that never follows, a zoom that hides a swing
+scripts/camera/camera_rig.gd|const SHAKE_DECAY: float = 6.0|const SHAKE_DECAY: float = 0.001|verify_feel
+scripts/camera/camera_rig.gd|const FOLLOW_SMOOTHING: float = 12.0|const FOLLOW_SMOOTHING: float = 0.01|verify_camera
+scripts/camera/camera_rig.gd|const MIN_ZOOM: float = 11.0|const MIN_ZOOM: float = 6.0|verify_view
+
+# The emphasis budget
+scripts/systems/emphasis.gd|const MOST_FRAMES: int = 12|const MOST_FRAMES: int = 60|verify_feel
+scripts/systems/emphasis.gd|const PARRY_FRAMES: int = MOST_FRAMES|const PARRY_FRAMES: int = 6|verify_feel
+scripts/systems/hit_feedback.gd|const HITSTOP_SCALE: float = 0.05|const HITSTOP_SCALE: float = 1.0|verify_feel
+
+# The aim, and the assist that was a setting moving nothing until #130
+scripts/components/aim_component.gd|const ASSIST_CONE: float = 12.0|const ASSIST_CONE: float = 40.0|verify_aim
+scripts/components/aim_component.gd|"soft": 0.5|"soft": 1.0|verify_aim
+
+# Waves, spawning and the pool
+scripts/systems/spawn_director.gd|const MIN_PLAYER_DISTANCE: float = 12.0|const MIN_PLAYER_DISTANCE: float = 1.0|verify_waves
+scripts/systems/enemy_pool.gd|const SIZE: int = 32|const SIZE: int = 2|verify_waves
+scripts/systems/economy.gd|const LEVEL_CAP: int = 5|const LEVEL_CAP: int = 1|verify_waves
+
+# Pickups, ground and devices
+scripts/systems/pickup_director.gd|const FURTHEST: float = 13.0|const FURTHEST: float = 60.0|verify_view
+scripts/world/ground.gd|const SNAP_TOLERANCE: float = 1.0|const SNAP_TOLERANCE: float = 60.0|verify_navigation
+scripts/systems/devices.gd|const STICK_WAKE: float = 0.5|const STICK_WAKE: float = 0.001|verify_glyphs
+
+# Audio
+scripts/autoload/audio_manager.gd|const PEAK: float = 0.9|const PEAK: float = 0.02|verify_audio

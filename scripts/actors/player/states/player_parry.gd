@@ -8,7 +8,6 @@ const LATE_END: float = 0.22
 const RECOVERY_END: float = 0.45
 const PERFECT_REFUND: float = 25.0
 const PERFECT_STAGGER: float = 1.0
-const PERFECT_HITSTOP: float = 0.10
 const LATE_REDUCTION: float = 0.5
 const LATE_STAGGER: float = 0.25
 
@@ -30,12 +29,11 @@ func physics_update(delta: float) -> void:
 func resolve(info: HitInfo) -> void:
 	if _elapsed <= PERFECT_END:
 		info.negated = true
-		info.hitstop = PERFECT_HITSTOP
 		if player.stamina != null:
 			player.stamina.refund(PERFECT_REFUND)
 		_stagger_attacker(info.source, PERFECT_STAGGER)
 		EventBus.parry_perfect.emit()
-		EventBus.hitstop_requested.emit(PERFECT_HITSTOP)
+		Emphasis.spend(Emphasis.for_parry())
 		transition_to(&"Idle")
 		return
 	if _elapsed <= LATE_END:

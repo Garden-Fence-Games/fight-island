@@ -33,8 +33,24 @@ var _already_hit: Array[int] = []
 func _ready() -> void:
 	monitoring = true
 	monitorable = false
-	if shape != null:
-		shape.disabled = true
+	if shape == null:
+		return
+	_take_ownership_of_the_shape()
+	shape.disabled = true
+
+
+## The box is sized per swing by `_fit_to`, and the one in the actor's scene is a sub-resource —
+## which every instance of that scene is handed, not a copy of. Thirty-two pooled bodies therefore
+## shared a single box, and the last one to arm decided how far every open hitbox reached: a
+## farmhand arming mid-sweep pulled the reaper's live box in from 3.2 m to 2.0 m, and the sweep
+## passed through a player standing at the 2.8 m the scythe is supposed to have.
+##
+## Duplicated here rather than marked local to the scene, because the fix then belongs to whatever
+## resizes the box rather than to each scene that remembers to tick a box.
+func _take_ownership_of_the_shape() -> void:
+	if shape.shape == null:
+		return
+	shape.shape = shape.shape.duplicate() as Shape3D
 
 
 func arm(

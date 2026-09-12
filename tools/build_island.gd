@@ -28,17 +28,15 @@ const FADEABLE_SHADER: String = "res://assets/shaders/fadeable.gdshader"
 ## player outright is a five-metre boulder, and there are six of those.
 const OCCLUDER_GROUP: StringName = &"occluder"
 ## How wide a chunk of scatter is, and **the strongest single lever on what this island costs**: a
-## chunk is the unit the camera keeps or drops whole, and the unit a visibility range is measured
-## to, so the grid sets how finely either can cut. It was 24 m, and at 24 m neither cut well. See
-## "What the island costs" in `docs/asset-pipeline.md` for the measurements behind 12 m.
+## chunk is what the camera keeps or drops whole. See "What the island costs" in
+## `docs/asset-pipeline.md` for the measurements behind 12 m, and for why 24 m culled so poorly.
 const CHUNK: float = 12.0
 ## Past these, a tuft and a pebble are a few pixels each.
 const GRASS_FADE: float = 55.0
 const PEBBLE_FADE: float = 70.0
-## The palms get a range too, and a far more generous one: they are the island's silhouette, and a
-## tall thing popping out is worse than a tall thing costing. Set past the far edge of what the
-## fixed camera frames, so it saves nothing today and catches a wider camera tomorrow. Rocks stay
-## rangeless; 80 triangles each buys nothing.
+## The palms get one too, and a far more generous one: they are the island's silhouette, and a tall
+## thing popping is worse than a tall thing costing. Past the fixed camera's reach on purpose — it
+## saves nothing today and catches a wider camera tomorrow. Rocks stay rangeless at 80 triangles.
 const PALM_FADE: float = 80.0
 ## The scattered decoration, each with its origin at its base. **The palm is ours and painted**, so
 ## it brings its own colours and the palette steps aside — see `_part_material`. The rest are
@@ -57,9 +55,8 @@ const ROCK_MODEL_HEIGHT: float = 0.57
 const ROCK_MODEL_DEPTH: float = 1.03
 const PEBBLE_MODEL_WIDTH: float = 0.36
 ## A tuft of grass is a splay of flat leaves, and it ships four times wider than it is high — so it
-## takes both figures. Scaled as one piece, tall grass would be a bush.
-const GRASS_MODEL_WIDTH: float = 0.94
-const GRASS_MODEL_HEIGHT: float = 1.246
+## takes both figures, as one pair. Scaled as one piece, tall grass would be a bush.
+const GRASS_MODEL_SIZE: Vector2 = Vector2(0.94, 1.246)
 const BUSH_MODEL_WIDTH: float = 1.9
 const BUSH_MODEL_HEIGHT: float = 1.2435
 ## The huts, from Kenney's CC0 Survival Kit — the Nature Kit's companion, drawn by the same hand on
@@ -139,12 +136,19 @@ const PALM_RADIUS: float = 0.2
 ## Rocks smaller than this are stepped over, not walked around, so they neither collide nor count.
 const BLOCKING_ROCK: float = 0.9
 const PALM_COUNT: int = 380
-const ROCK_COUNT: int = 950
-const PEBBLE_COUNT: int = 1500
+## Stone is scattered thinly on purpose. A rock the player never has to think about is not scenery,
+## it is litter in front of the fight — and the island already says "stone" with the six authored
+## formations, which is where a boulder is supposed to be noticed.
+##
+## Every count here is a **target, not a promise**: `_spots` gives up after `count * 120` throws, so
+## a figure past what the gap rule can fit on the island is simply never reached. Rocks sat at 950
+## and placed 424 — which is why the build line reports what was laid down rather than what was
+## asked for, and why lowering a saturated figure does nothing until it drops below the ceiling.
+const ROCK_COUNT: int = 200
+const PEBBLE_COUNT: int = 1200
 const GRASS_COUNT: int = 24000
-## How a tuft is shaped and graded, and how many bushes there are and where they clump, both live in
-## `IslandFoliage`. What stays here is how many tufts to ask for; what they look like is not the
-## island's business.
+## A tuft's shape and grading, and the bushes' count and clumping, live in `IslandFoliage`. What
+## stays here is how many tufts to ask for; what they look like is not the island's business.
 
 # --- Huts --------------------------------------------------------------------------------------
 ## The kit's pieces are furniture — half a metre of drying rack. A hut is one of them widened and
@@ -222,6 +226,8 @@ var _ground := FastNoiseLite.new()
 ## grid has been built and drained, which is what lets `_height_at` add it without chasing its tail.
 var _lift := PackedFloat32Array()
 var _drained: int = 0
+## What the scatter actually laid down, as opposed to what it was asked for.
+var _placed: Dictionary = {}
 
 
 func _initialize() -> void:
@@ -284,14 +290,16 @@ func _initialize() -> void:
 	print(
 		(
 			(
-				"island built — %d verts, %d palms, %d rocks, %d tufts, %d huts, "
-				+ "%d nav polys, %d cells drained"
+				"island built — %d verts, %d palms, %d rocks, %d pebbles, %d tufts, %d bushes, "
+				+ "%d huts, %d nav polys, %d cells drained"
 			)
 			% [
 				GRID * GRID,
-				PALM_COUNT,
-				ROCK_COUNT,
-				GRASS_COUNT,
+				_placed.get("palms", 0),
+				_placed.get("rocks", 0),
+				_placed.get("pebbles", 0),
+				_placed.get("tufts", 0),
+				_placed.get("bushes", 0),
 				_hut_sites().size(),
 				navigation.navigation_mesh.get_polygon_count(),
 				_drained
@@ -510,8 +518,7 @@ func _scatter() -> Node3D:
 		stood.y = _height_at(stood.x, stood.z)
 		taken.append([stood, HUT_KEEP_OUT])
 
-	# What a bush keeps clear of. Snapshotted before the palms go in, because the palms are the one
-	# thing it is meant to crowd rather than avoid — see `IslandFoliage`.
+	# Snapshotted before the palms go in: they are the one thing a bush crowds rather than avoids.
 	var bush_avoid := taken.duplicate()
 	var trunks: Array[Vector3] = []
 
@@ -560,11 +567,9 @@ func _scatter() -> Node3D:
 	for spot: Vector3 in _spots(
 		GRASS_COUNT, 0.0, 0.0, IslandFoliage.CLUMPING, Vector2(SHORE_BAND * 0.4, 3.0), 0.0, [], true
 	):
-		var model := Vector2(GRASS_MODEL_WIDTH, GRASS_MODEL_HEIGHT)
-		tufts.append(IslandFoliage.tuft(spot, _land(spot.x, spot.z), _rng, model))
+		tufts.append(IslandFoliage.tuft(spot, _land(spot.x, spot.z), _rng, GRASS_MODEL_SIZE))
 
-	# Clumped at the feet of palms and along the band trees do not reach, rather than scattered by
-	# noise like everything else — ninety props are too few for noise to read as anything but spacing.
+	# Clumped rather than scattered: ninety props are too few for noise. `IslandFoliage` says why.
 	var bushes := IslandFoliage.bushes(
 		trunks,
 		bush_avoid,
@@ -581,6 +586,13 @@ func _scatter() -> Node3D:
 
 	# The models carry their own colours, one material per part, so nothing here tints them. What the
 	# wind material replaces is the shading, not the palette.
+	_placed = {
+		"palms": palms.size(),
+		"rocks": rocks.size(),
+		"pebbles": pebbles.size(),
+		"tufts": tufts.size(),
+		"bushes": bushes.size(),
+	}
 	props.add_child(_multi("Bushes", _nature(BUSH_MODEL), bushes, _grass_wind(), GRASS_FADE, false))
 	props.add_child(_multi("Grass", _nature(GRASS_MODEL), tufts, _grass_wind(), GRASS_FADE, false))
 	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles, {}, PEBBLE_FADE, false))

@@ -21,9 +21,6 @@ const DEFAULTS: Dictionary = {
 	## On, where damage numbers are off: a kill paying is a rule the player has to learn, and it is
 	## one number per body rather than one per hit.
 	&"gameplay_credit_numbers": true,
-	&"controls_mouse_sensitivity": 12.0,
-	&"controls_stick_sensitivity": 180.0,
-	&"controls_invert_y": false,
 	&"video_window_mode": "windowed",
 	&"video_resolution": "1920x1080",
 	&"video_vsync": "on",
@@ -34,7 +31,6 @@ const DEFAULTS: Dictionary = {
 	&"audio_ambience": 100,
 	&"access_screen_shake": 100,
 	&"access_hitstop": true,
-	&"access_colourblind_telegraphs": false,
 	&"access_hold_to_confirm": false,
 	&"access_reduce_flashing": false,
 }

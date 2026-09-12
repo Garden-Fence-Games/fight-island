@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/enemy/enemy.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -15,7 +15,6 @@
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_dead.gd" id="13"]
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_retreat.gd" id="15"]
 [ext_resource type="Resource" path="res://data/enemies/farmhand.tres" id="14"]
-[ext_resource type="PackedScene" path="res://scenes/fx/telegraph.tscn" id="16"]
 [ext_resource type="PackedScene" path="res://assets/models/char_farmer.glb" id="17"]
 [ext_resource type="Script" path="res://scripts/components/animation_component.gd" id="18"]
 [ext_resource type="Script" path="res://scripts/components/head_look_component.gd" id="19"]
@@ -38,7 +37,6 @@ collision_layer = 4
 collision_mask = 3
 script = ExtResource("1")
 data = ExtResource("14")
-telegraph_scene = ExtResource("16")
 
 [node name="Visual" parent="." instance=ExtResource("17")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)

@@ -33,9 +33,6 @@ OPT_AIM_STRONG,Strong
 OPT_TUTORIAL_PROMPTS,Tutorial prompts
 OPT_DAMAGE_NUMBERS,Damage numbers
 OPT_CREDIT_NUMBERS,Credit numbers
-OPT_MOUSE_SENSITIVITY,Mouse sensitivity
-OPT_STICK_SENSITIVITY,Stick sensitivity
-OPT_INVERT_Y,Invert Y
 OPT_WINDOW_MODE,Window mode
 OPT_WINDOWED,Windowed
 OPT_BORDERLESS,Borderless
@@ -50,7 +47,6 @@ OPT_SFX,SFX
 OPT_AMBIENCE,Ambience
 OPT_SCREEN_SHAKE,Screen shake
 OPT_HITSTOP,Hitstop
-OPT_COLOURBLIND,Colourblind telegraphs
 OPT_HOLD_TO_CONFIRM,Hold to confirm
 OPT_REDUCE_FLASHING,Reduce flashing
 OPT_ACTION,Action
@@ -135,3 +131,6 @@ PICKUP_TAKE,{0} Take it
 WEAPON_FISTS,Fists
 WEAPON_STICK,Stick
 WEAPON_GUN,Gun
+UI_CREDITS,Credits
+CREDITS_ASSETS,Assets
+CREDITS_TOOLS,Engine and tools

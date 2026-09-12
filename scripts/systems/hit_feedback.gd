@@ -42,6 +42,17 @@ func _ready() -> void:
 		_ready_color = materials[0].albedo_color
 
 
+## A hitstop is a change to the global clock with a local owner, and the owner can be taken away
+## mid-beat: a scene change frees this node, the `await` that would have put the clock back never
+## resumes, and the whole game carries on at a twentieth of speed with nothing left that could
+## undo it. The window is under two tenths of a second, and it is not one worth leaving open.
+func _exit_tree() -> void:
+	if _stops <= 0:
+		return
+	_stops = 0
+	Engine.time_scale = 1.0
+
+
 func _on_attack_landed(target: Node3D, _damage: float, perfect: bool) -> void:
 	var enemy := target as Enemy
 	if enemy == null or enemy.body_materials == null:

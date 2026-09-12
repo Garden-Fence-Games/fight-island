@@ -30,7 +30,8 @@ proves it is done. Durations are estimates for one person working part-time.
 - [x] `HealthComponent` and `StaminaComponent`
 - [x] The hitbox/hurtbox pattern working end to end
 - [x] The fist three-attack chain with both timing layers, hitstop and a flash
-- [x] The farmhand with the full FSM, a readable telegraph and the attack-token pool
+- [x] The farmhand with the full FSM, a wind-up that shortens with the waves, and the attack-token
+  pool
 - [x] A debug HUD showing health, stamina, state and the chain index
 - [x] Sound — five hit-and-parry signatures, **synthesised at startup rather than shipped as
       files**, so the perfect window is recognisable with the screen off. It was the last box, and
@@ -51,9 +52,12 @@ off a number.
 - [x] The tutorial director, driven by step resources — see [tutorial.md](tutorial.md)
 - [x] Real HUD, death screen, retry, pause, options
 - [x] Island blockout with navigable geometry
-- [ ] First audio pass — `AudioManager` voices the player's own timing and nothing else yet. No
-      music, no ambience, no enemy or menu sound, and `assets/audio/` holds a bus layout and
-      nothing else
+- [x] First audio pass — footfalls on sand and in the surf, the wind-up, the roll, the gunshots, a
+      pickup, a wave-cleared sting, and the surf bed. The wind-up is **positional**, which is the
+      part that matters most: with the ring gone and its replacement clip not authored, the sound
+      is currently the whole telegraph rather than half of one. Still
+      synthesised, so `assets/audio/` still holds a bus layout and nothing else. **No music** — it
+      needs assets this project does not have, and it takes the ducking rule in #25 with it to #84
 
 **Exit:** the run plays start to finish on a gamepad **and** on keyboard and mouse, and the balance
 table in `docs/game-design.md` matches the shipped `.tres` values.
@@ -68,15 +72,28 @@ cannot be: somebody has to play the run through on each scheme and say so.
 
 - Fifteen waves, tuned; elites
 - Final art for the island, both characters and the three weapons — the primitives go away
-- Animation pass, VFX pass, full audio
+- Animation pass, VFX pass, full audio — **the enemy wind-up is owed an animation**, see below
 - Main menu, settings, credits
-- FR and EN localisation. The string table in `assets/locale/ui.csv` is already the only place UI
-  text lives, but it holds one column and that column is English
+- Every player-facing string through `tr()`, with no literal left in a scene or a script. **The
+  game ships in English and in nothing else** — see [menus.md](menus.md); the `tr()` layer is there
+  so a menu is not rewritten the day someone wants a second locale, not because one is planned
 - Balance telemetry in debug builds: time per wave, deaths per wave, upgrade pick rate
+
+**Balance telemetry came early** and is off this list: `Telemetry`, one CSV row per wave under
+`user://` in debug builds, and `verify_telemetry` in CI. It has to precede the tuning pass rather
+than accompany it — *fifteen waves, tuned* is the first item above, and tuning them off the formulas
+instead of off what players did is the thing this milestone exists to stop.
 
 **Save and load came early** and is off this list: `SaveManager`, JSON under `user://`, and
 `verify_save` in CI. It arrived with the run flow in M2 because a run you cannot resume is a run
 nobody plays twice.
+
+**The wind-up has no picture at the moment.** The ring that used to fill on the ground under a
+farmer committing has been taken out, and nothing has replaced it: the timing is intact and every
+check of it still passes, but a player reads a wind-up as a body that has stopped moving. The
+replacement is an animation on the enemy rig, which is why this sits here rather than in M2 — and
+until it lands the game is harder to read than the numbers in
+[game-design.md](game-design.md) describe.
 
 **The art has not started, whatever the screenshots suggest.** The player's rig and the island's
 vegetation, stone and huts are prototype dressing: CC0 stand-ins, on a Mixamo skeleton whose

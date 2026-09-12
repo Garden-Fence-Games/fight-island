@@ -35,7 +35,8 @@ chain window; attack 3 likewise after 2. Miss the window and the chain resets to
 player who mashes only ever sees the first attack of every weapon.
 
 **Layer 2 — the perfect window.** The last slice of the chain window is *perfect*. A perfect input
-applies the damage multiplier plus 0.08 s of hitstop, a bright flash and a sound of its own. The
+applies the damage multiplier plus the attack's own hitstop, a bright flash and a sound of its
+own. The
 player should know they nailed it without reading a number.
 
 Input is buffered for **0.15 s**, so a slightly early press still lands inside the window.
@@ -167,7 +168,7 @@ default, the stick trades commitment for reach and crowd control, the gun is the
 |---|---|---|---|---|
 | Dodge roll | 22 | 0.55 s | 0.30 s, from 0.05 s | 3.2 m travel; direction from the move vector, backward if neutral; 0.15 s cooldown |
 | Sprint | 12/s | held | — | needs ≥ 10 stamina to start, cancels on attack, 0.25 s ramp |
-| Parry — perfect | 10 on press | window 0.00–0.12 s | full negate | attacker staggered 1.0 s, **+25 stamina refunded**, 0.10 s hitstop |
+| Parry — perfect | 10 on press | window 0.00–0.12 s | full negate | attacker staggered 1.0 s, **+25 stamina refunded**, 12 frames of hitstop — the whole budget |
 | Parry — late | 10 on press | window 0.12–0.22 s | 50 % reduction | player staggered 0.25 s, no refund |
 | Parry — missed | 10 on press | 0.22–0.45 s recovery | none | fully vulnerable — the cost of mashing |
 
@@ -431,9 +432,45 @@ The run is saved between waves. Forty minutes is too long to lose to a closed la
 
 ## Feel and feedback budget
 
-Hitstop on perfect hits and perfect parries only. Screenshake on the three finishers and on taking
-damage, with a slider in the options. Camera kick on the charged shot. Damage numbers exist but
-are **off by default** — the feedback should be felt.
+Every one of these effects is individually an improvement and collectively a mess. A hit that stops
+time, shakes the screen, flashes the body and kicks the camera is not four times as satisfying — it
+is unreadable, and reading a fight is the whole subject. So the emphasis on a blow is **decided in
+one table and spent once**, in `scripts/systems/emphasis.gd`, rather than accumulated by whoever
+happens to be emitting at the time.
+
+| what happened | stops the clock for | shakes |
+|---|---|---|
+| A hit that is only a hit | — | — |
+| **Perfect hit** | the attack's own figure, 0.06–0.18 s | — |
+| Finisher | — | 0.6 |
+| A body dies | 3 frames | 0.3 |
+| **Perfect parry** | **12 frames — the whole budget** | — |
+| The player is hit | — | **1.0** |
+| A wave is cleared | — | — |
+
+Three rules hold it together, and `tools/verify_feel.tscn` holds all three:
+
+- **One blow, one spend.** A perfect finisher that kills is one event, not three: the loudest figure
+  on each channel wins and nothing is summed. Added up, that blow would stop for 0.20 s and shake at
+  0.9; it stops for 0.18 and shakes at 0.6.
+- **There is a ceiling** — twelve frames, a fifth of a second, past which a stop reads as the game
+  hitching rather than as weight. Written in frames because that is the unit a stop is felt in.
+- **Nothing shouts over a telegraph.** A shake requested while anything *in shot* is winding up is
+  refused outright. The camera is fixed precisely so a wind-up can never be hidden, and a screen that
+  jumps while a farmer commits hands that back. A farmer committing off screen refuses nothing.
+
+A stop **never eats a press**: the input buffer ages on the same scaled clock the stop slows, so a
+hitstop lengthens the buffer in real time rather than spending it.
+
+Two things this table says that the game did not say before it was written. **Taking a hit shook
+nothing** — the code beside the shake call described "the three finishers and on taking damage" and
+only ever did the first. And the **longest stop in the game belonged to the charged shot**, not to
+the perfect parry, so the most skilful input in the game was quieter than a held trigger.
+
+Damage numbers exist but are **off by default** — the feedback should be felt.
+
+**Rumble does not exist yet.** When it does it comes through this table like everything else, and it
+is off whenever the screen-shake slider is at zero.
 
 ### The visible half
 
@@ -442,11 +479,17 @@ with a brighter flare. Three differences at once, because damage numbers are off
 effect is what carries the information instead — and any single difference is one the player has to
 be told about rather than one they notice.
 
-An enemy winding up draws a **ring on the ground that fills as the telegraph runs**. It is a shape
-rather than a colour on purpose: colour alone fails a colourblind player, a greyscale screenshot and
-a camera twenty metres up, and the wind-up is the one thing in the game the player has half a second
-to read. The ring is the same warning colour for every archetype — a hue per farmer would be one
-more thing to learn in that half second, and the shape already carries it.
+**An enemy winding up currently shows nothing.** There was a ring on the ground that filled as the
+telegraph ran; it has been taken out, and the wind-up animation meant to replace it is not authored.
+Until it is, the only tell is that the farmer has stopped moving — the timings in this document are
+unchanged, and every one of them is harder to answer than the numbers say.
+
+When it comes back it comes back on the body, and it owes three things the ring paid: it must be a
+**shape rather than a colour**, because colour alone fails a colourblind player, a greyscale
+screenshot and a camera twenty metres up; it must be **the same tell for every archetype**, because
+a signal per farmer is one more thing to learn in the half second there is to read it; and it must
+be **driven by the wind-up's own duration**, which shortens with the waves and with the hour, so the
+picture and the timing cannot drift apart.
 
 ### The ring is the reward
 
@@ -481,3 +524,18 @@ is a different game; adding one before wave 15 is tuned is how this one stops sh
 
 Change the `.tres`, update the table in this file, and say why in the pull request body. Both
 halves in the same PR — a number that disagrees with this document is a bug in the document.
+
+### Where the evidence comes from
+
+A debug build appends one row per wave to `user://telemetry.csv` — see
+[architecture.md](architecture.md). It exists so the three claims this document makes that it cannot
+argue for itself can each be answered with data rather than with a feeling:
+
+| The claim | The columns that answer it |
+|---|---|
+| *The intended shape* — 1–3 teach, 4–7 pressure, 8–11 rotate weapons, 12–15 endure | `wave`, `outcome`, `seconds`: where runs actually end, and whether the time a wave takes climbs the way the shape says it should |
+| *A run affords roughly two full tracks and change* — see **Economy** | `earned` and `spent`, summed over a run |
+| *Five tracks are five choices* | `bought` across runs. **Stamina is the prime suspect**: surviving beats killing fast when death is final, and a track chosen by everyone every run is not a track, it is a mandatory step wearing a costume |
+
+None of those figures is a balance value, so none of them belongs in a `.tres`. They are what a
+balance value is argued from.

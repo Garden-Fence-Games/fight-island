@@ -8,6 +8,7 @@ extends Control
 
 const RUN_SCENE: String = "res://scenes/main/main.tscn"
 const OPTIONS_SCENE: String = "res://scenes/ui/options_screen.tscn"
+const CREDITS_SCENE: String = "res://scenes/ui/credits_screen.tscn"
 const VISTA_SCENE: String = "res://scenes/world/vista.tscn"
 const HEADLESS: String = "headless"
 const FADE_IN: float = 0.7
@@ -15,12 +16,14 @@ const FADE_OUT: float = 0.35
 
 var _leaving: bool = false
 var _options_screen: OptionsScreen = null
+var _credits_screen: CreditsScreen = null
 
 @onready var play: MenuEntry = $Content/Column/Menu/Play
 @onready var new_run: MenuEntry = $Content/Column/Menu/NewRun
 @onready var options: MenuEntry = $Content/Column/Menu/Options
 @onready var quit: MenuEntry = $Content/Column/Menu/Quit
-@onready var version: Label = $Content/Column/Version
+@onready var version: Label = $Content/Column/Footer/Version
+@onready var credits: MenuEntry = $Content/Column/Footer/Credits
 @onready var fade: ColorRect = $Fade
 
 
@@ -32,6 +35,7 @@ func _ready() -> void:
 	new_run.pressed.connect(_on_new_run_pressed)
 	options.pressed.connect(_on_options_pressed)
 	quit.pressed.connect(_on_quit_pressed)
+	credits.pressed.connect(_on_credits_pressed)
 	play.grab_focus()
 	fade.color.a = 1.0
 	create_tween().tween_property(fade, "color:a", 0.0, FADE_IN)
@@ -40,7 +44,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _leaving:
 		return
-	if _options_screen != null:
+	if _options_screen != null or _credits_screen != null:
 		return
 	if event.is_action_pressed(&"ui_cancel"):
 		# The one place in the game allowed to quit, which is why back does not simply go nowhere.
@@ -113,6 +117,22 @@ func _on_options_pressed() -> void:
 func _on_options_closed() -> void:
 	_options_screen = null
 	options.grab_focus()
+
+
+## The credits sit beside the version rather than in the menu: the column holds three rows without
+## crowding the logo, and a fourth that nobody opens twice is not worth the height. See
+## `docs/menus.md`.
+func _on_credits_pressed() -> void:
+	if _credits_screen != null:
+		return
+	_credits_screen = (load(CREDITS_SCENE) as PackedScene).instantiate() as CreditsScreen
+	_credits_screen.closed.connect(_on_credits_closed)
+	add_child(_credits_screen)
+
+
+func _on_credits_closed() -> void:
+	_credits_screen = null
+	credits.grab_focus()
 
 
 func _on_quit_pressed() -> void:

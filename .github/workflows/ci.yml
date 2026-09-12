@@ -137,6 +137,23 @@ jobs:
       - name: Verify the options screen
         run: tools/run-check.sh res://tools/verify_options.tscn
 
+      # Three settings have now shipped that persisted across launches and moved nothing: the
+      # colourblind telegraphs after their ring went, aim assist for as long as the gun existed,
+      # and the two look sensitivities plus invert Y for a camera that cannot be turned. It is the
+      # worst shape a settings bug has — silent, and it lands on the player who needed it, who
+      # sets it and believes they are covered. This reads the source and fails on a key whose only
+      # other mention is the row drawing it.
+      - name: Verify every setting reaches something
+        run: tools/run-check.sh res://tools/verify_settings.tscn
+
+      # `data/` is the balance surface and architecture.md enumerates it, which makes that list the
+      # thing somebody reads before touching balance. It had drifted into describing a design that
+      # was never built: `UpgradeTrack` as an icon and an Array[UpgradeLevel], an `sfx` nothing ever
+      # had, a `range` that is really `reach`. A wrong field list is worse than none, because it is
+      # trusted enough that nobody checks it. This holds the table to the code.
+      - name: Verify the documented balance surface exists
+        run: tools/run-check.sh res://tools/verify_data_surface.tscn
+
       # A pause menu that forgets to pause, a dialog a stopped tree cannot process, or an Escape
       # that closes the dialog and the menu under it in the same frame: none of that shows up in a
       # diff, and all of it is a soft lock in front of the player.
@@ -164,6 +181,13 @@ jobs:
       # way it stays true is a check that picks up a controller and reads the screen back.
       - name: Verify the device-aware glyphs
         run: tools/run-check.sh res://tools/verify_glyphs.tscn
+
+      # CC0 asks for nothing, but a credit the player cannot reach is an intention rather than an
+      # attribution. Two ways this quietly stops being true — a row added to the document and never
+      # baked, or a row baked and never drawn — and both fail in the same direction, by leaving
+      # somebody out.
+      - name: Verify the credits
+        run: tools/run-check.sh res://tools/verify_credits.tscn
 
       # The stick's 120° arc is a number in a .tres and the sweep it produces is geometry: the only
       # way to know the two still agree is to stand two farmers inside one swing. The gun's half is
@@ -218,11 +242,31 @@ jobs:
       - name: Verify day and night
         run: tools/run-check.sh res://tools/verify_day_night.tscn
 
+      # The budget, not the effects — those are verify_vfx's. What breaks here is a blow that spends
+      # three times for being three things at once, a knock that lands over a telegraph the camera
+      # is fixed specifically to protect, or a stop that costs the player an input.
+      - name: Verify the emphasis budget
+        run: tools/run-check.sh res://tools/verify_feel.tscn
+
       # The renderer draws nothing here, so this asserts which occluder should fade and by how much
       # — the decision — rather than the pixels. The dither that turns a fade into holes has no
       # decisions in it.
       - name: Verify camera occlusion
         run: tools/run-check.sh res://tools/verify_camera.tscn
+
+      # The camera cannot be turned, so the island is composed for one viewpoint and there is a blind
+      # side. This measures where it is rather than asserting where it should be, then holds the two
+      # rules that depend on the answer: a swing has to begin on screen at every zoom the wheel
+      # reaches, and a weapon dropped in the grass has to be somewhere the player can see it.
+      - name: Verify what the fixed camera shows
+        run: tools/run-check.sh res://tools/verify_view.tscn
+
+      # A tuning record nobody can trust is worse than none: a column that silently carries the run's
+      # running total instead of the wave's own reads perfectly plausible and would send a balance
+      # pass the wrong way. This also holds the release build's half of the promise — a recorder
+      # nobody armed leaves no file behind.
+      - name: Verify the telemetry record
+        run: tools/run-check.sh res://tools/verify_telemetry.tscn
 
       - uses: actions/upload-artifact@v4
         if: failure()

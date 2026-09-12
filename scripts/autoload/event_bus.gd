@@ -18,6 +18,14 @@ signal perfect_timing
 signal attack_whiffed(attack: AttackData)
 signal parry_perfect
 signal parry_late
+## A foot went down, and whether it went down in water. Carried because the surf and the sand are
+## two sounds, and the only thing that knows which is the body that just covered the ground.
+signal footstep_taken(wading: bool)
+## A farmer has begun committing, and where he is standing. **The position is the whole point**: a
+## wind-up the player cannot see is the one they most need to hear, so this is the one sound in the
+## game that has to arrive from a direction. It carries a point rather than the body, because by the
+## time a listener acts on it the only thing it needs is where to put the voice.
+signal telegraph_began(where: Vector3)
 signal enemy_spawned(enemy: Node3D)
 ## The archetype travels with the death because the tally outlives the node that carried it.
 signal enemy_died(enemy: Node3D, archetype: StringName, money: int)
@@ -49,6 +57,10 @@ signal rounds_scavenged(rounds: int)
 ## own ammunition.
 signal weapon_dry_fired
 signal weapon_reloaded
+## A round left the barrel, whether or not it found anybody. Fired **per round**, so the double tap
+## cracks twice — and separate from `attack_landed` because a gun that only makes a noise when it
+## hits is a gun the player cannot tell they fired.
+signal weapon_fired(attack: AttackData)
 ## A blow arrived while the player was rolling through it. Distinct from a dodge that merely
 ## happened: the lesson is not the button, it is the moment — and only this says the moment was
 ## right.

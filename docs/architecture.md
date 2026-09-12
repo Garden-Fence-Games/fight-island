@@ -41,6 +41,13 @@ mask = the opposing hurtbox layer. Carries `attack_data: AttackData`, `source: N
 **call-method track** switches it on for the active frames and off afterwards. A per-swing
 `_already_hit: Array[int]` of instance IDs stops one swing hitting twice.
 
+The box is resized per swing, to the reach of the attack being thrown — and **a hitbox duplicates
+its shape on `_ready`** because of it. A `.tscn`'s sub-resources are handed to every instance of
+that scene rather than copied, so thirty-two pooled bodies were resizing one box between them: the
+last one to arm decided how far every open hitbox reached. It is the same trap `DayNight` avoids on
+its `WorldEnvironment`, and the rule is general — **anything that writes to a sub-resource of a
+scene that is instanced more than once must own a copy of it first.**
+
 **`Hurtbox extends Area3D`** — the mirror: `monitoring = false`, `monitorable = true`,
 `collision_layer` = its own hurtbox layer, `mask = 0`. Holds a reference to its `HealthComponent`
 and emits `hurt(info: HitInfo)`.
@@ -86,18 +93,28 @@ keep in sync. A fourth archetype would be a `.tres`, not a branch.
 
 Custom `Resource` classes are the tuning surface. Changing a weapon never touches a script.
 
-- **`AttackData`** — `id`, `damage`, `stamina_cost`, `windup`, `active`, `recovery`,
-  `chain_window: Vector2`, `perfect_window: Vector2`, `perfect_multiplier`, `range`,
-  `arc_degrees`, `stagger`, `poise_damage`, `ammo_cost`, `animation: StringName`, `hitstop`,
-  `sfx`, `vfx`.
-- **`EnemyData`** — `id`, `display_name`, `health`, `damage`, `move_speed`, `attack: AttackData`,
-  `poise`, `money`, `material: StandardMaterial3D`, `is_ranged`, `preferred_range`,
-  `first_wave`.
-- **`WeaponData`** — `id`, `display_name`, `model: PackedScene`, `attacks: Array[AttackData]`,
-  `is_ranged`, `magazine`, `reload_time`, `upgrade_track: UpgradeTrack`, and `clip_suffix` — the
-  ending appended to a locomotion clip while this weapon is held, so `walk` becomes `walk_gun`
-  without the animation component ever learning what a weapon is.
-- **`UpgradeTrack`** — `id`, `display_name`, `icon`, `max_level`, `levels: Array[UpgradeLevel]`.
+- **`AttackData`** — `id`, `display_name`, `damage`, `stagger`, `poise_damage`, `stamina_cost`,
+  `ammo_cost`, `windup`, `active`, `recovery`, `chain_window: Vector2`, `perfect_window: Vector2`,
+  `perfect_multiplier`, `hitstop`, `money_multiplier`, `reach`, `arc_degrees`, `is_hitscan`,
+  `shots`, `charges`, `animation: StringName`, `vfx`.
+  The distance is **`reach`** and not "range", which is a GDScript built-in — and it is measured
+  centre to centre, which is why `Hitbox` adds half a body on top of it.
+- **`EnemyData`** — `id`, `display_name`, `health`, `move_speed`, `poise`, `money`,
+  `attack: AttackData`, `notice_radius`, `rouse_radius`, `attack_range`, `is_ranged`,
+  `preferred_range`, `retreat_range`, `projectile: PackedScene`, `tint`, `first_wave`.
+  **There is no damage here** — a farmer's damage belongs to the swing he throws, so it lives on
+  the `AttackData` and the wave scales it per body.
+- **`WeaponData`** — `id`, `display_name`, `attacks: Array[AttackData]`, `is_ranged`,
+  `found_at_wave`, `clip_suffix`, `chain_lockout`, `perfect_lockout`, `magazine`, `reload_time`,
+  `reserve_start`, `ammo_cap`, `scavenge_chance`.
+  `clip_suffix` is the ending appended to a locomotion clip while this weapon is held, so "walk"
+  becomes "walk_gun" without the animation component ever learning what a weapon is.
+- **`UpgradeTrack`** — `id`, `display_name`, `next_level_key`, `max_health`, `heals_on_purchase`,
+  `max_stamina`, `stamina_regen`, `weapon`, `damage`, `stamina_cost`, `reach`, `magazine`,
+  `reserve`.
+  **Flat fields, not a list of levels.** Every track carries what one level of it is worth and the
+  body computes `base + level × step`, so a track is a step size rather than a table — which is
+  what keeps re-applying an upgrade from drifting, and what makes the level the only thing saved.
 - **`WaveConfig`** — every coefficient from the scaling formulas, exported so waves are tuned in
   the inspector. It also carries the `DayCycle`, because which wave is a night wave is a question
   about the wave table.
@@ -120,9 +137,29 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   logic, no node references. The day phase lives here rather than being reached for through the
   wave director because the sky, the clock, the token pool and every enemy want it, and none of
   them should have to find a director to ask.
-- **`AudioManager`** — the fight's sounds, **synthesised at startup** rather than shipped as files,
-  and a small pool of voices on the `SFX` bus. Genuinely global because a sound outlives the scene
-  that triggered it, and an autoload because every one of these answers a bus signal.
+- **`AudioManager`** — every sound the island makes, **synthesised at startup** rather than shipped
+  as files. Genuinely global because a sound outlives the scene that triggered it, and an autoload
+  because all but one of them answer a bus signal.
+
+  Three tiers, and the division is what keeps the mix legible. **The player's own body** —
+  footfalls, a roll, a reload, a dry trigger — is flat, on the `SFX` bus, and deliberately the
+  quietest thing in the game: it is confirmation, not information. **The world** — a farmer
+  committing, a body going down — is *positional*, on a pool of `AudioStreamPlayer3D`, because a
+  wind-up the player cannot see is the one they most need to hear and a direction is the only thing
+  that makes a crowd answerable. **The bed** — the surf — loops on the `Ambience` bus and is the
+  only sound with no event behind it.
+
+  Loudness is **declared per sound** rather than normalised to one shared peak, and `peak_of`
+  reports what each asked for. It has to be declared: a footfall at a hit's level walks over the
+  fight it is walking through. The mix is therefore an ordering a check can assert — footfall under
+  swing under hit under telegraph — rather than a set of numbers that sounded fine once.
+
+  Two traps are worth knowing, because both are invisible and both were hit. **The anti-click ramp
+  goes on before the peak is measured**: a short sound is loudest a millisecond in, so ramping
+  afterwards eats the sample the normalisation was aimed at. And **the bed does not play in a
+  headless run** — a stream still playing when the engine tears down is reported as a leak, and CI
+  fails a boot on any warning at all. The waveform is still built and assigned, so the loop and its
+  seam stay as checkable as everything else.
 
 **`SaveManager` is deliberately not an autoload.** It is stateless file I/O, so a
 `class_name SaveManager extends RefCounted` with static methods gives the same call site without a
@@ -256,12 +293,21 @@ into it. What it does measure is the side the crowd rules live on.
 `Enemy._separation()`, which is every body against every other, and the hitbox polling
 `get_overlapping_areas()`. Neither is measurable at the budget:
 
-- The whole physics step is **1–2.5 ms against the 16.7 ms a 60 Hz frame has**, from zero bodies to
+- The whole physics step is **1–3 ms against the 16.7 ms a 60 Hz frame has**, from zero bodies to
   forty.
-- The cost does **not** rise with the square of the crowd. An every-body-against-every-other rule
-  only matters if it does.
-- A spatial grid was written, measured against the scan it replaced, and **reverted**: it made no
-  difference at thirty bodies and cost a static cache and more code to say the same thing.
+- The cost **does** rise with the square of the crowd, and the first version of this note said
+  otherwise. The whole-step figure cannot see it: a step is mostly `move_and_slide` and the
+  navigation agents, so a term worth a millisecond hides under them and the total reads flat.
+  Isolated and taken past the budget, the pass costs **17 µs per body at ten bodies and 77 µs per
+  body at sixty** — a per-body cost that climbs with the crowd is the definition of the square
+  term. `stress_enemies` now reports that column and that figure, so the claim is re-measurable
+  rather than a sentence.
+- **It is still not worth fixing**, which is what the original note got right. At the budget of
+  thirty the pass is about 1.3 ms, and a spatial grid was written, measured against the scan it
+  replaced, and **reverted**: it made no difference at thirty bodies and cost a static cache and
+  more code to say the same thing. The decision stands; only its reason changes. *Not quadratic*
+  would have meant never looking again, and the difference matters the day the budget rises —
+  past about sixty bodies the grid wins by roughly four to one.
 
 The run-to-run noise on a busy machine is larger than the gap between no enemies and forty of them,
 which is the most useful single fact here: **nothing on this side is close to the budget**, and the
@@ -321,19 +367,23 @@ check can only watch it fail to. A perfect hit differs from a plain one in **thr
 more debris, thrown further, for longer, plus a brighter flare. Any single difference is one the
 player has to be told about.
 
-**The telegraph is a shape, not a colour.** A ring on the ground under whoever is committing, filling
-as the wind-up runs. Colour alone fails a colourblind player, every greyscale screenshot, and any
-camera far enough away that a tint is a few pixels; a filling ring survives all three. It lies on the
-ground because from this camera the ground under a farmer is always in shot and his chest may not
-be, and the fill is driven by the same number as the wind-up, so the two cannot drift.
+**Nothing draws the wind-up.** There was a ring on the ground under whoever was committing, filling
+as the telegraph ran; it is gone, and the clip that replaces it is not authored yet. The timing is
+untouched — `WindUp` still holds for `enemy.windup()` seconds and every check of that still passes —
+but a player currently reads a wind-up as a farmer who has planted his feet and nothing more. When
+the tell comes back it comes back **on the body**, which is where a rigged enemy carries it: no
+ground decal, and no separate thing to keep in step with the number.
+
+Whatever draws it will still owe the rule the ring was built for: **a shape, not a colour.** Colour
+alone fails a colourblind player, every greyscale screenshot, and any camera far enough away that a
+tint is a few pixels.
 
 ### The accessibility settings are consumers
 
 Three were stored, persisted and shown in the options screen with **nothing reading them**. Two are
-read now:
+read now, and the third — `access_colourblind_telegraphs` — went out with the ring it thickened
+rather than staying on the screen as a switch that moves nothing.
 
-- `access_colourblind_telegraphs` thickens the ring and takes it to full contrast — redundancy on
-  top of a cue that already works, for a player who wants the shape to shout.
 - `access_screen_shake` scales every knock, and **nought means none**. Scaling happens on the camera
   rather than at each emitter, so no emitter has to remember the setting exists.
 - `access_reduce_flashing` damps the flare and **leaves the debris alone**: debris is motion, not
@@ -434,12 +484,79 @@ is fighting, so a field of men who have not noticed anything still holds the wav
 
 **The angle is fixed and never turns**: yaw −45°, pitch −50°, for the whole game. The rig follows
 the player through a damped smooth rather than being parented to them, and the spring arm runs
-**6–16 m** with eased zoom.
+**11–24 m** with eased zoom, opening at 17.
 
 Fixing it is a design decision, not a simplification. Every silhouette reads the same way every
 time; the island only has to be composed for one viewpoint; and a telegraph can never end up behind
 geometry because the player happened to have turned the camera. The cost is that the arena must be
 authored so nothing important sits in the one blind direction.
+
+### The emphasis budget
+
+`scripts/systems/emphasis.gd` is the one table that decides how loud anything in a fight is allowed
+to be, and the one place that turns it into bus signals. Nothing else emits `hitstop_requested` or
+`shake_requested`, so a new emitter cannot invent a figure of its own without coming through it.
+
+`for_hit(perfect, finisher, killed, stop)` takes the **loudest** figure on each channel, never the
+sum: a perfect finisher that kills is one blow. `stop` is the attack's own `hitstop`, which stays in
+the `.tres` beside the damage because a charged shot at 0.18 s and a pistol crack at 0.06 s are
+saying something true about their own weight. The table owns which events spend on which channel,
+how two of them combine, and the ceiling — twelve frames, written in frames because that is the unit
+a stop is felt in.
+
+The figures and why each is what it is live in
+[game-design.md](game-design.md#feel-and-feedback-budget); `tools/verify_feel.tscn` holds the rules.
+
+### Aim assist
+
+`AimComponent.direction()` is where it happens, so the head, the body, the swing and the shot all
+agree about where the player is pointing — a round that landed somewhere the character was visibly
+not facing reads as the game missing on its own.
+
+The nearest body **in angle** to where the player is already pointing, inside a 12° cone and inside
+the reach of the attack in hand, and the aim is turned that way by the share the setting asks for:
+`soft` half of it, `strong` all of it, `off` none. Closest in angle rather than in distance, because
+the player has aimed and the thing they meant is the one nearest that line.
+
+It applies to the mouse as much as to the stick. Aim assist on a mouse is normally an insult; this
+one is an accessibility setting rather than a pad affordance, and somebody who cannot hold a line
+with a mouse needs it exactly as much.
+
+The candidate list is the `enemies` group, which `EnemyDead` leaves the moment a body dies — so
+there is no liveness test here, because one could never fire. Two group scans a frame over at most
+twelve bodies; `tools/stress_enemies.tscn` shows nothing at forty.
+
+### Where the blind side is
+
+Measured rather than asserted, by `tools/verify_view.tscn`, which marches outward from the player
+on 36 bearings and asks the frustum where the ground leaves the frame:
+
+| arm | ground in shot, blind bearing | ground in shot, longest |
+|---|---|---|
+| 11 m (closest the wheel reaches) | 5.2 m | 22.5 m |
+| 17 m (at rest) | 8.5 m | past 30 m |
+| 24 m (furthest) | 12.0 m | past 30 m |
+
+The blind side is **bearing 130°**, down-screen — the strip of ground between the player and the
+camera, which falls off the bottom of the frame. It is very nearly half the arm, whatever the arm
+is, which is what fixes the lower end of the zoom range: a reaper strikes from 2.8 m and covers
+1.8 m more while he winds up, so under **4.6 m** of visible ground his swing begins off-screen.
+Eleven metres is the first step of the wheel clear of that. The floor was six until this was
+measured, and six shows 2.75 m.
+
+Two rules follow from it, and both are checked:
+
+- **A spawn is never in shot** and never closer than 12 m — `SpawnDirector`, held by `verify_waves`.
+  The blind side is where arrivals are supposed to come from.
+- **A weapon pickup always is** — `PickupDirector`, held by `verify_view`, which drops 768 of them
+  from 96 places around the island and fails if one lands where the player has no reason to walk.
+  The question is asked at `WeaponPickup.RESTING_HEIGHT` on both sides: asking about the air a metre
+  over a weapon accepts ground the weapon itself is off the bottom of the frame on, which is how one
+  drop in two hundred was going missing.
+
+The merchant is a screen rather than a body, so the third of issue #39's placement rules has
+nothing to bind. **The thrower test is still open**: he strikes from 14 m, and neither "enough
+sightline to be a threat" nor "enough cover to close on him" has an honest threshold yet.
 
 Occlusion is handled by **fading** what comes between the camera and the player, not by dodging it.
 With a fixed angle the offenders are known at authoring time, which a moving camera could never
@@ -476,7 +593,8 @@ check first so nothing beyond the camera is considered at all.
 
 ## Save format
 
-JSON under `user://`, four files with three lifetimes:
+JSON under `user://`, four files with three lifetimes. A debug build writes a fifth file in the
+same directory, `telemetry.csv`, and it is **not a save** — see *Telemetry* below.
 
 - `settings.json` — every row of the options screen, written the moment it changes
 - `bindings.json` — **overrides only**, so changing a default binding later does not need a
@@ -504,6 +622,39 @@ must not accumulate time nobody spent playing.
 
 **Never `ResourceLoader.load()` from `user://`.** A `.tres` can carry a script path, and that is
 arbitrary code execution on a file the player can edit.
+
+## Telemetry
+
+**`Telemetry`** is a plain `Node` in `main.tscn`, beside `HitFeedback`. It appends one row per wave
+to `user://telemetry.csv` so fifteen waves can be tuned from what players did rather than from what
+the formulas promise: `run, wave, enemies, seconds, outcome, kills, perfect_hits, perfect_parries,
+earned, spent, bought, level`.
+
+Not a fourth autoload, and not `DebugManager` wearing a new name — [ADR 0004](decisions/0004-three-autoloads.md)
+rejected that, and a node in the run scene has exactly the lifetime the record wants. One run is one
+scene, and `_exit_tree` is where the last wave of a victory and the wave a player quits out of both
+leave.
+
+**Debug builds only, and not by a guard at the write.** `_ready` calls `start()` only when
+`OS.is_debug_build()`, so a release build connects no signal and opens no file — the answer to "does
+this ship" is *there is nothing there* rather than *the file stays empty*. Local, no network, no
+prompt; `docs/menus.md` lists a telemetry prompt under what is deliberately absent.
+
+**It counts nothing of its own.** Every figure is the difference between two samples of
+`GameState.stats`, the tally the run summary already reads. A second counter beside that one would
+be a second thing to get wrong, and the two would disagree quietly. The consequence is the failure
+mode worth knowing about: writing the sample instead of the difference gives every wave the sum of
+the ones before it, and wave one — where the two agree — is the row anybody eyeballing the file looks
+at first. `tools/verify_telemetry.tscn` fights two waves with unequal kill counts for that reason.
+
+**The clock is the one figure it measures itself**, accumulated in `_process` rather than taken from
+wall time, so the merchant's pause and the gap between waves are charged to neither wave.
+
+A purchase is filed under the wave that **paid** for it: the merchant opens before the next wave
+starts, so the row is still open when `upgrade_purchased` arrives.
+
+The file is appended with `FileAccess` and read back by nobody — not even to decide whether the
+header is owed, which is a question about existence rather than about contents.
 
 ## Performance budget
 

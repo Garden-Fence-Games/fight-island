@@ -31,6 +31,17 @@ const STICK_DEADZONE: float = 0.25
 ## this the vector is a few pixels of noise pointing anywhere, and following it spins the character
 ## on the spot.
 const MIN_REACH: float = 0.6
+## How far off a body the aim may be and still be pulled onto it. Twelve degrees is about the error
+## a thumb makes on a stick, which is the scale the assist is for; wider and the aim starts choosing
+## targets the player was not looking at, which is worse than missing.
+const ASSIST_CONE: float = 12.0
+## How much of the way to the target each setting pulls. Soft leaves the last half of the error with
+## the player, so a body that was nearly lined up snaps and one that was not still misses. Strong
+## takes all of it, which is what somebody who cannot hold a stick steady actually needs.
+const ASSIST_PULL: Dictionary = {"soft": 0.5, "strong": 1.0}
+## The furthest a target may be when nothing in hand says otherwise — a fist has no reach worth
+## assisting at, and the player may be holding one while a thrower is the only thing on screen.
+const ASSIST_RANGE: float = 25.0
 
 var _device: Device = Device.NOBODY
 var _last_direction: Vector3 = Vector3.ZERO
@@ -53,15 +64,72 @@ func device() -> Device:
 
 
 ## Flat, normalised, and ZERO when the player is not aiming at anything.
+##
+## The assist is applied here rather than at each caller, so the head, the body, the swing and the
+## shot all agree about where the player is pointing. A shot that landed somewhere the character was
+## visibly not facing would read as the game missing on its own.
 func direction() -> Vector3:
 	if _body == null:
 		return Vector3.ZERO
+	var aimed := Vector3.ZERO
 	match _device:
 		Device.STICK:
-			return _stick_direction()
+			aimed = _stick_direction()
 		Device.MOUSE:
-			return _cursor_direction()
-	return Vector3.ZERO
+			aimed = _cursor_direction()
+	if aimed.is_zero_approx():
+		return aimed
+	return _assisted(aimed)
+
+
+## The aim pulled towards the nearest body inside the cone, by whatever share the setting asks for.
+##
+## It applies to the mouse as much as to the stick. Aim assist on a mouse is normally an insult, but
+## this one is an accessibility setting rather than a pad affordance — somebody who cannot hold a
+## line with a mouse needs it exactly as much, and the player asked for it either way.
+func _assisted(aimed: Vector3) -> Vector3:
+	var pull := float(ASSIST_PULL.get(str(Settings.get_value(&"gameplay_aim_assist")), 0.0))
+	if pull <= 0.0:
+		return aimed
+	var target := _nearest_in_the_cone(aimed)
+	if target == Vector3.ZERO:
+		return aimed
+	# Slerp rather than lerp: two directions half a cone apart interpolate through a shorter vector,
+	# and normalising that back out is a turn that speeds up in the middle for no reason.
+	return aimed.slerp(target, pull)
+
+
+## The direction of the body closest in angle to where the player is already pointing, or ZERO when
+## nothing is in the cone. Closest in **angle**, not in distance: the player has aimed, and the
+## thing they most likely meant is the one nearest that line.
+func _nearest_in_the_cone(aimed: Vector3) -> Vector3:
+	var best := Vector3.ZERO
+	var closest := cos(deg_to_rad(ASSIST_CONE))
+	var reach := _reach_in_hand()
+	# The group is the authority on what is alive — `EnemyDead` leaves it the moment a body dies,
+	# before it has finished sinking, so a second liveness test here would be one that can never
+	# fire. `verify_aim` holds that, by killing a farmer and checking the aim lets go of him.
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		var enemy := node as Enemy
+		if enemy == null:
+			continue
+		var to_body := enemy.global_position - _body.global_position
+		to_body.y = 0.0
+		if to_body.length() > reach or to_body.length() < MIN_REACH:
+			continue
+		var lined_up := aimed.dot(to_body.normalized())
+		if lined_up > closest:
+			closest = lined_up
+			best = to_body.normalized()
+	return best
+
+
+## How far the assist looks, taken from the weapon in hand so a pistol reaches across the island and
+## a fist does not drag the body round towards somebody out of reach.
+func _reach_in_hand() -> float:
+	var weapon := GameState.loadout.weapon() if GameState.loadout != null else null
+	var opener := weapon.attack_at(0) if weapon != null else null
+	return minf(opener.reach, ASSIST_RANGE) if opener != null else ASSIST_RANGE
 
 
 ## Where a screen position lands on the ground the body is standing on, or the body itself when the

@@ -60,9 +60,16 @@ func _somewhere_visible(player: Node3D) -> Vector3:
 			continue
 		if fallback == Vector3.INF:
 			fallback = standing
-		if camera == null or camera.is_position_in_frustum(standing + Vector3.UP):
+		if camera == null or _can_be_seen(camera, standing):
 			return standing
 	return fallback
+
+
+## Whether the weapon itself would be in frame, asked at the height it lies at rather than a metre
+## above it. The two differ exactly at the bottom edge of the shot, which is the blind side — so
+## asking about the air over a weapon accepts ground the weapon is not visible on.
+func _can_be_seen(camera: Camera3D, standing: Vector3) -> bool:
+	return camera.is_position_in_frustum(standing + Vector3.UP * WeaponPickup.RESTING_HEIGHT)
 
 
 func _on_wave_started(wave: int, _enemies: int) -> void:

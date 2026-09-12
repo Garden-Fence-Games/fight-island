@@ -24,6 +24,20 @@ const WELL_CLEAR: float = 20.0
 ## gap and not the second, whatever figure the data happens to carry.
 const SHOULDER_TO_SHOULDER: float = 3.0
 const ACROSS_THE_FIELD: float = 25.0
+## Where the second swinger stands while the first one is measured: far enough that its own swing
+## reaches nobody, so the only thing it brings to the measurement is that it armed at all.
+const INTERLOPER_DISTANCE: float = 20.0
+## Where the player waits before stepping into a swing that is already open. Past every reach in the
+## game, so the sweep has demonstrably found nothing before the step.
+const WELL_OUT_OF_REACH: float = 4.0
+## The least invulnerability a roll may grant and still be one. A farmhand's swing is active for
+## 0.12 s; a window shorter than the blow it is meant to answer is decoration. Written out, not read
+## off `PlayerDodge` — a bound taken from the thing it bounds agrees with whatever that thing says.
+const LEAST_INVULNERABILITY: float = 0.2
+## The longest a full bar may keep a player sprinting. A hundred stamina at the shipped drain lasts
+## a little over eight seconds; twenty is generous enough that only a sprint costing nothing reaches
+## it, and it is written out rather than derived from the drain for the usual reason.
+const LONGEST_SPRINT: float = 20.0
 
 var _failures: PackedStringArray = []
 var _player: Player = null
@@ -70,6 +84,10 @@ func _run() -> void:
 	await _check_stopping_early_costs_nothing()
 	await _check_a_perfect_finisher_waits_less()
 	await _check_the_lockout_leaves_the_dodge_alone()
+	await _check_a_dodge_through_a_swing_takes_nothing()
+	await _check_a_dodge_that_starts_too_late_takes_everything()
+	_check_a_roll_outlasts_its_own_invulnerability()
+	await _check_a_sprint_runs_out()
 	await _check_parry_negates()
 	await _check_enemy_closes_and_hits()
 	_check_noticing_is_possible_at_all()
@@ -81,6 +99,7 @@ func _run() -> void:
 	_check_the_two_farmers_differ_in_greyscale()
 	await _check_the_sweep_covers_the_sides_and_nothing_else()
 	await _check_a_sidestep_still_beats_a_farmhand()
+	await _check_one_swing_never_shrinks_another()
 	_check_the_thrower_matches_the_table()
 	_check_the_stone_can_be_sidestepped()
 	await _check_he_backs_away_when_crowded()
@@ -205,6 +224,124 @@ func _check_the_lockout_leaves_the_dodge_alone() -> void:
 	if _player.machine.current_name != &"Dodge":
 		_fail("the lockout should not stop the player dodging")
 	await _advance(PlayerDodge.DURATION + _player.lockout_left() + 0.05)
+
+
+## The dodge is one of the two defensive tools and **nothing was holding the half that matters**.
+## Setting `IFRAME_LENGTH` to nought passed every check in the project: the roll still moved, still
+## went where the keys said, still survived the lockout, and no longer avoided anything.
+##
+## Measured through a real blow, at the middle of the window, so it is the invulnerability being
+## checked and not the fact that a rolling body has moved out of reach — the farmer's swing is
+## applied straight to the hurtbox from where he stands.
+func _check_a_dodge_through_a_swing_takes_nothing() -> void:
+	_reset_player()
+	var before := _player.health.current_health
+	_player.machine.current.transition_to(&"Dodge")
+	await _advance(PlayerDodge.IFRAME_START + PlayerDodge.IFRAME_LENGTH * 0.5)
+	if _player.machine.current_name != &"Dodge":
+		_fail("the roll was over before its own invulnerability window opened")
+		return
+	_swing_at_the_player()
+	await get_tree().physics_frame
+	if _player.health.current_health < before:
+		_fail(
+			(
+				(
+					"a swing landed for %.1f in the middle of a roll — the dodge grants no "
+					+ "invulnerability at all"
+				)
+				% (before - _player.health.current_health)
+			)
+		)
+	await _advance(PlayerDodge.DURATION)
+
+
+## And the other half, or the check above would pass on a player who is simply never hurt. A blow
+## that arrives before the window opens has to land.
+func _check_a_dodge_that_starts_too_late_takes_everything() -> void:
+	_reset_player()
+	var before := _player.health.current_health
+	_player.machine.current.transition_to(&"Dodge")
+	await get_tree().physics_frame
+	_swing_at_the_player()
+	await get_tree().physics_frame
+	if is_equal_approx(_player.health.current_health, before):
+		_fail("a swing on the first frame of a roll was refused — the window opens late on purpose")
+	await _advance(PlayerDodge.DURATION)
+
+
+## A roll that ends before its own invulnerability opens is a roll with none, and the figures are
+## far enough apart that nothing but a mistake closes the gap. Written out rather than compared to
+## each other, so shrinking the roll to nothing fails here rather than moving the bound with it.
+func _check_a_roll_outlasts_its_own_invulnerability() -> void:
+	var opens := PlayerDodge.IFRAME_START
+	var closes := opens + PlayerDodge.IFRAME_LENGTH
+	if closes > PlayerDodge.DURATION:
+		_fail(
+			(
+				(
+					"the roll lasts %.2f s and its invulnerability runs to %.2f s — it ends inside "
+					+ "the window it is supposed to contain"
+				)
+				% [PlayerDodge.DURATION, closes]
+			)
+		)
+	if PlayerDodge.IFRAME_LENGTH < LEAST_INVULNERABILITY:
+		_fail(
+			(
+				(
+					"a roll is invulnerable for %.2f s, and a farmer's swing is active for %.2f s — "
+					+ "a window shorter than the blow is not a dodge"
+				)
+				% [PlayerDodge.IFRAME_LENGTH, LEAST_INVULNERABILITY]
+			)
+		)
+
+
+## Sprinting has to end on its own. The design rests on it: a walking player cannot break away from
+## a farmhand, so retreat costs breath rather than being the default state — and `SPRINT_DRAIN` set
+## to nought passed every check in the project, leaving a player who outruns the wave for ever.
+##
+## Measured by running until the state gives up rather than by reading the drain rate back, so the
+## figure being held is the one the player feels.
+func _check_a_sprint_runs_out() -> void:
+	_reset_player()
+	# Both held for the whole run. The state asks `move_direction` and `wants_sprint` every frame and
+	# drops back to Move the instant either says no — a first version pressed neither and reported a
+	# sprint that ended with a full bar, which is a check testing its own missing input.
+	Input.action_press(&"move_forward")
+	Input.action_press(&"sprint")
+	await get_tree().physics_frame
+	_player.machine.current.transition_to(&"Sprint")
+	var ran := 0.0
+	while _player.machine.current_name == &"Sprint" and ran < LONGEST_SPRINT:
+		await get_tree().physics_frame
+		ran += 1.0 / 60.0
+	Input.action_release(&"sprint")
+	Input.action_release(&"move_forward")
+	if ran >= LONGEST_SPRINT:
+		_fail(
+			(
+				(
+					"the player sprinted for %.0f s without running out of breath — a sprint that "
+					+ "costs nothing is a walk speed"
+				)
+				% LONGEST_SPRINT
+			)
+		)
+	if _player.stamina != null and _player.stamina.has(1.0):
+		_fail(
+			(
+				"the sprint ended with %.0f stamina left, so something other than breath ended it"
+				% _player.stamina.current_stamina
+			)
+		)
+
+
+## A farmer's swing, applied where he stands rather than by walking him into range: this is about
+## what the hurtbox does with a blow, not about whether he can reach.
+func _swing_at_the_player() -> void:
+	_player.hurtbox.take_hit(HitInfo.new(_enemy.data.attack, _enemy, false, 1.0))
 
 
 ## Plays a finisher through to its recovery and returns what the bus announced, so the check reads
@@ -377,8 +514,9 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"combat OK — hit, perfect, chain, lockout, parry, the reaper's arc, the thrower's stone, "
-				+ "a combo finished for double money, and a farmer who waits until he notices you"
+				"combat OK — hit, perfect, chain, lockout, parry, the reaper's arc through a second "
+				+ "man's swing, the thrower's stone, a combo finished for double money, and a "
+				+ "farmer who waits until he notices you"
 			)
 		)
 		get_tree().quit(0)
@@ -590,6 +728,30 @@ func _check_a_sidestep_still_beats_a_farmhand() -> void:
 	_hold_still(_enemy, false)
 
 
+## **Two bodies swinging at once, and neither one's reach is the other's.** The melee pool is two by
+## day and three at night, so from wave 3 — where the reaper joins the band beside the farmhand —
+## this is an ordinary fight rather than a corner of one.
+##
+## It is the one case a check that arms a single hitbox cannot see, and it is the case that was
+## broken: the box `_fit_to` resizes came out of the enemy scene as a sub-resource, and a scene
+## sub-resource is handed to every instance rather than copied, so all thirty-two pooled bodies
+## shared one. A farmhand arming during the reaper's active frames pulled that box in to its own
+## 1.6 m, and a player stepping inside the scythe's 2.8 m after that was never reported to it.
+func _check_one_swing_never_shrinks_another() -> void:
+	var reaper := _lease(REAPER)
+	if reaper == null:
+		_fail("could not lease a reaper")
+		return
+	_hold_still(reaper, true)
+	_hold_still(_enemy, true)
+	var caught := await _swing_catches_a_player_who_steps_in(reaper, 2.6, _enemy)
+	_hold_still(_enemy, false)
+	_hold_still(reaper, false)
+	reaper.retire()
+	if not caught:
+		_fail("a farmhand arming mid-sweep took the reaper's reach down to its own")
+
+
 ## Stops a body thinking for the length of a measurement, and it has to cover **all** of it rather
 ## than one bearing at a time. Left running between two bearings, a farmer two metres away notices
 ## the player, closes and lands a swing of his own — which grants the player i-frames, so the next
@@ -623,6 +785,38 @@ func _swing_reaches(enemy: Enemy, degrees: float, metres: float) -> bool:
 	var before := _player.health.current_health
 	enemy.hitbox.arm(enemy.data.attack, enemy, false)
 	await _advance(enemy.data.attack.active + 0.05)
+	enemy.hitbox.disarm()
+	return _player.health.current_health < before
+
+
+## Whether a swing already open catches a player who walks into it, while a second body arms a swing
+## of its own in between.
+##
+## The arrival is the point. A player standing in the arc when the hitbox opens is hit on the first
+## frame, before anything else has had a chance to touch the swing — so that ordering proves
+## nothing. `_within_the_swing` deliberately keeps a missed body eligible for the rest of the sweep,
+## and this is the window in which the reach the weapon claims has to still be the reach it has.
+##
+## The interloper is parked where nothing it does can reach anybody: the only thing it contributes
+## to the measurement is the fact of having armed.
+func _swing_catches_a_player_who_steps_in(enemy: Enemy, metres: float, interloper: Enemy) -> bool:
+	_reset_player()
+	await _advance(_player.health.hit_invulnerability + 0.1)
+	enemy.global_position = Vector3.ZERO
+	enemy.rotation.y = 0.0
+	interloper.global_position = Vector3(0.0, 0.0, INTERLOPER_DISTANCE)
+	_player.global_position = Vector3(0.0, 0.0, -WELL_OUT_OF_REACH)
+	await get_tree().physics_frame
+	var before := _player.health.current_health
+	enemy.hitbox.arm(enemy.data.attack, enemy, false)
+	# Two frames with nobody in range, so the swing is unambiguously open and has already found
+	# nothing — one is not enough to tell an empty arc from an overlap the server has yet to report.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	interloper.hitbox.arm(interloper.data.attack, interloper, false)
+	_player.global_position = Vector3(0.0, 0.0, -metres)
+	await _advance(enemy.data.attack.active)
+	interloper.hitbox.disarm()
 	enemy.hitbox.disarm()
 	return _player.health.current_health < before
 
