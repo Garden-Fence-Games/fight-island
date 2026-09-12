@@ -6,7 +6,7 @@
 script = ExtResource("1")
 id = &"dusk"
 display_name = "PHASE_DUSK"
-starts_at_hour = 19.0
+starts_at_hour = 18.0
 seconds = 30.0
 damage_scale = 1.10
 windup_scale = 0.95

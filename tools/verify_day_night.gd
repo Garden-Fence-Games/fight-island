@@ -1,5 +1,5 @@
 extends Node
-## Headless proof that a wave is a turn of the day: it opens in daylight, ends in the dark, the
+## Headless proof that a wave is a turn of the day: it opens at daybreak, ends in the dark, the
 ## clock only goes forward, and night is meaner without being darker than a telegraph can be read.
 ##
 ## The table below is `docs/game-design.md` written out by hand. Reading the numbers off the
@@ -31,9 +31,18 @@ const PATIENCE: float = 10.0
 
 const TABLE: Array[Dictionary] = [
 	{
-		"id": &"day",
-		"seconds": 165.0,
+		"id": &"dawn",
+		"seconds": 30.0,
 		"hour": 7.0,
+		"damage": 1.0,
+		"windup": 1.0,
+		"rouse": 1.0,
+		"tokens": 2,
+	},
+	{
+		"id": &"day",
+		"seconds": 135.0,
+		"hour": 9.0,
 		"damage": 1.0,
 		"windup": 1.0,
 		"rouse": 1.0,
@@ -42,7 +51,7 @@ const TABLE: Array[Dictionary] = [
 	{
 		"id": &"dusk",
 		"seconds": 30.0,
-		"hour": 19.0,
+		"hour": 18.0,
 		"damage": 1.1,
 		"windup": 0.95,
 		"rouse": 1.4,
@@ -51,7 +60,7 @@ const TABLE: Array[Dictionary] = [
 	{
 		"id": &"night",
 		"seconds": 165.0,
-		"hour": 21.0,
+		"hour": 19.0,
 		"damage": 1.25,
 		"windup": 0.88,
 		"rouse": 2.0,
@@ -87,7 +96,8 @@ func _run() -> void:
 	_check_the_phases_match_the_table()
 	_check_a_wave_is_six_minutes()
 	_check_the_turn_is_a_whole_day()
-	_check_a_wave_opens_in_daylight_and_ends_in_the_dark()
+	_check_a_wave_opens_at_daybreak_and_ends_in_the_dark()
+	_check_the_turn_only_ever_gets_meaner()
 	_check_the_clock_only_goes_forward()
 	_check_the_clock_lands_on_the_boundaries()
 	_check_the_telegraph_floor_wins()
@@ -161,13 +171,36 @@ func _check_the_turn_is_a_whole_day() -> void:
 
 
 ## The shape of the whole design in two assertions: a wave is a ramp the player can see coming.
-func _check_a_wave_opens_in_daylight_and_ends_in_the_dark() -> void:
+func _check_a_wave_opens_at_daybreak_and_ends_in_the_dark() -> void:
 	var opens := _cycle.phase_at(0.0)
 	var closes := _cycle.phase_at(_cycle.wave_seconds() - 0.01)
-	if opens == null or opens.id != &"day":
-		_fail("a wave should open in daylight, opens on %s" % [opens.id if opens else &"nothing"])
+	if opens == null or opens.id != &"dawn":
+		_fail("a wave should open at daybreak, opens on %s" % [opens.id if opens else &"nothing"])
 	if closes == null or closes.id != &"night":
 		_fail("a wave should end in the dark, ends on %s" % [closes.id if closes else &"nothing"])
+
+
+## **The turn only ever gets meaner.** Ordered across the table rather than pinned to named phases,
+## so a phase inserted for its look alone has to sit where its rules already belong — a dawn that
+## hits like dusk is a wave that opens on its own second half, and no single number in the table
+## looks wrong on the way there.
+func _check_the_turn_only_ever_gets_meaner() -> void:
+	for index: int in range(1, _cycle.phases.size()):
+		var earlier: DayPhase = _cycle.phases[index - 1]
+		var later: DayPhase = _cycle.phases[index]
+		var order := "%s then %s" % [earlier.id, later.id]
+		_never_eases("%s: damage" % order, earlier.damage_scale, later.damage_scale)
+		# The telegraph is the one that runs the other way: a shorter wind-up is a harder fight.
+		_never_eases("%s: telegraph" % order, later.windup_scale, earlier.windup_scale)
+		_never_eases("%s: rousing" % order, earlier.rouse_scale, later.rouse_scale)
+		_never_eases(
+			"%s: melee tokens" % order, float(earlier.melee_tokens), float(later.melee_tokens)
+		)
+
+
+func _never_eases(what: String, earlier: float, later: float) -> void:
+	if later < earlier - 0.001:
+		_fail("%s goes backwards, %.3f after %.3f" % [what, later, earlier])
 
 
 ## Sampled through a whole wave. A clock that runs backwards is the one thing a clock may never do,
@@ -190,11 +223,15 @@ func _check_the_clock_only_goes_forward() -> void:
 
 ## Exact at the ends: each phase starts on its own hour. Anything else and the clock and the sky
 ## disagree about the moment night falls.
+##
+## Walked over the *table's* seconds against the *table's* hours, never the resource's. Asking the
+## cycle when its own phases open is a question it cannot get wrong — `hour_at` reads the same two
+## fields the answer would be compared against — so it would print OK for any pair of numbers.
 func _check_the_clock_lands_on_the_boundaries() -> void:
-	_same("a wave starts at", _cycle.hour_at(0.0), _phase(&"day").starts_at_hour)
-	_same("dusk arrives at", _cycle.hour_at(_phase(&"day").seconds), _phase(&"dusk").starts_at_hour)
-	var into_night := _phase(&"day").seconds + _phase(&"dusk").seconds
-	_same("night falls at", _cycle.hour_at(into_night), _phase(&"night").starts_at_hour)
+	var opens := 0.0
+	for row: Dictionary in TABLE:
+		_same("%s arrives at" % row["id"], _cycle.hour_at(opens), row["hour"])
+		opens += row["seconds"] as float
 
 
 ## Night shortens the telegraph before the floor, never after it. Clamping first and scaling second
@@ -335,7 +372,7 @@ func _check_a_sky_with_nobody_driving_it_opens_at_daybreak() -> void:
 	var lone := (load(SKY) as PackedScene).instantiate()
 	add_child(lone)
 	var opens := _cycle.phase_at(GameState.day_elapsed)
-	if opens == null or opens.id != &"day":
+	if opens == null or opens.id != &"dawn":
 		_fail("a sky with nobody driving it opens on %s" % [opens.id if opens else &"nothing"])
 	lone.queue_free()
 

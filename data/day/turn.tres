@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="DayCycle" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="DayCycle" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/day_cycle.gd" id="1"]
-[ext_resource type="Resource" path="res://data/day/day.tres" id="2"]
-[ext_resource type="Resource" path="res://data/day/dusk.tres" id="3"]
-[ext_resource type="Resource" path="res://data/day/night.tres" id="4"]
+[ext_resource type="Resource" path="res://data/day/dawn.tres" id="2"]
+[ext_resource type="Resource" path="res://data/day/day.tres" id="3"]
+[ext_resource type="Resource" path="res://data/day/dusk.tres" id="4"]
+[ext_resource type="Resource" path="res://data/day/night.tres" id="5"]
 
 [resource]
 script = ExtResource("1")
-phases = Array[ExtResource("2")]([ExtResource("2"), ExtResource("3"), ExtResource("4")])
+phases = Array[ExtResource("2")]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5")])
