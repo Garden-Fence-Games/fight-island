@@ -11,7 +11,13 @@ const NORMAL_COLOR: Color = Color(1.0, 0.58, 0.3)
 ## What the body goes while it cannot attack. Drained rather than tinted a new colour: the player
 ## reads "spent" off it without having to learn what a colour means, and it cannot be mistaken for
 ## the damage flash, which goes the other way.
-const SPENT_COLOR: Color = Color(0.2, 0.28, 0.36)
+##
+## **It multiplies a texture, so it cannot be read as a colour on its own.** These numbers were
+## chosen against a white capsule, where 0.2 was a slate blue. The same value over the rig's albedo
+## map takes the character to a fifth of his own brightness, which is not a drained man — it is a
+## silhouette, and the third punch of every combo turned the player black. Dulled and cooled to a
+## bit over half, which still reads as spent on a body that is already coloured.
+const SPENT_COLOR: Color = Color(0.52, 0.58, 0.68)
 const SPENT_FADE: float = 0.06
 const READY_FADE: float = 0.14
 
