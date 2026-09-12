@@ -12,6 +12,7 @@ display_name = "Gun"
 attacks = [ExtResource("2"), ExtResource("3"), ExtResource("4")]
 is_ranged = true
 found_at_wave = 4
+clip_suffix = &"_gun"
 chain_lockout = 0.0
 perfect_lockout = 0.0
 magazine = 6

@@ -10,6 +10,14 @@ extends Resource
 ## which is the fists — they are never not in hand. The number lives here rather than in a director
 ## because *when the stick turns up* is a fact about the stick.
 @export var found_at_wave: int = 0
+## Appended to a locomotion clip's name while this weapon is held — `_gun` turns `walk` into
+## `walk_gun`. Empty for a weapon carried the way the base cycles were authored, which is the fists
+## and, for now, the stick.
+##
+## A clip-name fragment rather than a set of clip names, because the rig arrives one animation at a
+## time: a variant that has not been authored is silently skipped, so naming the whole set here
+## would mean listing clips that do not exist and pretending they do.
+@export var clip_suffix: StringName = &""
 
 @export_group("Chain")
 ## How long after a full chain before the player may attack again, measured from the end of the

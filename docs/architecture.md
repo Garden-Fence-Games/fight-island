@@ -94,7 +94,9 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   `poise`, `money`, `material: StandardMaterial3D`, `is_ranged`, `preferred_range`,
   `first_wave`.
 - **`WeaponData`** — `id`, `display_name`, `model: PackedScene`, `attacks: Array[AttackData]`,
-  `is_ranged`, `magazine`, `reload_time`, `upgrade_track: UpgradeTrack`.
+  `is_ranged`, `magazine`, `reload_time`, `upgrade_track: UpgradeTrack`, and `clip_suffix` — the
+  ending appended to a locomotion clip while this weapon is held, so `walk` becomes `walk_gun`
+  without the animation component ever learning what a weapon is.
 - **`UpgradeTrack`** — `id`, `display_name`, `icon`, `max_level`, `levels: Array[UpgradeLevel]`.
 - **`WaveConfig`** — every coefficient from the scaling formulas, exported so waves are tuned in
   the inspector. It also carries the `DayCycle`, because which wave is a night wave is a question

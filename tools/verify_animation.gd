@@ -60,6 +60,7 @@ func _run() -> void:
 	await _check_idle_plays_idle(machine, anim)
 	await _check_clipless_state_rests(anim)
 	await _check_sprint_runs_the_walk_faster(anim)
+	await _check_a_gun_in_hand_changes_the_cycle(machine, anim)
 	_check_the_body_can_be_tinted(player)
 	await _check_the_fist_combo_animates(player, machine, anim)
 	_check_the_gun_starts_hidden(player)
@@ -192,6 +193,57 @@ func _check_sprint_runs_the_walk_faster(anim: AnimationComponent) -> void:
 		)
 
 
+## The gun is modelled into the skeleton, so `walk_gun` and `idle_gun` are the same body carrying
+## it. Four claims, and the last two are the ones that would rot quietly:
+##
+## The swap lands **while the player is already walking**, without waiting for a transition. And a
+## variant the rig does not carry falls back to the plain clip rather than to nothing — the stick
+## has no cycles of its own, and a weapon with a walk authored and no idle must still have an idle.
+func _check_a_gun_in_hand_changes_the_cycle(
+	machine: StateMachine, anim: AnimationComponent
+) -> void:
+	var gun := load("res://data/weapons/gun.tres") as WeaponData
+	if gun == null or gun.clip_suffix == &"":
+		_fail("the gun should name a locomotion suffix")
+		return
+	for clip: String in ["walk_gun", "idle_gun"]:
+		if not anim.animation_player.has_animation(clip):
+			_fail("the rig carries no clip named %s" % clip)
+			return
+
+	Input.action_press(&"move_forward")
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	if anim.current_clip() != &"walk":
+		_fail("empty-handed walking plays %s, expected walk" % anim.current_clip())
+
+	# Equipped mid-stride: the stride has to change here, not at the next transition.
+	EventBus.weapon_equipped.emit(gun)
+	await get_tree().physics_frame
+	if machine.current_name != &"Move":
+		_fail("picking a gun up should not have left Move, went to %s" % machine.current_name)
+	if anim.current_clip() != &"walk_gun":
+		_fail("walking with a gun plays %s, expected walk_gun" % anim.current_clip())
+
+	Input.action_release(&"move_forward")
+	for _frame: int in SETTLE_FRAMES:
+		await get_tree().physics_frame
+	if anim.current_clip() != &"idle_gun":
+		_fail("standing with a gun plays %s, expected idle_gun" % anim.current_clip())
+
+	# A suffix the rig knows nothing about must not silence the body.
+	anim.clip_suffix = &"_hoe"
+	await get_tree().physics_frame
+	if anim.current_clip() != &"idle":
+		_fail("an unauthored variant plays %s, expected a fallback to idle" % anim.current_clip())
+
+	var fists := load("res://data/weapons/fists.tres") as WeaponData
+	EventBus.weapon_equipped.emit(fists)
+	await get_tree().physics_frame
+	if anim.current_clip() != &"idle":
+		_fail("back to fists plays %s, expected idle" % anim.current_clip())
+
+
 ## `HitFeedback` drains the body's colour while a chain is spent, and it lives in `main.tscn` — so
 ## nothing that loads only the arena instantiates it, and the day the capsule became a rig the
 ## property it reached through vanished with no test to notice. This is that test.
@@ -305,6 +357,7 @@ func _report() -> void:
 				"animation OK — the cycles loop, Move walks past one cycle, Idle idles, "
 				+ "Sprint runs the same cycle faster, "
 				+ "the three punches play their own clip at the attack's speed, "
+				+ "a gun in hand carries the body differently, "
 				+ "the gun stays hidden, the body can be tinted"
 			)
 		)
