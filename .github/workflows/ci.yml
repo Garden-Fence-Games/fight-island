@@ -152,6 +152,12 @@ jobs:
       - name: Verify navigation
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_navigation.tscn
 
+      # The turn of the day is a wave coefficient and a look at once, and the two are easy to drift
+      # apart. This asserts the phases tile a whole day, that the clock only ever goes forward, and
+      # that night is meaner without being darker than a telegraph can be read through.
+      - name: Verify day and night
+        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_day_night.tscn
+
       # The renderer draws nothing here, so this asserts which occluder should fade and by how much
       # — the decision — rather than the pixels. The dither that turns a fade into holes has no
       # decisions in it.

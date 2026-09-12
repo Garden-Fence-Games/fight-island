@@ -10,8 +10,12 @@ extends Node
 
 const ARENA: String = "res://scenes/world/arena.tscn"
 const CONFIG: String = "res://data/waves/standard.tres"
-## Long enough for a four-body wave at one every 0.6 s, with room for a few refused points.
+## Long enough for a shortened wave to run its day and its night, with room for refused points.
 const WAVE_PATIENCE: float = 12.0
+## A wave is six minutes of real time, which is not a thing a headless check can sit through. The
+## cycle is shrunk to this and the proportions of its phases are kept, so what is checked is the
+## rule — the wave ends when its night does — and not the number.
+const A_QUICK_WAVE: float = 2.4
 ## How many points the spawn search is asked for. Not a sample — the search.
 const POINTS: int = 200
 ## The rule, written out rather than read off the class being checked. Reading SpawnDirector's own
@@ -27,6 +31,7 @@ var _player: Player = null
 var _director: WaveDirector = null
 var _spawns: Array[Vector3] = []
 var _cleared: Array = []
+var _kept_run: Dictionary = {}
 
 
 func _ready() -> void:
@@ -34,6 +39,9 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	# Passing a wave writes a save. Whatever this machine already had goes back at the end: a check
+	# that eats the developer's run is worse than no check.
+	_kept_run = SaveManager.read_json(SaveManager.RUN_PATH)
 	_check_the_formulas_match_the_table()
 	_check_the_cost_curve()
 	_check_a_run_affords_about_two_tracks()
@@ -60,7 +68,15 @@ func _run() -> void:
 	await _check_a_wave_arrives_and_clears()
 	_check_nothing_spawned_in_shot_or_underfoot()
 	_check_the_bodies_were_reused()
+	_put_the_run_back()
 	_report()
+
+
+func _put_the_run_back() -> void:
+	if _kept_run.is_empty():
+		SaveManager.clear_run()
+		return
+	SaveManager.write_json(SaveManager.RUN_PATH, _kept_run)
 
 
 ## Nothing can be spawned before the navigation map answers, so waiting for it is part of the
@@ -85,7 +101,7 @@ func _check_the_formulas_match_the_table() -> void:
 	if config == null:
 		_fail("there is no wave configuration to check")
 		return
-	for pair: Array in [[1, 4], [5, 11], [10, 19], [15, 27]]:
+	for pair: Array in [[1, 18], [5, 42], [10, 72], [15, 102]]:
 		var got := config.enemy_count(int(pair[0]))
 		if got != int(pair[1]):
 			_fail("wave %d should send %d enemies, sends %d" % [pair[0], pair[1], got])
@@ -120,16 +136,17 @@ func _check_the_formulas_match_the_table() -> void:
 		_fail("a band should still pick an archetype when only some of them exist")
 
 
-## The whole loop, once: the wave arrives a body at a time, never overcrowds, and pays out when the
-## last one goes down.
+## The whole loop, once: bodies arrive to fill the island, never more than the table allows at a
+## time, and the wave pays out when its night is over rather than when the last body falls.
 func _check_a_wave_arrives_and_clears() -> void:
 	var config := _director.config
-	var wanted := config.enemy_count(1)
 	var ceiling := config.max_alive(1)
+	_director.config = _shortened(config, A_QUICK_WAVE)
+	var purse := GameState.money
 	_director.start_wave(1)
 
 	var waited := 0.0
-	while _spawns.size() < wanted and waited < WAVE_PATIENCE:
+	while _cleared.is_empty() and waited < WAVE_PATIENCE:
 		await get_tree().physics_frame
 		waited += 1.0 / 60.0
 		if _director.spawner.alive_count() > ceiling:
@@ -137,24 +154,42 @@ func _check_a_wave_arrives_and_clears() -> void:
 				"wave 1 had %d alive, the most is %d" % [_director.spawner.alive_count(), ceiling]
 			)
 			return
-	if _spawns.size() != wanted:
-		_fail("wave 1 should send %d, sent %d in %.0f s" % [wanted, _spawns.size(), WAVE_PATIENCE])
-		return
-
-	var purse := GameState.money
-	_kill_everything()
-	await get_tree().physics_frame
-	await get_tree().physics_frame
 	if _cleared.is_empty():
-		_fail("killing the last enemy should clear the wave")
+		_fail("a wave should end when its night does, %.1f s passed" % WAVE_PATIENCE)
 		return
+	if _spawns.is_empty():
+		_fail("a wave should put somebody on the island")
+		return
+	# Nobody was killed, so the wave was passed on time. Bodies still standing are sent home.
+	if _director.spawner.alive_count() > 0:
+		_fail(
+			"a passed wave should leave nobody standing, left %d" % _director.spawner.alive_count()
+		)
 	var paid: int = _cleared[0][1]
 	var due := config.reward_for(1, true)
 	if paid != due:
 		_fail("an untouched wave 1 should pay %d, paid %d" % [due, paid])
-	_check_the_money_reached_the_wallet(purse, paid, wanted)
+	_check_the_money_reached_the_wallet(purse, paid, 0)
 	if not _director.is_running() and _director.wave != 1:
 		_fail("the director should still be on wave 1 until the breather ends")
+
+
+## The same wave, with its day and its night squeezed into a couple of seconds. The proportions are
+## kept, so a phase that is half the wave is still half of it.
+func _shortened(config: WaveConfig, seconds: float) -> WaveConfig:
+	var quick := config.duplicate() as WaveConfig
+	if config.cycle == null or config.cycle.wave_seconds() <= 0.0:
+		return quick
+	var whole := config.cycle.wave_seconds()
+	var cycle := DayCycle.new()
+	var phases: Array[DayPhase] = []
+	for phase: DayPhase in config.cycle.phases:
+		var brief := phase.duplicate() as DayPhase
+		brief.seconds = seconds * phase.seconds / whole
+		phases.append(brief)
+	cycle.phases = phases
+	quick.cycle = cycle
+	return quick
 
 
 ## The rules, asserted against the search itself rather than against the handful of points one wave
@@ -221,17 +256,7 @@ func _check_the_bodies_were_reused() -> void:
 		_fail("the spawn director has no pool")
 		return
 	if pool.made_count() != EnemyPool.SIZE:
-		_fail("the pool made %d bodies for a four-enemy wave" % pool.made_count())
-
-
-func _kill_everything() -> void:
-	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
-		var enemy := node as Enemy
-		if enemy == null or enemy.health == null:
-			continue
-		var killing := HitInfo.new()
-		killing.damage = enemy.health.max_health * 2.0
-		enemy.health.apply(killing)
+		_fail("the pool made %d bodies rather than leasing them" % pool.made_count())
 
 
 func _on_enemy_spawned(enemy: Node3D) -> void:

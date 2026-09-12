@@ -9,10 +9,17 @@ const DAMAGE_RISE: float = 56.0
 const DAMAGE_LIFE: float = 0.7
 const DAMAGE_HEIGHT: float = 1.6
 const LOW_HEALTH: float = 0.35
+const MINUTES_IN_AN_HOUR: float = 60.0
+## How long "wave one passed" stays up. Long enough to read at a glance while the merchant is
+## opening behind it, short enough not to sit over the first farmer of the next wave.
+const BANNER_LIFE: float = 2.2
+const BANNER_FADE: float = 0.4
 
 @onready var wave_chip: PanelContainer = $Root/TopRight/WaveChip
 @onready var wave: Label = $Root/TopRight/WaveChip/Wave
 @onready var money: Label = $Root/TopRight/MoneyChip/Money
+@onready var clock: Label = $Root/TopRight/ClockChip/Clock
+@onready var banner: Label = $Root/Banner
 @onready var health_bar: ProgressBar = $Root/BottomLeft/Health/Bar
 @onready var health_value: Label = $Root/BottomLeft/Health/Row/Value
 @onready var stamina_bar: ProgressBar = $Root/BottomLeft/Stamina/Bar
@@ -33,6 +40,7 @@ func _ready() -> void:
 	EventBus.stamina_changed.connect(_on_stamina_changed)
 	GameState.money_changed.connect(_on_money_changed)
 	EventBus.wave_started.connect(_on_wave_started)
+	EventBus.wave_cleared.connect(_on_wave_cleared)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	EventBus.ammo_changed.connect(_on_ammo_changed)
 	EventBus.attack_landed.connect(_on_attack_landed)
@@ -42,6 +50,13 @@ func _ready() -> void:
 		caption.text = tr(caption.text).to_upper()
 	_on_money_changed(GameState.money, 0)
 	_on_wave_started(GameState.wave, 0)
+
+
+## Polled rather than signalled: the hour moves every frame that a farmer is falling over, and a
+## signal per frame is a signal nobody wants. Rounded to the minute, so the face ticks.
+func _process(_delta: float) -> void:
+	var minutes := roundi(GameState.hour * MINUTES_IN_AN_HOUR)
+	clock.text = "%02d:%02d" % [(minutes / 60) % 24, minutes % 60]
 
 
 func _on_player_damaged(current: float, maximum: float) -> void:
@@ -68,6 +83,16 @@ func _on_money_changed(balance: int, _delta: int) -> void:
 func _on_wave_started(index: int, _enemies: int) -> void:
 	wave_chip.visible = index >= 1
 	wave.text = (tr("HUD_WAVE") % index).to_upper()
+
+
+## The one thing in the HUD that announces rather than reports. It is the whole reward for surviving
+## a night, so it is allowed to be the biggest text on screen for two seconds.
+func _on_wave_cleared(index: int, _reward: int) -> void:
+	banner.text = (tr("HUD_WAVE_PASSED") % index).to_upper()
+	banner.modulate.a = 1.0
+	var tween := create_tween()
+	tween.tween_interval(BANNER_LIFE)
+	tween.tween_property(banner, "modulate:a", 0.0, BANNER_FADE)
 
 
 ## Ammo is the one panel that comes and goes, and the weapon decides — a melee player never sees

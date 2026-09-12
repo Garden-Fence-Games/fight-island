@@ -54,6 +54,19 @@ theme_type_variation = &"HudMoney"
 text = "$0"
 auto_translate_mode = 2
 
+[node name="ClockChip" type="PanelContainer" parent="Root/TopRight"]
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+theme_type_variation = &"HudChipMoney"
+
+[node name="Clock" type="Label" parent="Root/TopRight/ClockChip"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"HudLabel"
+text = "07:00"
+auto_translate_mode = 2
+
 [node name="BottomLeft" type="VBoxContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 2
@@ -204,6 +217,27 @@ mouse_filter = 2
 theme_type_variation = &"AmmoReserve"
 text = "0"
 auto_translate_mode = 2
+
+[node name="Banner" type="Label" parent="Root"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -420.0
+offset_top = -220.0
+offset_right = 420.0
+offset_bottom = -140.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_type_variation = &"HudBanner"
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "WAVE 01 PASSED"
+auto_translate_mode = 2
+modulate = Color(1, 1, 1, 0)
 
 [node name="Numbers" type="Control" parent="Root"]
 layout_mode = 1
