@@ -118,8 +118,9 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   logic, no node references. The day phase lives here rather than being reached for through the
   wave director because the sky, the clock, the token pool and every enemy want it, and none of
   them should have to find a director to ask.
-- **`AudioManager`** — bus setup, a pool of `AudioStreamPlayer3D`, music crossfade. Genuinely
-  global because a sound outlives the scene that triggered it.
+- **`AudioManager`** — the fight's sounds, **synthesised at startup** rather than shipped as files,
+  and a small pool of voices on the `SFX` bus. Genuinely global because a sound outlives the scene
+  that triggered it, and an autoload because every one of these answers a bus signal.
 
 **`SaveManager` is deliberately not an autoload.** It is stateless file I/O, so a
 `class_name SaveManager extends RefCounted` with static methods gives the same call site without a

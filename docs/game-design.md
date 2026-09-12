@@ -418,6 +418,30 @@ Hitstop on perfect hits and perfect parries only. Screenshake on the three finis
 damage, with a slider in the options. Camera kick on the charged shot. Damage numbers exist but
 are **off by default** — the feedback should be felt.
 
+### The ring is the reward
+
+The subject of this game is timing, and **the eye is on the enemy** — not on the player, and not on
+the flash around their own fist. So the perfect window has to be audible, and a wave lasting six
+minutes only makes that more true: a window the player can only *see* is a window they will miss.
+
+Five sounds, synthesised at startup rather than shipped as files, and one idea runs through them:
+
+| | |
+|---|---|
+| Normal hit | a thud that stops |
+| **Perfect hit** | the same thud, plus a bright partial that keeps going |
+| Whiff | filtered air, and **no transient at all** — nothing was struck, so nothing snaps |
+| **Perfect parry** | a bell, three partials, the longest sound in the game |
+| Late parry | the same bell, damped: one partial, a fifth of the length |
+
+**Nothing differs by loudness alone.** Loudness is the first thing a player turns down and the first
+thing a busy fight buries. What separates each pair is the tail — how long it rings, and for the two
+hits, *what* is ringing: the perfect one carries a partial the plain one does not contain at all.
+
+`tools/verify_audio.tscn` measures exactly that, because nobody can listen to a check: each tail has
+to outlast its plain version by at least twice, the perfect hit's tail has to be three times
+brighter than the plain one's, and a whiff's opening must stay well under a hit's.
+
 ## Out of scope for v1
 
 Multiplayer · a fourth weapon · a fourth enemy · a boss · a second biome · progression carried between runs. Each

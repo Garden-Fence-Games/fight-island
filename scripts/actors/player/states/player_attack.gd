@@ -131,6 +131,11 @@ func _shoot() -> void:
 
 
 func _begin_recovery() -> void:
+	# The one moment a miss is knowable: the window is shut and nothing was touched. Announced here
+	# rather than on exit, because a chain moves straight from one attack to the next and the state
+	# leaves without the swing ever having ended on its own.
+	if not _landed:
+		EventBus.attack_whiffed.emit(_attack)
 	_phase = Phase.RECOVERY
 	_elapsed = 0.0
 	if player.hitbox != null:
