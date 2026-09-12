@@ -18,6 +18,9 @@ const TURN_SPEED_DEGREES: float = 360.0
 const REPATH_INTERVAL: float = 0.25
 ## Where a stone leaves the hand and where it is aimed. Both at chest height, so a throw travels
 ## flat: an arc would be prettier and would also make the thing impossible to read at a glance.
+## What breaking a farmer's poise is worth, as a multiple of the blow's own throw. Every hit already
+## rocks him; this is the difference between rocked and sprawling.
+const BROKEN_POISE_PUSH: float = 1.8
 const THROW_HEIGHT: float = 1.1
 const CHEST_HEIGHT: float = 1.0
 
@@ -67,6 +70,8 @@ var _repath_clock: float = 0.0
 @onready var visual: Node3D = $Visual
 @onready var body_materials: BodyMaterialsComponent = $BodyMaterials
 @onready var head_look: HeadLookComponent = get_node_or_null("HeadLook") as HeadLookComponent
+@onready var animation: AnimationComponent = get_node_or_null("Animation") as AnimationComponent
+@onready var ragdoll: RagdollComponent = get_node_or_null("Ragdoll") as RagdollComponent
 @onready var agent: NavigationAgent3D = $Agent
 
 
@@ -114,6 +119,10 @@ func revive(
 	roused = false
 	if head_look != null:
 		head_look.watching = null
+	# A body handed back mid-tumble comes out of the pool still tumbling, which is the kind of bug
+	# that only shows up five waves in. Cheap to call when nothing is running, so it is called always.
+	if ragdoll != null:
+		ragdoll.stop()
 	_stone = null
 	_token_owed = false
 	if data != null:
@@ -360,11 +369,13 @@ func _on_stone_spent() -> void:
 		release_token()
 
 
-func stagger(duration: float) -> void:
+## The push is the attack's own stagger figure and the direction is the way the blow travelled.
+## Both are passed rather than looked up: by the time the body reacts, the swing is over.
+func stagger(duration: float, from: Vector3 = Vector3.ZERO, push: float = 0.0) -> void:
 	if machine == null or not is_alive():
 		return
 	release_token()
-	machine.current.transition_to(&"Stagger", {"duration": duration})
+	machine.current.transition_to(&"Stagger", {"duration": duration, "from": from, "push": push})
 
 
 func is_alive() -> bool:
@@ -376,7 +387,7 @@ func is_alive() -> bool:
 func _apply_tint() -> void:
 	if body_materials == null or visual == null:
 		return
-	# Multiplied over the rig's own painted colours rather than replacing them. White is the farmer
+		# Multiplied over the rig's own painted colours rather than replacing them. White is the farmer
 	# as he was painted; the two archetypes that have no texture of their own yet are still told
 	# apart by a wash, which is what their tint was for when all three were capsules.
 	body_materials.tint(data.tint)
@@ -395,9 +406,15 @@ func _on_hurt(info: HitInfo) -> void:
 	rouse()
 	_poise_window = 2.0
 	poise_left -= info.poise_damage
-	if poise_left <= 0.0 and data != null:
+	var broke := poise_left <= 0.0 and data != null
+	if broke:
 		poise_left = data.poise
-		stagger(maxf(info.stagger, 0.4))
+	# **Every hit throws him**, and every hit therefore opens the next one — that is what makes a
+	# combo a combo rather than three swings at a man who is already walking away. Poise no longer
+	# decides *whether* he reacts, only how hard: a blow that breaks it sends him sprawling, one
+	# that does not rocks him where he stands and leaves him open all the same.
+	var push := info.stagger * (BROKEN_POISE_PUSH if broke else 1.0)
+	stagger(maxf(info.stagger, 0.4), info.direction, push)
 
 
 func _on_died() -> void:
