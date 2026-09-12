@@ -13,13 +13,20 @@ exactly one upgrade — and a run never affords them all.
 
 ## Status
 
-**Milestone 1 — prototype.** The game runs. Grey-box arena, a player who moves, sprints, dodges
-and parries, the three-attack fist chain with both timing layers, and farmhands who close the
-distance and swing. Everything is Godot primitives on purpose — the only question this milestone
-answers is whether the timing feels good.
+**Milestone 2 — vertical slice.** A run plays end to end. Three weapons with three attacks each,
+found on the ground and swapped instantly; waves that arrive as turns of the day and pay out when
+they are cleared; the merchant and his five upgrade tracks; title, pause, options and a death
+screen, all navigable on a pad. The island is generated, navigable, and dressed.
 
-Still to come: the stick and the gun, waves, money and the upgrade merchant. See
-[docs/roadmap.md](docs/roadmap.md).
+**The primitives are going away one at a time, not all at once.** The player is a rigged mesh and
+the island wears two CC0 model packs. The enemies are still capsules and a weapon lying on the
+ground is still a box, because art follows the answer to "does the timing feel good" rather than
+waiting on it.
+
+The fight is audible: five hit-and-parry signatures are **synthesised at startup**, so a perfect
+window is recognisable with the screen off and the repository still ships no audio file. Left before
+the slice closes: the rest of that first pass — music, ambience, and anything the enemies or the
+menus should sound like. See [docs/roadmap.md](docs/roadmap.md).
 
 ## Features
 
@@ -72,7 +79,8 @@ git lfs install
 open -a Godot project.godot   # or open the folder from the Godot project manager
 ```
 
-The first open reimports every asset. There is no main scene yet — that arrives in M1.
+The first open reimports every asset, then runs `scenes/boot/boot.tscn` — the main scene
+since M1.
 
 To validate the project configuration the same way CI does:
 
