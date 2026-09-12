@@ -27,6 +27,13 @@ extends Resource
 @export var perfect_multiplier: float = 1.35
 @export var hitstop: float = 0.08
 
+@export_group("Reward")
+## What a body killed by this attack is worth, over what it would otherwise pay. It sits on the
+## attack rather than on the chain, next to `perfect_multiplier`, because the chain is where the
+## *timing* lives and this is about which swing landed — a finisher is reachable only by chaining
+## twice, so paying for the swing and paying for the combo are the same rule stated once.
+@export var money_multiplier: float = 1.0
+
 @export_group("Reach")
 @export var reach: float = 1.4
 @export var arc_degrees: float = 70.0
