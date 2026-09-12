@@ -481,6 +481,22 @@ time; the island only has to be composed for one viewpoint; and a telegraph can 
 geometry because the player happened to have turned the camera. The cost is that the arena must be
 authored so nothing important sits in the one blind direction.
 
+### The emphasis budget
+
+`scripts/systems/emphasis.gd` is the one table that decides how loud anything in a fight is allowed
+to be, and the one place that turns it into bus signals. Nothing else emits `hitstop_requested` or
+`shake_requested`, so a new emitter cannot invent a figure of its own without coming through it.
+
+`for_hit(perfect, finisher, killed, stop)` takes the **loudest** figure on each channel, never the
+sum: a perfect finisher that kills is one blow. `stop` is the attack's own `hitstop`, which stays in
+the `.tres` beside the damage because a charged shot at 0.18 s and a pistol crack at 0.06 s are
+saying something true about their own weight. The table owns which events spend on which channel,
+how two of them combine, and the ceiling — twelve frames, written in frames because that is the unit
+a stop is felt in.
+
+The figures and why each is what it is live in
+[game-design.md](game-design.md#feel-and-feedback-budget); `tools/verify_feel.tscn` holds the rules.
+
 ### Aim assist
 
 `AimComponent.direction()` is where it happens, so the head, the body, the swing and the shot all

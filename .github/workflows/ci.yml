@@ -225,6 +225,12 @@ jobs:
       - name: Verify day and night
         run: tools/run-check.sh res://tools/verify_day_night.tscn
 
+      # The budget, not the effects — those are verify_vfx's. What breaks here is a blow that spends
+      # three times for being three things at once, a knock that lands over a telegraph the camera
+      # is fixed specifically to protect, or a stop that costs the player an input.
+      - name: Verify the emphasis budget
+        run: tools/run-check.sh res://tools/verify_feel.tscn
+
       # The renderer draws nothing here, so this asserts which occluder should fade and by how much
       # — the decision — rather than the pixels. The dither that turns a fade into holes has no
       # decisions in it.

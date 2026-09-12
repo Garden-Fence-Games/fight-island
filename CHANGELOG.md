@@ -6,6 +6,34 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **One budget for the whole hit.** `scripts/systems/emphasis.gd` is now the single table deciding
+  how loud anything in a fight may be, and the only thing that emits `hitstop_requested` or
+  `shake_requested`. A perfect finisher that kills is **one** blow: the loudest figure on each
+  channel wins and nothing is summed. Summed it would stop for 0.20 s and shake at 0.9; it stops for
+  0.18 and shakes at 0.6.
+- **A ceiling of twelve frames** on any single blow, in frames because that is the unit a stop is
+  felt in.
+- `tools/verify_feel.tscn`, holding all of it — including that a hitstop never costs the player a
+  buffered press.
+
+### Fixed
+
+- **Taking a hit shakes the camera.** The comment beside the shake call read "shake on the three
+  finishers **and on taking damage**, and nowhere else", and taking damage shook nothing at all: the
+  code had been describing a design it did not implement. It is the loudest figure in the table now.
+- **The perfect parry is the longest stop in the game again.** It was 6 frames and the charged shot
+  was 11, so the most skilful input in the game was quieter than a held trigger. It is 12 — the
+  whole budget, and nothing else may draw level.
+- **Nothing shouts over a telegraph.** A shake requested while anything *in shot* is winding up is
+  refused outright. The camera is fixed precisely so a wind-up can never be hidden, and a screen
+  that jumps while a farmer commits hands that back. A farmer committing off screen refuses nothing.
+
+### Removed
+
+- `HitInfo.hitstop`, which nothing read once `Emphasis` owned the decision.
+
 ### Fixed
 
 - **Aim assist does something.** It has been a row in the options screen, a key in

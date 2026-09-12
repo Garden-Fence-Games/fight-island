@@ -17,9 +17,6 @@ enum Phase { WINDUP, ACTIVE, RECOVERY }
 ## Where on a body the burst is drawn: the chest, which is where a swing lands and where the camera
 ## is already looking. The feet are under the ground and the head is off the top of most bodies.
 const IMPACT_HEIGHT: float = 1.1
-## How hard a finisher knocks the camera, before the player's own setting scales it. Tuning this
-## into a whole-hit budget is the M4 pass; what matters here is that it goes through the setting.
-const FINISHER_SHAKE: float = 1.0
 
 var _attack: AttackData = null
 var _index: int = 0
@@ -176,18 +173,18 @@ func _refund_ammo() -> void:
 	GameState.loadout.refund(_attack.ammo_cost)
 
 
+## One blow, one spend. Perfect, finisher and killing are three things that can be true of the same
+## swing, and `Emphasis` takes the loudest of them rather than letting all three land at once — see
+## `scripts/systems/emphasis.gd` for why that is the difference between weight and noise.
 func _on_landed(target: Node3D, info: HitInfo) -> void:
 	_landed = true
 	EventBus.attack_landed.emit(target, info.damage, info.perfect)
 	_show_the_impact(target, info.perfect)
-	# The design's own list: shake on the three finishers and on taking damage, and nowhere else.
-	# A hit that shook the camera every time would leave nothing to say about the ones that matter.
-	if _attack.is_finisher():
-		EventBus.shake_requested.emit(FINISHER_SHAKE)
-	if not info.perfect:
-		return
-	EventBus.perfect_timing.emit()
-	EventBus.hitstop_requested.emit(info.hitstop)
+	if info.perfect:
+		EventBus.perfect_timing.emit()
+	var enemy := target as Enemy
+	var killed := enemy != null and not enemy.is_alive()
+	Emphasis.spend(Emphasis.for_hit(info.perfect, _attack.is_finisher(), killed, _attack.hitstop))
 
 
 ## The effect the attack names, leased rather than made. Played from here because this is the one

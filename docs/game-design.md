@@ -35,7 +35,8 @@ chain window; attack 3 likewise after 2. Miss the window and the chain resets to
 player who mashes only ever sees the first attack of every weapon.
 
 **Layer 2 — the perfect window.** The last slice of the chain window is *perfect*. A perfect input
-applies the damage multiplier plus 0.08 s of hitstop, a bright flash and a sound of its own. The
+applies the damage multiplier plus the attack's own hitstop, a bright flash and a sound of its
+own. The
 player should know they nailed it without reading a number.
 
 Input is buffered for **0.15 s**, so a slightly early press still lands inside the window.
@@ -167,7 +168,7 @@ default, the stick trades commitment for reach and crowd control, the gun is the
 |---|---|---|---|---|
 | Dodge roll | 22 | 0.55 s | 0.30 s, from 0.05 s | 3.2 m travel; direction from the move vector, backward if neutral; 0.15 s cooldown |
 | Sprint | 12/s | held | — | needs ≥ 10 stamina to start, cancels on attack, 0.25 s ramp |
-| Parry — perfect | 10 on press | window 0.00–0.12 s | full negate | attacker staggered 1.0 s, **+25 stamina refunded**, 0.10 s hitstop |
+| Parry — perfect | 10 on press | window 0.00–0.12 s | full negate | attacker staggered 1.0 s, **+25 stamina refunded**, 12 frames of hitstop — the whole budget |
 | Parry — late | 10 on press | window 0.12–0.22 s | 50 % reduction | player staggered 0.25 s, no refund |
 | Parry — missed | 10 on press | 0.22–0.45 s recovery | none | fully vulnerable — the cost of mashing |
 
@@ -431,9 +432,45 @@ The run is saved between waves. Forty minutes is too long to lose to a closed la
 
 ## Feel and feedback budget
 
-Hitstop on perfect hits and perfect parries only. Screenshake on the three finishers and on taking
-damage, with a slider in the options. Camera kick on the charged shot. Damage numbers exist but
-are **off by default** — the feedback should be felt.
+Every one of these effects is individually an improvement and collectively a mess. A hit that stops
+time, shakes the screen, flashes the body and kicks the camera is not four times as satisfying — it
+is unreadable, and reading a fight is the whole subject. So the emphasis on a blow is **decided in
+one table and spent once**, in `scripts/systems/emphasis.gd`, rather than accumulated by whoever
+happens to be emitting at the time.
+
+| what happened | stops the clock for | shakes |
+|---|---|---|
+| A hit that is only a hit | — | — |
+| **Perfect hit** | the attack's own figure, 0.06–0.18 s | — |
+| Finisher | — | 0.6 |
+| A body dies | 3 frames | 0.3 |
+| **Perfect parry** | **12 frames — the whole budget** | — |
+| The player is hit | — | **1.0** |
+| A wave is cleared | — | — |
+
+Three rules hold it together, and `tools/verify_feel.tscn` holds all three:
+
+- **One blow, one spend.** A perfect finisher that kills is one event, not three: the loudest figure
+  on each channel wins and nothing is summed. Added up, that blow would stop for 0.20 s and shake at
+  0.9; it stops for 0.18 and shakes at 0.6.
+- **There is a ceiling** — twelve frames, a fifth of a second, past which a stop reads as the game
+  hitching rather than as weight. Written in frames because that is the unit a stop is felt in.
+- **Nothing shouts over a telegraph.** A shake requested while anything *in shot* is winding up is
+  refused outright. The camera is fixed precisely so a wind-up can never be hidden, and a screen that
+  jumps while a farmer commits hands that back. A farmer committing off screen refuses nothing.
+
+A stop **never eats a press**: the input buffer ages on the same scaled clock the stop slows, so a
+hitstop lengthens the buffer in real time rather than spending it.
+
+Two things this table says that the game did not say before it was written. **Taking a hit shook
+nothing** — the code beside the shake call described "the three finishers and on taking damage" and
+only ever did the first. And the **longest stop in the game belonged to the charged shot**, not to
+the perfect parry, so the most skilful input in the game was quieter than a held trigger.
+
+Damage numbers exist but are **off by default** — the feedback should be felt.
+
+**Rumble does not exist yet.** When it does it comes through this table like everything else, and it
+is off whenever the screen-shake slider is at zero.
 
 ### The visible half
 
