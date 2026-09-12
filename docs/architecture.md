@@ -127,9 +127,29 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   logic, no node references. The day phase lives here rather than being reached for through the
   wave director because the sky, the clock, the token pool and every enemy want it, and none of
   them should have to find a director to ask.
-- **`AudioManager`** — the fight's sounds, **synthesised at startup** rather than shipped as files,
-  and a small pool of voices on the `SFX` bus. Genuinely global because a sound outlives the scene
-  that triggered it, and an autoload because every one of these answers a bus signal.
+- **`AudioManager`** — every sound the island makes, **synthesised at startup** rather than shipped
+  as files. Genuinely global because a sound outlives the scene that triggered it, and an autoload
+  because all but one of them answer a bus signal.
+
+  Three tiers, and the division is what keeps the mix legible. **The player's own body** —
+  footfalls, a roll, a reload, a dry trigger — is flat, on the `SFX` bus, and deliberately the
+  quietest thing in the game: it is confirmation, not information. **The world** — a farmer
+  committing, a body going down — is *positional*, on a pool of `AudioStreamPlayer3D`, because a
+  wind-up the player cannot see is the one they most need to hear and a direction is the only thing
+  that makes a crowd answerable. **The bed** — the surf — loops on the `Ambience` bus and is the
+  only sound with no event behind it.
+
+  Loudness is **declared per sound** rather than normalised to one shared peak, and `peak_of`
+  reports what each asked for. It has to be declared: a footfall at a hit's level walks over the
+  fight it is walking through. The mix is therefore an ordering a check can assert — footfall under
+  swing under hit under telegraph — rather than a set of numbers that sounded fine once.
+
+  Two traps are worth knowing, because both are invisible and both were hit. **The anti-click ramp
+  goes on before the peak is measured**: a short sound is loudest a millisecond in, so ramping
+  afterwards eats the sample the normalisation was aimed at. And **the bed does not play in a
+  headless run** — a stream still playing when the engine tears down is reported as a leak, and CI
+  fails a boot on any warning at all. The waveform is still built and assigned, so the loop and its
+  seam stay as checkable as everything else.
 
 **`SaveManager` is deliberately not an autoload.** It is stateless file I/O, so a
 `class_name SaveManager extends RefCounted` with static methods gives the same call site without a

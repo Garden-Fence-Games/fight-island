@@ -1,12 +1,21 @@
 extends Node
-## Headless proof that the five sounds are five sounds, and that the one claim the design rests on
-## is true of the waveform: **a perfect hit rings longer than a normal one, and a perfect parry
-## rings longer than a late one.**
+## Headless proof that every sound is its own sound, and that the claims the design rests on are
+## true of the waveforms: **a perfect hit rings longer than a normal one, a perfect parry rings
+## longer than a late one, a swing through air passes rather than striking, and a wind-up climbs.**
 ##
-## Nobody can listen to a check. What can be measured is the property that makes the listening work:
-## the tail. Loudness is not it — a player turns the volume down and a busy fight buries a decibel —
-## so what is asserted is how long each sound goes on for, and that the two pairs differ by a margin
-## an ear can hold onto.
+## Nobody can listen to a check, so what is measured is the property that makes the listening work.
+## For the two rewarded pairs it is the tail — loudness is not it, because a player turns the volume
+## down and a busy fight buries a decibel. For the telegraph it is the shape of the envelope, which
+## is the one thing that separates a thing arriving from a thing that already happened.
+##
+## Loudness *is* asserted, but only ever as an ordering: what matters is not that a footfall sits at
+## 0.28 but that it sits under a swing, which sits under a hit. The numbers are a mix and the
+## ordering is the design, so the ordering is what a check should hold.
+##
+## Two things are checked here that no waveform can show. The telegraph has to play on a positional
+## voice, because a warning with no direction in it cannot answer the farmer behind the player. And
+## a missed shot has to play **nothing** — the round already cracked when it left, and following it
+## with a swish is the gun swinging an arm it does not have.
 ## Run: godot --headless --path . res://tools/verify_audio.tscn
 
 ## Where a sound is counted as over: a hundredth of its own peak, which is about forty decibels down
@@ -28,8 +37,52 @@ const TAIL_FROM: float = 0.06
 const TAIL_TO: float = 0.15
 ## Where a transient lives. A hit snaps inside this; a swing through empty air must not.
 const TRANSIENT: float = 0.012
-## The five, and nothing else pretending to be a sixth.
-const EXPECTED: Array[StringName] = [&"hit", &"perfect", &"whiff", &"parry_perfect", &"parry_late"]
+## Every one-shot, and nothing else pretending to be one more. The bed is not in it: it loops, so
+## half the properties asserted here are ones it is *supposed* to break.
+const EXPECTED: Array[StringName] = [
+	&"hit",
+	&"perfect",
+	&"whiff",
+	&"parry_perfect",
+	&"parry_late",
+	&"shot",
+	&"shot_heavy",
+	&"step_sand",
+	&"step_water",
+	&"roll",
+	&"reload",
+	&"dry_fire",
+	&"hurt",
+	&"enemy_down",
+	&"pickup",
+	&"telegraph",
+	&"wave_cleared",
+]
+## The one looping sound, checked on its own terms.
+const BED: StringName = &"surf"
+## How close a baked peak has to be to the peak it declared. Tight: this is arithmetic, not taste,
+## and the only thing that moves it is a normalisation that did not happen.
+const PEAK_TOLERANCE: float = 0.02
+## Where a rising sound's peak has to sit, as a share of its length. Past halfway, because the
+## claim is that it climbs — not that it happens to be loudest a little later than a thud.
+const CLIMBS_PAST: float = 0.5
+## The longest a swing through air may last. It used to run 540 ms, which is most of a second of
+## hiss laid over whatever the player did next.
+const SWING_LASTS: float = 0.25
+## How closely the two ends of the bed have to agree in level for the wrap to be inaudible. A loop
+## that steps in volume ticks every time it comes round, and a tick under a fight is the kind of
+## thing a player hears for an hour without being able to say what it is.
+const SEAM_MATCHES: float = 0.25
+## Where the bed's ends are measured, as a share of its length.
+const SEAM_WINDOW: float = 0.04
+## Frames a stopped voice pool is given to report itself free. Generous, because what is being
+## waited on is the audio server's own iteration rather than anything this check controls — and a
+## bound reached is reported as a failure, so generosity costs nothing but patience.
+const DRAINS_WITHIN: int = 120
+## Frames a sound is given to start before its absence is taken as an answer. Only the one check
+## that asserts silence needs it: every other case can stop waiting the moment it hears something,
+## and a check that expects nothing has nothing to stop on.
+const SPEAKS_UP_WITHIN: int = 20
 
 var _failures: PackedStringArray = []
 
@@ -39,18 +92,28 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	_check_all_five_exist()
+	_check_every_sound_exists()
 	_check_none_of_them_is_another()
 	_check_the_perfect_hit_rings_longer()
 	_check_the_perfect_parry_rings_longer()
 	_check_a_swing_through_air_has_no_impact_in_it()
+	_check_a_swing_reads_as_a_pass()
+	_check_the_mix_is_ordered()
+	_check_the_telegraph_is_the_one_sound_that_climbs()
+	_check_the_bed_comes_round_cleanly()
 	_check_nothing_clips_or_clicks()
 	_check_nothing_is_cut_off()
 	await _check_the_right_sound_answers_each_signal()
+	await _check_the_telegraph_comes_from_somewhere()
+	await _check_a_missed_shot_does_not_swish()
+	# Nothing left ringing. A voice still playing when the engine tears down is two objects it
+	# reports as leaked, and a check that ends in a warning is a check nobody trusts the next time
+	# a warning means something.
+	await _silence_everything()
 	_report()
 
 
-func _check_all_five_exist() -> void:
+func _check_every_sound_exists() -> void:
 	for id: StringName in EXPECTED:
 		var stream := AudioManager.sound(id) as AudioStreamWAV
 		if stream == null:
@@ -60,8 +123,9 @@ func _check_all_five_exist() -> void:
 			_fail("the %s sound is empty" % id)
 
 
-## Five names pointing at one waveform would satisfy every other check here and would be five
-## sounds in the log and one in the ear.
+## Seventeen names pointing at one waveform would satisfy every other check here and would be
+## seventeen sounds in the log and one in the ear. It is the cheap way a set of sounds rots: a
+## `_build` that forgets a line leaves an id resolving to whatever was registered before it.
 func _check_none_of_them_is_another() -> void:
 	for first: StringName in EXPECTED:
 		for second: StringName in EXPECTED:
@@ -130,6 +194,120 @@ func _check_a_swing_through_air_has_no_impact_in_it() -> void:
 		)
 
 
+## **The mix, as an ordering rather than as a set of numbers somebody liked once.**
+##
+## This is the check that keeps the whole set usable. Every sound here is individually fine and the
+## only thing that can go wrong is their relationship: a footfall at a hit's level walks over the
+## fight, and a telegraph under one is a warning the player will not hear in a crowd. So what is
+## asserted is the order, and the order is the design — quietest is the body you already control,
+## loudest is the thing about to hit you.
+func _check_the_mix_is_ordered() -> void:
+	var rungs: Array[Array] = [
+		[&"step_sand", &"whiff"],
+		[&"step_water", &"whiff"],
+		[&"roll", &"whiff"],
+		[&"whiff", &"hit"],
+		[&"hurt", &"telegraph"],
+		[&"hit", &"telegraph"],
+	]
+	for rung: Array in rungs:
+		var under: StringName = rung[0]
+		var over: StringName = rung[1]
+		var quiet := AudioManager.peak_of(under)
+		var loud := AudioManager.peak_of(over)
+		if quiet >= loud:
+			_fail(
+				(
+					"%s peaks at %.2f and %s at %.2f — the quieter one is not quieter"
+					% [under, quiet, over, loud]
+				)
+			)
+
+
+## **The one sound in the game that climbs.**
+##
+## Everything else reports something that has already happened, so it is loudest the moment it
+## begins and falls away. A telegraph reports something that has *not* happened yet, and the ear
+## reads a rise as a thing arriving. That difference is categorical rather than a matter of degree,
+## which is what lets a wind-up survive three farmers, a fight, and a player who has the music up.
+##
+## Asserted twice over, because a single peak index is one loud sample away from meaning nothing:
+## the loudest moment sits in the second half, *and* the opening is quieter than the close.
+func _check_the_telegraph_is_the_one_sound_that_climbs() -> void:
+	var samples := _samples(&"telegraph")
+	if samples.size() < 4:
+		_fail("there is no telegraph sound")
+		return
+	var share := _peak_share(&"telegraph")
+	if share <= CLIMBS_PAST:
+		_fail(
+			(
+				"the telegraph is loudest %.0f%% of the way through — a warning has to climb"
+				% [share * 100.0]
+			)
+		)
+	var length := float(samples.size()) / float(AudioManager.MIX_RATE)
+	var opens := _loudest(&"telegraph", 0.0, length * 0.2)
+	var closes := _loudest(&"telegraph", length * 0.6, length)
+	if opens >= closes:
+		_fail("the telegraph opens at %.2f and closes at %.2f — it does not rise" % [opens, closes])
+
+
+## A swing through air is something **passing**: it swells, peaks and falls. A sound that is loudest
+## at its first sample is a sound that began with contact, and the transient check above cannot see
+## the difference between a quiet snap and a burst of noise that merely starts at full level.
+##
+## And it may not wash. At a decay of 0.09 the buffer ran 540 ms — most of a second of hiss laid
+## over whatever the player did next, which in a chain is the following swing.
+func _check_a_swing_reads_as_a_pass() -> void:
+	var share := _peak_share(&"whiff")
+	if share < 0.15:
+		_fail(
+			"a swing is loudest %.0f%% in — that is an impact, not air going past" % [share * 100.0]
+		)
+	var lasts := _tail(&"whiff")
+	if lasts > SWING_LASTS:
+		_fail(
+			(
+				"a swing through air lasts %.0f ms, which is a wash — %.0f ms is the ceiling"
+				% [lasts * 1000.0, SWING_LASTS * 1000.0]
+			)
+		)
+
+
+## The bed is the only sound that comes back round, so it is the only one that can tick.
+##
+## Two things have to hold and neither is visible in a diff: the engine has to be told to loop it at
+## all, and the two ends have to agree in level — a loop assembled from noise has no natural join,
+## and a step in volume at the wrap is a click a player hears for an hour without ever being able
+## to say what it is.
+func _check_the_bed_comes_round_cleanly() -> void:
+	var stream := AudioManager.sound(BED) as AudioStreamWAV
+	if stream == null or stream.data.size() < 4:
+		_fail("there is no surf")
+		return
+	if stream.loop_mode != AudioStreamWAV.LOOP_FORWARD:
+		_fail("the surf is not set to loop, so the island goes quiet after one pass")
+	var last := stream.data.size() / 2 - 1
+	if stream.loop_end != last:
+		_fail("the surf loops to sample %d of %d — it drops its own tail" % [stream.loop_end, last])
+	var samples := _samples(BED)
+	var length := float(samples.size()) / float(AudioManager.MIX_RATE)
+	var opens := _level(samples, 0.0, length * SEAM_WINDOW)
+	var closes := _level(samples, length * (1.0 - SEAM_WINDOW), length)
+	if opens <= 0.0 or closes <= 0.0:
+		_fail("the surf is silent at one of its ends")
+		return
+	var apart := absf(opens - closes) / maxf(opens, closes)
+	if apart > SEAM_MATCHES:
+		_fail(
+			(
+				"the surf opens at %.3f and closes at %.3f — %.0f%% apart, so the wrap ticks"
+				% [opens, closes, apart * 100.0]
+			)
+		)
+
+
 ## A partial added without normalising clips, and a waveform that starts at full amplitude clicks.
 ## Both are inaudible in a diff and obvious in a headset.
 func _check_nothing_clips_or_clicks() -> void:
@@ -145,8 +323,14 @@ func _check_nothing_clips_or_clicks() -> void:
 				clipped += 1
 		if clipped > 1:
 			_fail("the %s sound clips on %d samples" % [id, clipped])
-		if loudest < 0.5:
-			_fail("the %s sound peaks at %.2f — it was never normalised" % [id, loudest])
+		# Against the peak the sound asked for, not a floor every sound shares. A footfall is meant
+		# to be quieter than a hit, so a blanket minimum would either pass an unnormalised buffer or
+		# forbid the mix having any shape at all.
+		var wanted := AudioManager.peak_of(id)
+		if absf(loudest - wanted) > PEAK_TOLERANCE:
+			_fail(
+				"the %s sound asked for a peak of %.2f and came out at %.2f" % [id, wanted, loudest]
+			)
 		if absf(samples[0]) > 0.02:
 			_fail("the %s sound starts at %.3f, which is a click" % [id, samples[0]])
 
@@ -161,17 +345,94 @@ func _check_the_right_sound_answers_each_signal() -> void:
 		[&"whiff", func() -> void: EventBus.attack_whiffed.emit(null)],
 		[&"parry_perfect", func() -> void: EventBus.parry_perfect.emit()],
 		[&"parry_late", func() -> void: EventBus.parry_late.emit()],
+		[&"step_sand", func() -> void: EventBus.footstep_taken.emit(false)],
+		[&"step_water", func() -> void: EventBus.footstep_taken.emit(true)],
+		[&"roll", func() -> void: EventBus.player_state_changed.emit(&"Dodge")],
+		[&"reload", func() -> void: EventBus.weapon_reloaded.emit()],
+		[&"dry_fire", func() -> void: EventBus.weapon_dry_fired.emit()],
+		[&"pickup", func() -> void: EventBus.weapon_found.emit(&"gun")],
+		[&"wave_cleared", func() -> void: EventBus.wave_cleared.emit(3, 40)],
+		[&"shot", func() -> void: EventBus.weapon_fired.emit(_an_attack(false))],
+		[&"shot_heavy", func() -> void: EventBus.weapon_fired.emit(_an_attack(true))],
 	]
 	for case: Array in cases:
 		var wanted: StringName = case[0]
 		var fire: Callable = case[1]
 		fire.call()
-		await get_tree().process_frame
+		# Waited for rather than read one frame later. A voice does not report itself playing the
+		# instant it is told to, for the same reason a stopped one does not report itself free: the
+		# audio server runs on its own iteration. Reading too early says "nothing came out" about a
+		# sound that was about to.
+		for _frame: int in DRAINS_WITHIN:
+			if _anything_playing():
+				break
+			await get_tree().process_frame
 		var heard := _now_playing()
 		if heard != wanted:
 			_fail("the fight asked for %s and %s came out" % [wanted, heard])
 		await _silence_everything()
 	cases.clear()
+
+
+## An `AttackData` standing in for a round, built rather than loaded: what the sound branches on is
+## two flags, and a check that loaded the real gun would be asserting the data file instead of the
+## wiring — `verify_weapons` is where the gun's own figures are held to the table.
+func _an_attack(charged: bool) -> AttackData:
+	var attack := AttackData.new()
+	attack.is_hitscan = true
+	attack.charges = charged
+	return attack
+
+
+## **A wind-up has to arrive from a direction**, and that is the whole of why it exists: the ring on
+## the ground answers a farmer the player can see, and the two behind them are answered by nothing
+## else. A telegraph on a flat voice is a telegraph that says a farmer is committing *somewhere*.
+##
+## The position is asserted too. A voice that plays at the origin carries a direction, just not the
+## right one — and at the origin it is the middle of the island, so it would sound plausible from
+## almost anywhere and be wrong everywhere.
+func _check_the_telegraph_comes_from_somewhere() -> void:
+	var where := Vector3(7.0, 0.0, -11.0)
+	EventBus.telegraph_began.emit(where)
+	for _frame: int in DRAINS_WITHIN:
+		if _anything_playing():
+			break
+		await get_tree().process_frame
+	if _now_playing() == &"telegraph":
+		_fail("the telegraph played flat — a warning with no direction in it")
+	var voice := _placed_voice(&"telegraph")
+	if voice == null:
+		_fail("nothing positional played the telegraph")
+		await _silence_everything()
+		return
+	if voice.global_position.distance_to(where) > 0.01:
+		_fail("the telegraph plays at %v and the farmer is at %v" % [voice.global_position, where])
+	await _silence_everything()
+
+
+## A shot that found nobody has already been heard: it cracked when the round left. Following it
+## with a swish was the gun swinging an arm it does not have, and it is the one case in the whole
+## set where the right answer to a signal is silence.
+func _check_a_missed_shot_does_not_swish() -> void:
+	EventBus.attack_whiffed.emit(_an_attack(false))
+	# Given the same room to be heard as every other case, or this would pass by reading before a
+	# sound it is asserting the absence of had a chance to start.
+	for _frame: int in SPEAKS_UP_WITHIN:
+		await get_tree().process_frame
+	var heard := _now_playing()
+	if heard != &"nothing":
+		_fail("a missed shot played %s — a gun does not swing through air" % heard)
+	await _silence_everything()
+
+
+func _placed_voice(id: StringName) -> AudioStreamPlayer3D:
+	for voice: Node in AudioManager.get_children():
+		var player := voice as AudioStreamPlayer3D
+		if player == null or not player.playing:
+			continue
+		if player.stream == AudioManager.sound(id):
+			return player
+	return null
 
 
 func _now_playing() -> StringName:
@@ -185,12 +446,46 @@ func _now_playing() -> StringName:
 	return &"nothing"
 
 
+## Both pools, and **it waits until they are actually idle.**
+##
+## `AudioStreamPlayer3D` does not descend from `AudioStreamPlayer` — they are siblings under Node —
+## so stopping one kind leaves the other ringing into the next measurement.
+##
+## The waiting is the part that matters, and it cost a flaky run to learn. `stop()` does not make a
+## voice report itself free within the same frame: the audio server releases it on its own
+## iteration, which is not frame-locked. The wiring table drives fourteen sounds through a pool of
+## twelve, so a voice still counted as busy from two cases ago means `play` finds nothing free and
+## returns in silence — and the check then reports that the fight asked for a sound and nothing came
+## out, which is true, and about the check rather than about the game. It failed on `dry_fire` once
+## and passed twice with nothing changed, which is the worst way for a check to behave.
+##
+## Bounded, and a bound reached is a failure rather than a shrug: a pool that never drains is
+## something to be told about, not to wait longer for.
 func _silence_everything() -> void:
 	for voice: Node in AudioManager.get_children():
-		var player := voice as AudioStreamPlayer
-		if player != null:
-			player.stop()
-	await get_tree().process_frame
+		var flat := voice as AudioStreamPlayer
+		if flat != null:
+			flat.stop()
+		var placed := voice as AudioStreamPlayer3D
+		if placed != null:
+			placed.stop()
+	for _frame: int in DRAINS_WITHIN:
+		if not _anything_playing():
+			return
+		await get_tree().process_frame
+	_fail("the voice pool would not drain — something is still playing after it was stopped")
+
+
+func _anything_playing() -> bool:
+	for voice: Node in AudioManager.get_children():
+		var flat := voice as AudioStreamPlayer
+		# The bed is the exception: it is meant to be playing, and headless it never starts.
+		if flat != null and flat.playing and flat != AudioManager.bed():
+			return true
+		var placed := voice as AudioStreamPlayer3D
+		if placed != null and placed.playing:
+			return true
+	return false
 
 
 ## How long a sound goes on for: the last moment it is still above a hundredth of its own peak.
@@ -260,6 +555,36 @@ func _check_nothing_is_cut_off() -> void:
 			)
 
 
+## Where a sound is loudest, as a share of its own length. The shape of the envelope in one number:
+## nought is a sound that begins at its peak, and anything past a half is a sound that arrives.
+func _peak_share(id: StringName) -> float:
+	var samples := _samples(id)
+	if samples.size() < 2:
+		return 0.0
+	var loudest := 0.0
+	var at := 0
+	for index: int in samples.size():
+		var value := absf(samples[index])
+		if value > loudest:
+			loudest = value
+			at = index
+	return float(at) / float(samples.size() - 1)
+
+
+## Average level over a window, rather than its single loudest sample. Noise is spiky, so a peak
+## says nothing about how loud a stretch of it *sounds* — which is the only thing that matters when
+## the question is whether two ends of a loop match.
+func _level(samples: PackedFloat32Array, from: float, to: float) -> float:
+	var first := maxi(int(from * float(AudioManager.MIX_RATE)), 0)
+	var after := mini(int(to * float(AudioManager.MIX_RATE)), samples.size())
+	if after <= first:
+		return 0.0
+	var total := 0.0
+	for index: int in range(first, after):
+		total += samples[index] * samples[index]
+	return sqrt(total / float(after - first))
+
+
 func _loudest(id: StringName, from: float, to: float) -> float:
 	var samples := _samples(id)
 	var first := int(from * float(AudioManager.MIX_RATE))
@@ -291,8 +616,11 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"audio OK — five distinct sounds, the perfect hit and the perfect parry ring "
-				+ "longer than their plain versions, and a swing through air never snaps"
+				"audio OK — every sound is its own waveform at the peak it declared, the perfect "
+				+ "hit and the perfect parry ring longer than their plain versions, a swing "
+				+ "through air passes rather than snapping, the telegraph is the one sound that "
+				+ "climbs and it arrives from where the farmer is standing, and the surf comes "
+				+ "back round without a tick"
 			)
 		)
 		get_tree().quit(0)

@@ -11,6 +11,10 @@ const MOVE_SPEED: float = 3.2
 const SPRINT_SPEED: float = 5.0
 const SPRINT_DRAIN: float = 12.0
 const SPRINT_MINIMUM: float = 10.0
+## Ground covered between one footfall and the next. Measured in metres rather than counted on a
+## timer, so a sprint's steps come faster than a walk's without either speed being told about the
+## other — and so wading, which costs speed, slows the footsteps with it.
+const STRIDE: float = 0.95
 
 ## What is in hand. Set from the run state, not by the scene: a player who quits to the title and
 ## continues is holding what they were holding. The export is the fallback for a scene opened
@@ -28,6 +32,7 @@ var damage_multiplier: float = 1.0
 var stamina_cost_multiplier: float = 1.0
 
 var _body_materials: Array[StandardMaterial3D] = []
+var _stride_walked: float = 0.0
 var _chain_attack: AttackData = null
 var _chain_clock: float = -1.0
 var _lockout_clock: float = 0.0
@@ -172,7 +177,10 @@ func _mesh_instances(root: Node) -> Array[MeshInstance3D]:
 	return found
 
 
-func apply_motion(direction: Vector3, speed: float, delta: float) -> void:
+## `on_foot` is what separates walking from every other way the body covers ground. A roll travels
+## too and it is not two steps, and an attack calls `halt` and travels none — so the two states that
+## actually walk say so, and nothing else has to know footfalls exist.
+func apply_motion(direction: Vector3, speed: float, delta: float, on_foot: bool = false) -> void:
 	var wading := Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH)
 	velocity.x = direction.x * speed * wading
 	velocity.z = direction.z * speed * wading
@@ -180,6 +188,8 @@ func apply_motion(direction: Vector3, speed: float, delta: float) -> void:
 	if is_on_floor() and velocity.y < 0.0:
 		velocity.y = 0.0
 	move_and_slide()
+	if on_foot:
+		_carry_the_stride(delta)
 
 
 func halt(delta: float) -> void:
@@ -285,6 +295,19 @@ func _continue_chain() -> Dictionary:
 
 func is_alive() -> bool:
 	return health == null or health.is_alive()
+
+
+## Counts the ground just covered and puts a foot down each `STRIDE` of it.
+##
+## Read off `velocity` after the slide rather than off the direction that was asked for, so a player
+## leaning into a boulder makes no sound. No ground covered, nothing heard — which is also what
+## makes the footfalls slow down in the shallows without anybody telling them the water is there.
+func _carry_the_stride(delta: float) -> void:
+	_stride_walked += Vector2(velocity.x, velocity.z).length() * delta
+	if _stride_walked < STRIDE:
+		return
+	_stride_walked = 0.0
+	EventBus.footstep_taken.emit(Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH) < 1.0)
 
 
 func _on_sprint_pressed(from_gamepad: bool) -> void:
