@@ -42,7 +42,10 @@ const ROCK_MODEL_WIDTH: float = 1.07
 const ROCK_MODEL_HEIGHT: float = 0.57
 const ROCK_MODEL_DEPTH: float = 1.03
 const PEBBLE_MODEL_WIDTH: float = 0.36
+## A tuft of grass is a splay of flat leaves, and it ships four times wider than it is high — so it
+## takes both figures. Scaled as one piece, tall grass would be a bush.
 const GRASS_MODEL_WIDTH: float = 0.26
+const GRASS_MODEL_HEIGHT: float = 0.14
 ## The huts, from Kenney's CC0 Survival Kit — the Nature Kit's companion, drawn by the same hand on
 ## the same half-metre tile, and shipping the same untextured, named parts the palette maps colours
 ## onto. Four pieces: the posts a hut stands on, the deck they carry, the roof over it, and the
@@ -122,6 +125,18 @@ const PALM_COUNT: int = 380
 const ROCK_COUNT: int = 950
 const PEBBLE_COUNT: int = 3400
 const GRASS_COUNT: int = 24000
+## How tall a tuft stands. Two bands, and an even share out of each, because the thing that read as
+## a green carpet was not the amount of grass — it was that every blade of it was the same length.
+## Ground cover with two lengths in it has a near and a far; ground cover with one is a texture.
+##
+## The tall band stops under 1.1 m on purpose. That is the height `OcclusionFader` draws its line
+## to, which makes it the height at which the island stops dressing a body and starts hiding one.
+const GRASS_SHORT: Vector2 = Vector2(0.16, 0.34)
+const GRASS_TALL: Vector2 = Vector2(0.5, 0.85)
+const GRASS_TALL_SHARE: float = 0.5
+## How wide a tuft is, drawn independently of how tall it is. Tying the two together would give
+## back the uniformity the two bands were for, one step removed: every tall tuft equally broad.
+const GRASS_WIDTH: Vector2 = Vector2(0.24, 0.46)
 
 # --- Huts --------------------------------------------------------------------------------------
 ## The kit's pieces are furniture — half a metre of drying rack. A hut is one of them widened and
@@ -170,14 +185,18 @@ const NATURE_PALETTE: Dictionary = {
 	"woodDark": Color(0.36, 0.27, 0.19),
 }
 
-## Grass is short and quick: it reaches full bend in half a metre and ripples every few
-## metres. A lawn does not sway on the same clock as a five-metre palm, so it overrides the
-## palm-scale wind the shader ships with.
+## Grass is short and quick: it ripples every few metres, and a lawn does not sway on the same clock
+## as a five-metre palm, so it overrides the palm-scale wind the shader ships with.
+##
+## `bend_height` is the tall band's own height rather than a figure of its own, and that is what
+## makes one wind serve grass of two lengths: bend is the fraction of that height a vertex stands
+## at, so a long blade leans over and a short tuft beside it barely stirs — from the same numbers,
+## with nothing to keep in step.
 const GRASS_WIND: Dictionary = {
-	"wind_strength": 0.11,
+	"wind_strength": 0.2,
 	"wind_speed": 2.6,
 	"wave_length": 9.0,
-	"bend_height": 0.2,
+	"bend_height": GRASS_TALL.y,
 	"bend_power": 1.4,
 	"gust_length": 42.0,
 }
@@ -528,12 +547,16 @@ func _scatter() -> Node3D:
 	):
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
 		var lean := Basis(Vector3.RIGHT, _rng.randf_range(-0.18, 0.18))
-		# Small on purpose. The ground has to read as texture, not as a field of objects: a busy
-		# floor competes with the enemies for the eye, and a telegraph at twenty metres is the one
-		# thing the player cannot afford to miss.
-		var size := _rng.randf_range(0.26, 0.46)
-		var grown := Vector3.ONE * (size / GRASS_MODEL_WIDTH)
-		tufts.append(Transform3D((turn * lean).scaled(grown), spot))
+		var band := GRASS_TALL if _rng.randf() < GRASS_TALL_SHARE else GRASS_SHORT
+		var height := _rng.randf_range(band.x, band.y)
+		var width := _rng.randf_range(GRASS_WIDTH.x, GRASS_WIDTH.y)
+		var grown := Vector3(
+			width / GRASS_MODEL_WIDTH, height / GRASS_MODEL_HEIGHT, width / GRASS_MODEL_WIDTH
+		)
+		# Rotated, then scaled in its own axes — not `.scaled()`, which scales along the world's.
+		# Stretching a leaning tuft up the world's Y shears it, and at six times the model's height
+		# that is not a lean any more, it is a smear.
+		tufts.append(Transform3D(turn * lean * Basis.from_scale(grown), spot))
 
 	# The models carry their own colours, one material per part, so nothing here tints them. What the
 	# wind material replaces is the shading, not the palette.
