@@ -1,0 +1,116 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/confirm_dialog.gd" id="1"]
+[ext_resource type="Theme" path="res://assets/themes/ui_theme.tres" id="2"]
+
+[node name="ConfirmDialog" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2")
+script = ExtResource("1")
+
+[node name="Scrim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.68)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Frame" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+theme_type_variation = &"DialogFrame"
+
+[node name="Rows" type="VBoxContainer" parent="Center/Frame"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 24
+
+[node name="Title" type="Label" parent="Center/Frame/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"DialogTitle"
+auto_translate_mode = 2
+
+[node name="Body" type="RichTextLabel" parent="Center/Frame/Rows"]
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"DialogBody"
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Frame/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="Confirm" type="Button" parent="Center/Frame/Rows/Buttons"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_contents = true
+theme_type_variation = &"DialogPrimary"
+auto_translate_mode = 2
+
+[node name="Fill" type="ColorRect" parent="Center/Frame/Rows/Buttons/Confirm"]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0.25)
+
+[node name="Cancel" type="Button" parent="Center/Frame/Rows/Buttons"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"DialogSecondary"
+auto_translate_mode = 2
+
+[node name="Footer" type="PanelContainer" parent="Center/Frame/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"DialogFooter"
+
+[node name="Hints" type="HBoxContainer" parent="Center/Frame/Rows/Footer"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Accept" type="Label" parent="Center/Frame/Rows/Footer/Hints"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Caption"
+text = "[A / ENTER] CONFIRM"
+auto_translate_mode = 2
+
+[node name="Spacer" type="Control" parent="Center/Frame/Rows/Footer/Hints"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Back" type="Label" parent="Center/Frame/Rows/Footer/Hints"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Caption"
+text = "[B / ESC] BACK"
+auto_translate_mode = 2

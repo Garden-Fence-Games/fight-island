@@ -79,3 +79,15 @@ OPT_BIND_MENU_OPTIONS,Open options
 OPT_BIND_MENU_NEW_RUN,New run
 OPT_BIND_MENU_PREV_TAB,Previous tab
 OPT_BIND_MENU_NEXT_TAB,Next tab
+UI_PAUSED,Game paused
+UI_RESUME,Resume
+UI_RESTART_RUN,Restart run
+UI_QUIT_TO_TITLE,Quit to title
+UI_CANCEL,Cancel
+UI_RESTART,Restart run
+UI_RESTART_ASK,Restart run?
+UI_RESTART_BODY,"The wave you are on, the money you have saved and every upgrade you have bought are %s. This cannot be undone."
+UI_RESTART_DANGER,lost for good
+UI_QUIT_ASK,Quit to title?
+UI_QUIT_BODY,"The run waits for you at the title, but the wave you are in the middle of is %s. There is no saving mid-wave."
+UI_QUIT_DANGER,started again

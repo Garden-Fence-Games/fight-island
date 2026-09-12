@@ -68,12 +68,31 @@ Options loses its badge while a run is waiting, because the pad has one Y.
 
 Opens on `pause` (`Esc` / Start). Sets `get_tree().paused = true`, which is why the camera rig and
 the hit-feedback node must both respect `PROCESS_MODE_PAUSABLE` — a camera that keeps drifting
-behind a pause menu feels broken even though nothing is wrong.
+behind a pause menu feels broken even though nothing is wrong. They inherit it from the root, so
+neither has to be told.
 
 **Resume · Options · Restart run · Quit to title.** Restart and Quit both confirm, because both
 throw away up to forty minutes. Nothing else in the game confirms anything.
 
+**The world behind it is blurred, not hidden.** The player is meant to remember what they are going
+back to. It is the screen's own mipmaps read at a level, so the cost does not grow with the radius.
+
+**Quit to title keeps the run.** The title turns Play into Continue precisely because there is one
+waiting, and the wave director picks up at the wave the run state remembers. Ending a run is what
+New run is for. What is lost is the wave in progress — there is no saving mid-wave.
+
 The cursor is visible at all times, so the pause menu has nothing to release.
+
+### The confirmation
+
+One dialog, used twice. It names what is actually lost, in red, inside the sentence rather than
+after it — the fragment is a separate string so a translator can put it where the grammar wants it.
+
+Focus opens on **Cancel**: the dangerous button should take a deliberate move to reach.
+
+With **hold to confirm** on, the confirming button has to be held for three quarters of a second and
+fills as it is held. Off, it is a press. That accessibility setting has exactly one consumer, and
+this is it.
 
 ## Options
 

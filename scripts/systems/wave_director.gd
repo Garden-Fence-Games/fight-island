@@ -37,6 +37,9 @@ var _health_seen: float = -1.0
 
 func _ready() -> void:
 	_rng.seed = GameState.run_seed + 1
+	# A run the player quit to the title comes back where it was: the wave the state remembers is
+	# the one already cleared, so the next one is the one that was interrupted.
+	wave = GameState.wave
 	EventBus.enemy_died.connect(_on_enemy_died)
 	EventBus.player_damaged.connect(_on_player_damaged)
 	if autostart:
