@@ -31,6 +31,17 @@ extends Resource
 @export var reach: float = 1.4
 @export var arc_degrees: float = 70.0
 
+@export_group("Ranged")
+## Resolved as a ray the instant the windup ends, instead of arming a hitbox for its active frames.
+## A bullet has no travel and no swing: giving one active frames would let a farmer walk into a shot
+## that had already been fired.
+@export var is_hitscan: bool = false
+## Rays one press sends. The double tap is two, which is also why it needs two rounds to exist.
+@export var shots: int = 1
+## The windup only advances while the button is held, and letting go early cancels the attack. The
+## charged shot is the one attack in the game that asks for a hold rather than a tap.
+@export var charges: bool = false
+
 @export_group("Presentation")
 @export var animation: StringName = &""
 

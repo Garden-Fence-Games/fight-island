@@ -173,6 +173,34 @@ Movement is the one lesson with no event behind it, and that is the honest answe
 nothing else in this game cares that the player walked, so there is nothing to listen to and the
 director measures the distance itself.
 
+## The bag
+
+What the player is carrying is a `Loadout` on `GameState` — which weapons have been found, which is
+in hand, and the rounds in the gun and in the pocket. Its own object rather than five fields,
+exactly like `RunStats`, and for the reason `GameState`'s own docstring gives: that class is narrow
+on purpose, and "the bag" has rules of its own.
+
+**It is run state, not a field on the body.** A player who quits to the title and continues is
+holding what they were holding, and the gun still has the rounds they left in it, because the whole
+bag goes into `run.json`.
+
+The rules worth stating, because each is a thing a player would notice going wrong:
+
+- **A weapon that has not been found cannot be equipped**, so the wheel is honest about what is in
+  the bag and cannot cycle onto an empty hand.
+- **The magazine is the gate on a shot, not the reserve.** A shot the magazine cannot pay for is a
+  reload the player has to choose to make.
+- **The reserve grows on a cleared wave and at no other moment.** That is the gun's rhythm; see
+  `docs/game-design.md`.
+- **A pickup already in the bag does nothing.** Walking over the gun twice must not re-arm one the
+  player has half emptied.
+
+A shot is a `Hitscan` beside the hitbox: a **ray** rather than a volume, resolved the instant the
+windup ends. A bullet has no travel and no swing, so arming a box for a tenth of a second would let
+a farmer walk into a shot that had already been fired. It builds the same `HitInfo` and calls the
+same `take_hit`, so a parry, a set of invulnerability frames and a death behave identically whether
+the blow was a fist or a round.
+
 ## The wallet
 
 `Economy` owns the cost curve and nothing else. The balance lives on `GameState`, and a wave's

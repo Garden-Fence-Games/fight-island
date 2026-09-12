@@ -48,6 +48,9 @@ var day_elapsed: float = 0.0
 ## Track id to how many levels of it are owned. Levels rather than effects, so the body can always
 ## recompute from its own base instead of carrying a running total that drifts.
 var upgrade_levels: Dictionary = {}
+## What is in the bag: the weapons found, the one in hand, and the rounds. Its own object for the
+## same reason the tally is — it has rules, and this class is narrow on purpose.
+var loadout: Loadout = Loadout.new()
 
 var debug_overlay_visible: bool = false
 
@@ -93,8 +96,10 @@ func begin_run() -> void:
 	set_day_phase(null)
 	stats = RunStats.new()
 	upgrade_levels = {}
+	loadout = Loadout.new()
 	_bought_in_wave = -1
 	money_changed.emit(money, 0)
+	EventBus.weapon_equipped.emit(loadout.weapon())
 	save_run()
 
 
@@ -128,6 +133,16 @@ func spend(amount: int) -> bool:
 
 func level_of(track: UpgradeTrack) -> int:
 	return int(upgrade_levels.get(track.id, 0)) if track != null else 0
+
+
+## The extra rounds the gun track has bought. Recomputed from the level rather than kept as a
+## number, which is the same rule the body follows for health and damage: levels are the only thing
+## stored, and everything else is a sum done fresh.
+func magazine_bonus() -> int:
+	var track := Upgrades.find(&"gun")
+	if track == null or track.weapon != loadout.equipped:
+		return 0
+	return track.magazine * level_of(track)
 
 
 ## What the next level of a track costs, or zero when there is no next level.
@@ -180,6 +195,9 @@ func snapshot() -> Dictionary:
 		"bought_in_wave": _bought_in_wave,
 		"upgrades": levels,
 		"stats": stats.to_dict(),
+		# Without this a resumed run hands the gun back unfound, which the player would read as
+		# the save having eaten it.
+		"loadout": loadout.to_dict(),
 	}
 
 
@@ -202,8 +220,12 @@ func restore(data: Dictionary) -> bool:
 			upgrade_levels[StringName(id)] = int((levels as Dictionary)[id])
 	var tally: Variant = data.get("stats", {})
 	stats = RunStats.from_dict(tally as Dictionary if tally is Dictionary else {})
+	var bag: Variant = data.get("loadout", {})
+	loadout = Loadout.from_dict(bag as Dictionary if bag is Dictionary else {})
 	run_in_progress = true
 	money_changed.emit(money, 0)
+	EventBus.weapon_equipped.emit(loadout.weapon())
+	loadout.announce()
 	return true
 
 
@@ -264,6 +286,7 @@ func _on_wave_cleared(_index: int, reward: int) -> void:
 	wave_in_progress = false
 	stats.waves_cleared += 1
 	earn(reward)
+	loadout.restock(_reserve_bonus())
 	save_run()
 
 
@@ -279,6 +302,13 @@ func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool) -> void:
 
 func _on_parry_perfect() -> void:
 	stats.perfect_parries += 1
+
+
+## The extra pocket a cleared wave pays out, on the same rule as the magazine. Applied whether or
+## not the gun is in hand: the wave paid for it, not the hand.
+func _reserve_bonus() -> int:
+	var track := Upgrades.find(&"gun")
+	return track.reserve * level_of(track) if track != null else 0
 
 
 ## The only thing that outlives a run. It is written on the way out rather than as the waves pass,

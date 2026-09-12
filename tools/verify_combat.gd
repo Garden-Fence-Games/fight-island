@@ -28,6 +28,7 @@ const ACROSS_THE_FIELD: float = 25.0
 var _failures: PackedStringArray = []
 var _player: Player = null
 var _enemy: Enemy = null
+var _kept_run: Dictionary = {}
 
 
 func _ready() -> void:
@@ -36,6 +37,11 @@ func _ready() -> void:
 
 func _run() -> void:
 	var arena := (load(ARENA) as PackedScene).instantiate()
+	# From a fresh run, and the machine's own run put back at the end. `GameState` restores a
+	# saved run at boot, so a developer who has picked the gun up would start this check holding
+	# it — and every damage figure below is the fists'.
+	_kept_run = SaveManager.read_json(SaveManager.RUN_PATH)
+	GameState.begin_run()
 	add_child(arena)
 	# Wave 1 belongs to the tutorial now, and a lesson holding it open would leave this check
 	# waiting for a parry nobody is going to throw. This one is not about the lesson.
@@ -80,6 +86,7 @@ func _run() -> void:
 	await _check_he_backs_away_when_crowded()
 	await _check_only_one_stone_is_ever_in_the_air()
 	await _check_the_ranged_token_is_held_until_the_stone_lands()
+	_put_the_run_back()
 	_report()
 
 
@@ -687,3 +694,10 @@ func _check_the_ranged_token_is_held_until_the_stone_lands() -> void:
 		_fail("a thrower kept the ranged token after its stone had landed")
 	_hold_still(thrower, false)
 	thrower.retire()
+
+
+func _put_the_run_back() -> void:
+	if _kept_run.is_empty():
+		SaveManager.clear_run()
+		return
+	SaveManager.write_json(SaveManager.RUN_PATH, _kept_run)

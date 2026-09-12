@@ -31,6 +31,7 @@ OPT_AIM_SOFT,Soft
 OPT_AIM_STRONG,Strong
 OPT_TUTORIAL_PROMPTS,Tutorial prompts
 OPT_DAMAGE_NUMBERS,Damage numbers
+OPT_CREDIT_NUMBERS,Credit numbers
 OPT_MOUSE_SENSITIVITY,Mouse sensitivity
 OPT_STICK_SENSITIVITY,Stick sensitivity
 OPT_INVERT_Y,Invert Y
@@ -129,3 +130,7 @@ TUTORIAL_PERFECT,Strike as the flash fades
 TUTORIAL_DODGE,Roll through the swing with {0}
 TUTORIAL_PARRY,Parry the swing with {0}
 TUTORIAL_SPRINT,Sprint with {0}
+PICKUP_TAKE,{0} Take it
+WEAPON_FISTS,Fists
+WEAPON_STICK,Stick
+WEAPON_GUN,Gun

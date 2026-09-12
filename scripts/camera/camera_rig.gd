@@ -15,8 +15,19 @@ extends Node3D
 ## geometry because the player happened to have turned the camera. Zoom stays, because it costs
 ## nothing and helps when a crowd closes in.
 
+## Where the camera sits before anybody touches the wheel. It lives here with the yaw and the pitch
+## rather than on each arena's spring arm, because it is the same decision: how the game is framed.
+##
+## Seventeen is where the trade stops paying. Further back is a more legible crowd, and it is also
+## more of the ring a body can arrive on sitting inside the shot — and a spawn point in shot is
+## refused, because a farmer fading into existence in frame tells the player the world is a spawner
+## rather than a place. Measured on the island: ten metres puts 6% of that ring on screen, thirteen
+## 14%, seventeen 25%, twenty-four 49%. Past twenty the arrivals start coming only from behind.
+const DEFAULT_ZOOM: float = 17.0
 const MIN_ZOOM: float = 6.0
-const MAX_ZOOM: float = 16.0
+## Room to pull further back when a crowd closes in. The cost of doing so is the ring above, and it
+## is the player's to pay for a moment rather than the game's to pay for a whole run.
+const MAX_ZOOM: float = 24.0
 const ZOOM_STEP: float = 1.5
 const ZOOM_SMOOTHING: float = 10.0
 const FOLLOW_SMOOTHING: float = 12.0
@@ -38,7 +49,8 @@ func _ready() -> void:
 		target = get_tree().get_first_node_in_group(&"player") as Node3D
 	rotation.y = deg_to_rad(yaw_degrees)
 	pitch_pivot.rotation.x = deg_to_rad(pitch_degrees)
-	_wanted_zoom = spring.spring_length
+	spring.spring_length = DEFAULT_ZOOM
+	_wanted_zoom = DEFAULT_ZOOM
 	if target != null:
 		global_position = target.global_position
 

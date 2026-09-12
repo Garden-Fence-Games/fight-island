@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -21,6 +21,7 @@
 [ext_resource type="Resource" path="res://data/tutorial/06_parry.tres" id="19"]
 [ext_resource type="Resource" path="res://data/tutorial/07_sprint.tres" id="20"]
 [ext_resource type="PackedScene" path="res://scenes/world/island_sky.tscn" id="21"]
+[ext_resource type="Script" path="res://scripts/systems/pickup_director.gd" id="22"]
 
 [node name="Arena" type="Node3D"]
 
@@ -41,7 +42,7 @@ script = ExtResource("3")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 
 [node name="Spring" type="SpringArm3D" parent="CameraRig/PitchPivot"]
-spring_length = 10.0
+spring_length = 17.0
 collision_mask = 0
 
 [node name="Camera" type="Camera3D" parent="CameraRig/PitchPivot/Spring"]
@@ -60,6 +61,9 @@ script = ExtResource("7")
 [node name="EnemyPool" type="Node" parent="WaveDirector/SpawnDirector"]
 script = ExtResource("8")
 enemy_scene = ExtResource("2")
+
+[node name="PickupDirector" type="Node" parent="."]
+script = ExtResource("22")
 
 [node name="TutorialDirector" type="Node" parent="."]
 script = ExtResource("11")

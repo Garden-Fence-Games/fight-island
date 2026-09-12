@@ -11,6 +11,7 @@ const PLAYER: String = "res://scenes/actors/player.tscn"
 const SETTLE_FRAMES: int = 8
 
 var _failures: PackedStringArray = []
+var _kept_run: Dictionary = {}
 
 
 func _ready() -> void:
@@ -18,6 +19,11 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	# From a fresh run, and the machine's own run put back at the end. `GameState` restores a saved
+	# run at boot, so a developer who has picked the gun up would start this check holding it — and
+	# then every punch is a shot with an empty magazine, and the gun mesh is visible on purpose.
+	_kept_run = SaveManager.read_json(SaveManager.RUN_PATH)
+	GameState.begin_run()
 	var player := (load(PLAYER) as PackedScene).instantiate() as Player
 	add_child(player)
 	await get_tree().physics_frame
@@ -282,7 +288,15 @@ func _fail(message: String) -> void:
 	_failures.append(message)
 
 
+func _put_the_run_back() -> void:
+	if _kept_run.is_empty():
+		SaveManager.clear_run()
+		return
+	SaveManager.write_json(SaveManager.RUN_PATH, _kept_run)
+
+
 func _report() -> void:
+	_put_the_run_back()
 	for _index: int in SETTLE_FRAMES:
 		await get_tree().physics_frame
 	if _failures.is_empty():
