@@ -27,6 +27,9 @@ const OUTSIDE_CONE: float = deg_to_rad(20.0)
 ## The share `soft` is expected to take off the error. Written out, not read — see
 ## `_check_soft_pulls_halfway_and_strong_goes_all_the_way`.
 const EXPECTED_SOFT_PULL: float = 0.5
+## The turn rate this check was written against. Written out, not read — see
+## `_check_a_body_turns_rather_than_snaps`.
+const EXPECTED_TURN_RATE: float = 720.0
 ## Inside the fists' 1.4 m, and well outside it. The weapon in hand decides how far the assist
 ## looks, and the fists are what a fresh run starts with.
 const IN_REACH: float = 1.2
@@ -166,14 +169,29 @@ func _check_letting_go_hands_the_facing_back() -> void:
 
 
 ## The cap is the difference between a character and a turret.
+##
+## The rate is **written out and asserted first**. Building the bound from `TURN_SPEED_DEGREES` made
+## this pass at ten times the speed — two whole revolutions in a single frame — because the
+## expectation moved with the thing it was meant to hold.
 func _check_a_body_turns_rather_than_snaps() -> void:
+	if not is_equal_approx(Player.TURN_SPEED_DEGREES, EXPECTED_TURN_RATE):
+		_fail(
+			(
+				(
+					"the body turns at %.0f°/s and this check was written for %.0f°/s — move it "
+					+ "deliberately or not at all"
+				)
+				% [Player.TURN_SPEED_DEGREES, EXPECTED_TURN_RATE]
+			)
+		)
+		return
 	_reset()
 	_player.rotation.y = 0.0
 	_push_stick(Vector2(1.0, 0.0))
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	var turned := absf(_player.rotation.y)
-	var most := deg_to_rad(Player.TURN_SPEED_DEGREES) * (3.0 / 60.0)
+	var most := deg_to_rad(EXPECTED_TURN_RATE) * (3.0 / 60.0)
 	if turned > most:
 		_fail("the body turned %.1f° in two frames, the cap allows %.1f°" % [turned, most])
 

@@ -20,6 +20,11 @@ const SETTLE_FRAMES: int = 4
 ## the pad is in hand is the exact failure this issue was opened for.
 const KEYBOARD_WORDS: PackedStringArray = ["MOUSE", "CLICK", "SPACE", "SHIFT", "WASD", "ENTER"]
 
+## How far a stick that nobody is touching wanders, and how far one somebody is. Absolute rather
+## than scaled off `Devices.STICK_WAKE` — see `_check_a_stick_at_rest_is_not_a_hand`.
+const A_RESTING_STICK: float = 0.25
+const A_PUSHED_STICK: float = 0.6
+
 var _failures: PackedStringArray = []
 var _kept_bindings: Dictionary = {}
 
@@ -66,16 +71,21 @@ func _check_the_hand_decides() -> void:
 
 ## A resting stick drifts. Without a threshold every glyph on screen would flicker for ever, which
 ## is worse than showing the wrong one.
+##
+## The two pushes are **absolute, not multiples of `STICK_WAKE`**. Scaled off the threshold, this
+## passed with the threshold at a thousandth: a drift of half of nothing is still nothing, and a
+## push of a thousandth plus a tenth is still a push. Both figures move only when somebody moves
+## them on purpose.
 func _check_a_stick_at_rest_is_not_a_hand() -> void:
 	Devices.force(InputBindings.Device.KEYBOARD)
 	var drift := InputEventJoypadMotion.new()
 	drift.axis = JOY_AXIS_LEFT_X
-	drift.axis_value = Devices.STICK_WAKE * 0.5
+	drift.axis_value = A_RESTING_STICK
 	if Devices.notice(drift):
-		_fail("a stick at rest counted as the player picking up the pad")
-	drift.axis_value = Devices.STICK_WAKE + 0.1
+		_fail("a stick sitting at %.2f counted as the player picking up the pad" % A_RESTING_STICK)
+	drift.axis_value = A_PUSHED_STICK
 	if not Devices.notice(drift):
-		_fail("a stick pushed properly did not count as the pad")
+		_fail("a stick pushed to %.2f did not count as the pad" % A_PUSHED_STICK)
 
 
 ## Not every action: some are deliberately one-device — `weapon_prev` is pad-only and the three

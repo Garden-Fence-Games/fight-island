@@ -13,13 +13,34 @@ All notable changes to this project are documented here, following
   than of the source text, so a name that only appears in a comment cannot satisfy it. Fields the
   document leaves out are not failures: a bullet is a summary and choosing what to omit is editing,
   while naming something that is not there is being wrong.
-
-
 - `tools/verify_settings.tscn` — every key in `Settings.DEFAULTS` has to be either applied by
   `Settings` itself or read by a script that is not the options row drawing it. It reads the
   project's own source to answer that, the way `verify_credits` reads `docs/credits.md`, because a
   check that can only see runtime state cannot see a consumer that does not exist. Proven by
   putting one of the dead settings back.
+- **`tools/mutate.sh`** — breaks one constant at a time and reports which breakages no check
+  notices, because reading for a guard that cannot fail does not work. Twenty-four mutations in
+  `tools/mutations.txt`, run weekly in CI and by hand when a guard is written. Seven of them
+  survived the first sweep.
+
+### Fixed
+
+- **A dodge that granted no invulnerability passed every check in the project.** `IFRAME_LENGTH` set
+  to nought: the roll still moved, still went where the keys said, still survived the chain lockout,
+  and no longer avoided anything. The dodge is one of the two defensive tools and the half that
+  matters was held by nothing. `verify_combat` now rolls through a real swing, checks a blow before
+  the window still lands, and refuses a roll that ends before its own window opens.
+- **A sprint that cost nothing passed every check.** `SPRINT_DRAIN` at zero leaves a player who
+  outruns the wave for ever, and the design rests on the opposite — a walking player cannot break
+  away from a farmhand, so retreat costs breath. `verify_combat` now runs until the breath gives out.
+- **Three guards that took their bound from the thing they were guarding**, and so agreed with
+  whatever it said: the body's turn cap (passed at ten times the rate, two revolutions a frame), the
+  stick's wake threshold (passed at a thousandth), and the emphasis ceiling (passed at a full
+  second). Each writes its figure out now and asserts the constant against it first.
+- **A camera knock that never died away passed every check.** `SHAKE_DECAY` at a thousandth leaves a
+  camera that never stops moving, which is the opposite of the entire argument for a fixed angle.
+
+### Added
 
 - **One budget for the whole hit.** `scripts/systems/emphasis.gd` is now the single table deciding
   how loud anything in a fight may be, and the only thing that emits `hitstop_requested` or

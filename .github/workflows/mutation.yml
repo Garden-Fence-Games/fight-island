@@ -1,0 +1,44 @@
+# Breaks the game on purpose and reports which breakages no check notices.
+#
+# Not on every pull request: it runs the check suite once per mutation and takes the better part of
+# half an hour. Weekly is the right cadence for the thing it measures — a guard does not go quiet
+# between one commit and the next, it goes quiet when somebody rewrites the thing underneath it.
+name: mutation
+
+on:
+  schedule:
+    # Sunday, early. Nothing is waiting on the answer.
+    - cron: "17 4 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  sweep:
+    name: Which checks can actually fail
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          lfs: true
+
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: false
+
+      - name: Import project resources
+        run: |
+          godot --headless --import --path "$GITHUB_WORKSPACE" > /dev/null 2>&1 || true
+          godot --headless --import --path "$GITHUB_WORKSPACE" > /dev/null 2>&1
+
+      # A survivor is a mutation nothing noticed: either a guard that reads its bound off the thing
+      # it is guarding, or a property nobody ever wrote a guard for. Both are worth a morning.
+      - name: Sweep
+        run: tools/mutate.sh

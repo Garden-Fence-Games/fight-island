@@ -33,6 +33,11 @@ const OUTLIVES_THE_BUFFER: float = 0.25
 ## The ceiling this check was written against, in frames. Written out, not read — see
 ## `_check_no_blow_may_pass_the_ceiling`.
 const EXPECTED_CEILING: int = 12
+## How long the fiercest knock has to be over in, and what counts as over. At the shipped decay a
+## full knock is down to a thousandth inside a second and a half; the bound is written out rather
+## than derived from the decay, or moving the decay would move the bound with it.
+const SETTLES_WITHIN: float = 1.5
+const STILL_SHAKING: float = 0.01
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -72,6 +77,7 @@ func _run() -> void:
 	await _check_a_telegraph_behind_the_player_refuses_nothing()
 	await _check_a_stop_never_eats_a_press()
 	await _check_taking_a_hit_is_the_loudest_thing_that_happens()
+	await _check_a_knock_dies_away()
 	_report()
 
 
@@ -263,6 +269,26 @@ func _check_taking_a_hit_is_the_loudest_thing_that_happens() -> void:
 	await get_tree().process_frame
 	if _rig.shake_left() <= 0.0:
 		_fail("the player took a swing to the face and the camera did not move")
+
+
+## A shake that never settles is a camera that never stops moving, and the whole argument for a
+## fixed angle is that a silhouette reads the same way every time. `SHAKE_DECAY` set to a
+## thousandth passed every check in the project.
+func _check_a_knock_dies_away() -> void:
+	_rig.settle()
+	EventBus.shake_requested.emit(1.0)
+	await get_tree().process_frame
+	if _rig.shake_left() <= 0.0:
+		_fail("the knock never landed, so nothing about it settling was tested")
+		return
+	await get_tree().create_timer(SETTLES_WITHIN, true, false, true).timeout
+	if _rig.shake_left() > STILL_SHAKING:
+		_fail(
+			(
+				"%.1f s after a knock the camera is still shaking at %.3f"
+				% [SETTLES_WITHIN, _rig.shake_left()]
+			)
+		)
 
 
 ## A farmer stood at a spot and pushed into his wind-up, or null with a failure already recorded.
