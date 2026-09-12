@@ -349,7 +349,10 @@ Everything downstream is a listener or a reader, and none of them knows a direct
 - `DayNight` owns the sun and the `WorldEnvironment` as children and reads `GameState.day_elapsed`
   — the same clock the rules read, so the light and the damage change together. It duplicates the
   environment on `_ready`, because a scene sub-resource is shared by every instance of the scene
-  and the headless checks make two arenas in one process.
+  and the headless checks make two arenas in one process. **The shadows are painted from the phase
+  too**, not left on the light: a moon at a third of daylight's energy casting noon's shadow is a
+  shadow darker than the thing that threw it, and the check holds a dimmer sun to a lighter and
+  softer one across the whole table rather than phase by phase.
 - The HUD polls the hour rather than being signalled: it moves every frame, and a signal per frame
   is a signal nobody wants. It also listens for `wave_cleared` to put the passed-wave banner up.
 

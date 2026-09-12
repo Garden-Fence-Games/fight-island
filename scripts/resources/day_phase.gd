@@ -36,6 +36,15 @@ extends Resource
 ## Degrees around the compass, and it only ever increases across a turn so the sun sweeps forward
 ## through the sky instead of swinging back the way it came.
 @export var sun_azimuth_degrees: float = 40.0
+## How much of the light a shadow takes away. It has to follow the sun rather than stay put: a moon
+## at a third of daylight's energy, casting a shadow as opaque as noon's, is what makes a night look
+## like a day render with the brightness pulled down. The shadow would be darker than the light that
+## threw it.
+@export_range(0.0, 1.0) var shadow_opacity: float = 1.0
+## How far a shadow's edge spreads. A high sun draws a hard edge because it is nearly a point; a low
+## one and a moon throw edges that have travelled through air, and a knife-sharp shadow under a dim
+## sky reads as a decal stuck to the ground rather than as shade.
+@export var shadow_softness: float = 1.0
 ## Ambient comes from the sky, so this is a multiplier on a background that darkens by itself. It
 ## goes *up* at night rather than down — the sky is already black, and what is left has to keep a
 ## silhouette legible.
