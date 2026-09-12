@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/enemy/enemy.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -20,14 +20,15 @@
 [ext_resource type="Script" path="res://scripts/components/animation_component.gd" id="18"]
 [ext_resource type="Script" path="res://scripts/components/head_look_component.gd" id="19"]
 [ext_resource type="Script" path="res://scripts/components/body_materials_component.gd" id="20"]
+[ext_resource type="Script" path="res://scripts/components/ragdoll_component.gd" id="21"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
-height = 1.7
-radius = 0.35
+height = 2.21
+radius = 0.455
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_2"]
-height = 1.7
-radius = 0.4
+height = 2.21
+radius = 0.52
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_1"]
 size = Vector3(1.6, 1.2, 1.6)
@@ -57,8 +58,11 @@ clips = {
 [node name="HeadLook" type="Node" parent="."]
 script = ExtResource("19")
 
+[node name="Ragdoll" type="Node" parent="."]
+script = ExtResource("21")
+
 [node name="Collision" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.105, 0)
 shape = SubResource("CapsuleShape3D_1")
 
 [node name="Health" type="Node" parent="."]
@@ -72,7 +76,7 @@ collision_mask = 0
 script = ExtResource("3")
 
 [node name="Shape" type="CollisionShape3D" parent="Hurtbox"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.105, 0)
 shape = SubResource("CapsuleShape3D_2")
 
 [node name="Hitbox" type="Area3D" parent="."]
@@ -89,7 +93,7 @@ disabled = true
 path_desired_distance = 0.8
 target_desired_distance = 1.2
 path_max_distance = 6.0
-radius = 0.5
+radius = 0.65
 avoidance_enabled = false
 
 [node name="StateMachine" type="Node" parent="."]
