@@ -2,6 +2,7 @@ extends GdUnitTestSuite
 ## Attack window arithmetic, and one property every attack that ships has to satisfy.
 
 const ATTACKS: String = "res://data/attacks"
+const WEAPONS: String = "res://data/weapons"
 
 
 func test_a_zero_width_chain_window_is_a_finisher() -> void:
@@ -57,6 +58,30 @@ func test_only_a_finisher_is_worth_extra_money() -> void:
 	# An enemy's swing is an AttackData too and pays nothing, so this also catches a bonus landing on
 	# the farmhand rather than on the fists.
 	assert_int(paid).is_greater(0)
+
+
+## The other direction, and the one a new weapon breaks: every weapon the player can hold ends its
+## chain on a finisher, and that finisher pays. Checked per weapon rather than over the folder,
+## because "the third hit of a combo" is a claim about a chain — a fourth weapon whose last attack
+## forgot the bonus would leave the design document saying something untrue about it.
+func test_every_weapon_ends_on_a_finisher_that_pays() -> void:
+	var weapons := _shipped_weapons()
+	assert_array(weapons).is_not_empty()
+	for weapon: WeaponData in weapons:
+		assert_int(weapon.chain_length()).is_greater(0)
+		var last := weapon.attack_at(weapon.chain_length() - 1)
+		assert_object(last).is_not_null()
+		assert_bool(last.is_finisher()).is_true()
+		assert_float(last.money_multiplier).is_greater(1.0)
+
+
+func _shipped_weapons() -> Array[WeaponData]:
+	var out: Array[WeaponData] = []
+	for name: String in DirAccess.get_files_at(WEAPONS):
+		var weapon := load("%s/%s" % [WEAPONS, name.trim_suffix(".remap")]) as WeaponData
+		if weapon != null:
+			out.append(weapon)
+	return out
 
 
 func _shipped_attacks() -> Array[AttackData]:

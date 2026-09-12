@@ -378,8 +378,12 @@ upgrade_cost(level) = round_to_5(50 * pow(1.6, level))   # 50, 80, 130, 205, 330
 The finisher bonus is the one economic lever the player earns with their hands rather than with
 their patience. It multiplies, so an elite finished on the third hit pays `2 × 3 × 2 = 12` against a
 farmhand's ordinary 2 — and the only way to reach it is to chain twice, because a fresh attack always
-starts at the first hit. It lives on the attack, beside the damage multiplier for perfect timing:
-`data/attacks/fist_uppercut.tres`.
+starts at the first hit.
+
+It lives on the attack, beside the damage multiplier for perfect timing, and **every weapon's third
+attack carries it**: `fist_uppercut`, `stick_overhead`, `gun_charged`. All three weapons therefore
+reward finishing equally, so the bonus never argues with the choice of weapon — that choice is
+already paid for in reach, stamina and ammunition.
 
 A note on what this rewards, since it is a real cost: lining the uppercut up on a nearly-dead body
 means holding the first two hits back, so the bonus asks the player to plan a kill rather than to
