@@ -368,10 +368,11 @@ func is_alive() -> bool:
 func _apply_tint() -> void:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = data.tint
-	if rank != null:
-		material.emission_enabled = true
-		material.emission = rank.glow
-		material.emission_energy_multiplier = rank.glow_energy
+	# Enabled whether or not there is a rank, so the slot exists for the hit flash to borrow on an
+	# ordinary body too. An energy of nought is what makes that free.
+	material.emission_enabled = true
+	material.emission = EliteRank.glow_of(rank)
+	material.emission_energy_multiplier = EliteRank.glow_energy_of(rank)
 	mesh.material_override = material
 	mesh.scale = Vector3.ONE * (rank.scale if rank != null else 1.0)
 

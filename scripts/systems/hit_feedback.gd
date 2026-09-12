@@ -50,8 +50,19 @@ func _on_attack_landed(target: Node3D, _damage: float, perfect: bool) -> void:
 	material.emission_enabled = true
 	material.emission = PERFECT_COLOR if perfect else NORMAL_COLOR
 	material.emission_energy_multiplier = 3.0 if perfect else 1.2
+	# Back to what the body wears at rest, not to nought. An elite *is* its emission, so a flash that
+	# faded this slot to zero left an ordinary farmhand fifteen per cent too big — and scale alone is
+	# the cue that does not read from a camera this high.
+	#
+	# Both channels, or the fade would end on the flash's cream at the rank's own energy. Asking the
+	# body rather than remembering what was here also survives a second hit landing mid-fade: every
+	# tween converges on the same answer instead of on whatever the last one happened to overwrite.
 	var tween := create_tween()
-	tween.tween_property(material, "emission_energy_multiplier", 0.0, FLASH_DURATION)
+	tween.set_parallel(true)
+	tween.tween_property(material, "emission", EliteRank.glow_of(enemy.rank), FLASH_DURATION)
+	tween.tween_property(
+		material, "emission_energy_multiplier", EliteRank.glow_energy_of(enemy.rank), FLASH_DURATION
+	)
 
 
 ## The state, held for as long as it lasts, rather than a flash when a press is refused. Seeing

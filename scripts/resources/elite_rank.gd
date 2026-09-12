@@ -22,3 +22,17 @@ extends Resource
 ## its own. Emission is the cue that survives: it reads as brighter, not just different.
 @export var glow: Color = Color(1.0, 0.42, 0.16)
 @export var glow_energy: float = 1.6
+
+
+## What a body of this rank wears in its emission slot at rest — and what a body of *no* rank wears,
+## which is nothing.
+##
+## Static and null-tolerant because two callers need the same answer and must not disagree: the body
+## writes it when it wakes up, and the hit flash borrows the slot and has to give exactly this back.
+## An elite *is* its emission, so a flash that faded the slot to nought took the rank with it.
+static func glow_of(rank: EliteRank) -> Color:
+	return rank.glow if rank != null else Color.BLACK
+
+
+static func glow_energy_of(rank: EliteRank) -> float:
+	return rank.glow_energy if rank != null else 0.0

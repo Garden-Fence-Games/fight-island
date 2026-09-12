@@ -23,6 +23,10 @@ const WELL_CLEAR: float = 20.0
 ## Two men working the same patch of field, and two men who are not. Rousing must cross the first
 ## gap and not the second, whatever figure the data happens to carry.
 const SHOULDER_TO_SHOULDER: float = 3.0
+const CONFIG: String = "res://data/waves/standard.tres"
+## Enough hits that a flash which trampled the rank would have to trample it every time to pass. One
+## hit proves the fix; fifty prove it does not drift a little further each blow.
+const FIFTY_BLOWS: int = 50
 const ACROSS_THE_FIELD: float = 25.0
 
 var _failures: PackedStringArray = []
@@ -86,6 +90,7 @@ func _run() -> void:
 	await _check_he_backs_away_when_crowded()
 	await _check_only_one_stone_is_ever_in_the_air()
 	await _check_the_ranged_token_is_held_until_the_stone_lands()
+	await _check_an_elite_keeps_its_glow_after_being_hit()
 	# Last of the checks, because it is the one that kills the sparring partner on purpose — and
 	# before the run goes back, because it pays money into the wallet on its way through.
 	await _check_a_finisher_pays_double()
@@ -271,6 +276,65 @@ func _check_enemy_closes_and_hits() -> void:
 		_fail("the farmhand should have landed a hit within six seconds")
 
 
+## An elite is recognisable by exactly one thing that survives greyscale, and the hit flash borrows
+## the very same `emission` slot. A flash that faded it to nought left an ordinary farmhand fifteen
+## per cent too big.
+##
+## **`HitFeedback` is instantiated here on purpose.** It lives in `main.tscn`, so nothing that loads
+## only the arena has it in the tree — which is exactly why neither `verify_waves` nor this file
+## caught the conflict: the two only fight when both exist. `verify_waves` measures a *fresh* elite
+## and is right about it; the glow only disappears once something touches the body.
+func _check_an_elite_keeps_its_glow_after_being_hit() -> void:
+	var config := load(CONFIG) as WaveConfig
+	if config == null or config.elite == null:
+		_fail("there is no elite to check")
+		return
+	var feedback := HitFeedback.new()
+	add_child(feedback)
+	var elite := _spawn_ranked(Vector3(SHOULDER_TO_SHOULDER, 0.0, -2.0), config.elite)
+	var plain := _spawn_ranked(Vector3(-SHOULDER_TO_SHOULDER, 0.0, -2.0), null)
+	if elite == null or plain == null:
+		_fail("the pool would not lease two farmhands")
+		feedback.queue_free()
+		return
+
+	# Emitted rather than swung, because this is the signal a landed hit puts on the bus and the only
+	# thing HitFeedback listens to. Driving a real swing would add a reach measurement to a check
+	# about a material.
+	EventBus.attack_landed.emit(elite, 10.0, false)
+	EventBus.attack_landed.emit(plain, 10.0, true)
+	await _advance(HitFeedback.FLASH_DURATION + 0.1)
+	_check_glow("after one hit", elite, config.elite.glow, config.elite.glow_energy)
+	_check_glow("after one hit", plain, Color.BLACK, 0.0)
+
+	for _blow: int in FIFTY_BLOWS:
+		EventBus.attack_landed.emit(elite, 10.0, false)
+		await get_tree().physics_frame
+	await _advance(HitFeedback.FLASH_DURATION + 0.1)
+	_check_glow("after fifty", elite, config.elite.glow, config.elite.glow_energy)
+
+	elite.retire()
+	plain.retire()
+	feedback.queue_free()
+
+
+## The flash has to still happen, or the fix would have been to stop flashing.
+func _check_glow(when: String, body: Enemy, glow: Color, energy: float) -> void:
+	var material := body.mesh.material_override as StandardMaterial3D
+	if material == null:
+		_fail("%s: the body carries no material override to read" % when)
+		return
+	if not is_equal_approx(material.emission_energy_multiplier, energy):
+		_fail(
+			(
+				"%s: emission energy is %.2f, expected %.2f"
+				% [when, material.emission_energy_multiplier, energy]
+			)
+		)
+	if not material.emission.is_equal_approx(glow):
+		_fail("%s: emission is %s, expected %s" % [when, material.emission, glow])
+
+
 ## Three claims on one body, measured on the bus because the bus is what the wallet hears.
 ##
 ## The third is the one worth spelling out. A body is leased and returned, and `last_hit_worth` is
@@ -378,7 +442,8 @@ func _report() -> void:
 		print(
 			(
 				"combat OK — hit, perfect, chain, lockout, parry, the reaper's arc, the thrower's stone, "
-				+ "a combo finished for double money, and a farmer who waits until he notices you"
+				+ "a combo finished for double money, an elite that keeps its glow after being hit, "
+				+ "and a farmer who waits until he notices you"
 			)
 		)
 		get_tree().quit(0)
@@ -492,6 +557,17 @@ func _park_enemy_at(metres: float) -> void:
 func _apart() -> float:
 	var offset := _enemy.global_position - _player.global_position
 	return Vector2(offset.x, offset.z).length()
+
+
+## A body leased with the rank asked for, or none. The spawner takes the rank, so an elite is the
+## same lease as a farmhand and not a second path.
+func _spawn_ranked(where: Vector3, rank: EliteRank) -> Enemy:
+	var director := get_node_or_null("Arena/WaveDirector") as WaveDirector
+	if director == null:
+		director = get_child(0).get_node_or_null("WaveDirector") as WaveDirector
+	if director == null or director.spawner == null:
+		return null
+	return director.spawner.spawn_at(load(FARMHAND) as EnemyData, where, 1.0, 1.0, 1.0, 1.0, rank)
 
 
 func _spawn_extra(where: Vector3) -> Enemy:
