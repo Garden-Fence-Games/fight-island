@@ -32,6 +32,19 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- **`docs/architecture.md` said the crowd's cost does not rise with the square of the crowd. It
+  does.** The measurement behind that claim read the whole physics step, which is mostly
+  `move_and_slide` and the navigation agents, and it stopped at forty bodies — so a term worth a
+  millisecond stayed buried under the ones worth two or three and the total read flat. Isolated and
+  taken past the budget, separation costs 17 µs per body at ten bodies and 77 µs at sixty, and a
+  per-body cost that climbs with the crowd is the square term by definition.
+  **The decision not to fix it stands** — at thirty bodies the pass is about 1.3 ms of a 16.7 ms
+  frame — but *not quadratic* would have meant never looking again, and past about sixty bodies a
+  grid wins by roughly four to one. Only the reason changed.
+- `stress_enemies` reports the separation pass on its own, and at sixty and a hundred and twenty
+  bodies as well as inside the budget, so the shape is re-measurable instead of asserted. Its
+  passes are spread one to a frame: two hundred in one frame is a 678 ms frame, which made the
+  tool's own busy-machine warning fire at every size — correctly, about itself.
 - **A weapon is no longer dropped where the player cannot see it.** `PickupDirector` asked the
   camera whether a point *a metre above* the ground was in shot, then laid the weapon on the ground
   — and the two answers differ exactly at the bottom edge of the frame, which is the blind side. It
