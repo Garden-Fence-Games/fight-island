@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WaveConfig" load_steps=25 format=3]
+[gd_resource type="Resource" script_class="WaveConfig" load_steps=26 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/wave_config.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/resources/wave_band.gd" id="2"]
@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://data/enemies/reaper.tres" id="5"]
 [ext_resource type="Resource" path="res://data/enemies/thrower.tres" id="6"]
 [ext_resource type="Resource" path="res://data/day/turn.tres" id="7"]
+[ext_resource type="Resource" path="res://data/waves/elite.tres" id="8"]
 
 [sub_resource type="Resource" id="Share_1"]
 script = ExtResource("3")
@@ -97,3 +98,4 @@ shares = Array[ExtResource("3")]([SubResource("Share_10"), SubResource("Share_11
 script = ExtResource("1")
 bands = Array[ExtResource("2")]([SubResource("Band_1"), SubResource("Band_3"), SubResource("Band_5"), SubResource("Band_8"), SubResource("Band_12")])
 cycle = ExtResource("7")
+elite = ExtResource("8")

@@ -104,6 +104,10 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
 - **`DayCycle`** — `phases: Array[DayPhase]`, in order. Their seconds add up to **one wave**. It
   answers three questions off the same array: whose *rules* are in force this far into the wave,
   what the *clock* reads, and how far the *sky* has turned toward the next phase.
+- **`EliteRank`** — what being an elite is worth: the health, damage and money multipliers, and the
+  mesh scale and emission that make it legible. One instance on `WaveConfig`, shared by every body
+  that rolls it, because an elite is the *same scene* — multipliers rather than a second archetype
+  is what keeps the difficulty curve from turning into an asset list.
 
 ## Autoloads — three, and why not four
 
@@ -212,8 +216,12 @@ between those two is what makes a late wave pressure rather than a wall. `enemy_
 director back; when nothing is owed and nothing is alive it emits `wave_cleared` with the reward and
 starts the breather. The economy and the HUD are listeners — the director does not know they exist.
 
-**Every number comes from the resource**, including the elite chance the elite pass will read. A
-table split across two files is a table that starts disagreeing.
+**Every number comes from the resource**, the elite chance and the `EliteRank` it hands out
+included. A table split across two files is a table that starts disagreeing.
+
+The roll is per body, not per wave: a wave is never uniformly worse, an elite is a moment inside a
+fight. A null `WaveConfig.elite` switches the whole thing off, which is how the tutorial wave and
+the headless checks run the same director without ever meeting one.
 
 ## Day and night
 

@@ -24,6 +24,14 @@ const NEAREST_SPAWN: float = 12.0
 ## The navigation map is built on a physics step, and until it answers, every point is refused.
 ## This is also why the first wave is not instant in the game.
 const MAP_SYNC_FRAMES: int = 120
+const FARMHAND: String = "res://data/enemies/farmhand.tres"
+## Far enough apart that neither shoves the other while they are being measured.
+const SHOULDER_TO_SHOULDER: float = 4.0
+## How much brighter an elite has to be than the archetype it came from, in Rec. 709 luma. Written
+## out rather than read off the resource, which would make it agree with any glow anybody sets.
+const TELLS_APART: float = 0.35
+## Enough rolls that a one-in-ten chance coming up nought would be a real result, not luck.
+const ELITE_ROLLS: int = 400
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -68,8 +76,99 @@ func _run() -> void:
 	await _check_a_wave_arrives_and_clears()
 	_check_nothing_spawned_in_shot_or_underfoot()
 	_check_the_bodies_were_reused()
+	_check_an_elite_is_worse_and_obviously_so()
+	_check_elites_keep_away_from_the_first_waves()
 	_put_the_run_back()
 	_report()
+
+
+## Two claims, checked on a body rather than on a table: an elite is worth the trouble, and it is
+## recognisable in under a second. The second one is the hard half — a hue alone would satisfy any
+## check that only compared colours, and would vanish for a colourblind player or a greyscale
+## screenshot, so what is asserted is **luminance**.
+func _check_an_elite_is_worse_and_obviously_so() -> void:
+	var config := _director.config
+	var data := load(FARMHAND) as EnemyData
+	if config == null or config.elite == null or data == null:
+		_fail("there is no elite to check")
+		return
+	var plain := _director.spawner.spawn_at(data, Vector3.ZERO)
+	var elite := _director.spawner.spawn_at(
+		data, Vector3(SHOULDER_TO_SHOULDER, 0.0, 0.0), 1.0, 1.0, 1.0, 1.0, config.elite
+	)
+	if plain == null or elite == null:
+		_fail("the pool would not lease two farmhands")
+		return
+	_same("an elite's health", elite.health.max_health, plain.health.max_health * 2.0)
+	_same("an elite's damage", elite.damage_scale, plain.damage_scale * 1.4)
+	_same("an elite's size", elite.mesh.scale.x, 1.15)
+	_check_the_elite_reads_in_greyscale(plain, elite)
+	_check_the_elite_pays_triple(plain, elite)
+	plain.retire()
+	elite.retire()
+
+
+## The one cue that survives a greyscale screenshot and a colourblind player. Emission is what makes
+## it work: it reads as brighter, not merely different.
+func _check_the_elite_reads_in_greyscale(plain: Enemy, elite: Enemy) -> void:
+	var apart := (
+		_brightness(elite.mesh.material_override) - _brightness(plain.mesh.material_override)
+	)
+	if apart < TELLS_APART:
+		_fail(
+			(
+				"an elite is %.2f brighter than a farmhand, and %.2f is the least that reads"
+				% [apart, TELLS_APART]
+			)
+		)
+
+
+## Rec. 709 luma of what the surface actually puts out, emission included — which is what a
+## greyscale screenshot would show.
+func _brightness(material: Material) -> float:
+	var surface := material as StandardMaterial3D
+	if surface == null:
+		return 0.0
+	var out := surface.albedo_color
+	if surface.emission_enabled:
+		out += surface.emission * surface.emission_energy_multiplier
+	return 0.2126 * out.r + 0.7152 * out.g + 0.0722 * out.b
+
+
+func _check_the_elite_pays_triple(plain: Enemy, elite: Enemy) -> void:
+	var paid: Array[int] = []
+	var purse := func(_enemy: Node3D, _archetype: StringName, money: int) -> void:
+		paid.append(money)
+	EventBus.enemy_died.connect(purse)
+	for body: Enemy in [plain, elite]:
+		var killing := HitInfo.new()
+		killing.damage = body.health.max_health * 2.0
+		body.health.apply(killing)
+	EventBus.enemy_died.disconnect(purse)
+	if paid.size() != 2:
+		_fail("two dead farmhands should pay twice, paid %d times" % paid.size())
+		return
+	if paid[1] != paid[0] * 3:
+		_fail("an elite should pay %d, paid %d" % [paid[0] * 3, paid[1]])
+
+
+## Wave four is where they start, and the roll is a coin toss the check would pass by luck a great
+## deal of the time — so it is rolled until the odds of a false pass are nil.
+func _check_elites_keep_away_from_the_first_waves() -> void:
+	var config := _director.config
+	if config == null:
+		return
+	for wave_index: int in range(1, config.elite_first_wave):
+		if config.elite_chance(wave_index) > 0.0:
+			_fail("wave %d can roll an elite, and elites start at %d" % [wave_index, 4])
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var rolled := 0
+	for _attempt: int in ELITE_ROLLS:
+		if rng.randf() < config.elite_chance(config.elite_first_wave):
+			rolled += 1
+	if rolled == 0:
+		_fail("no elite came up in %d rolls at wave %d" % [ELITE_ROLLS, config.elite_first_wave])
 
 
 func _put_the_run_back() -> void:
@@ -267,6 +366,11 @@ func _on_wave_cleared(wave: int, reward: int) -> void:
 	_cleared.append([wave, reward])
 
 
+func _same(what: String, got: float, wanted: float) -> void:
+	if absf(got - wanted) > 0.001:
+		_fail("%s is %.3f, should be %.3f" % [what, got, wanted])
+
+
 func _fail(message: String) -> void:
 	_failures.append(message)
 
@@ -276,7 +380,7 @@ func _report() -> void:
 		print(
 			(
 				"waves OK — the table holds, a wave arrives out of shot, clears, pays, "
-				+ "and the purse and the cost curve keep their shape"
+				+ "an elite is worse and looks it, and the purse keeps its shape"
 			)
 		)
 		get_tree().quit(0)
