@@ -80,6 +80,7 @@ const HUT_ROOF_HEIGHT: float = 0.684
 ## wreckage of a hut when it lies flat, and both need to know how wide it was drawn.
 const HUT_PLANK_WIDTH: float = 0.49
 const IslandWater := preload("res://tools/island_water.gd")
+const IslandFoliage := preload("res://tools/island_foliage.gd")
 const IslandNavigation := preload("res://tools/island_navigation.gd")
 ## How deep the enemies may follow the player in. The navigation mesh stops here, a little under the
 ## waterline: wading the shallows is allowed, and everything past it is rejected for free.
@@ -149,22 +150,9 @@ const PALM_COUNT: int = 380
 const ROCK_COUNT: int = 200
 const PEBBLE_COUNT: int = 1200
 const GRASS_COUNT: int = 24000
-## How tall a tuft stands. Two bands, and an even share out of each, because the thing that read as
-## a green carpet was not the amount of grass — it was that every blade of it was the same length.
-## Ground cover with two lengths in it has a near and a far; ground cover with one is a texture.
-##
-## The tall band stops under 1.1 m on purpose. That is the height `OcclusionFader` draws its line
-## to, which makes it the height at which the island stops dressing a body and starts hiding one.
-const GRASS_SHORT: Vector2 = Vector2(0.16, 0.34)
-const GRASS_TALL: Vector2 = Vector2(0.5, 0.85)
-const GRASS_TALL_SHARE: float = 0.5
-## A bush is ten times a tuft in triangles, so it is counted in dozens rather than thousands. It
-## never blocks: getting stuck on a shrub is worse than any realism it buys.
-const BUSH_COUNT: int = 90
-const BUSH_SIZE: Vector2 = Vector2(0.7, 1.5)
-## How wide a tuft is, drawn independently of how tall it is. Tying the two together would give
-## back the uniformity the two bands were for, one step removed: every tall tuft equally broad.
-const GRASS_WIDTH: Vector2 = Vector2(0.24, 0.46)
+## How a tuft is shaped and graded, and how many bushes there are and where they clump, both live in
+## `IslandFoliage`. What stays here is how many tufts to ask for; what they look like is not the
+## island's business.
 
 # --- Huts --------------------------------------------------------------------------------------
 ## The kit's pieces are furniture — half a metre of drying rack. A hut is one of them widened and
@@ -224,7 +212,7 @@ const GRASS_WIND: Dictionary = {
 	"wind_strength": 0.2,
 	"wind_speed": 2.6,
 	"wave_length": 9.0,
-	"bend_height": GRASS_TALL.y,
+	"bend_height": IslandFoliage.GRASS_TALL.y,
 	"bend_power": 1.4,
 	"gust_length": 42.0,
 }
@@ -534,6 +522,11 @@ func _scatter() -> Node3D:
 		stood.y = _height_at(stood.x, stood.z)
 		taken.append([stood, HUT_KEEP_OUT])
 
+	# What a bush keeps clear of. Snapshotted before the palms go in, because the palms are the one
+	# thing it is meant to crowd rather than avoid — see `IslandFoliage`.
+	var bush_avoid := taken.duplicate()
+	var trunks: Array[Vector3] = []
+
 	var palms: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
 		PALM_COUNT, CLEAR_RADIUS, PALM_RADIUS, 3.4, Vector2(0.08, 3.0), 0.0, taken
@@ -545,6 +538,7 @@ func _scatter() -> Node3D:
 		# and the model already has the proportions of a palm.
 		var grown := Vector3.ONE * (height / PALM_MODEL_HEIGHT)
 		palms.append(Transform3D((lean * turn).scaled(grown), spot))
+		trunks.append(spot)
 		blocking.append([spot, PALM_RADIUS])
 		taken.append([spot, PALM_RADIUS])
 
@@ -572,32 +566,30 @@ func _scatter() -> Node3D:
 			var here := maxf(size, wide) * 0.34
 			blocking.append([spot, here])
 			taken.append([spot, here])
+			bush_avoid.append([spot, here])
 
 	var tufts: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
-		GRASS_COUNT, 0.0, 0.0, 1.4, Vector2(SHORE_BAND * 0.4, 3.0), 0.0, [], true
+		GRASS_COUNT, 0.0, 0.0, IslandFoliage.CLUMPING, Vector2(SHORE_BAND * 0.4, 3.0), 0.0, [], true
 	):
-		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
-		var lean := Basis(Vector3.RIGHT, _rng.randf_range(-0.18, 0.18))
-		var band := GRASS_TALL if _rng.randf() < GRASS_TALL_SHARE else GRASS_SHORT
-		var height := _rng.randf_range(band.x, band.y)
-		var width := _rng.randf_range(GRASS_WIDTH.x, GRASS_WIDTH.y)
-		var grown := Vector3(
-			width / GRASS_MODEL_WIDTH, height / GRASS_MODEL_HEIGHT, width / GRASS_MODEL_WIDTH
-		)
-		# Rotated, then scaled in its own axes — not `.scaled()`, which scales along the world's.
-		# Stretching a leaning tuft up the world's Y shears it, and at six times the model's height
-		# that is not a lean any more, it is a smear.
-		tufts.append(Transform3D(turn * lean * Basis.from_scale(grown), spot))
+		var model := Vector2(GRASS_MODEL_WIDTH, GRASS_MODEL_HEIGHT)
+		tufts.append(IslandFoliage.tuft(spot, _land(spot.x, spot.z), _rng, model))
 
-	var bushes: Array[Transform3D] = []
-	for spot: Vector3 in _spots(
-		BUSH_COUNT, CLEAR_RADIUS, 0.5, 2.4, Vector2(SHORE_BAND * 0.6, 3.0), 0.0, taken, true
-	):
-		var size := _rng.randf_range(BUSH_SIZE.x, BUSH_SIZE.y)
-		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
-		var grown := Vector3.ONE * (size / BUSH_MODEL_HEIGHT)
-		bushes.append(Transform3D(turn * Basis.from_scale(grown), spot))
+	# Clumped at the feet of palms and along the band trees do not reach, rather than scattered by
+	# noise like everything else — ninety props are too few for noise to read as anything but spacing.
+	var bushes := IslandFoliage.bushes(
+		trunks,
+		bush_avoid,
+		_rng,
+		_land,
+		_height_at,
+		CLEAR_RADIUS,
+		MAX_RADIUS,
+		WATER_LEVEL,
+		SHORE_BAND,
+		MIN_GAP,
+		BUSH_MODEL_HEIGHT
+	)
 
 	# The models carry their own colours, one material per part, so nothing here tints them. What the
 	# wind material replaces is the shading, not the palette.
@@ -689,7 +681,10 @@ func _spots(
 			continue
 		var density := (_clump.get_noise_2d(x, z) + 1.0) * 0.5
 		if follow_green:
-			density = _greenness(x, z)
+			# Green says whether the ground is grass at all; lushness says how well it grows there.
+			# Greenness alone finishes its climb a half-band from the water and is flat after that,
+			# so the island had one density everywhere inland and a hard edge near the sand.
+			density = _greenness(x, z) * IslandFoliage.thinning(inland)
 		if centre_fade > 0.0:
 			density *= smoothstep(centre_fade * 0.25, centre_fade, radius)
 		if _rng.randf() > pow(density, clumping):
