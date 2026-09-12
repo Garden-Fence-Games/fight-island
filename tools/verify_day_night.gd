@@ -93,6 +93,7 @@ func _run() -> void:
 	_check_the_telegraph_floor_wins()
 	_check_night_hits_harder()
 	_check_night_can_still_be_seen()
+	_check_a_dimmer_sun_casts_a_lighter_shadow()
 	_check_nobody_notices_further_at_night()
 
 	_arena = (load(ARENA) as PackedScene).instantiate() as Node3D
@@ -233,6 +234,45 @@ func _check_night_can_still_be_seen() -> void:
 		)
 
 
+## **A dimmer sun never casts a heavier shadow.** Ordered across the whole table rather than phase
+## by phase, so a fourth phase added later is held to the same rule with nobody having to come
+## back here.
+##
+## This is the one that rots quietly: the sun's energy and the shadow's weight are two numbers in
+## two places, and tuning either alone is how a night render becomes a day render with the
+## brightness pulled down — shadows darker than the light that threw them.
+func _check_a_dimmer_sun_casts_a_lighter_shadow() -> void:
+	# Typed explicitly: `duplicate()` hands back a bare Array, and the elements of one cannot be
+	# inferred — which is a parse error, and a verify scene that will not parse hangs rather than
+	# failing, because nothing ever reaches `_report()`.
+	var phases: Array[DayPhase] = _cycle.phases.duplicate()
+	phases.sort_custom(func(a: DayPhase, b: DayPhase) -> bool: return a.sun_energy < b.sun_energy)
+	for index: int in range(1, phases.size()):
+		var dimmer: DayPhase = phases[index - 1]
+		var brighter: DayPhase = phases[index]
+		if dimmer.shadow_opacity > brighter.shadow_opacity:
+			_fail(
+				(
+					"%s is lit at %.2f and shadows at %.2f, against %s at %.2f lit and %.2f shadowed"
+					% [
+						dimmer.id,
+						dimmer.sun_energy,
+						dimmer.shadow_opacity,
+						brighter.id,
+						brighter.sun_energy,
+						brighter.shadow_opacity
+					]
+				)
+			)
+		if dimmer.shadow_softness < brighter.shadow_softness:
+			_fail(
+				(
+					"%s is dimmer than %s and draws a harder shadow edge — %.2f against %.2f"
+					% [dimmer.id, brighter.id, dimmer.shadow_softness, brighter.shadow_softness]
+				)
+			)
+
+
 ## The hour is not allowed near this one. A farmer arrives between twelve and twenty-six metres out
 ## and the thrower already notices at twelve: scale it, and every night is back to a charge from
 ## the horizon.
@@ -313,6 +353,9 @@ func _check_the_sky_follows_the_clock() -> void:
 		opens += phase.seconds
 		await get_tree().process_frame
 		_same("the sun at %s" % phase.id, sky.sun.light_energy, phase.sun_energy)
+		# Painted from the phase rather than left on the node, or a moon would throw noon's shadow.
+		_same("the shadow at %s" % phase.id, sky.sun.shadow_opacity, phase.shadow_opacity)
+		_same("the shadow edge at %s" % phase.id, sky.sun.shadow_blur, phase.shadow_softness)
 
 
 ## End to end, on a wave squeezed into a couple of seconds: the rules change while the player is
@@ -406,6 +449,7 @@ func _report() -> void:
 		print(
 			(
 				"day/night OK — a wave is a turn of the day, the clock only goes forward, "
+				+ "the shadows follow the sun that throws them, "
 				+ "and night is meaner without being darker than it can be read"
 			)
 		)

@@ -42,6 +42,11 @@ func _process(_delta: float) -> void:
 func _paint(from: DayPhase, to: DayPhase, amount: float) -> void:
 	sun.light_color = from.sun_colour.lerp(to.sun_colour, amount)
 	sun.light_energy = lerpf(from.sun_energy, to.sun_energy, amount)
+	# Shadows are half of what the light says, and they are painted here rather than left on the
+	# node: a shadow that keeps noon's weight under a moon is a shadow darker than the thing casting
+	# it, and the whole point of the cycle is that the player reads the hour off the island.
+	sun.shadow_opacity = lerpf(from.shadow_opacity, to.shadow_opacity, amount)
+	sun.shadow_blur = lerpf(from.shadow_softness, to.shadow_softness, amount)
 	_aim(
 		lerpf(from.sun_elevation_degrees, to.sun_elevation_degrees, amount),
 		rad_to_deg(
