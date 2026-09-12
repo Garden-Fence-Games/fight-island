@@ -181,6 +181,19 @@ readable: seeing what you cannot buy is the whole tension of the economy.
 There is no "skip" button — leaving without buying is done by pressing back, and the game does not
 ask whether you are sure.
 
+**The cards are `UpgradeTrack` resources**, and the effects are fields on them rather than a branch
+somewhere: nothing in the code asks "is this the health track". A sixth track would be a `.tres`.
+
+The screen stops the tree while it is up, which is what buys the breather its five seconds — the
+director's gap only starts once the cards are gone. A purchase reaches the living player
+immediately, through the `UpgradeComponent` on the body: it reads its own base values once and
+applies `base + level × step`, so it is safe to run again on a weapon swap or on a player who
+walked back into the arena with a run already under way.
+
+**A weapon track only pays out while its weapon is in hand.** The stick upgrade does nothing for
+your fists, which is what makes spreading money across weapons a real decision rather than a
+strictly worse one.
+
 ## Run summary
 
 Shown on death and on victory, with the same layout so the shape is familiar:
@@ -194,6 +207,13 @@ Shown on death and on victory, with the same layout so the shape is familiar:
 Then **Retry** (a fresh run, straight into wave 1) and **Title**.
 
 Victory adds a single line unlocking endless, and nothing else. No score screen, no rank.
+
+Death opens with **Retry** focused and victory with **Title**: each is what the player came to that
+screen for. Only the two perfect counters are set in the accent colour — they are the two numbers
+that say whether the player is getting better, and colouring the rest would bury them.
+
+The enemy panel lists what the run actually felled. An archetype that never turned up has no line,
+because the alternative is this screen keeping its own list of every enemy in the game.
 
 ## HUD during the fight
 

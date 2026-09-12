@@ -20,6 +20,10 @@ var perfect: bool = false
 ## What the wave does to this attack. On the hitbox rather than on the AttackData because the data
 ## is one shared resource: scaling it would scale it for everyone, permanently.
 var damage_scale: float = 1.0
+## What the stick upgrade does to the swing — the reach and the arc together, because the track
+## buys both. Not an argument to `arm` because only the player ever moves it, and a parameter on
+## every call site to say "unchanged" is noise.
+var reach_scale: float = 1.0
 
 var _already_hit: Array[int] = []
 
@@ -59,7 +63,7 @@ func _fit_to(from_attack: AttackData) -> void:
 	var box := shape.shape as BoxShape3D
 	if box == null:
 		return
-	var span := maxf(from_attack.reach + BODY_ALLOWANCE, 0.2)
+	var span := maxf(from_attack.reach * reach_scale + BODY_ALLOWANCE, 0.2)
 	box.size = Vector3(span * 2.0, 1.2, span * 2.0)
 	shape.position = Vector3(0.0, 1.0, 0.0)
 
@@ -87,7 +91,7 @@ func _within_the_swing(hurtbox: Hurtbox) -> bool:
 	var offset := hurtbox.global_position - source.global_position
 	offset.y = 0.0
 	var apart := offset.length()
-	if apart > attack.reach + BODY_ALLOWANCE:
+	if apart > attack.reach * reach_scale + BODY_ALLOWANCE:
 		return false
 	if apart <= POINT_BLANK:
 		return true
@@ -96,7 +100,7 @@ func _within_the_swing(hurtbox: Hurtbox) -> bool:
 	if forward.is_zero_approx():
 		return true
 	var away := rad_to_deg(forward.normalized().angle_to(offset / apart))
-	return away <= attack.arc_degrees * 0.5
+	return away <= minf(attack.arc_degrees * reach_scale, 360.0) * 0.5
 
 
 func _physics_process(_delta: float) -> void:

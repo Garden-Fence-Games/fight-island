@@ -25,6 +25,13 @@ func kills_of(archetype: StringName) -> int:
 	return int(_kills.get(archetype, 0))
 
 
+## The archetypes this run actually met, in the order they were first felled. Listing every
+## archetype in the game instead would mean this screen keeping a list of them, and that list would
+## be the second place they are enumerated.
+func archetypes_seen() -> Array:
+	return _kills.keys()
+
+
 func total_kills() -> int:
 	var total := 0
 	for archetype: StringName in _kills:

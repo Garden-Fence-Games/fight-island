@@ -18,6 +18,12 @@ const SPRINT_MINIMUM: float = 10.0
 ## means no chain is open. Windows on attack N govern the press that produces attack N + 1.
 var chain_index: int = -1
 
+## Set by the upgrade component, read by whatever is about to swing. Multipliers rather than a
+## rewritten AttackData, because the resource on disk is shared and scaling it in place would raise
+## every fist in the game and then save the result.
+var damage_multiplier: float = 1.0
+var stamina_cost_multiplier: float = 1.0
+
 var _chain_attack: AttackData = null
 var _chain_clock: float = -1.0
 var _lockout_clock: float = 0.0

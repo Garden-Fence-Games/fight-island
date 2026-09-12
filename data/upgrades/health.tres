@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeTrack" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/upgrade_track.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"health"
+display_name = "Health"
+next_level_key = "MERCHANT_HEALTH"
+max_health = 20.0
+heals_on_purchase = true

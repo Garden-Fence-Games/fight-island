@@ -91,3 +91,30 @@ UI_RESTART_DANGER,lost for good
 UI_QUIT_ASK,Quit to title?
 UI_QUIT_BODY,"The run waits for you at the title, but the wave you are in the middle of is %s. There is no saving mid-wave."
 UI_QUIT_DANGER,started again
+MERCHANT_TITLE,Prepare for the next wave
+MERCHANT_PURSE,Money
+MERCHANT_COST,Upgrade cost
+MERCHANT_LEVEL,LV.%d
+MERCHANT_MAXED,Fully upgraded. Nothing left to buy on this one.
+MERCHANT_HEALTH,"Twenty more hit points, and a full heal the moment you buy it."
+MERCHANT_STAMINA,"Fifteen more stamina, and two more a second coming back."
+MERCHANT_FISTS,"Fifteen per cent more damage, and five per cent less stamina a swing."
+MERCHANT_STICK,"Fifteen per cent more damage, and five per cent more reach and arc."
+MERCHANT_GUN,"Fifteen per cent more damage, one more round in the magazine and six in reserve."
+SUMMARY_DEFEAT,Wave %d — defeated
+SUMMARY_VICTORY,Wave %d — victory
+SUMMARY_COMBAT,Combat
+SUMMARY_ENEMIES,Enemies
+SUMMARY_UPGRADES,Upgrades
+SUMMARY_WAVES,Waves cleared
+SUMMARY_TIME,Run time
+SUMMARY_EARNED,Money earned
+SUMMARY_SPENT,Money spent
+SUMMARY_PERFECT_HITS,Perfect hits
+SUMMARY_PERFECT_PARRIES,Perfect parries
+SUMMARY_ENDLESS,Endless mode is open. The waves keep coming.
+UI_RETRY,Retry
+UI_TITLE,Title
+ENEMY_FARMHAND,Farmhands
+ENEMY_REAPER,Reapers
+ENEMY_THROWER,Throwers

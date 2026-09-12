@@ -32,6 +32,10 @@ extends Resource
 @export var elite_chance_per_wave: float = 0.05
 @export var elite_chance_ceiling: float = 0.40
 
+## Clearing this wave is the victory. It lives here with the rest of the wave's figures rather than
+## in the screen that announces it, so there is one place that knows how long a run is.
+@export var final_wave: int = 15
+
 @export_group("Reward")
 @export var base_reward: int = 50
 @export var reward_per_wave: int = 12
