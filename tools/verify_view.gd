@@ -23,14 +23,14 @@ const MARCH: float = 0.25
 ## A body is taller than the ground it stands on and the camera looks down, so the ground being out
 ## of shot and the thing standing on it being out of shot are different questions. The pickup is
 ## the low one: its prompt floats at 1.3 m but the weapon itself lies in the grass.
-const PICKUP_HEIGHT: float = 0.3
+const PICKUP_HEIGHT: float = WeaponPickup.RESTING_HEIGHT
 ## Where the player is put for the sweep: the flat middle, clear of the rock formations, so the
 ## footprint measured is the camera's and not one boulder's shadow.
 const CENTRE: Vector3 = Vector3(0.0, 0.0, 0.0)
 ## How many drops are rolled, and from how many places. Every one of them must land in shot: the
 ## fallback in `PickupDirector` exists so a weapon is never lost outright, and a weapon that is
 ## merely invisible is the failure it quietly trades down to.
-const PLACES: int = 24
+const PLACES: int = 96
 const DROPS_EACH: int = 8
 ## How far the player is moved around the island between drops.
 const WANDER: float = 34.0

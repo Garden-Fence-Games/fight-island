@@ -474,8 +474,11 @@ Two rules follow from it, and both are checked:
 
 - **A spawn is never in shot** and never closer than 12 m — `SpawnDirector`, held by `verify_waves`.
   The blind side is where arrivals are supposed to come from.
-- **A weapon pickup always is** — `PickupDirector`, held by `verify_view`, which drops 192 of them
-  from 24 places around the island and fails if one lands where the player has no reason to walk.
+- **A weapon pickup always is** — `PickupDirector`, held by `verify_view`, which drops 768 of them
+  from 96 places around the island and fails if one lands where the player has no reason to walk.
+  The question is asked at `WeaponPickup.RESTING_HEIGHT` on both sides: asking about the air a metre
+  over a weapon accepts ground the weapon itself is off the bottom of the frame on, which is how one
+  drop in two hundred was going missing.
 
 The merchant is a screen rather than a body, so the third of issue #39's placement rules has
 nothing to bind. **The thrower test is still open**: he strikes from 14 m, and neither "enough
