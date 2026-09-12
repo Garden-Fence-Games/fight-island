@@ -567,6 +567,13 @@ drains the body's colour for the duration; combat itself knows nothing about it.
 for the whole lockout rather than flashed when a press is refused: seeing that the weapon is not
 ready *before* pressing is worth more than being told afterwards.
 
+**The drain multiplies the albedo, so its colour cannot be read on its own.** A value that was a
+slate blue over a white capsule takes a textured rig to a fifth of its own brightness — which is how
+the third punch of every combo once turned the player black. `tests/test_hit_feedback.gd` holds the
+drain between a floor and a ceiling for that reason: dark enough that the lockout is visible, light
+enough that the body is still a body. A wait nobody can see reads as a dropped input, and a player
+who has turned into a silhouette is not reading anything at all.
+
 ## Animation
 
 `AnimationComponent` listens to the `StateMachine`'s `transitioned` signal and plays the clip that
