@@ -371,8 +371,20 @@ agree.
 wave_reward(n)      = 50 + 12 * (n - 1)                  # w1=50  w10=158  w15=218
 flawless_bonus      = +30 % if the wave was cleared without taking damage
 kill_bonus          = 2 per enemy, 6 per elite
+finisher_bonus      = ×2 on the body the third hit of a combo kills
 upgrade_cost(level) = round_to_5(50 * pow(1.6, level))   # 50, 80, 130, 205, 330
 ```
+
+The finisher bonus is the one economic lever the player earns with their hands rather than with
+their patience. It multiplies, so an elite finished on the third hit pays `2 × 3 × 2 = 12` against a
+farmhand's ordinary 2 — and the only way to reach it is to chain twice, because a fresh attack always
+starts at the first hit. It lives on the attack, beside the damage multiplier for perfect timing:
+`data/attacks/fist_uppercut.tres`.
+
+A note on what this rewards, since it is a real cost: lining the uppercut up on a nearly-dead body
+means holding the first two hits back, so the bonus asks the player to plan a kill rather than to
+mash one. That is the intended trade, and it is why the figure is ×2 rather than an elite's ×3 —
+enough to be worth aiming for, not enough to make finishing every body the only correct way to play.
 
 Fifteen waves with no flawless bonus earn about **2 010** plus kills. Maxing a single track costs
 **795**, so a run affords roughly two full tracks and change. That gap is the design.
