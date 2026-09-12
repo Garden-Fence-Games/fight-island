@@ -16,6 +16,10 @@ const TURN_SPEED_DEGREES: float = 360.0
 ## farmers is most of a frame spent on a query whose answer barely moves, and the player cannot get
 ## far in a quarter of a second.
 const REPATH_INTERVAL: float = 0.25
+## Where a stone leaves the hand and where it is aimed. Both at chest height, so a throw travels
+## flat: an arc would be prettier and would also make the thing impossible to read at a glance.
+const THROW_HEIGHT: float = 1.1
+const CHEST_HEIGHT: float = 1.0
 
 @export var data: EnemyData = null
 
@@ -33,6 +37,12 @@ var poise_left: float = 0.0
 var damage_scale: float = 1.0
 var speed_scale: float = 1.0
 var windup_scale: float = 1.0
+
+## The stone this body has in the air, if any. The ranged token is held until it lands rather than
+## until the throw finishes, because the design says at most one stone is in the air — and a throw
+## whose recovery is shorter than its own stone's flight would otherwise let a second one go.
+var _stone: Projectile = null
+var _token_owed: bool = false
 
 var _tokens: AttackTokens = null
 var _gravity: float = 9.8
@@ -80,6 +90,8 @@ func revive(
 	target = get_tree().get_first_node_in_group(&"player") as Node3D
 	_poise_window = 0.0
 	roused = false
+	_stone = null
+	_token_owed = false
 	if data != null:
 		poise_left = data.poise
 		if health != null:
@@ -172,6 +184,14 @@ func notices_target() -> bool:
 	return distance_to_target() <= data.notice_radius
 
 
+## Whether the player has come closer than this archetype will tolerate. Nought means he stands his
+## ground, which is every archetype but the thrower.
+func wants_room() -> bool:
+	if data == null or data.retreat_range <= 0.0 or target == null:
+		return false
+	return distance_to_target() < data.retreat_range
+
+
 func distance_to_target() -> float:
 	if target == null:
 		return INF
@@ -209,7 +229,7 @@ func path_direction(delta: float) -> Vector3:
 
 
 ## Steering that keeps bodies from stacking. Cheap, and worth far more than it costs.
-func separation() -> Vector3:
+func _separation() -> Vector3:
 	var push := Vector3.ZERO
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		var other := node as Enemy
@@ -225,7 +245,7 @@ func separation() -> Vector3:
 
 
 func apply_motion(direction: Vector3, speed: float, delta: float) -> void:
-	var steered := (direction + separation()).limit_length(1.0)
+	var steered := (direction + _separation()).limit_length(1.0)
 	# Enemies pay the same toll as the player, so backing into the shallows is a real choice
 	# rather than a free escape.
 	var wading := Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH)
@@ -249,6 +269,25 @@ func face(direction: Vector3, delta: float) -> void:
 	rotation.y = rotate_toward(rotation.y, wanted, deg_to_rad(TURN_SPEED_DEGREES) * delta)
 
 
+## Sends a stone on its way, and keeps the ranged token until it is spent.
+func throw_at(target_position: Vector3) -> void:
+	if data == null or data.attack == null or data.projectile == null:
+		return
+	var stone := data.projectile.instantiate() as Projectile
+	if stone == null:
+		push_error("%s throws something that is not a projectile" % name)
+		return
+	# Into the tree beside the thrower, not under it: a stone parented to a body that dies mid-flight
+	# would be freed in the air.
+	get_parent().add_child(stone)
+	var from := global_position + Vector3.UP * THROW_HEIGHT
+	stone.global_position = from
+	var toward := target_position + Vector3.UP * CHEST_HEIGHT - from
+	stone.launch(data.attack, self, toward, damage_scale)
+	stone.spent.connect(_on_stone_spent)
+	_stone = stone
+
+
 func claim_token() -> bool:
 	if _tokens == null:
 		return true
@@ -258,7 +297,20 @@ func claim_token() -> bool:
 func release_token() -> void:
 	if _tokens == null:
 		return
+	if _stone != null and is_instance_valid(_stone):
+		# Owed, not released. Letting go here would put a second stone in the air while the first is
+		# still travelling, which is the one thing the ranged pool of 1 exists to prevent.
+		_token_owed = true
+		return
+	_token_owed = false
 	_tokens.release(self, data != null and data.is_ranged)
+
+
+func _on_stone_spent() -> void:
+	_stone = null
+	if _token_owed:
+		_token_owed = false
+		release_token()
 
 
 func stagger(duration: float) -> void:
