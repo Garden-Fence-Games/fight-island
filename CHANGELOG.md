@@ -59,6 +59,17 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- **A distant orientation landmark cannot exist under this camera**, and #39 had been asking for one
+  since before the blockout. Measured against the real frustum rather than argued: at −50° the top
+  edge of the view still points downward, so the taller a thing is the *sooner* it leaves the frame.
+  A 30 m spire is invisible at every distance; a 3 m rock thirty metres away is in shot at full
+  zoom. Nothing at all is in frame past 30 m. Written into `docs/architecture.md` with the table,
+  because it is backwards from every intuition about landmarks and it will be proposed again.
+- It also turns out not to be needed: a camera that never turns means up-screen is always the same
+  world direction, so facing is never in question. What is left is knowing where on the island you
+  are, which the camp, the six formations and the shape of the coast already answer.
+
+
 - **A dodge that granted no invulnerability passed every check in the project.** `IFRAME_LENGTH` set
   to nought: the roll still moved, still went where the keys said, still survived the chain lockout,
   and no longer avoided anything. The dodge is one of the two defensive tools and the half that
