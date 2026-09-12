@@ -256,6 +256,19 @@ The wind costs **0.05 ms of a 4.96 ms frame** — measured against the same geom
 material, because headless renders nothing and a vertex program's cost cannot be guessed from a
 polygon count.
 
+**Water the sea cannot reach is not water.** The coastline is a noise field rather than a distance
+field, so it dips below the waterline here and there well inland, and the sea is one flat sheet
+across the whole world — it fills every one of those dips. `tools/island_water.gd` floods the height
+grid inward from its border and lifts whatever the flood cannot reach, so a pool joined to the open
+sea by a channel stays a lagoon and a pool with no way out is drained. The threshold is the whole
+thing: measured at the crest of the swell there are four bodies of water on this island — the sea
+and three puddles. Measured five centimetres higher there is one, because the damp band along the
+shore is continuous and the flood walks up the beach, round through the sand and into every puddle.
+
+The lift is *kept*, not just applied to the grid, because `_height_at` is deliberately the one place
+the mesh and the collision agree about the ground. A drain applied to the grid alone would leave
+props, colliders and the navigation bake all standing under the sand.
+
 ## Navigation
 
 The same generator bakes a `NavigationMesh` beside the terrain and hangs it on a
@@ -359,6 +372,9 @@ Two headless guards run in CI and locally:
   material overrides any of it, and that **every frond hangs off the tip of the trunk it names** to
   within a millimetre. That last check is what found the crowns had been off their trunks since the
   island was first generated.
+  It also floods the terrain's own collision heights and fails if any water stands where the open
+  sea cannot reach it, and it reads the swell height out of the water shader to fail if the waves
+  ever grow past the height the drained sand was lifted to — one number, two files.
 - **`tools/verify_navigation.tscn`** — asserts the island is baked, that a route past a boulder
   bends around it, that a spawn point inside one is refused, and — the only check straight-line
   chasing cannot pass — that a farmhand with a boulder between him and the player still gets there.
