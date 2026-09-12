@@ -224,6 +224,13 @@ jobs:
       - name: Verify camera occlusion
         run: tools/run-check.sh res://tools/verify_camera.tscn
 
+      # The camera cannot be turned, so the island is composed for one viewpoint and there is a blind
+      # side. This measures where it is rather than asserting where it should be, then holds the two
+      # rules that depend on the answer: a swing has to begin on screen at every zoom the wheel
+      # reaches, and a weapon dropped in the grass has to be somewhere the player can see it.
+      - name: Verify what the fixed camera shows
+        run: tools/run-check.sh res://tools/verify_view.tscn
+
       # A tuning record nobody can trust is worse than none: a column that silently carries the run's
       # running total instead of the wave's own reads perfectly plausible and would send a balance
       # pass the wrong way. This also holds the release build's half of the promise — a recorder

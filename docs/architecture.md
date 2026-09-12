@@ -445,12 +445,41 @@ is fighting, so a field of men who have not noticed anything still holds the wav
 
 **The angle is fixed and never turns**: yaw −45°, pitch −50°, for the whole game. The rig follows
 the player through a damped smooth rather than being parented to them, and the spring arm runs
-**6–16 m** with eased zoom.
+**11–24 m** with eased zoom, opening at 17.
 
 Fixing it is a design decision, not a simplification. Every silhouette reads the same way every
 time; the island only has to be composed for one viewpoint; and a telegraph can never end up behind
 geometry because the player happened to have turned the camera. The cost is that the arena must be
 authored so nothing important sits in the one blind direction.
+
+### Where the blind side is
+
+Measured rather than asserted, by `tools/verify_view.tscn`, which marches outward from the player
+on 36 bearings and asks the frustum where the ground leaves the frame:
+
+| arm | ground in shot, blind bearing | ground in shot, longest |
+|---|---|---|
+| 11 m (closest the wheel reaches) | 5.2 m | 22.5 m |
+| 17 m (at rest) | 8.5 m | past 30 m |
+| 24 m (furthest) | 12.0 m | past 30 m |
+
+The blind side is **bearing 130°**, down-screen — the strip of ground between the player and the
+camera, which falls off the bottom of the frame. It is very nearly half the arm, whatever the arm
+is, which is what fixes the lower end of the zoom range: a reaper strikes from 2.8 m and covers
+1.8 m more while he winds up, so under **4.6 m** of visible ground his swing begins off-screen.
+Eleven metres is the first step of the wheel clear of that. The floor was six until this was
+measured, and six shows 2.75 m.
+
+Two rules follow from it, and both are checked:
+
+- **A spawn is never in shot** and never closer than 12 m — `SpawnDirector`, held by `verify_waves`.
+  The blind side is where arrivals are supposed to come from.
+- **A weapon pickup always is** — `PickupDirector`, held by `verify_view`, which drops 192 of them
+  from 24 places around the island and fails if one lands where the player has no reason to walk.
+
+The merchant is a screen rather than a body, so the third of issue #39's placement rules has
+nothing to bind. **The thrower test is still open**: he strikes from 14 m, and neither "enough
+sightline to be a threat" nor "enough cover to close on him" has an honest threshold yet.
 
 Occlusion is handled by **fading** what comes between the camera and the player, not by dodging it.
 With a fixed angle the offenders are known at authoring time, which a moving camera could never
