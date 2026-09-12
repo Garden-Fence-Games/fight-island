@@ -163,6 +163,8 @@ All notable changes to this project are documented here, following
   player who stepped inside the scythe's 2.8 m after that was never reported to the sweep at all.
   From wave 3, where the reaper joins the band, with three men able to commit at once at night. A
   hitbox now owns the shape it resizes, and `verify_combat` swings two reaches at once.
+- A hitstop freed mid-beat left the game running at a twentieth of speed for good: the `await` that
+  restores the clock belongs to a node a scene change can take away.
 - Four headless checks read whatever run happened to be saved on the machine. `GameState` restores
   a run at boot, so a developer carrying the gun ran `verify_combat` against gun damage and
   `verify_animation` against an empty magazine. CI never saw it — a clean checkout has no `user://`.
