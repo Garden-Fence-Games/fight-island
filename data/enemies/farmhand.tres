@@ -17,4 +17,4 @@ rouse_radius = 7.0
 attack_range = 1.6
 is_ranged = false
 preferred_range = 1.4
-tint = Color(0.78, 0.36, 0.28, 1)
+tint = Color(1, 1, 1, 1)

@@ -8,6 +8,7 @@ extends Node
 ## Run: godot --headless --path . res://tools/verify_animation.tscn
 
 const PLAYER: String = "res://scenes/actors/player.tscn"
+const ENEMY: String = "res://scenes/actors/enemy.tscn"
 const SETTLE_FRAMES: int = 8
 
 var _failures: PackedStringArray = []
@@ -64,7 +65,48 @@ func _run() -> void:
 	_check_the_body_can_be_tinted(player)
 	await _check_the_fist_combo_animates(player, machine, anim)
 	_check_the_gun_starts_hidden(player)
+	await _check_the_farmer_animates()
 	_report()
+
+
+## The states a farmer is actually in while a wave is running have to name a clip the rig carries.
+##
+## This exists because a missing clip is deliberately silent — the rig arrives one animation at a
+## time and a component that complained would turn main red for it. The cost of that silence is that
+## a **typo** in the map looks exactly like a clip nobody has authored yet: `Chase` pointed at
+## `walk_attack` for a rig whose clip is called `chase`, and the farmer walked at you without moving
+## a leg, with nothing in the log.
+##
+## Only Idle and Chase, on purpose. The attack, stagger and death clips are genuinely unwritten, and
+## asserting those would be asserting the calendar rather than the wiring.
+func _check_the_farmer_animates() -> void:
+	var farmer := (load(ENEMY) as PackedScene).instantiate() as Enemy
+	add_child(farmer)
+	await get_tree().physics_frame
+	var anim := farmer.get_node_or_null("Animation") as AnimationComponent
+	if anim == null:
+		_fail("the farmer carries no AnimationComponent")
+		farmer.queue_free()
+		return
+	if anim.animation_player == null:
+		_fail("the farmer's component found no AnimationPlayer")
+		farmer.queue_free()
+		return
+	for state: StringName in [&"Idle", &"Chase"]:
+		farmer.machine.current.transition_to(state)
+		await get_tree().physics_frame
+		if anim.current_clip() == &"":
+			_fail(
+				(
+					"the farmer plays nothing in %s — the map names %s and the rig carries %s"
+					% [
+						state,
+						anim.clips.get(state, &""),
+						anim.animation_player.get_animation_list()
+					]
+				)
+			)
+	farmer.queue_free()
 
 
 ## Driven by a real press rather than by calling `transition_to`, because `Move` sends itself back
@@ -358,7 +400,7 @@ func _report() -> void:
 				+ "Sprint runs the same cycle faster, "
 				+ "the three punches play their own clip at the attack's speed, "
 				+ "a gun in hand carries the body differently, "
-				+ "the gun stays hidden, the body can be tinted"
+				+ "the gun stays hidden, the body can be tinted, the farmer walks and idles"
 			)
 		)
 		get_tree().quit(0)
