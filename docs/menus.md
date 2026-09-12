@@ -52,10 +52,21 @@ Credits are not a title entry: the layout holds three rows without crowding the 
 that nobody opens twice is not worth the height. They do not have a home yet — the Options screen
 is five tabs and a sixth would not be one of the five the design draws.
 
-The background is the island with the camera drifting slowly. Not a pre-rendered image: the real
-arena scene, so the title screen can never look like a different game than the one that follows.
-Until the island is composed for it, a grey wash stands in — one node named `Background`, which is
-the only thing that changes when the arena moves in.
+The background is the island with the camera drifting slowly, blurred and dimmed. Not a pre-rendered
+image: `scenes/world/vista.tscn` instances **the same `island.tscn` the fight happens on**, lit by
+the same `island_sky.tscn` the arena uses, so the title cannot look like a different game than the
+one that follows. It is blurred by the **pause menu's own shader**, for the same reason: two
+treatments of "the world behind a menu" would drift apart.
+
+The vista camera **swings through a narrow arc rather than orbiting**. The island is composed for
+one angle — that is the fixed camera's bargain — so a full orbit would show it from the side nobody
+built, and the title would become the one place in the game that lies about what the island looks
+like.
+
+It is added in code rather than sitting in the scene, and that is not a style choice: a headless
+boot has no renderer to draw an island with, and the dummy one answers a material query on it with
+an error about the absence of a GPU rather than about the game. The consequence is worth stating —
+**CI boots the title without its backdrop**, so a broken vista is a thing a human has to see.
 
 When a run is in progress and the player quit to title, Play becomes **Continue**, and a second
 entry **New run** appears below it.

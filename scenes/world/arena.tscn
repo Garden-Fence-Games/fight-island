@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=23 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -20,35 +20,11 @@
 [ext_resource type="Resource" path="res://data/tutorial/05_dodge.tres" id="18"]
 [ext_resource type="Resource" path="res://data/tutorial/06_parry.tres" id="19"]
 [ext_resource type="Resource" path="res://data/tutorial/07_sprint.tres" id="20"]
-
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
-
-[sub_resource type="Sky" id="Sky_1"]
-sky_material = SubResource("ProceduralSkyMaterial_1")
-
-[sub_resource type="Environment" id="Environment_1"]
-background_mode = 2
-sky = SubResource("Sky_1")
-tonemap_mode = 2
-ssao_enabled = true
-fog_enabled = true
-fog_mode = 1
-fog_light_color = Color(0.6, 0.73, 0.84, 1)
-fog_light_energy = 1.0
-fog_sun_scatter = 0.15
-fog_density = 0.0
-fog_depth_curve = 0.9
-fog_depth_begin = 55.0
-fog_depth_end = 130.0
+[ext_resource type="PackedScene" path="res://scenes/world/island_sky.tscn" id="21"]
 
 [node name="Arena" type="Node3D"]
 
-[node name="Environment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_1")
-
-[node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.707, -0.436, 0.557, 0, 0.788, 0.616, -0.707, -0.436, 0.557, 0, 20, 0)
-shadow_enabled = true
+[node name="Sky" parent="." instance=ExtResource("21")]
 
 [node name="Island" parent="." instance=ExtResource("5")]
 [node name="AttackTokens" type="Node" parent="."]
