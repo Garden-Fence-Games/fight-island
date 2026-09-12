@@ -41,6 +41,9 @@ func _run() -> void:
 
 	_arena = (load(ARENA) as PackedScene).instantiate() as Node3D
 	add_child(_arena)
+	# Wave 1 belongs to the tutorial now, and a lesson holding it open would leave this check
+	# waiting for a parry nobody is going to throw. This one is not about the lesson.
+	_stand_the_tutorial_down(_arena)
 	_director = _arena.get_node("WaveDirector") as WaveDirector
 	_director.halt()
 	await _wait_for_the_map()
@@ -347,3 +350,9 @@ func _check_a_wave_never_opens_with_a_thrower() -> void:
 				break
 		if wave_index >= 5 and not ever_ranged:
 			_fail("no thrower ever appears at wave %d, where the table says they do" % wave_index)
+
+
+func _stand_the_tutorial_down(arena: Node) -> void:
+	var tutorial := arena.get_node_or_null(^"TutorialDirector") as TutorialDirector
+	if tutorial != null:
+		tutorial.stand_down()

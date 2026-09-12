@@ -47,6 +47,9 @@ func _ready() -> void:
 func _run() -> void:
 	_arena = (load(ARENA) as PackedScene).instantiate() as Node3D
 	add_child(_arena)
+	# Wave 1 belongs to the tutorial now, and a lesson holding it open would leave this check
+	# waiting for a parry nobody is going to throw. This one is not about the lesson.
+	_stand_the_tutorial_down(_arena)
 	await _wait_for_the_map()
 
 	_player = _arena.get_node("Player") as Player
@@ -208,3 +211,9 @@ func _report() -> void:
 	for failure: String in _failures:
 		printerr(failure)
 	get_tree().quit(1)
+
+
+func _stand_the_tutorial_down(arena: Node) -> void:
+	var tutorial := arena.get_node_or_null(^"TutorialDirector") as TutorialDirector
+	if tutorial != null:
+		tutorial.stand_down()

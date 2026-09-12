@@ -8,6 +8,25 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **Wave 1 is the tutorial.** A `TutorialDirector` in the arena reads seven `TutorialStep`
+  resources, hand-drives that one wave, then hands the island back — wave 2 arrives on the formula
+  like every other. Every step closes retroactively, so a player who lands a chained perfect hit
+  before being asked closes three lessons at once and never sees a prompt. Cleared steps live in
+  `progress.json`; a second run skips the whole thing.
+- One prompt at a time, bottom-centre, fading in after a beat of silence. It never blocks, never
+  pauses, never repeats.
+- The on-demand spawn hook: `SpawnDirector.spawn` and `spawn_at` take `harmless`, and a harmless
+  farmer is refused the attack token — he closes and circles but cannot swing.
+- `HealthComponent.minimum_health`, raised to one during wave 1 and dropped after. Silently: the
+  flash, the numbers and the stagger all behave normally.
+- `EventBus.dodge_evaded` — a blow arriving while the player rolls through it, which is the dodge
+  lesson. Distinct from a dodge that merely happened.
+- `EventBus.player_state_changed`.
+- `tools/verify_tutorial.tscn` — headless proof that a chained perfect hit closes three lessons
+  with no prompt shown, that a harmless farmer cannot claim a token, that the player cannot be
+  taken below one hit point during wave 1, that the parry holds the wave open, and that a second
+  run skips the tutorial.
+
 - Saving and resuming a run. `run.json` is written when a wave starts, when one is cleared and when
   an upgrade is bought, so Continue survives closing the game and a run resumed between two waves
   still gets the merchant it had not spent. A finished run deletes its file.

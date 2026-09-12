@@ -87,6 +87,15 @@ func halt() -> void:
 		spawner.clear()
 
 
+## Takes the island back from whatever drove a wave by hand — the tutorial today, scripted waves
+## later. The breather runs as usual afterwards, so the next wave arrives exactly like every other.
+func hand_over(after_wave: int) -> void:
+	wave = after_wave
+	_running = false
+	_left_to_send = 0
+	_next_wave_in = breather
+
+
 func is_running() -> bool:
 	return _running
 

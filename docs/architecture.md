@@ -21,8 +21,8 @@ res://
     components/   health_component.gd, stamina_component.gd, hitbox.gd, hurtbox.gd,
                   hit_info.gd, state_machine.gd, state.gd
     actors/       player/, enemy/, merchant/ — each with its states/
-    systems/      wave_director.gd, spawn_director.gd, economy.gd, save_manager.gd,
-                  settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
+    systems/      wave_director.gd, spawn_director.gd, tutorial_director.gd, economy.gd,
+                  save_manager.gd, settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
     camera/       camera_rig.gd
     ui/
   tests/
@@ -137,6 +137,22 @@ throw, release, and assert the pool still shows the token held.
 
 The stone is parented to the thrower's **parent**, not to the thrower. A projectile owned by a body
 that dies mid-flight would be freed in the air.
+
+## The tutorial, and what it proves about the bus
+
+Wave 1 is hand-driven by a `TutorialDirector` reading `TutorialStep` resources — see
+[tutorial.md](tutorial.md). It is worth stating here because it is the **bus paying for itself**:
+the tutorial watches the whole fight without a single combat system knowing it exists, and deleting
+the node cannot break anything. `attack_landed` already carries the perfect flag, `parry_perfect`
+already fires, and two signals were added for lessons nothing else had a reason to announce —
+`dodge_evaded`, a blow arriving while the player rolls through it, and `player_state_changed`.
+
+`dodge_evaded` is not "the player dodged". The lesson is the moment, not the button, and only a hit
+that was actually refused says the moment was right.
+
+Movement is the one lesson with no event behind it, and that is the honest answer rather than a gap:
+nothing else in this game cares that the player walked, so there is nothing to listen to and the
+director measures the distance itself.
 
 ## The wallet
 
