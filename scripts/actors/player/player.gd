@@ -16,6 +16,7 @@ const SPRINT_MINIMUM: float = 10.0
 ## means no chain is open. Windows on attack N govern the press that produces attack N + 1.
 var chain_index: int = -1
 
+var _body_materials: Array[StandardMaterial3D] = []
 var _chain_attack: AttackData = null
 var _chain_clock: float = -1.0
 var _lockout_clock: float = 0.0
@@ -106,6 +107,43 @@ func locomotion_facing(movement: Vector3) -> Vector3:
 		return Vector3.ZERO
 	var target := wanted - signf(offset) * limit
 	return Vector3(-sin(target), 0.0, -cos(target))
+
+
+## Every material the body is drawn with, as copies this body owns. Whatever wants to tint the whole
+## silhouette — the drained colour while a chain is spent — goes through here.
+##
+## **Copies, not the originals.** The rig's materials come out of the imported glTF and are shared by
+## every instance of it, so tinting one in place would drain the merchant and all three farmers the
+## day they use the same rig. A surface override is private to this mesh instance.
+##
+## Tinting `albedo_color` rather than replacing the material with `material_override`: albedo is
+## multiplied with the texture, so the character stays himself and merely goes the colour asked for.
+## An override would flatten a textured rig to a single block of paint.
+##
+## Built on first use, because the visual is an instanced scene and its meshes are not in the tree
+## when the player's own `_ready` runs.
+func body_materials() -> Array[StandardMaterial3D]:
+	if not _body_materials.is_empty():
+		return _body_materials
+	for mesh: MeshInstance3D in _mesh_instances(self):
+		for surface: int in mesh.get_surface_override_material_count():
+			var source := mesh.get_active_material(surface) as StandardMaterial3D
+			if source == null:
+				continue
+			var copy := source.duplicate() as StandardMaterial3D
+			mesh.set_surface_override_material(surface, copy)
+			_body_materials.append(copy)
+	return _body_materials
+
+
+func _mesh_instances(root: Node) -> Array[MeshInstance3D]:
+	var found: Array[MeshInstance3D] = []
+	for child: Node in root.get_children():
+		var mesh := child as MeshInstance3D
+		if mesh != null:
+			found.append(mesh)
+		found.append_array(_mesh_instances(child))
+	return found
 
 
 func apply_motion(direction: Vector3, speed: float, delta: float) -> void:

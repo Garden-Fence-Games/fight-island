@@ -51,6 +51,7 @@ func _run() -> void:
 	await _check_move_walks(machine, anim)
 	await _check_idle_plays_idle(machine, anim)
 	await _check_clipless_state_rests(anim)
+	_check_the_body_can_be_tinted(player)
 	_report()
 
 
@@ -99,6 +100,32 @@ func _check_clipless_state_rests(anim: AnimationComponent) -> void:
 		_fail("a state with no clip should emit clip_missing")
 
 
+## `HitFeedback` drains the body's colour while a chain is spent, and it lives in `main.tscn` — so
+## nothing that loads only the arena instantiates it, and the day the capsule became a rig the
+## property it reached through vanished with no test to notice. This is that test.
+##
+## Both halves matter. Empty means the feedback silently does nothing. Materials shared with the
+## imported rig mean tinting the player drains every other character built on the same glTF.
+func _check_the_body_can_be_tinted(player: Player) -> void:
+	var materials := player.body_materials()
+	if materials.is_empty():
+		_fail("the body exposes no materials to tint — HitFeedback has nothing to drain")
+		return
+	var meshes: Array[MeshInstance3D] = []
+	for node: Node in player.find_children("*", "MeshInstance3D", true, false):
+		meshes.append(node as MeshInstance3D)
+	for mesh: MeshInstance3D in meshes:
+		for surface: int in mesh.get_surface_override_material_count():
+			var override := mesh.get_surface_override_material(surface)
+			if override == null:
+				continue
+			if mesh.mesh.surface_get_material(surface) == override:
+				_fail("surface %d of %s is tinted in place, not through a copy" % [surface, mesh.name])
+	# Handing back a fresh set each call would leave the tween animating materials nothing draws.
+	if player.body_materials() != materials:
+		_fail("body_materials() hands back a different set each call")
+
+
 func _fail(message: String) -> void:
 	_failures.append(message)
 
@@ -107,7 +134,12 @@ func _report() -> void:
 	for _index: int in SETTLE_FRAMES:
 		await get_tree().physics_frame
 	if _failures.is_empty():
-		print("animation OK — walk, idle and hurt on the rig, Move walks, Idle idles, Sprint rests")
+		print(
+			(
+				"animation OK — walk, idle and hurt on the rig, Move walks, Idle idles, "
+				+ "Sprint rests, the body can be tinted"
+			)
+		)
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:
