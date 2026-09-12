@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="DayPhase" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/day_phase.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"night"
+display_name = "PHASE_NIGHT"
+starts_at_hour = 21.0
+seconds = 165.0
+damage_scale = 1.25
+windup_scale = 0.88
+rouse_scale = 2.00
+melee_tokens = 3
+sun_colour = Color(0.55, 0.66, 1, 1)
+sun_energy = 0.30
+sun_elevation_degrees = 62.0
+sun_azimuth_degrees = 250.0
+ambient_energy = 1.35
+sky_top = Color(0.03, 0.04, 0.12, 1)
+sky_horizon = Color(0.09, 0.12, 0.26, 1)
+fog_colour = Color(0.1, 0.13, 0.24, 1)
+fog_density = 0.022

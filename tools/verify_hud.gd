@@ -35,8 +35,10 @@ func _run() -> void:
 
 	_check_vitals()
 	_check_wave_and_money()
+	await _check_the_clock()
 	await _check_ammo_follows_the_weapon()
 	await _check_damage_numbers()
+	await _check_the_banner_announces_the_wave()
 	_check_stats_are_tallied()
 	_put_the_run_back()
 	_report()
@@ -47,6 +49,18 @@ func _put_the_run_back() -> void:
 		SaveManager.clear_run()
 		return
 	SaveManager.write_json(SaveManager.RUN_PATH, _kept_run)
+
+
+## Quarter past eight in the evening, which catches the two ways a clock face goes wrong: minutes
+## printed as a fraction of an hour, and an hour that loses its leading zero at midnight.
+func _check_the_clock() -> void:
+	for hour: float in [20.25, 0.5]:
+		GameState.hour = hour
+		await get_tree().process_frame
+		var reads := _label("Root/TopRight/ClockChip/Clock").text
+		var wanted := "20:15" if is_equal_approx(hour, 20.25) else "00:30"
+		if reads != wanted:
+			_fail("the clock reads %s at %.2f, expected %s" % [reads, hour, wanted])
 
 
 func _check_vitals() -> void:
@@ -107,6 +121,21 @@ func _check_damage_numbers() -> void:
 	if numbers.get_child_count() != 1:
 		_fail("the setting is on and no damage number appeared")
 	Settings.set_value(&"gameplay_damage_numbers", restore)
+
+
+## The one thing in the HUD that announces rather than reports, and the whole reward for surviving
+## a night. Run after the money check, because passing a wave pays on the way through, and before
+## the tally, which clears a wave of its own.
+func _check_the_banner_announces_the_wave() -> void:
+	var banner := _label("Root/Banner")
+	if banner.modulate.a > 0.0:
+		_fail("the banner should be invisible until a wave is passed")
+	EventBus.wave_cleared.emit(3, 100)
+	await get_tree().process_frame
+	if banner.text != "WAVE 03 PASSED":
+		_fail("the banner reads %s, expected WAVE 03 PASSED" % banner.text)
+	if banner.modulate.a <= 0.0:
+		_fail("the banner should be on screen when a wave is passed")
 
 
 func _check_stats_are_tallied() -> void:
