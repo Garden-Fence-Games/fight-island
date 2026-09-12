@@ -130,8 +130,16 @@ const PALM_RADIUS: float = 0.2
 ## Rocks smaller than this are stepped over, not walked around, so they neither collide nor count.
 const BLOCKING_ROCK: float = 0.9
 const PALM_COUNT: int = 380
-const ROCK_COUNT: int = 950
-const PEBBLE_COUNT: int = 3400
+## Stone is scattered thinly on purpose. A rock the player never has to think about is not scenery,
+## it is litter in front of the fight — and the island already says "stone" with the six authored
+## formations, which is where a boulder is supposed to be noticed.
+##
+## Every count here is a **target, not a promise**: `_spots` gives up after `count * 120` throws, so
+## a figure past what the gap rule can fit on the island is simply never reached. Rocks sat at 950
+## and placed 424 — which is why the build line reports what was laid down rather than what was
+## asked for, and why lowering a saturated figure does nothing until it drops below the ceiling.
+const ROCK_COUNT: int = 200
+const PEBBLE_COUNT: int = 1200
 const GRASS_COUNT: int = 24000
 ## How tall a tuft stands. Two bands, and an even share out of each, because the thing that read as
 ## a green carpet was not the amount of grass — it was that every blade of it was the same length.
@@ -222,6 +230,8 @@ var _ground := FastNoiseLite.new()
 ## grid has been built and drained, which is what lets `_height_at` add it without chasing its tail.
 var _lift := PackedFloat32Array()
 var _drained: int = 0
+## What the scatter actually laid down, as opposed to what it was asked for.
+var _placed: Dictionary = {}
 
 
 func _initialize() -> void:
@@ -284,14 +294,15 @@ func _initialize() -> void:
 	print(
 		(
 			(
-				"island built — %d verts, %d palms, %d rocks, %d tufts, %d huts, "
+				"island built — %d verts, %d palms, %d rocks, %d pebbles, %d tufts, %d huts, "
 				+ "%d nav polys, %d cells drained"
 			)
 			% [
 				GRID * GRID,
-				PALM_COUNT,
-				ROCK_COUNT,
-				GRASS_COUNT,
+				_placed.get("palms", 0),
+				_placed.get("rocks", 0),
+				_placed.get("pebbles", 0),
+				_placed.get("tufts", 0),
 				_hut_sites().size(),
 				navigation.navigation_mesh.get_polygon_count(),
 				_drained
@@ -568,6 +579,12 @@ func _scatter() -> Node3D:
 
 	# The models carry their own colours, one material per part, so nothing here tints them. What the
 	# wind material replaces is the shading, not the palette.
+	_placed = {
+		"palms": palms.size(),
+		"rocks": rocks.size(),
+		"pebbles": pebbles.size(),
+		"tufts": tufts.size(),
+	}
 	props.add_child(_multi("Grass", _nature(GRASS_MODEL), tufts, _grass_wind(), GRASS_FADE, false))
 	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles, {}, PEBBLE_FADE, false))
 	props.add_child(_multi("Palms", _nature(PALM_MODEL), palms, _palm_wind()))
