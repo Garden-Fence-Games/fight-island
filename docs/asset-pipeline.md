@@ -180,7 +180,13 @@ The importer strips these from the node name and generates the body:
 Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 
 **Player:** `idle`, `walk`, `run`, `sprint`, `dodge_roll`, `parry`, `parry_success`, `hurt`,
-`death`, `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`.
+`death`, `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`, plus
+`idle_gun` and `walk_gun` — the gun is held across the whole body, so standing and walking with it
+are their own clips rather than a layer over the unarmed ones.
+
+**The gun mesh is part of the rig**, parented to the hand bone, because the gun clips animate it.
+It is hidden rather than detached when the player is unarmed — see `WeaponVisualComponent` in
+[architecture.md](architecture.md).
 
 **Farmer (shared by all three):** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`,
 `death`, plus one attack set per archetype — `windup_punch` / `attack_punch`,

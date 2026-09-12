@@ -35,6 +35,20 @@ func enter(message: Dictionary) -> void:
 		player.hitbox.landed.connect(_on_landed)
 
 
+## The clip this swing plays, named by its own `AttackData`. The animation component asks the state
+## for it instead of looking `Attack` up in a table, because one state drives all nine attacks and
+## only the state knows which one is running. The table still answers for every other state.
+func clip_name() -> StringName:
+	return _attack.animation if _attack != null else &""
+
+
+## How long the clip should take: exactly as long as the attack itself. The windows are balance and
+## live in the `.tres`; the clip bends to them, so the fist is out during the active frames rather
+## than roughly around them. Returning zero leaves the clip at its authored speed.
+func clip_duration() -> float:
+	return _attack.total_duration() if _attack != null else 0.0
+
+
 func exit() -> void:
 	if player.hitbox != null:
 		player.hitbox.disarm()

@@ -44,6 +44,9 @@ _subresources={
 "idle": {
 "settings/loop_mode": 1
 },
+"idle_gun": {
+"settings/loop_mode": 1
+},
 "walk": {
 "settings/loop_mode": 1
 },
