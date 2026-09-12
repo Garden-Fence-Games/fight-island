@@ -27,7 +27,7 @@ const MINUTES_IN_AN_HOUR: float = 60.0
 const BANNER_LIFE: float = 2.2
 const BANNER_FADE: float = 0.4
 
-var _pulse: Tween = null
+var _pulsing: Tween = null
 
 @onready var wave_chip: PanelContainer = $Root/TopRight/WaveChip
 @onready var wave: Label = $Root/TopRight/WaveChip/Wave
@@ -58,6 +58,7 @@ func _ready() -> void:
 	EventBus.wave_cleared.connect(_on_wave_cleared)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	EventBus.ammo_changed.connect(_on_ammo_changed)
+	EventBus.rounds_scavenged.connect(_on_rounds_scavenged)
 	EventBus.attack_landed.connect(_on_attack_landed)
 	EventBus.enemy_died.connect(_on_enemy_died)
 	ammo.visible = false
@@ -93,26 +94,34 @@ func _on_stamina_changed(current: float, maximum: float) -> void:
 func _on_money_changed(balance: int, delta: int) -> void:
 	money.text = "$%s" % _grouped(balance)
 	if delta > 0:
-		_pulse_the_chip()
+		_pulse(money_chip)
 
 
-## The chip answers when money arrives, because the counter alone does not: a two-digit number
+## Rounds arrive off bodies, one at a time, in the middle of the fight that dropped them — which is
+## exactly the moment a counter in the corner goes unread. Same answer as the money chip, for the
+## same reason, and it is the only reason ammunition ever announces itself: spending and reloading
+## are things the player did on purpose.
+func _on_rounds_scavenged(_rounds: int) -> void:
+	_pulse(ammo)
+
+
+## A panel answers when something arrives, because the counter alone does not: a two-digit number
 ## changing in the corner of a fight is not something the eye is going to catch on its own.
 ##
 ## Spending is deliberately silent. The player pressed the button and watched the price — being
 ## punched at about it afterwards tells them nothing they did not just do.
-func _pulse_the_chip() -> void:
+func _pulse(chip: Control) -> void:
 	if bool(Settings.get_value(&"access_reduce_flashing")):
 		return
-	if _pulse != null and _pulse.is_valid():
-		_pulse.kill()
-	# Read every time rather than cached in _ready: the chip is laid out after the first frame, and
-	# it resizes when the balance gains a digit or a translation lengthens the string.
-	money_chip.pivot_offset = money_chip.size * 0.5
-	money_chip.scale = Vector2.ONE
-	_pulse = create_tween()
-	_pulse.tween_property(money_chip, "scale", Vector2.ONE * PULSE_SCALE, PULSE_UP)
-	_pulse.tween_property(money_chip, "scale", Vector2.ONE, PULSE_DOWN)
+	if _pulsing != null and _pulsing.is_valid():
+		_pulsing.kill()
+	# Read every time rather than cached in _ready: a chip is laid out after the first frame, and it
+	# resizes when the balance gains a digit or a translation lengthens the string.
+	chip.pivot_offset = chip.size * 0.5
+	chip.scale = Vector2.ONE
+	_pulsing = create_tween()
+	_pulsing.tween_property(chip, "scale", Vector2.ONE * PULSE_SCALE, PULSE_UP)
+	_pulsing.tween_property(chip, "scale", Vector2.ONE, PULSE_DOWN)
 
 
 ## Nothing before the first wave: a chip reading zero is furniture, and the director takes a

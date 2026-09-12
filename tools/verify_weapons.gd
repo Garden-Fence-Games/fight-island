@@ -47,7 +47,9 @@ func _run() -> void:
 	_check_the_gun_comes_loaded()
 	await _check_a_shot_needs_a_round()
 	_check_the_double_tap_needs_two()
-	_check_the_reserve_only_grows_between_waves()
+	_check_a_cleared_wave_hands_over_no_rounds()
+	_check_the_pocket_stops_at_the_ceiling()
+	_check_a_body_in_eight_leaves_a_round()
 	await _check_reloading_takes_from_the_pocket()
 	_check_the_wheel_only_offers_what_was_found()
 	await _check_a_swap_drops_the_chain()
@@ -75,9 +77,16 @@ func _check_the_tables_match() -> void:
 	_expect(gun.attack_at(2).damage, 55.0, "gun charged shot damage")
 	if gun.magazine != 6 or not is_equal_approx(gun.reload_time, 1.6):
 		_fail("the magazine is %d and the reload %.2f s" % [gun.magazine, gun.reload_time])
-	if gun.reserve_start != 24 or gun.reserve_per_wave != 8:
+	if gun.reserve_start != 24 or gun.ammo_cap != 30:
+		_fail("the pocket starts at %d and caps at %d" % [gun.reserve_start, gun.ammo_cap])
+	if not is_equal_approx(gun.scavenge_chance, 0.125):
+		_fail("a body leaves a round %.3f of the time, expected one in eight" % gun.scavenge_chance)
+	if gun.reserve_start + gun.magazine > gun.ammo_cap:
 		_fail(
-			"the reserve starts at %d and grows by %d" % [gun.reserve_start, gun.reserve_per_wave]
+			(
+				"the gun arrives carrying %d rounds against a ceiling of %d"
+				% [gun.reserve_start + gun.magazine, gun.ammo_cap]
+			)
 		)
 	if gun.attack_at(1).ammo_cost != 2:
 		_fail("the double tap costs %d rounds, expected 2" % gun.attack_at(1).ammo_cost)
@@ -178,16 +187,48 @@ func _check_the_double_tap_needs_two() -> void:
 		_fail("the double tap left %d rounds behind" % bag.magazine)
 
 
-## The gun's rhythm, stated as a check: the pocket refills between waves and at no other moment.
-func _check_the_reserve_only_grows_between_waves() -> void:
+## The gun's rhythm, stated as a check: **nothing refills on a clock.** A cleared wave pays money
+## and nothing else, and the pocket is exactly where the last fight left it.
+func _check_a_cleared_wave_hands_over_no_rounds() -> void:
 	var bag := GameState.loadout
+	bag.magazine = 0
 	bag.reserve = 0
-	bag.spend(0)
-	if bag.reserve != 0:
-		_fail("the pocket grew without a wave being cleared")
 	EventBus.wave_cleared.emit(3, 0)
-	if bag.reserve != Arsenal.find(&"gun").reserve_per_wave:
-		_fail("a cleared wave added %d rounds, expected 8" % bag.reserve)
+	if bag.carried() != 0:
+		_fail("a cleared wave handed over %d rounds; nothing should" % bag.carried())
+
+
+## The ceiling, and the fact that it counts the magazine. A bag that could be topped up past it
+## would make the number on the panel a suggestion.
+func _check_the_pocket_stops_at_the_ceiling() -> void:
+	var bag := GameState.loadout
+	var gun := Arsenal.find(&"gun")
+	bag.magazine = gun.magazine
+	bag.reserve = 0
+	var taken := bag.take(gun.ammo_cap * 2)
+	if bag.carried() != gun.ammo_cap:
+		_fail("the bag holds %d rounds against a ceiling of %d" % [bag.carried(), gun.ammo_cap])
+	if taken != gun.ammo_cap - gun.magazine:
+		_fail("a full top-up reported %d rounds taken, expected %d" % [taken, bag.room()])
+	if bag.take(1) != 0:
+		_fail("a full bag took another round")
+
+
+## One body in eight leaves a round. The roll is handed in rather than made, so this asks the
+## question with a known answer instead of firing ten thousand kills and squinting at the total.
+func _check_a_body_in_eight_leaves_a_round() -> void:
+	var bag := GameState.loadout
+	var chance := Arsenal.find(&"gun").scavenge_chance
+	bag.magazine = 0
+	bag.reserve = 0
+	if bag.scavenge(chance * 0.5) != 1:
+		_fail("a roll inside the chance left nothing behind")
+	if bag.scavenge(chance) != 0:
+		_fail("a roll on the chance itself left a round behind")
+	if bag.scavenge(1.0) != 0:
+		_fail("a roll past the chance left a round behind")
+	if bag.carried() != 1:
+		_fail("three rolls left %d rounds in the bag, expected one" % bag.carried())
 
 
 func _check_reloading_takes_from_the_pocket() -> void:
@@ -317,7 +358,10 @@ func _report() -> void:
 		await get_tree().physics_frame
 	if _failures.is_empty():
 		print(
-			"weapons OK — the stick sweeps two, the gun rations, and nothing carries across a swap"
+			(
+				"weapons OK — the stick sweeps two, the gun rations against a ceiling the bodies "
+				+ "refill, and nothing carries across a swap"
+			)
 		)
 		get_tree().quit(0)
 		return

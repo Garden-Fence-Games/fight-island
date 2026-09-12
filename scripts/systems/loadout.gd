@@ -6,12 +6,12 @@ extends RefCounted
 ## A slice of run state with its own behaviour, exactly like `RunStats` — and for the same reason.
 ## `GameState` warns in its own docstring about becoming a god object, and "the bag" is a coherent
 ## thing with rules of its own: a weapon that has not been found cannot be equipped, a shot the
-## magazine cannot pay for is a reload the player has to choose to make, and **the reserve only
-## grows between waves**.
+## magazine cannot pay for is a reload the player has to choose to make, and **there is a hard
+## ceiling on the rounds the player may hold, magazine included**.
 ##
-## That last one is the gun's entire rhythm. The magazine decides how long a fight lasts and the
-## reserve decides how many fights there are, so running dry mid-wave is a designed moment rather
-## than an accident of balance.
+## That ceiling is the gun's entire rhythm. Nothing refills on a clock: rounds come off the bodies
+## of the people who came to kill you and from the merchant, so running dry mid-wave is a designed
+## moment and the answer to it is to close rather than to wait it out.
 ##
 ## It announces on the bus rather than carrying signals of its own: a listener that connected to a
 ## `Loadout` would lose its connection the moment a new run built a new one.
@@ -59,7 +59,7 @@ func find_weapon(id: StringName) -> bool:
 	if picked != null and picked.is_ranged:
 		# It comes loaded. A gun handed over empty is a gun the player thinks is broken.
 		magazine = picked.magazine
-		reserve = picked.reserve_start
+		reserve = mini(picked.reserve_start, maxi(picked.ammo_cap - magazine, 0))
 	EventBus.weapon_found.emit(id)
 	equip(id)
 	return true
@@ -112,13 +112,52 @@ func reload(bonus: int = 0) -> void:
 	announce()
 
 
-## What a cleared wave adds, and the only moment the reserve ever grows.
-func restock(bonus: int = 0) -> void:
-	var ranged := Arsenal.find(&"gun")
-	if ranged == null or not found.has(ranged.id):
-		return
-	reserve += ranged.reserve_per_wave + bonus
+## Every round in the bag, magazine included. The one number the ceiling is measured against, and
+## the one a player counts: a reload moves rounds between two pockets, it never makes any.
+func carried() -> int:
+	var ranged := _ranged()
+	return magazine + reserve if ranged != null else 0
+
+
+## How many more rounds would fit. Zero is a full bag, and a full bag is what makes the merchant's
+## rounds worth timing rather than buying the moment they are affordable.
+func room() -> int:
+	var ranged := _ranged()
+	if ranged == null:
+		return 0
+	return maxi(ranged.ammo_cap - carried(), 0)
+
+
+## Rounds taken into the pocket, which is not always the rounds offered. Returns how many landed,
+## because a caller that announces "+1" over a bag that could not hold it is telling the player
+## something that did not happen.
+func take(rounds: int) -> int:
+	var taken := mini(maxi(rounds, 0), room())
+	if taken == 0:
+		return 0
+	reserve += taken
 	announce()
+	return taken
+
+
+## What a body leaves behind, if it leaves anything.
+##
+## **The roll arrives rather than being made here.** A one-in-eight that rolls its own dice can only
+## be checked by firing it ten thousand times and squinting at the total; one that is handed a
+## number can be asked the question with a known answer, which is what `verify_weapons` does.
+func scavenge(roll: float) -> int:
+	var ranged := _ranged()
+	if ranged == null or roll >= ranged.scavenge_chance:
+		return 0
+	return take(1)
+
+
+## The gun, but only once it has been found. Rounds mean nothing to a player who has no gun to put
+## them in, and a pocket that filled up before the weapon arrived would be a pocket the player
+## never saw fill.
+func _ranged() -> WeaponData:
+	var ranged := Arsenal.find(&"gun")
+	return ranged if ranged != null and found.has(ranged.id) else null
 
 
 func announce() -> void:
