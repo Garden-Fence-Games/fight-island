@@ -8,6 +8,16 @@ All notable changes to this project are documented here, following
 
 ### Changed
 
+- **The island's loose stone is thinned out.** Scattered rocks drop from 424 placed to 200 and
+  pebbles from 3 400 to 1 200. The six authored formations are untouched — they are what the island
+  is supposed to say "stone" with, and a fighting floor peppered with boulders nobody ever has to
+  think about was reading as litter in front of the fight.
+- `tools/build_island.gd` reports what the scatter **laid down** rather than what it was asked for.
+  The counts are targets: `_spots` gives up after `count * 120` throws, so a figure past what the
+  gap rule can fit is simply never reached. Rocks sat at 950 and were placing 424 — which is why
+  lowering that number did nothing until it dropped under the ceiling. Grass asks for 24 000 and
+  places 11 898.
+
 - **The gun is rationed by a ceiling and fed by the dead.** The player never holds more than 30
   rounds, magazine included, and **a cleared wave no longer hands over any**. Ammunition enters a
   run two ways now: one body in eight leaves a round behind, and the gun track hands over its six

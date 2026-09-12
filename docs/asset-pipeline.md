@@ -36,7 +36,10 @@ the test the second one had to pass too:
 - **No textures at all**, only per-material colours, so the island keeps its own palette. This was
   also once true of the shader — see *The palm is the exception* below, which is what changed.
 - **Cheap enough for a `MultiMesh`.** A palm is 186 triangles, a boulder 80, a tuft of grass 36 —
-  times 380, 950 and 24 000 instances, which is a number worth checking before downloading anything.
+  times 380, 200 and 11 898 instances, which is a number worth checking before downloading anything.
+  Those are the figures the build line prints, not the constants it was asked for: the counts in
+  `build_island.gd` are targets, and `_spots` stops throwing after `count * 120` tries, so anything
+  past what the minimum-gap rule can fit on the island is never reached.
 - **Named parts.** The generator maps colours onto `woodBark`, `leafsGreen`, `stone` and so on, so a
   pack that renames a part fails loudly at build time rather than rendering in a default.
 
