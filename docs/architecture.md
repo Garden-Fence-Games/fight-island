@@ -283,12 +283,21 @@ into it. What it does measure is the side the crowd rules live on.
 `Enemy._separation()`, which is every body against every other, and the hitbox polling
 `get_overlapping_areas()`. Neither is measurable at the budget:
 
-- The whole physics step is **1–2.5 ms against the 16.7 ms a 60 Hz frame has**, from zero bodies to
+- The whole physics step is **1–3 ms against the 16.7 ms a 60 Hz frame has**, from zero bodies to
   forty.
-- The cost does **not** rise with the square of the crowd. An every-body-against-every-other rule
-  only matters if it does.
-- A spatial grid was written, measured against the scan it replaced, and **reverted**: it made no
-  difference at thirty bodies and cost a static cache and more code to say the same thing.
+- The cost **does** rise with the square of the crowd, and the first version of this note said
+  otherwise. The whole-step figure cannot see it: a step is mostly `move_and_slide` and the
+  navigation agents, so a term worth a millisecond hides under them and the total reads flat.
+  Isolated and taken past the budget, the pass costs **17 µs per body at ten bodies and 77 µs per
+  body at sixty** — a per-body cost that climbs with the crowd is the definition of the square
+  term. `stress_enemies` now reports that column and that figure, so the claim is re-measurable
+  rather than a sentence.
+- **It is still not worth fixing**, which is what the original note got right. At the budget of
+  thirty the pass is about 1.3 ms, and a spatial grid was written, measured against the scan it
+  replaced, and **reverted**: it made no difference at thirty bodies and cost a static cache and
+  more code to say the same thing. The decision stands; only its reason changes. *Not quadratic*
+  would have meant never looking again, and the difference matters the day the budget rises —
+  past about sixty bodies the grid wins by roughly four to one.
 
 The run-to-run noise on a busy machine is larger than the gap between no enemies and forty of them,
 which is the most useful single fact here: **nothing on this side is close to the budget**, and the
