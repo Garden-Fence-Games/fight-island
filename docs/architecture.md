@@ -114,6 +114,23 @@ See [ADR 0004](decisions/0004-three-autoloads.md).
 Rejected outright: `Settings` (folded into `SaveManager` and `GameState`), `SceneManager` (a
 forty-line `main.gd` covers four scenes), `DebugManager` (a scene behind an action).
 
+## The wallet
+
+`Economy` owns the cost curve and nothing else. The balance lives on `GameState`, and a wave's
+reward lives on `WaveConfig` with the rest of that wave's figures — three homes, none of them
+duplicating another. The kill bonus is not there at all: it is `EnemyData.money`, per archetype,
+and an elite will carry a larger one on its own body the same way it carries scaled health.
+
+**The wallet listens.** The director pays out on the bus when a wave clears and each body pays out
+as it dies; neither knows a wallet exists. Money only moves through `earn` and `spend`, so nothing
+can change it without `money_changed` going out, and `spend` answers whether the purchase went
+through — a merchant that has to check the balance itself is a merchant that can forget to.
+
+**The curve is the design.** Rewards rise by a flat twelve a wave while costs rise by three fifths
+a level, so the gap widens on purpose: fifteen waves earn 2 010 and maxing one track costs 795. The
+check asserts that ratio as a *band* — two to three tracks a run — rather than as a number, so a
+tuning pass that keeps the shape passes and one that flattens the choice does not.
+
 ## Signals
 
 Named as a past-tense fact, never as a command and never `on_*`:
@@ -411,7 +428,9 @@ Two headless guards run in CI and locally:
   `max_alive`, clears when the last body dies, pays the tabled reward, and reuses bodies rather than
   making them. The spawn rules are checked against **two hundred points from the search**, not
   against the four a wave happened to use — with the "never in shot" rule deleted, a four-body wave
-  still passed, which made that check decorative.
+  still passed, which made that check decorative. It also asserts the upgrade cost curve, that a
+  run buys about two tracks out of five, and that clearing a wave puts both the reward and the
+  kills into the purse.
 - **`tools/verify_aim.tscn`** — drives a real joypad event and a real key press through the
   engine's own input path, and the real camera projection for the cursor, then asserts that holding
   a movement key still walks the body and does not follow its facing, that the body turns at a
