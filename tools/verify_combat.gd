@@ -24,6 +24,12 @@ const WELL_CLEAR: float = 20.0
 ## gap and not the second, whatever figure the data happens to carry.
 const SHOULDER_TO_SHOULDER: float = 3.0
 const ACROSS_THE_FIELD: float = 25.0
+## Where the second swinger stands while the first one is measured: far enough that its own swing
+## reaches nobody, so the only thing it brings to the measurement is that it armed at all.
+const INTERLOPER_DISTANCE: float = 20.0
+## Where the player waits before stepping into a swing that is already open. Past every reach in the
+## game, so the sweep has demonstrably found nothing before the step.
+const WELL_OUT_OF_REACH: float = 4.0
 
 var _failures: PackedStringArray = []
 var _player: Player = null
@@ -81,6 +87,7 @@ func _run() -> void:
 	_check_the_two_farmers_differ_in_greyscale()
 	await _check_the_sweep_covers_the_sides_and_nothing_else()
 	await _check_a_sidestep_still_beats_a_farmhand()
+	await _check_one_swing_never_shrinks_another()
 	_check_the_thrower_matches_the_table()
 	_check_the_stone_can_be_sidestepped()
 	await _check_he_backs_away_when_crowded()
@@ -377,8 +384,9 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"combat OK — hit, perfect, chain, lockout, parry, the reaper's arc, the thrower's stone, "
-				+ "a combo finished for double money, and a farmer who waits until he notices you"
+				"combat OK — hit, perfect, chain, lockout, parry, the reaper's arc through a second "
+				+ "man's swing, the thrower's stone, a combo finished for double money, and a "
+				+ "farmer who waits until he notices you"
 			)
 		)
 		get_tree().quit(0)
@@ -590,6 +598,30 @@ func _check_a_sidestep_still_beats_a_farmhand() -> void:
 	_hold_still(_enemy, false)
 
 
+## **Two bodies swinging at once, and neither one's reach is the other's.** The melee pool is two by
+## day and three at night, so from wave 3 — where the reaper joins the band beside the farmhand —
+## this is an ordinary fight rather than a corner of one.
+##
+## It is the one case a check that arms a single hitbox cannot see, and it is the case that was
+## broken: the box `_fit_to` resizes came out of the enemy scene as a sub-resource, and a scene
+## sub-resource is handed to every instance rather than copied, so all thirty-two pooled bodies
+## shared one. A farmhand arming during the reaper's active frames pulled that box in to its own
+## 1.6 m, and a player stepping inside the scythe's 2.8 m after that was never reported to it.
+func _check_one_swing_never_shrinks_another() -> void:
+	var reaper := _lease(REAPER)
+	if reaper == null:
+		_fail("could not lease a reaper")
+		return
+	_hold_still(reaper, true)
+	_hold_still(_enemy, true)
+	var caught := await _swing_catches_a_player_who_steps_in(reaper, 2.6, _enemy)
+	_hold_still(_enemy, false)
+	_hold_still(reaper, false)
+	reaper.retire()
+	if not caught:
+		_fail("a farmhand arming mid-sweep took the reaper's reach down to its own")
+
+
 ## Stops a body thinking for the length of a measurement, and it has to cover **all** of it rather
 ## than one bearing at a time. Left running between two bearings, a farmer two metres away notices
 ## the player, closes and lands a swing of his own — which grants the player i-frames, so the next
@@ -623,6 +655,38 @@ func _swing_reaches(enemy: Enemy, degrees: float, metres: float) -> bool:
 	var before := _player.health.current_health
 	enemy.hitbox.arm(enemy.data.attack, enemy, false)
 	await _advance(enemy.data.attack.active + 0.05)
+	enemy.hitbox.disarm()
+	return _player.health.current_health < before
+
+
+## Whether a swing already open catches a player who walks into it, while a second body arms a swing
+## of its own in between.
+##
+## The arrival is the point. A player standing in the arc when the hitbox opens is hit on the first
+## frame, before anything else has had a chance to touch the swing — so that ordering proves
+## nothing. `_within_the_swing` deliberately keeps a missed body eligible for the rest of the sweep,
+## and this is the window in which the reach the weapon claims has to still be the reach it has.
+##
+## The interloper is parked where nothing it does can reach anybody: the only thing it contributes
+## to the measurement is the fact of having armed.
+func _swing_catches_a_player_who_steps_in(enemy: Enemy, metres: float, interloper: Enemy) -> bool:
+	_reset_player()
+	await _advance(_player.health.hit_invulnerability + 0.1)
+	enemy.global_position = Vector3.ZERO
+	enemy.rotation.y = 0.0
+	interloper.global_position = Vector3(0.0, 0.0, INTERLOPER_DISTANCE)
+	_player.global_position = Vector3(0.0, 0.0, -WELL_OUT_OF_REACH)
+	await get_tree().physics_frame
+	var before := _player.health.current_health
+	enemy.hitbox.arm(enemy.data.attack, enemy, false)
+	# Two frames with nobody in range, so the swing is unambiguously open and has already found
+	# nothing — one is not enough to tell an empty arc from an overlap the server has yet to report.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	interloper.hitbox.arm(interloper.data.attack, interloper, false)
+	_player.global_position = Vector3(0.0, 0.0, -metres)
+	await _advance(enemy.data.attack.active)
+	interloper.hitbox.disarm()
 	enemy.hitbox.disarm()
 	return _player.health.current_health < before
 

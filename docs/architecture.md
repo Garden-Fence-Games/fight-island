@@ -41,6 +41,13 @@ mask = the opposing hurtbox layer. Carries `attack_data: AttackData`, `source: N
 **call-method track** switches it on for the active frames and off afterwards. A per-swing
 `_already_hit: Array[int]` of instance IDs stops one swing hitting twice.
 
+The box is resized per swing, to the reach of the attack being thrown — and **a hitbox duplicates
+its shape on `_ready`** because of it. A `.tscn`'s sub-resources are handed to every instance of
+that scene rather than copied, so thirty-two pooled bodies were resizing one box between them: the
+last one to arm decided how far every open hitbox reached. It is the same trap `DayNight` avoids on
+its `WorldEnvironment`, and the rule is general — **anything that writes to a sub-resource of a
+scene that is instanced more than once must own a copy of it first.**
+
 **`Hurtbox extends Area3D`** — the mirror: `monitoring = false`, `monitorable = true`,
 `collision_layer` = its own hurtbox layer, `mask = 0`. Holds a reference to its `HealthComponent`
 and emits `hurt(info: HitInfo)`.
