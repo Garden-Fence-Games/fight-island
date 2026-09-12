@@ -122,9 +122,15 @@ Direct `.blend` import is fine during blockout. Switch before the first CI expor
 
 - **1 Godot unit = 1 metre.** Blender scene unit scale 1.0.
 - **Apply all transforms** before exporting (`Ctrl+A → All Transforms`).
-- Godot is Y-up / −Z forward and glTF is Y-up / +Z forward; the importer converts. **Export with
-  glTF defaults and never hand-rotate in Blender.**
-- Character origin at the feet, facing −Z. Weapon origin at the grip, barrel or blade along −Z.
+- The importer converts the **up axis** — Blender's Z-up becomes Y-up — and nothing else. **Export
+  with glTF defaults and never hand-rotate in Blender** to compensate for it.
+- **It does not convert the facing, and that one is a trap.** glTF says a character's front is +Z,
+  Godot says a node's forward is −Z, and nothing reconciles them: a character authored correctly in
+  Blender, facing −Y as Blender expects, arrives in Godot facing +Z and aims out of its own back.
+  **The model instance in the scene carries the 180° yaw** — `Visual` in `player.tscn` — rather than
+  the `.blend`, so the artist's file stays natural to work in and re-exporting can never undo the
+  fix. `tools/verify_head_look.tscn` fails if a rig turns up facing the wrong way.
+- Character origin at the feet. Weapon origin at the grip, barrel or blade along −Z.
 - **Root motion off.** Movement is code-driven so it can be interrupted on frame one.
 - Normal maps must be flagged `Normal Map` in the import dock, or the lighting is subtly wrong
   forever.
@@ -174,7 +180,13 @@ The importer strips these from the node name and generates the body:
 Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 
 **Player:** `idle`, `walk`, `run`, `sprint`, `dodge_roll`, `parry`, `parry_success`, `hurt`,
-`death`, `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`.
+`death`, `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`, plus
+`idle_gun` and `walk_gun` — the gun is held across the whole body, so standing and walking with it
+are their own clips rather than a layer over the unarmed ones.
+
+**The gun mesh is part of the rig**, parented to the hand bone, because the gun clips animate it.
+It is hidden rather than detached when the player is unarmed — see `WeaponVisualComponent` in
+[architecture.md](architecture.md).
 
 **Farmer (shared by all three):** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`,
 `death`, plus one attack set per archetype — `windup_punch` / `attack_punch`,

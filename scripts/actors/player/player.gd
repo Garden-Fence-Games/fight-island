@@ -24,6 +24,7 @@ var chain_index: int = -1
 var damage_multiplier: float = 1.0
 var stamina_cost_multiplier: float = 1.0
 
+var _body_materials: Array[StandardMaterial3D] = []
 var _chain_attack: AttackData = null
 var _chain_clock: float = -1.0
 var _lockout_clock: float = 0.0
@@ -37,8 +38,8 @@ var _gravity: float = 9.8
 @onready var hitbox: Hitbox = $Hitbox
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var machine: StateMachine = $StateMachine
-@onready var mesh: MeshInstance3D = $Body
 @onready var aim: AimComponent = $Aim
+@onready var head_look: HeadLookComponent = get_node_or_null("HeadLook") as HeadLookComponent
 
 
 func _ready() -> void:
@@ -96,6 +97,67 @@ func move_direction() -> Vector3:
 func look_direction(movement: Vector3) -> Vector3:
 	var aimed := aim.direction() if aim != null else Vector3.ZERO
 	return aimed if not aimed.is_zero_approx() else movement
+
+
+## Where the body should point while it is only walking or standing: along its own movement, never
+## at the aim. The head carries the aim now, and a body that turned to the cursor while travelling
+## somewhere else would play a forward stride sideways — the moonwalk that having one `walk` clip
+## and a free-turning body produces.
+##
+## **Standing still is the exception.** The neck stops at its limit, so an aim further round than
+## that would leave the player looking over one shoulder with no way to ever face it. The body then
+## turns just far enough to bring the aim back inside the head's reach, and not one degree further.
+## Attacks and dodges do not come through here: a swing commits to the aim itself, in full.
+func locomotion_facing(movement: Vector3) -> Vector3:
+	if not movement.is_zero_approx():
+		return movement
+	var aimed := aim.direction() if aim != null else Vector3.ZERO
+	if aimed.is_zero_approx() or head_look == null:
+		return Vector3.ZERO
+	var wanted := atan2(-aimed.x, -aimed.z)
+	var offset := angle_difference(rotation.y, wanted)
+	var limit := deg_to_rad(head_look.limit_degrees)
+	if absf(offset) <= limit:
+		return Vector3.ZERO
+	var target := wanted - signf(offset) * limit
+	return Vector3(-sin(target), 0.0, -cos(target))
+
+
+## Every material the body is drawn with, as copies this body owns. Whatever wants to tint the whole
+## silhouette — the drained colour while a chain is spent — goes through here.
+##
+## **Copies, not the originals.** The rig's materials come out of the imported glTF and are
+## shared by every instance of it, so tinting one in place would drain the merchant and all three
+## farmers the day they use the same rig. A surface override is private to this mesh instance.
+##
+## Tinting `albedo_color` rather than replacing the material with `material_override`: albedo is
+## multiplied with the texture, so the character stays himself and merely goes the colour asked for.
+## An override would flatten a textured rig to a single block of paint.
+##
+## Built on first use, because the visual is an instanced scene and its meshes are not in the tree
+## when the player's own `_ready` runs.
+func body_materials() -> Array[StandardMaterial3D]:
+	if not _body_materials.is_empty():
+		return _body_materials
+	for mesh: MeshInstance3D in _mesh_instances(self):
+		for surface: int in mesh.get_surface_override_material_count():
+			var source := mesh.get_active_material(surface) as StandardMaterial3D
+			if source == null:
+				continue
+			var copy := source.duplicate() as StandardMaterial3D
+			mesh.set_surface_override_material(surface, copy)
+			_body_materials.append(copy)
+	return _body_materials
+
+
+func _mesh_instances(root: Node) -> Array[MeshInstance3D]:
+	var found: Array[MeshInstance3D] = []
+	for child: Node in root.get_children():
+		var mesh := child as MeshInstance3D
+		if mesh != null:
+			found.append(mesh)
+		found.append_array(_mesh_instances(child))
+	return found
 
 
 func apply_motion(direction: Vector3, speed: float, delta: float) -> void:

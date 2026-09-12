@@ -19,7 +19,9 @@ res://
     autoload/     event_bus.gd, game_state.gd, audio_manager.gd
     resources/    attack_data.gd, weapon_data.gd, upgrade_track.gd, wave_config.gd
     components/   health_component.gd, stamina_component.gd, hitbox.gd, hurtbox.gd,
-                  hit_info.gd, state_machine.gd, state.gd
+                  hit_info.gd, state_machine.gd, state.gd, aim_component.gd,
+                  animation_component.gd, head_look_component.gd,
+                  weapon_visual_component.gd
     actors/       player/, enemy/, merchant/ — each with its states/
     systems/      wave_director.gd, spawn_director.gd, tutorial_director.gd, economy.gd,
                   save_manager.gd, settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
@@ -480,6 +482,25 @@ an attack takes its facing once, on entry, so a swing cannot be steered mid-anim
 goes where the stick or the keys say, rolling *away* from the aim when there is no movement input
 at all, because rolling into what you are shooting at is not what the button means.
 
+### Who does the pointing, once there is a rig
+
+The aim is one question with two answers, split the day the capsule became a character:
+
+- **While walking or standing, the body faces where it travels** — `Player.locomotion_facing`. A
+  body free to point at the cursor while travelling elsewhere plays a forward stride sideways, and
+  with one `walk` clip that is a moonwalk. This is also why there are no strafe clips yet: a
+  character who always walks the way he faces never needs one.
+- **The head carries the aim**, up to the neck's 55°. That is the whole of `HeadLookComponent`.
+- **Standing still, the body takes the remainder.** Past the neck's limit it turns just far enough
+  to bring the aim back inside the head's reach and stops, so a player can face anything without the
+  body ever swinging round for a few degrees of cursor movement.
+- **Attacks and dodges do not come through any of this.** A swing snaps to the aim in full, on
+  entry: what you point at is what you hit.
+
+The consequence to keep in view: while *moving*, an aim more than 55° off the direction of travel is
+not fully expressed. Closing that gap is what strafe clips and a torso split buy, and neither is
+worth building before the gun makes shooting-while-moving a real decision.
+
 ## The chain lockout
 
 Where it lives is the interesting part. The clock is on `Player`, beside the chain bookkeeping, for
@@ -495,6 +516,76 @@ nobody can see reads as a dropped input, and the player blames the game. `HitFee
 drains the body's colour for the duration; combat itself knows nothing about it. The state is shown
 for the whole lockout rather than flashed when a press is refused: seeing that the weapon is not
 ready *before* pressing is worth more than being told afterwards.
+
+## Animation
+
+`AnimationComponent` listens to the `StateMachine`'s `transitioned` signal and plays the clip that
+matches the state. It does not know whose skeleton it drives: the `AnimationPlayer` and the machine
+are found under its parent when its exports are left null, so a reimport that renames the glTF
+nodes does not require touching the scene.
+
+Three decisions worth keeping:
+
+- **The states do not start their own clips.** A state that had to remember would one day forget,
+  and that bug is a character frozen mid-stride with nothing in the log to explain it. Driving it
+  from the one signal the machine already emits means a new state cannot be added without the
+  animation question being answered.
+- **A state may still *name* its own clip, and that name wins.** `Attack` is the reason: one state
+  drives all nine attacks and which one is running is `AttackData`, so no table could answer for it.
+  The component asks — `clip_name()`, and `clip_duration()` to stretch the clip to the attack's own
+  windup-active-recovery — rather than the state pushing, because `StateMachine` runs `enter` before
+  it emits and a state that started its own clip would have it stopped again one line later. The
+  clip bends to the balance figures, never the reverse: the `.tres` is where an attack's timing
+  lives, and a punch whose clip ran at its authored speed would have the fist out a frame late for
+  ever.
+- **A state with no clip plays nothing and says nothing.** The rig arrives one animation at a time,
+  so most of the map points at clips that do not exist yet — that is the normal state of affairs,
+  not a fault. It also keeps the build green: the import gate fails on any `WARNING` line, so a
+  component that complained once per transition would turn main red for having half a rig. It
+  emits `clip_missing` instead, and falls back to the rig's `RESET` pose.
+
+The state-to-clip map is explicit rather than a lowercase of the state name, because `Move` plays
+`walk` and no rule bridges that pair. It is exported, so a state can be pointed at a clip that
+already exists while the real one is still being authored.
+
+## The weapon is in the rig, not attached to it
+
+`WeaponVisualComponent` shows and hides the weapon meshes the skeleton already carries. There is no
+bone attachment and nothing is spawned: the gun is modelled into the rig, parented to the hand bone,
+because that is how the clips were authored — `idle_gun` and `walk_gun` move a gun that is part of
+the skeleton. Hiding the mesh is therefore the whole of "not holding it", and hidden is the default,
+which is what fists look like.
+
+It takes a flag rather than a `WeaponData`, so it knows neither what a weapon is nor who owns it.
+Whoever hands the gun over sets `armed`, which is what lets a pickup, a weapon switch and a headless
+check all drive it the same way.
+
+## Head look
+
+`HeadLookComponent` points the head bone at the aim while the body does whatever its clip says. It
+is the cheap half of an upper-body split: one bone, a `LookAtModifier3D`, no `AnimationTree` and no
+second set of clips. Mixamo only ever hands over full-body animations, so any such split has to be
+made at runtime; the torso version is the same idea one layer up and can be added without moving
+this.
+
+Four things about it are not obvious, and each was measured rather than assumed:
+
+- **The modifier is built in code**, because a `SkeletonModifier3D` has to be a child of the
+  `Skeleton3D` and that skeleton lives inside the imported glTF scene. Authoring it in `player.tscn`
+  would mean editable children and the importer's node names pinned into the scene file.
+- **It is built deferred.** A parent is still setting up its children while their `_ready` runs, so
+  `add_child` on it fails and leaves the target adrift outside the tree, with a head that never
+  moves and nothing in the log to say why.
+- **The skeleton only runs its modifiers while something is playing.** With no clip the pose never
+  changes, the skeleton never updates, and the head freezes. This is why the rig imports with
+  `import_rest_as_RESET` on: a state with no clip of its own plays `RESET`, which keeps the
+  skeleton live.
+- **`get_bone_global_pose()` reports the animated pose *before* modifiers.** It shows a perfectly
+  still head no matter where the modifier is actually pointing it, so anything checking the result
+  has to read a `BoneAttachment3D` instead.
+
+The turn is clamped to 55°, and past that the head stops and the body carries the rest. Unclamped,
+a player running north while aiming south twists the neck through 180°.
 
 ## A Node3D faces -Z
 
