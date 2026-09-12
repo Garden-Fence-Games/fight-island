@@ -91,6 +91,7 @@ whenever a constant at the top of that file changes:
 ```bash
 godot --headless --path . --script tools/build_island.gd
 godot --headless --path . res://tools/verify_island.tscn
+godot --headless --path . res://tools/verify_playfield.tscn
 ```
 
 **The playfield is authored, the decoration is scattered.** The flat fighting core, the six rock
@@ -109,6 +110,13 @@ camera is fixed, so a wall anywhere is a wall the player can never look around �
 cliff along the water, however good it would look. The island rolls instead: gentle relief inland,
 fading out toward both the fighting core and the shore, so the arena stays flat and the beach stays
 walkable. The six rock formations carry the orientation the landmark would have.
+
+**And no corner of it answers the reaper's sweep with nothing.** `verify_playfield` walks every
+square metre of ground the fight can reach — nineteen thousand of them — and checks that a dodge
+still lands somewhere the arc does not cover. The fixed camera is what makes this a check rather
+than a look: a player cannot turn to find the way out, so a pocket is not something they can play
+around. The ground a dodge may land on is deliberately wider than the ground walked: the sea is an
+escape, and a body the enemies cannot follow into is out of the fight rather than cornered in it.
 
 Two things it gets right that are easy to get wrong:
 

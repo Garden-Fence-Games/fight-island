@@ -8,6 +8,13 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **No corner of the island answers the reaper's sweep with nothing.** `tools/verify_playfield.tscn`
+  walks every square metre of ground the fight can reach — nineteen thousand of them — and fails if
+  a dodge from any of them lands only in directions a 160° arc already covers. The camera never
+  turns, so a pocket is not something the player can look their way out of; and the first run of it
+  found one, on a sandbank a hundred metres out that no enemy can reach, which is what taught the
+  check to walk the ground the fight reaches rather than the ground a body can paddle to.
+
 - **Somebody lived on this island before it was an arena.** Five wooden huts stand off the fighting
   core — three of them still standing on their stilts under a plank roof, two collapsed to the bare
   post frame with their planking on the sand around them. They are placed rather than scattered,
