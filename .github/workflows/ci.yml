@@ -56,9 +56,14 @@ jobs:
           include-templates: false
 
       # Godot exits 0 even when it logs import errors, so the grep below is the real gate.
+      # Twice on purpose. The CSV translation importer writes assets/locale/*.translation, which
+      # project.godot lists under locale/translations — so on a cold checkout the first pass reads
+      # that setting before the file it generates exists. The second pass is the one that has to be
+      # clean, and it also proves a cold import converges rather than merely surviving.
       - name: Import project resources
         run: |
           set -o pipefail
+          godot --headless --import --path "$GITHUB_WORKSPACE" > /dev/null 2>&1 || true
           godot --headless --import --path "$GITHUB_WORKSPACE" 2>&1 | tee import.log
 
       - name: Fail on any error or warning
