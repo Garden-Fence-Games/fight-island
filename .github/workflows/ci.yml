@@ -124,6 +124,12 @@ jobs:
       - name: Verify saving and resuming a run
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_save.tscn
 
+      # The tutorial's whole design target is a player who never sees a prompt, and the only way to
+      # know that still holds is to land a chained perfect hit and assert three lessons closed at
+      # once. Playing it well is exactly the case a human tester never reproduces on purpose.
+      - name: Verify the tutorial wave
+        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_tutorial.tscn
+
       # The island is generated, so the rules combat depends on have to be checked rather than
       # trusted: a clear spawn pad, a walkable gap between everything that blocks, nothing tall
       # enough to hide a fight from a camera that cannot turn, and water the player can reach.

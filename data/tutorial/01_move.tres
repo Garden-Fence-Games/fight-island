@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TutorialStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/tutorial_step.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"move"
+prompt_key = "TUTORIAL_MOVE"
+trigger = 0
+condition = 0
+travel = 3.0
+enemies = 0

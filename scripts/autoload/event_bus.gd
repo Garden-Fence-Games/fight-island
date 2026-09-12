@@ -26,3 +26,10 @@ signal chain_spent(seconds: float)
 signal chain_ready
 signal weapon_equipped(weapon: WeaponData)
 signal ammo_changed(magazine: int, reserve: int)
+## A blow arrived while the player was rolling through it. Distinct from a dodge that merely
+## happened: the lesson is not the button, it is the moment — and only this says the moment was
+## right.
+signal dodge_evaded
+## The player's state machine moved. Cross-cutting because a sprint, a roll and a death are each
+## something audio and the tutorial want to know about without holding the player.
+signal player_state_changed(state: StringName)

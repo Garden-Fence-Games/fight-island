@@ -137,8 +137,24 @@ flag, `parry_perfect` already fires, and the player already reports its state tr
 is what the bus was for**: the tutorial observes the whole fight without a single system knowing
 it exists, and deleting the director cannot break combat.
 
-The one thing it needs that does not exist yet is a way for the wave director to spawn on demand
-rather than on the formula — a hook M2 has to provide anyway for scripted waves later.
+The hook it needed is in: `SpawnDirector.spawn` and `spawn_at` both take `harmless`, and a harmless
+body is refused the attack token — the one gate every path into `WindUp` goes through. He still
+closes and still circles, so he reads as a threat while being unable to be one. The longer telegraph
+is the `windup` multiplier the wave scaling already used.
+
+Two details worth stating, because they are not obvious from the table:
+
+- **A step says how many bodies should be standing, not how many to send.** The director tops up, so
+  a farmhand killed during the chain lesson is replaced and the lesson survives being played well.
+- **The wave director is halted, not replaced.** When the last lesson closes, the tutorial hands the
+  island back and the ordinary breather runs — so wave 2 arrives exactly like every other wave.
+
+The protection during wave 1 is `HealthComponent.minimum_health`, raised to one and dropped again
+after. Everything else — the flash, the numbers, the stagger — behaves normally.
+
+**Not yet device-aware.** The prompts name both glyphs, the way the menus do, because the
+device-aware glyph set is its own piece of work. A pad player currently reads `[SPACE / A]` rather
+than `A` alone. That is a known deviation from the rule above, not a decision.
 
 ## The test
 

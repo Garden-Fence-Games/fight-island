@@ -26,6 +26,11 @@ func _run() -> void:
 	_kept_run = SaveManager.read_json(SaveManager.RUN_PATH)
 	var arena := (load(ARENA) as PackedScene).instantiate()
 	add_child(arena)
+	# Wave 1 belongs to the tutorial now, and a lesson holding it open would leave this check
+	# waiting for a parry nobody is going to throw. This one is not about the lesson.
+	var tutorial := arena.get_node_or_null(^"TutorialDirector") as TutorialDirector
+	if tutorial != null:
+		tutorial.stand_down()
 	await get_tree().physics_frame
 	_player = arena.get_node("Player") as Player
 	if _player == null:

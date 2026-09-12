@@ -37,6 +37,9 @@ var poise_left: float = 0.0
 var damage_scale: float = 1.0
 var speed_scale: float = 1.0
 var windup_scale: float = 1.0
+## He comes, he circles, and he never swings. The first two tutorial steps need something to hit
+## that will not hit back — and a farmer standing still would teach the player that farmers do.
+var passive: bool = false
 
 ## The stone this body has in the air, if any. The ranged token is held until it lands rather than
 ## until the throw finishes, because the design says at most one stone is in the air — and a throw
@@ -79,11 +82,13 @@ func revive(
 	health_boost: float = 1.0,
 	damage: float = 1.0,
 	speed: float = 1.0,
-	windup: float = 1.0
+	windup: float = 1.0,
+	harmless: bool = false
 ) -> void:
 	damage_scale = damage
 	speed_scale = speed
 	windup_scale = windup
+	passive = harmless
 	global_position = where
 	velocity = Vector3.ZERO
 	rotation.y = 0.0
@@ -288,7 +293,11 @@ func throw_at(target_position: Vector3) -> void:
 	_stone = stone
 
 
+## The one gate every path into WindUp goes through, which is why refusing here is all it takes to
+## make a body harmless. He keeps closing and keeps circling, so he still reads as a threat.
 func claim_token() -> bool:
+	if passive:
+		return false
 	if _tokens == null:
 		return true
 	return _tokens.claim(self, data != null and data.is_ranged)
