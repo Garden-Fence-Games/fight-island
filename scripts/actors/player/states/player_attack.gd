@@ -23,7 +23,8 @@ func enter(message: Dictionary) -> void:
 	if _attack == null:
 		transition_to(&"Idle")
 		return
-	if player.stamina != null and not player.stamina.try_spend(_attack.stamina_cost):
+	var cost := _attack.stamina_cost * player.stamina_cost_multiplier
+	if player.stamina != null and not player.stamina.try_spend(cost):
 		transition_to(&"Idle")
 		return
 	_phase = Phase.WINDUP
@@ -81,7 +82,7 @@ func _begin_active() -> void:
 	_phase = Phase.ACTIVE
 	_elapsed = 0.0
 	if player.hitbox != null:
-		player.hitbox.arm(_attack, player, _perfect)
+		player.hitbox.arm(_attack, player, _perfect, player.damage_multiplier)
 
 
 func _begin_recovery() -> void:

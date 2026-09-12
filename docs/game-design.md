@@ -289,7 +289,7 @@ Level cap 5, one purchase per wave, bought from the merchant. Leftover money car
 | Health | +20 max HP, heals to full on purchase | 200 HP |
 | Stamina | +15 max stamina, +2/s regen | 175 stamina, 30/s |
 | Fists | +15 % damage, −5 % stamina cost | ×1.75 damage, −25 % cost |
-| Stick | +15 % damage, +5 % range and arc | ×1.75 damage, 3.1 m reach |
+| Stick | +15 % damage, +5 % range and arc | ×1.75 damage, 3.0 m reach |
 | Gun | +15 % damage, +1 magazine, +6 reserve | ×1.75 damage, magazine 11 |
 
 ## Win and lose

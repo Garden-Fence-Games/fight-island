@@ -122,6 +122,24 @@ every reader asks for the value at the moment it needs it, which is why no signa
 The first read loads the file and applies everything, so a scene launched straight from the
 editor behaves exactly like one reached through boot.
 
+## The thrower, and the one stone
+
+Two things about the ranged archetype are not obvious.
+
+**`Retreat` releases its token on the way in.** A body walking backwards is not committing to
+anything, and a held token would keep the other thrower waiting for a turn that is not coming.
+
+**The ranged token is held until the stone lands, not until the throw ends.** The design says at
+most one stone is in the air, and a throw whose recovery is shorter than its own stone's flight
+would otherwise let a second one go. With the figures as they ship the two are the same thing — a
+stone crosses its range in 1.17 s while the next thrower needs 1.4 s to claim and wind up, so
+nothing in a running fight distinguishes them. Shorten a recovery or slow a stone and it would
+matter, and nobody would find out by watching. `verify_combat` therefore checks the rule directly:
+throw, release, and assert the pool still shows the token held.
+
+The stone is parented to the thrower's **parent**, not to the thrower. A projectile owned by a body
+that dies mid-flight would be freed in the air.
+
 ## The wallet
 
 `Economy` owns the cost curve and nothing else. The balance lives on `GameState`, and a wave's
@@ -527,8 +545,9 @@ Two headless guards run in CI and locally:
   making them. The spawn rules are checked against **two hundred points from the search**, not
   against the four a wave happened to use — with the "never in shot" rule deleted, a four-body wave
   still passed, which made that check decorative. It also asserts the upgrade cost curve, that a
-  run buys about two tracks out of five, and that clearing a wave puts both the reward and the
-  kills into the purse.
+  run buys about two tracks out of five, that clearing a wave puts both the reward and the kills
+  into the purse, and that no wave ever opens with a thrower while one can still turn up later —
+  rolled four hundred times a band, because a rule that holds for one seed is not a rule.
 - **`tools/verify_aim.tscn`** — drives a real joypad event and a real key press through the
   engine's own input path, and the real camera projection for the cursor, then asserts that holding
   a movement key still walks the body and does not follow its facing, that the body turns at a

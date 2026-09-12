@@ -27,5 +27,8 @@ func physics_update(delta: float) -> void:
 	enemy.face_target(delta)
 	if _elapsed < 0.3:
 		return
+	if enemy.wants_room():
+		transition_to(&"Retreat")
+		return
 	if enemy.distance_to_target() <= enemy.data.attack_range and enemy.claim_token():
 		transition_to(&"WindUp")

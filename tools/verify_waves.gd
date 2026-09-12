@@ -37,6 +37,7 @@ func _run() -> void:
 	_check_the_formulas_match_the_table()
 	_check_the_cost_curve()
 	_check_a_run_affords_about_two_tracks()
+	_check_a_wave_never_opens_with_a_thrower()
 
 	_arena = (load(ARENA) as PackedScene).instantiate() as Node3D
 	add_child(_arena)
@@ -303,3 +304,46 @@ func _check_the_money_reached_the_wallet(before: int, paid: int, bodies: int) ->
 	var earned := GameState.money - before
 	if earned != due:
 		_fail("clearing wave 1 should be worth %d in the purse, was worth %d" % [due, earned])
+
+
+## Nobody is shot at before there is anything on screen to explain it. `WaveBand.pick` has carried
+## the rule since the wave work and has never had a ranged archetype to filter — this is the first
+## time it has anything to do, so it is the first time the rule is worth anything.
+##
+## Rolled many times rather than once: a rule that holds for one seed and not the next is not a
+## rule, and a single roll of a table where the thrower is a fifth of the mix passes four times in
+## five by luck alone.
+func _check_a_wave_never_opens_with_a_thrower() -> void:
+	var config := load(CONFIG) as WaveConfig
+	if config == null:
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20260912
+	for wave_index: int in [5, 8, 12, 20]:
+		var band := config.band_for(wave_index)
+		if band == null:
+			_fail("wave %d has no composition band" % wave_index)
+			continue
+		var ranged_seen := false
+		var opened := 0
+		for _roll: int in 400:
+			var first := band.pick(rng, true)
+			if first == null:
+				continue
+			opened += 1
+			if first.is_ranged:
+				ranged_seen = true
+		if opened == 0:
+			_fail("wave %d cannot open with anybody at all" % wave_index)
+		if ranged_seen:
+			_fail("a wave %d opened with a thrower" % wave_index)
+		# And the other half of it: the archetype has to be reachable once the wave is under way,
+		# or "never opens with one" would be satisfied by never sending one.
+		var ever_ranged := false
+		for _roll: int in 400:
+			var later := band.pick(rng, false)
+			if later != null and later.is_ranged:
+				ever_ranged = true
+				break
+		if wave_index >= 5 and not ever_ranged:
+			_fail("no thrower ever appears at wave %d, where the table says they do" % wave_index)
