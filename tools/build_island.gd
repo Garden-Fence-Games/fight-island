@@ -16,6 +16,17 @@ const SEED: int = 20260911
 ## Wind, for everything that grows. One shader: a MultiMesh takes one material, and a palm
 ## that swayed on a different program from the grass beside it would be two winds on one island.
 const FOLIAGE_SHADER: String = "res://assets/shaders/foliage.gdshader"
+## Stone that gets out of the camera's way. It carries the same fade as the plants and none of the
+## wind, because a boulder that swayed would be worse than one that hid the player.
+const FADEABLE_SHADER: String = "res://assets/shaders/fadeable.gdshader"
+## What the camera fades when it comes between itself and the player — the authored formations, and
+## only those. Found by group rather than by path: a node export written into a generated .tscn does
+## not resolve (ADR 0006), and the fader has no business knowing the shape of the island's tree.
+##
+## **The palms are deliberately not in it.** A thinned-out tree is more distracting than the tree
+## was, and a grove of them flickering as the body walks through is worse still. What hides the
+## player outright is a five-metre boulder, and there are six of those.
+const OCCLUDER_GROUP: StringName = &"occluder"
 ## The scattered decoration, from Kenney's CC0 Nature Kit. Every one of them has its origin at its
 ## base and carries no texture — only per-material colours — which is exactly what the scatter and
 ## the wind shader already wanted.
@@ -588,7 +599,7 @@ func _spots(
 func _multi(
 	name: String, mesh: ArrayMesh, transforms: Array[Transform3D], wind: Dictionary = {}
 ) -> Node3D:
-	_dress(mesh, wind)
+	_dress(mesh, FOLIAGE_SHADER if not wind.is_empty() else "", wind)
 
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D
@@ -641,26 +652,32 @@ func _find_mesh(node: Node) -> Mesh:
 ## Per surface rather than through material_override, which takes one material for the whole mesh:
 ## a palm is trunk and leaves in one piece, and flattening both to a single colour is exactly what
 ## buying a modelled palm was meant to stop.
-func _dress(mesh: ArrayMesh, wind: Dictionary) -> void:
+func _dress(mesh: ArrayMesh, shader: String, uniforms: Dictionary) -> void:
 	for surface: int in mesh.get_surface_count():
-		var shipped := mesh.surface_get_material(surface)
-		var part := shipped.resource_name if shipped != null else ""
-		if not NATURE_PALETTE.has(part):
-			printerr("no colour for the part a model calls '%s'" % part)
-			continue
-		var colour: Color = NATURE_PALETTE[part]
-		if wind.is_empty():
-			var matte := StandardMaterial3D.new()
-			matte.albedo_color = colour
-			matte.roughness = 0.9
-			mesh.surface_set_material(surface, matte)
-			continue
-		var material := ShaderMaterial.new()
-		material.shader = load(FOLIAGE_SHADER)
-		material.set_shader_parameter("tint", colour)
-		for parameter: String in wind:
-			material.set_shader_parameter(parameter, wind[parameter])
-		mesh.surface_set_material(surface, material)
+		mesh.surface_set_material(surface, _part_material(mesh, surface, shader, uniforms))
+
+
+## The material for one part of a model, in the island's colour for that part.
+func _part_material(
+	mesh: ArrayMesh, surface: int, shader: String, uniforms: Dictionary
+) -> Material:
+	var shipped := mesh.surface_get_material(surface)
+	var part := shipped.resource_name if shipped != null else ""
+	if not NATURE_PALETTE.has(part):
+		printerr("no colour for the part a model calls '%s'" % part)
+		return shipped
+	var colour: Color = NATURE_PALETTE[part]
+	if shader.is_empty():
+		var matte := StandardMaterial3D.new()
+		matte.albedo_color = colour
+		matte.roughness = 0.9
+		return matte
+	var material := ShaderMaterial.new()
+	material.shader = load(shader)
+	material.set_shader_parameter("tint", colour)
+	for parameter: String in uniforms:
+		material.set_shader_parameter(parameter, uniforms[parameter])
+	return material
 
 
 ## The palms stand in the wind the shader ships with. Nothing is set here, and that is the point:
@@ -727,7 +744,6 @@ func _landmark() -> StaticBody3D:
 
 	var placements := _formations()
 	var boulder := _nature(ROCK_MODEL)
-	_dress(boulder, {})
 	# The model stands on its origin, where the old sphere was centred on it — so the formations sit
 	# on the ground rather than being lifted by a share of their own height.
 	var shipped := Vector3(ROCK_MODEL_WIDTH, ROCK_MODEL_HEIGHT, ROCK_MODEL_DEPTH)
@@ -741,6 +757,13 @@ func _landmark() -> StaticBody3D:
 		visual.name = "Rock"
 		visual.mesh = boulder
 		visual.transform = Transform3D(Basis(Vector3.UP, turn).scaled(size / shipped), where)
+		# Per surface on the node rather than on the mesh: the six formations share one mesh, so a
+		# material hung there would fade all of them the moment one of them stood in the way.
+		for surface: int in boulder.get_surface_count():
+			visual.set_surface_override_material(
+				surface, _part_material(boulder, surface, FADEABLE_SHADER, {})
+			)
+		visual.add_to_group(OCCLUDER_GROUP, true)
 		body.add_child(visual)
 
 		# The shape is already in metres, so the collider must NOT inherit the visual's scale — doing

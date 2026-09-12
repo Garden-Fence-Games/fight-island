@@ -6,7 +6,9 @@ extends Node3D
 ## The spring arm is deliberately inert — its collision mask is zero. Letting it dodge geometry is
 ## what produced sudden zoom jumps the moment the island had trees: the arm collapsed against
 ## whatever stood behind the player and sprang back out when it cleared. A fixed camera has to be
-## *fixed*, so what gets in the way is faded instead.
+## *fixed*, so stone that gets in the way goes pale instead — see `OcclusionFader`. Palms are left
+## alone: the body reads clearly through a crown of fronds, and thinning several hundred trees in
+## and out as someone walks looks stranger than the trees did.
 ##
 ## The constraint buys more than it costs. Every silhouette reads the same way every time, the
 ## island only has to be composed for one viewpoint, and a telegraph can never end up hidden behind
