@@ -38,10 +38,13 @@ const FOLIAGE: PackedStringArray = ["Grass", "Palms", "Bushes"]
 const STILL: PackedStringArray = ["Rocks", "Pebbles"]
 ## Every scattered population, all of which have to be splittable.
 const SCATTERED: PackedStringArray = ["Grass", "Pebbles", "Palms", "Rocks", "Bushes"]
-## How wide a chunk may be. The generator cuts on a 24 m grid and a model hangs over the edge of its
-## own cell, so this is that grid with room for the widest thing standing in it. Written out rather
-## than read from the generator, which would make this agree with any grid anybody sets.
-const WIDEST_CHUNK: float = 34.0
+## How wide a chunk may be. The generator cuts on a 12 m grid and a model hangs over the edge of its
+## own cell, so this is that grid with room for the widest thing standing in it — a palm, at 7.4 m
+## across. Written out rather than read off the generator, which would make this agree with any grid
+## anybody sets — and **the grid is what the island's cost turns on**: a chunk is the unit the
+## camera keeps or drops, so a grid that crept back to 24 m would put 190,000 triangles a frame back
+## without failing anything else here.
+const WIDEST_CHUNK: float = 20.0
 const FOLIAGE_SHADER: String = "res://assets/shaders/foliage.gdshader"
 ## The figures a palm's surfaces are allowed to set for themselves — how it is coloured, whether by
 ## a tint or by its own painted texture, and how far a leaf flexes. **Every wind figure falls
