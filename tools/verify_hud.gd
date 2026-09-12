@@ -12,6 +12,7 @@ const SETTLE_FRAMES: int = 4
 var _failures: PackedStringArray = []
 var _hud: CanvasLayer = null
 var _target: Node3D = null
+var _kept_run: Dictionary = {}
 
 
 func _ready() -> void:
@@ -19,6 +20,9 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	# Driving a run writes one to disk. Whatever this machine already had goes back at the end: a
+	# check that eats the developer's run is worse than no check.
+	_kept_run = SaveManager.read_json(SaveManager.RUN_PATH)
 	_hud = (load(HUD) as PackedScene).instantiate() as CanvasLayer
 	add_child(_hud)
 	_target = Node3D.new()
@@ -34,7 +38,15 @@ func _run() -> void:
 	await _check_ammo_follows_the_weapon()
 	await _check_damage_numbers()
 	_check_stats_are_tallied()
+	_put_the_run_back()
 	_report()
+
+
+func _put_the_run_back() -> void:
+	if _kept_run.is_empty():
+		SaveManager.clear_run()
+		return
+	SaveManager.write_json(SaveManager.RUN_PATH, _kept_run)
 
 
 func _check_vitals() -> void:

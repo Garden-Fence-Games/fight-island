@@ -15,6 +15,25 @@ var perfect_parries: int = 0
 var _kills: Dictionary = {}
 
 
+## Anything missing or of the wrong type falls back to a fresh tally's value, so a hand-edited or
+## half-written file costs the player their numbers rather than their run.
+static func from_dict(data: Dictionary) -> RunStats:
+	var stats := RunStats.new()
+	stats.waves_cleared = int(data.get("waves_cleared", stats.waves_cleared))
+	stats.ended_on_wave = int(data.get("ended_on_wave", stats.ended_on_wave))
+	stats.seconds = float(data.get("seconds", stats.seconds))
+	stats.money_earned = int(data.get("money_earned", stats.money_earned))
+	stats.money_spent = int(data.get("money_spent", stats.money_spent))
+	stats.perfect_hits = int(data.get("perfect_hits", stats.perfect_hits))
+	stats.perfect_parries = int(data.get("perfect_parries", stats.perfect_parries))
+	var kills: Variant = data.get("kills", {})
+	if kills is Dictionary:
+		for archetype: Variant in kills as Dictionary:
+			# JSON has no StringName, and a String key would never answer `kills_of`.
+			stats._kills[StringName(archetype)] = int((kills as Dictionary)[archetype])
+	return stats
+
+
 func record_kill(archetype: StringName) -> void:
 	if archetype.is_empty():
 		return
@@ -42,3 +61,19 @@ func total_kills() -> int:
 func formatted_time() -> String:
 	var whole := int(seconds)
 	return "%d:%02d" % [whole / 60, whole % 60]
+
+
+func to_dict() -> Dictionary:
+	var kills := {}
+	for archetype: StringName in _kills:
+		kills[String(archetype)] = int(_kills[archetype])
+	return {
+		"waves_cleared": waves_cleared,
+		"ended_on_wave": ended_on_wave,
+		"seconds": seconds,
+		"money_earned": money_earned,
+		"money_spent": money_spent,
+		"perfect_hits": perfect_hits,
+		"perfect_parries": perfect_parries,
+		"kills": kills,
+	}
