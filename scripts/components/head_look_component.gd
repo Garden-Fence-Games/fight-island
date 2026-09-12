@@ -13,16 +13,23 @@ extends Node
 ## `player.tscn` would mean enabling editable children and pinning the importer's node names into
 ## the scene file. Building it here keeps the rig replaceable.
 ##
-## **The turn is clamped.** A player running north while aiming south would otherwise twist the neck
-## through 180 degrees, which is the Exorcist and not a character. Past the limit the head simply
-## stops and the body is what carries the rest of the turn.
+## **The turn is clamped, and the limit is the dial that matters.** Past it the head stops and the
+## body carries the rest of the turn. Fifty-five degrees is a neck; a full 180 is an owl, and it is
+## the current setting on purpose — while the aim is being built, seeing the head track the cursor
+## all the way round is worth more than anatomy. Dialling it back to 55 is one value in the
+## inspector and needs no code.
+##
+## One consequence to know before changing it: `Player.locomotion_facing` asks this component how
+## far the neck reaches, and turns the body only for the part the neck cannot cover. At 180 there is
+## never a remainder, so a standing player's body stops turning towards the aim entirely.
 
 ## Mixamo's colon is not legal in a Godot bone name, so the importer rewrites `mixamorig:Head` as
 ## this. Exported because the farmer rig will not necessarily agree.
 @export var bone_name: StringName = &"mixamorig_Head"
 ## How far past the body's own facing the head may turn before it gives up and waits for the body.
-## Fifty-five degrees is inside what a neck does; past roughly sixty it reads as an injury.
-@export_range(0.0, 90.0, 1.0, "degrees") var limit_degrees: float = 55.0
+## Fifty-five is inside what a neck does and sixty starts reading as an injury — but the range goes
+## to 180 because showing that the head really is tracking the cursor beats anatomy for now.
+@export_range(0.0, 180.0, 1.0, "degrees") var limit_degrees: float = 180.0
 ## Where the clamp starts easing rather than hitting a wall, as a fraction of the limit.
 @export_range(0.0, 1.0, 0.05) var damp_threshold: float = 0.7
 ## Seconds the head takes to catch up. Zero snaps, which reads as a twitch on a fixed camera.
