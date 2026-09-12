@@ -21,30 +21,47 @@ options is a row on the parent screen.
 ## The flow
 
 ```
-boot ──▶ title ──▶ [Play] ──▶ run ──┬──▶ [Esc] ──▶ pause ──┬──▶ resume
-                                    │                     ├──▶ options
-                                    │                     ├──▶ restart run
-                                    │                     └──▶ quit to title
-                                    ├──▶ wave cleared ──▶ merchant ──▶ next wave
-                                    ├──▶ died ──▶ run summary ──┬──▶ retry
-                                    │                           └──▶ title
-                                    └──▶ wave 15 cleared ──▶ victory ──┬──▶ endless
-                                                                       └──▶ title
+boot ─▶ intro ─▶ title ──▶ [Play] ──▶ run ──┬──▶ [Esc] ──▶ pause ──┬──▶ resume
+                                            │                     ├──▶ options
+                                            │                     ├──▶ restart run
+                                            │                     └──▶ quit to title
+                                            ├──▶ wave cleared ──▶ merchant ──▶ next wave
+                                            ├──▶ died ──▶ run summary ──┬──▶ retry
+                                            │                           └──▶ title
+                                            └──▶ wave 15 cleared ──▶ victory ──┬──▶ endless
+                                                                               └──▶ title
 ```
+
+## Intro
+
+A single Garden Fence sting, eight seconds, `assets/video/garden_fence_intro.ogv`. Godot plays Ogg
+Theora and nothing else, so the source `.mp4` is transcoded — it is not the shipped file.
+
+**Any button skips it**, and a discreet hint says so after a second and a half. There is nothing
+else on the screen and nothing after it but the title.
 
 ## Title
 
-Four entries, in this order: **Play · Options · Credits · Quit**.
+Three entries, in this order: **Play · Options · Quit**.
 
 Play starts a run immediately. There is no character select, no difficulty select, no save-slot
 list — a run is forty minutes and the game has one difficulty, so anything between the button and
 the fight is furniture.
 
+Credits are not a title entry. They are a page of the Options screen: the layout holds three rows
+without crowding the logo, and a fourth that nobody opens twice is not worth the height.
+
 The background is the island with the camera drifting slowly. Not a pre-rendered image: the real
 arena scene, so the title screen can never look like a different game than the one that follows.
+Until the island is composed for it, a grey wash stands in — one node named `Background`, which is
+the only thing that changes when the arena moves in.
 
 When a run is in progress and the player quit to title, Play becomes **Continue**, and a second
 entry **New run** appears below it.
+
+Every entry carries the glyph that fires it — `[A / ENTER]` on the focused row, `[Y / O]` on
+Options, `[B / ESC]` on Quit — and each of those is a real binding. New run takes `[Y / N]` and
+Options loses its badge while a run is waiting, because the pad has one Y.
 
 ## Pause
 
@@ -142,13 +159,16 @@ The debug overlay from M1 stays behind `F3` in debug builds and is stripped from
 ## Localisation
 
 Every string on every screen goes through `tr()` with a key from the first line of code, prefixed
-`UI_`, `HUD_`, `OPT_` or `TUT_`. English and French ship; the FR pass lands in M3.
+`UI_`, `HUD_`, `OPT_` or `TUT_`. The keys live in `assets/locale/ui.csv`.
 
-A menu built with literals is a menu that gets rewritten later, so this is not deferred.
+**The game ships in English and in nothing else.** The `tr()` layer stays because a menu built with
+literals is a menu that gets rewritten the day a second locale is wanted — but no second locale is
+planned, and a French column is not a deliverable.
 
 ## What is deliberately absent
 
 - **No settings that need a restart.** If a setting cannot apply live, it is built wrong.
-- **No launcher, no splash screens, no logos.** Boot goes to the title.
+- **No launcher, no engine splash, no publisher card.** The studio sting is the one thing before
+  the title, and any button skips it.
 - **No difficulty menu.** See Accessibility.
 - **No online anything** — no leaderboards, no accounts, no telemetry prompt.

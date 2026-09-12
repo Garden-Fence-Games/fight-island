@@ -10,7 +10,8 @@ enemy both have health because both carry a `HealthComponent`, not because they 
 
 ```
 res://
-  assets/{models,textures,materials,audio,fonts}/   imported, engine-ready
+  assets/{models,textures,materials,audio,fonts,   imported, engine-ready
+          logo,video,locale,themes}/
   art-source/                                       .blend and texture sources, not imported
   data/{weapons,attacks,upgrades,waves}/            .tres only — the balance surface
   scenes/{boot,main,world,actors,weapons,ui,fx}/

@@ -56,9 +56,14 @@ jobs:
           include-templates: false
 
       # Godot exits 0 even when it logs import errors, so the grep below is the real gate.
+      # Twice on purpose. The CSV translation importer writes assets/locale/*.translation, which
+      # project.godot lists under locale/translations — so on a cold checkout the first pass reads
+      # that setting before the file it generates exists. The second pass is the one that has to be
+      # clean, and it also proves a cold import converges rather than merely surviving.
       - name: Import project resources
         run: |
           set -o pipefail
+          godot --headless --import --path "$GITHUB_WORKSPACE" > /dev/null 2>&1 || true
           godot --headless --import --path "$GITHUB_WORKSPACE" 2>&1 | tee import.log
 
       - name: Fail on any error or warning
@@ -74,10 +79,15 @@ jobs:
 
       # Booting the real game is worth more than parsing files one by one: --script starts no
       # autoloads, so any script touching the EventBus would fail there for the wrong reason.
+      # Boot goes through the intro, so the title and the arena are named explicitly — otherwise
+      # 240 frames never reach either of them and the check silently covers the sting alone.
       - name: Boot the game headless
         run: |
           set -o pipefail
-          godot --headless --path "$GITHUB_WORKSPACE" --quit-after 240 2>&1 | tee run.log
+          : > run.log
+          for scene in "" res://scenes/ui/title_screen.tscn res://scenes/main/main.tscn; do
+            godot --headless --path "$GITHUB_WORKSPACE" --quit-after 240 $scene 2>&1 | tee -a run.log
+          done
           if grep -nE '^(ERROR|WARNING|SCRIPT ERROR|USER ERROR|USER SCRIPT ERROR)' run.log; then
             echo "::error::Errors or warnings while running the game."
             exit 1
