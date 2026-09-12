@@ -8,6 +8,28 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The stick and the gun.** Six attacks to the table in `docs/game-design.md`: the stick's 120°
+  sweep reaches two bodies at once, which is the whole reason it exists and the answer to the
+  reaper; the gun is hitscan, rationed by a magazine of six and a reserve that **only grows between
+  waves**.
+- The charged shot, the one attack in the game that holds rather than taps. Letting go early
+  abandons it and hands the round back, but not the stamina.
+- Ground pickups: the stick on wave 2, the gun on wave 4, each weapon carrying its own
+  `found_at_wave`. A prompt appears on the weapon itself, in world space, with the glyph for the
+  device in hand.
+- Weapon switching — three direct keys and a wheel that only ever offers what has been found.
+  Free and instant, and the only thing it costs is the chain, whose windows belonged to the old
+  weapon.
+- `Loadout`, the run's bag: weapons found, what is in hand, and the rounds. Saved with the run, so
+  a resumed run is still holding what it was holding, with the ammunition it had left.
+- `Hitscan`, `PlayerReload`, `PickupDirector`, `Arsenal`.
+- `tools/verify_weapons.tscn` — headless proof that one 120° sweep reaches two farmers and never
+  hits either twice, that the gun's figures match the table, that a trigger on an empty magazine
+  does not fire, that the reserve grows on a cleared wave and at no other moment, and that a swap
+  drops the chain.
+- `docs/game-design.md` gained a **poise** column. The numbers had been in the resources since M1
+  with no row in the document, which is exactly the drift that document exists to prevent.
+
 - **Every glyph on screen names the device in hand.** A menu row and a tutorial prompt each name an
   *action*, never a key, and `Devices` answers with what that action is bound to on the keyboard or
   the pad — swapping the instant the player picks up a controller, and following a rebind
@@ -114,6 +136,10 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- Four headless checks read whatever run happened to be saved on the machine. `GameState` restores
+  a run at boot, so a developer carrying the gun ran `verify_combat` against gun damage and
+  `verify_animation` against an empty magazine. CI never saw it — a clean checkout has no `user://`.
+  They now start from a fresh run and put the machine's own back.
 - A run quit halfway through a wave came back at the **next** wave, silently skipping the one that
   was interrupted: the wave director read the state's current wave as if it were the last cleared
   one.

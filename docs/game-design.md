@@ -104,27 +104,52 @@ is three times the price per metre.
 Fists are always available. The **stick** is a ground pickup that spawns during wave 2, the **gun**
 during wave 4. Pickups last the whole run; swapping is free and instant.
 
-| Weapon | # | Attack | Damage | Stamina | Windup | Active | Recovery | Chain window | Perfect window | Perfect × | Range | Arc | Stagger |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Fists | 1 | Jab | 8 | 6 | 0.12 | 0.08 | 0.22 | 0.10–0.45 | 0.33–0.45 | ×1.35 | 1.4 m | 70° | 0.10 |
-| Fists | 2 | Cross | 12 | 9 | 0.16 | 0.09 | 0.28 | 0.12–0.45 | 0.33–0.45 | ×1.35 | 1.5 m | 70° | 0.15 |
-| Fists | 3 | Uppercut | 20 | 14 | 0.28 | 0.12 | 0.50 | — | — | ×1.35 | 1.6 m | 60° | 0.60 |
-| Stick | 1 | Backhand | 14 | 10 | 0.20 | 0.12 | 0.30 | 0.14–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.15 |
-| Stick | 2 | Return | 18 | 12 | 0.22 | 0.12 | 0.34 | 0.16–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.20 |
-| Stick | 3 | Overhead | 30 | 18 | 0.45 | 0.14 | 0.65 | — | — | ×1.35 | 2.6 m | 45° | 0.90 |
-| Gun | 1 | Single shot | 22 | 0 | 0.10 | hitscan | 0.35 | 0.08–0.40 | 0.28–0.40 | ×1.25 | 25 m | 2° | 0.10 |
-| Gun | 2 | Double tap | 2 × 16 | 0 | 0.08 | hitscan | 0.55 | 0.10–0.45 | 0.33–0.45 | ×1.25 | 22 m | 3° | 0.15 |
-| Gun | 3 | Charged shot | 55 | 12 | 0.70 charge | hitscan | 0.60 | — | — | ×1.50 | 30 m | 1° | 1.10 |
+| Weapon | # | Attack | Damage | Stamina | Windup | Active | Recovery | Chain window | Perfect window | Perfect × | Range | Arc | Stagger | Poise |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Fists | 1 | Jab | 8 | 6 | 0.12 | 0.08 | 0.22 | 0.10–0.45 | 0.33–0.45 | ×1.35 | 1.4 m | 70° | 0.10 | 10 |
+| Fists | 2 | Cross | 12 | 9 | 0.16 | 0.09 | 0.28 | 0.12–0.45 | 0.33–0.45 | ×1.35 | 1.5 m | 70° | 0.15 | 12 |
+| Fists | 3 | Uppercut | 20 | 14 | 0.28 | 0.12 | 0.50 | — | — | ×1.35 | 1.6 m | 60° | 0.60 | 20 |
+| Stick | 1 | Backhand | 14 | 10 | 0.20 | 0.12 | 0.30 | 0.14–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.15 | 15 |
+| Stick | 2 | Return | 18 | 12 | 0.22 | 0.12 | 0.34 | 0.16–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.20 | 18 |
+| Stick | 3 | Overhead | 30 | 18 | 0.45 | 0.14 | 0.65 | — | — | ×1.35 | 2.6 m | 45° | 0.90 | 35 |
+| Gun | 1 | Single shot | 22 | 0 | 0.10 | hitscan | 0.35 | 0.08–0.40 | 0.28–0.40 | ×1.25 | 25 m | 2° | 0.10 | 8 |
+| Gun | 2 | Double tap | 2 × 16 | 0 | 0.08 | hitscan | 0.55 | 0.10–0.45 | 0.33–0.45 | ×1.25 | 22 m | 3° | 0.15 | 8 |
+| Gun | 3 | Charged shot | 55 | 12 | 0.70 charge | hitscan | 0.60 | — | — | ×1.50 | 30 m | 1° | 1.10 | 30 |
 
 A finisher has no windows of its own: the press that produced it was timed against the previous
 attack's recovery, and its perfect multiplier applies to that press.
 
-**Implemented in M1:** the fists, exactly as tabled above. `tools/verify_combat.tscn` asserts the
-jab's damage, the perfect multiplier, both chain-window boundaries, the chain lockout and the parry
-outcome, so the table and `data/attacks/*.tres` cannot drift apart unnoticed.
+**Poise** is what a hit takes off an enemy's stagger meter — 15 on a farmhand, 30 on a reaper,
+10 on a thrower. It had been in the resources since M1 with no row here, which is the drift this
+document exists to prevent, so it is tabled now. Read it against those three numbers: **the stick's
+overhead is the only single blow that staggers a reaper**, which is a large part of why the stick is
+the answer to him.
+
+**All three weapons are in**, exactly as tabled above. `tools/verify_combat.tscn` asserts the fists'
+damage, the perfect multiplier, both chain-window boundaries, the chain lockout and the parry
+outcome; `tools/verify_weapons.tscn` asserts the stick's and the gun's figures, that one 120° sweep
+reaches two bodies standing inside it, and that the ammunition behaves as written below.
 
 **Ammunition.** Magazine 6, reload 1.6 s. The reserve starts at 24 and each cleared wave grants
 **+8**. Attacks 1/2/3 cost 1/2/1 rounds; attack 2 needs at least 2 in the magazine.
+
+**The reserve grows on a cleared wave and at no other moment.** That is the whole of the gun's
+rhythm: the magazine decides how long one fight lasts, the reserve decides how many fights there
+are, and a player who empties the pocket in wave 6 carries that into wave 7 and has to answer it
+with the stick. It is also why the gun has no chain lockout — two answers to the same question
+would be one too many.
+
+**The charged shot is held, and letting go early cancels it.** The windup only advances while the
+button is down; releasing before it completes abandons the shot and hands the round back, but not
+the stamina. Deciding to charge is the commitment, and a cost that can be taken back is not one.
+*(The table gives the charged shot no windows of its own, so it is a finisher like the uppercut and
+the overhead: the press that produced it was timed against attack 2's recovery, and that press's
+perfect flag is the one that applies.)*
+
+**A shot is a ray, resolved the instant the windup ends.** No active frames, because a bullet has
+no travel and a farmer must not be able to walk into a shot already fired. **Terrain does not stop
+it** — a round currently passes through a boulder, which is a question this document has never
+answered either way.
 
 **Sanity check on the full chain:** fists 40 damage over 1.55 s for 29 stamina; stick 62 over
 2.39 s for 40 stamina; gun 109 over 1.78 s for 4 rounds and 12 stamina. Fists are the safe

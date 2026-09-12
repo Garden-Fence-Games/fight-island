@@ -12,6 +12,9 @@ const SPRINT_SPEED: float = 5.0
 const SPRINT_DRAIN: float = 12.0
 const SPRINT_MINIMUM: float = 10.0
 
+## What is in hand. Set from the run state, not by the scene: a player who quits to the title and
+## continues is holding what they were holding. The export is the fallback for a scene opened
+## straight from the editor with no run behind it.
 @export var weapon: WeaponData = null
 
 ## Index of the attack that just played, and the clock since its recovery began. A negative clock
@@ -36,6 +39,9 @@ var _gravity: float = 9.8
 @onready var health: HealthComponent = $Health
 @onready var stamina: StaminaComponent = $Stamina
 @onready var hitbox: Hitbox = $Hitbox
+@onready var hitscan: Hitscan = get_node_or_null("Hitscan") as Hitscan
+@onready
+var visual: WeaponVisualComponent = get_node_or_null("WeaponVisual") as WeaponVisualComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var machine: StateMachine = $StateMachine
 @onready var aim: AimComponent = $Aim
@@ -53,6 +59,8 @@ func _ready() -> void:
 		stamina.stamina_changed.connect(_on_stamina_changed)
 	if machine != null:
 		machine.transitioned.connect(_on_state_transitioned)
+	EventBus.weapon_equipped.connect(_on_weapon_equipped)
+	_on_weapon_equipped(GameState.loadout.weapon())
 
 
 func _process(delta: float) -> void:
@@ -72,6 +80,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		press_attack()
 	if event.is_action_pressed(&"sprint"):
 		_on_sprint_pressed(InputBindings.device_of(event) == InputBindings.Device.GAMEPAD)
+	if event.is_action_pressed(&"reload"):
+		_begin_reload()
+	_read_weapon_input(event)
 
 
 ## The one way a press enters the buffer, so a headless check can drive the chain like a player.
@@ -297,6 +308,43 @@ func _on_hurt(info: HitInfo) -> void:
 		return
 	if machine != null and info.stagger > 0.0:
 		machine.current.transition_to(&"Hurt", {"stagger": info.stagger})
+
+
+## Three direct keys and a wheel. The wheel only ever offers what has been found, so a player who
+## has not picked the gun up cannot cycle onto an empty hand.
+##
+## Switching is **free and instant**: no animation, no penalty, no cooldown. The interesting
+## decision is which weapon suits the moment, not whether the player can afford to find out.
+func _read_weapon_input(event: InputEvent) -> void:
+	var bag := GameState.loadout
+	for carried: WeaponData in Arsenal.all():
+		if event.is_action_pressed(StringName("weapon_%s" % carried.id)):
+			bag.equip(carried.id)
+			return
+	if event.is_action_pressed(&"weapon_next"):
+		bag.equip(Arsenal.next_owned(bag.equipped, bag.found, 1))
+	elif event.is_action_pressed(&"weapon_prev"):
+		bag.equip(Arsenal.next_owned(bag.equipped, bag.found, -1))
+
+
+## Nothing happens on a weapon that does not reload or a magazine already full, and that includes
+## not leaving whatever state the player is in.
+func _begin_reload() -> void:
+	if machine == null or not GameState.loadout.can_reload(GameState.magazine_bonus()):
+		return
+	if machine.current is PlayerDead or machine.current is PlayerAttack:
+		return
+	machine.current.transition_to(&"Reload")
+
+
+## The only thing a swap costs is the chain, which cannot be carried to a different weapon because
+## its windows belonged to the old one.
+func _on_weapon_equipped(equipped: WeaponData) -> void:
+	if equipped != null:
+		weapon = equipped
+	close_chain()
+	if visual != null:
+		visual.armed = weapon != null and weapon.is_ranged
 
 
 func _on_state_transitioned(state: StringName) -> void:

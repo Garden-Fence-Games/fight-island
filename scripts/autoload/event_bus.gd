@@ -29,7 +29,15 @@ signal wave_cleared(wave: int, reward: int)
 signal chain_spent(seconds: float)
 signal chain_ready
 signal weapon_equipped(weapon: WeaponData)
+## A weapon was picked up for the first time. Distinct from equipping it, because finding the gun is
+## a moment and putting it back in your hands is not.
+signal weapon_found(id: StringName)
 signal ammo_changed(magazine: int, reserve: int)
+## The trigger was pulled on an empty magazine. It exists so the moment is **audible**: a press that
+## does nothing at all reads as a dropped input, and the player blames the game rather than their
+## own ammunition.
+signal weapon_dry_fired
+signal weapon_reloaded
 ## A blow arrived while the player was rolling through it. Distinct from a dodge that merely
 ## happened: the lesson is not the button, it is the moment — and only this says the moment was
 ## right.

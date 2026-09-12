@@ -5,6 +5,12 @@ extends PlayerState
 ##
 ## The facing is taken once, on entry, and never again: a swing that can be steered mid-animation
 ## is a swing with no commitment, and commitment is the only thing making a windup cost anything.
+##
+## A shot is the same state with two things different. It resolves as a **ray at the end of the
+## windup** rather than a box held open for its active frames — a bullet has no travel, so a farmer
+## must not be able to walk into one already fired. And the charged shot **only charges while the
+## button is held**: letting go early cancels it, which is what makes holding a commitment rather
+## than a formality.
 
 enum Phase { WINDUP, ACTIVE, RECOVERY }
 
@@ -23,6 +29,10 @@ func enter(message: Dictionary) -> void:
 	if _attack == null:
 		transition_to(&"Idle")
 		return
+	# Rounds before stamina: a trigger pulled on an empty magazine must not also cost breath.
+	if not _take_ammo():
+		transition_to(&"Idle")
+		return
 	var cost := _attack.stamina_cost * player.stamina_cost_multiplier
 	if player.stamina != null and not player.stamina.try_spend(cost):
 		transition_to(&"Idle")
@@ -34,6 +44,8 @@ func enter(message: Dictionary) -> void:
 	player.snap_to_face(player.look_direction(player.move_direction()))
 	if player.hitbox != null and not player.hitbox.landed.is_connected(_on_landed):
 		player.hitbox.landed.connect(_on_landed)
+	if player.hitscan != null and not player.hitscan.landed.is_connected(_on_landed):
+		player.hitscan.landed.connect(_on_landed)
 
 
 ## The clip this swing plays, named by its own `AttackData`. The animation component asks the state
@@ -50,11 +62,21 @@ func clip_duration() -> float:
 	return _attack.total_duration() if _attack != null else 0.0
 
 
+## How far a charge has come, nought to one, for whatever wants to draw it. Zero for every attack
+## that does not charge, which is eight of the nine.
+func charge() -> float:
+	if _attack == null or not _attack.charges or _phase != Phase.WINDUP:
+		return 0.0
+	return clampf(_elapsed / maxf(_attack.windup, 0.001), 0.0, 1.0)
+
+
 func exit() -> void:
 	if player.hitbox != null:
 		player.hitbox.disarm()
 		if player.hitbox.landed.is_connected(_on_landed):
 			player.hitbox.landed.disconnect(_on_landed)
+	if player.hitscan != null and player.hitscan.landed.is_connected(_on_landed):
+		player.hitscan.landed.disconnect(_on_landed)
 
 
 func physics_update(delta: float) -> void:
@@ -64,8 +86,7 @@ func physics_update(delta: float) -> void:
 	player.halt(delta)
 	match _phase:
 		Phase.WINDUP:
-			if _elapsed >= _attack.windup:
-				_begin_active()
+			_update_windup()
 		Phase.ACTIVE:
 			if _elapsed >= _attack.active:
 				_begin_recovery()
@@ -78,11 +99,35 @@ func physics_update(delta: float) -> void:
 				transition_to(&"Idle")
 
 
+## A charge that is let go of early is abandoned, and the round is handed back. The stamina is not:
+## deciding to charge is the commitment, and a cost that can be taken back is not one.
+func _update_windup() -> void:
+	if _attack.charges and not Input.is_action_pressed(&"attack"):
+		_refund_ammo()
+		transition_to(&"Idle")
+		return
+	if _elapsed >= _attack.windup:
+		_begin_active()
+
+
 func _begin_active() -> void:
-	_phase = Phase.ACTIVE
 	_elapsed = 0.0
+	if _attack.is_hitscan:
+		_shoot()
+		_begin_recovery()
+		return
+	_phase = Phase.ACTIVE
 	if player.hitbox != null:
 		player.hitbox.arm(_attack, player, _perfect, player.damage_multiplier)
+
+
+## Every round of the press leaves at once. The double tap may legitimately hit the same farmer
+## twice, so nothing is remembered between the two — the design pays 2 × 16, not 16.
+func _shoot() -> void:
+	if player.hitscan == null:
+		return
+	for _round: int in maxi(_attack.shots, 1):
+		player.hitscan.fire(_attack, player, _perfect, player.damage_multiplier)
 
 
 func _begin_recovery() -> void:
@@ -99,6 +144,21 @@ func _begin_recovery() -> void:
 	if _attack.is_finisher() and player.weapon != null:
 		player.spend_chain(_attack.recovery + player.weapon.lockout_for(_perfect))
 	player.open_chain(_attack, _index)
+
+
+## Whether there was anything to fire. An empty magazine says so on the bus rather than silently
+## refusing, because a press that produces nothing at all is a press the player thinks was lost.
+func _take_ammo() -> bool:
+	if _attack.ammo_cost <= 0:
+		return true
+	if GameState.loadout.spend(_attack.ammo_cost):
+		return true
+	EventBus.weapon_dry_fired.emit()
+	return false
+
+
+func _refund_ammo() -> void:
+	GameState.loadout.refund(_attack.ammo_cost)
 
 
 func _on_landed(target: Node3D, info: HitInfo) -> void:
