@@ -75,6 +75,42 @@ ZenNotes is not in git, so a per-PR rule cannot be enforced and would rot into a
 
 `/sync-notes` drafts the ZenNotes status refresh from the roadmap and the commit log.
 
+## A check that cannot fail
+
+The commonest way a guard goes quiet is that it takes its bound from the thing it is checking:
+
+```gdscript
+var most := deg_to_rad(Player.TURN_SPEED_DEGREES) * (3.0 / 60.0)
+if turned > most:
+```
+
+Ten times the turn rate moves the expectation with it, and the check passes on a body that spins
+twice in a single frame. Reading for this does not work — three of the ones found this way were
+written by people who believed they were holding exactly the thing they were not.
+
+**Write the figure out, and assert the constant against it first.** Moving it deliberately is then a
+one-line edit; moving it by accident fails, and says so:
+
+```gdscript
+if not is_equal_approx(Player.TURN_SPEED_DEGREES, EXPECTED_TURN_RATE):
+    _fail("the body turns at %.0f°/s and this check was written for %.0f°/s" % [...])
+    return
+```
+
+`tools/mutate.sh` measures it rather than trusting anyone's reading: it breaks one constant at a
+time, runs the checks that should notice, and reports the ones that did not. The table lives in
+`tools/mutations.txt`, and a line in it is a claim — *if somebody changed this by accident, one of
+these checks would say so*. It runs weekly in CI and takes about half an hour, so run it by hand
+when you add a guard rather than waiting for Sunday:
+
+```
+tools/mutate.sh
+```
+
+A **survivor** is either a guard reading its bound off what it guards, or a property nobody ever
+wrote a guard for. Both are worth a morning. A line added to the table without once being run in
+the broken state is a line that means nothing.
+
 ## Definition of done
 
 ```
@@ -83,6 +119,7 @@ ZenNotes is not in git, so a per-PR rule cannot be enforced and would rot into a
 - [ ] tools/verify_project_config.gd passes
 - [ ] No debug prints, no debug actions in a release build
 - [ ] Tests pass
+- [ ] A new guard was run once with the thing it guards broken, and failed
 - [ ] Docs updated per the trigger table above
 - [ ] A balance change touched docs/game-design.md AND the .tres
 - [ ] A finished milestone updated ZenNotes
