@@ -554,6 +554,37 @@ player may never see coming, so sound is the only warning the design gives them:
 the longest climb, and the only one that crosses an octave. The check fails if any other archetype
 climbs as high as his.
 
+### The bed lifts with the island
+
+Three loops on the **Music** bus, and they are one piece of music getting louder rather than three
+cues taking turns — same length so they never drift apart, all built on stacked fifths so any pair
+of them agrees, and they **stack**: a layer above its range stays full rather than handing over.
+
+| | root | arrives at | full at |
+|---|---|---|---|
+| Ground | 55 Hz | always on during a fight | 0.15 |
+| Pulse | 82.5 Hz | 0.20 | 0.55 |
+| Edge | 220 Hz | 0.60 | 0.95 |
+
+**Pressure is bodies on the island, not time.** A wave five minutes through is not a tense wave if
+nobody is left, and a wave thirty seconds in with eight farmers closing is. Measured against what
+*this* wave allows at once rather than a constant, so a full island sounds full at wave 1 and at
+wave 15. Between waves it is zero, and the breather is silent — which is the only pacing tool the
+game has.
+
+Nothing in the layers is rhythmic and nothing shares a frequency with the perfect signature or with
+any wind-up. A bed the ear can count against is a metronome, and a player fights a metronome instead
+of reading a fight.
+
+**A telegraph outranks the bed**, the way it outranks a camera knock: the Music bus drops 14 dB
+while anything is winding up and eases back after. Half a bed over a wind-up is still a bed over it.
+
+### Nothing the player needs is on a bus they may mute
+
+Music and Ambience exist to be switched off. Everything that tells the player something is on
+**SFX**, and `tools/verify_music.tscn` walks every voice to prove it — a slider at the bottom must
+cost atmosphere and never information.
+
 ### Running dry is announced a round early
 
 The shot that leaves **one** round in the magazine plays two short dry clicks a semitone apart.

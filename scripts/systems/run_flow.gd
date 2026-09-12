@@ -56,6 +56,7 @@ func _open_merchant() -> void:
 		return
 	var merchant := _open(MERCHANT_SCENE) as MerchantScreen
 	merchant.closed.connect(_on_screen_closed)
+	EventBus.merchant_opened.emit()
 	get_tree().paused = true
 
 
@@ -64,6 +65,7 @@ func _open_summary(victory: bool) -> void:
 	if _screen != null:
 		return
 	GameState.end_run()
+	EventBus.run_ended.emit(victory)
 	var summary := _open(SUMMARY_SCENE) as RunSummary
 	summary.retried.connect(_on_retry)
 	summary.left.connect(_on_leave)

@@ -58,7 +58,13 @@ const EXPECTED: Array[StringName] = [
 	&"telegraph",
 	&"wave_cleared",
 	&"low_ammo",
+	&"merchant",
+	&"victory",
+	&"defeat",
 ]
+## The three music layers, checked on their own terms like the bed is: they loop, they carry no
+## event, and they are the one thing here allowed to be muted.
+const MUSIC: Array[StringName] = [&"music_ground", &"music_pulse", &"music_edge"]
 ## The impact families, and the wind-ups. Listed here rather than read off `AudioManager.IMPACTS`,
 ## for the reason the mutation sweep exists: a check that takes its list from the thing it is
 ## checking passes on a table with a row missing.
@@ -562,6 +568,9 @@ func _check_the_right_sound_answers_each_signal() -> void:
 		[&"wave_cleared", func() -> void: EventBus.wave_cleared.emit(3, 40)],
 		[&"shot", func() -> void: EventBus.weapon_fired.emit(_an_attack(false))],
 		[&"shot_heavy", func() -> void: EventBus.weapon_fired.emit(_an_attack(true))],
+		[&"merchant", func() -> void: EventBus.merchant_opened.emit()],
+		[&"victory", func() -> void: EventBus.run_ended.emit(true)],
+		[&"defeat", func() -> void: EventBus.run_ended.emit(false)],
 	]
 	for case: Array in cases:
 		var wanted: StringName = case[0]
