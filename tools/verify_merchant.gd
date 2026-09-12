@@ -13,6 +13,7 @@ const SETTLE_FRAMES: int = 8
 
 var _failures: PackedStringArray = []
 var _player: Player = null
+var _kept_run: Dictionary = {}
 
 
 func _ready() -> void:
@@ -20,6 +21,9 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	# Driving a run writes one to disk. Whatever this machine already had goes back at the end: a
+	# check that eats the developer's run is worse than no check.
+	_kept_run = SaveManager.read_json(SaveManager.RUN_PATH)
 	var arena := (load(ARENA) as PackedScene).instantiate()
 	add_child(arena)
 	await get_tree().physics_frame
@@ -36,7 +40,15 @@ func _run() -> void:
 	_check_money_carries()
 	await _check_a_weapon_track_moves_the_swing()
 	await _check_the_summary_reads_the_run()
+	_put_the_run_back()
 	_report()
+
+
+func _put_the_run_back() -> void:
+	if _kept_run.is_empty():
+		SaveManager.clear_run()
+		return
+	SaveManager.write_json(SaveManager.RUN_PATH, _kept_run)
 
 
 func _check_tracks_are_data() -> void:

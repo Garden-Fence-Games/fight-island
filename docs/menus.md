@@ -60,6 +60,12 @@ the only thing that changes when the arena moves in.
 When a run is in progress and the player quit to title, Play becomes **Continue**, and a second
 entry **New run** appears below it.
 
+**Continue survives closing the game.** The run is on disk, so the entry is there on the next
+launch too — it reads `run.json`, not a variable that only lives as long as the process. A run
+resumed between two waves reopens the merchant it had not spent yet; one resumed halfway through a
+wave fights that wave again from its start. A run that ended, in a death or in a victory, is not
+resumable and the file is gone.
+
 Every entry carries the glyph that fires it — `[A / ENTER]` on the focused row, `[Y / O]` on
 Options, `[B / ESC]` on Quit — and each of those is a real binding. New run takes `[Y / N]` and
 Options loses its badge while a run is waiting, because the pad has one Y.

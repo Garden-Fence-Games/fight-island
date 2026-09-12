@@ -8,6 +8,17 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- Saving and resuming a run. `run.json` is written when a wave starts, when one is cleared and when
+  an upgrade is bought, so Continue survives closing the game and a run resumed between two waves
+  still gets the merchant it had not spent. A finished run deletes its file.
+- `progress.json`, holding what outlives a run — the best wave reached today, the tutorial's steps
+  next.
+- Every file under `user://` now carries a version and passes through a migration on read. A file
+  from an older build is accepted, one from a newer build is refused, and an unreadable run file is
+  deleted rather than left to fail every launch.
+- `tools/verify_save.tscn` — headless proof that a run survives the round trip whole, that a
+  missing, truncated, incomplete or future-dated file falls back instead of crashing, and that an
+  interrupted wave is fought again rather than skipped.
 - Merchant between waves: five cards driven by `UpgradeTrack` resources, one purchase a wave, and
   leftover money that carries. Effects reach the living player the moment they are bought,
   including the heal to full on a health purchase.
@@ -59,6 +70,10 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- A run quit halfway through a wave came back at the **next** wave, silently skipping the one that
+  was interrupted: the wave director read the state's current wave as if it were the last cleared
+  one.
+- The run clock counted time spent on the title screen with a run suspended behind it.
 - Strings with a comma in them were cut short on screen: the locale CSV was written without
   quoting, so the merchant's card copy stopped at its first clause.
 - A cold checkout failed to import: `project.godot` lists a translation file the CSV importer has

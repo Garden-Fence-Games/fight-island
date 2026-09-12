@@ -23,6 +23,18 @@ var _screen: Control = null
 func _ready() -> void:
 	EventBus.wave_cleared.connect(_on_wave_cleared)
 	EventBus.player_died.connect(_on_player_died)
+	if merchant_is_owed():
+		_open_merchant()
+
+
+## A run resumed between two waves still owes its merchant: the wave was cleared before the player
+## closed the game, and losing that wave's one purchase to a closed laptop is exactly what saving
+## the run exists to prevent. Public and free of side effects so the headless check can ask it
+## without standing up an arena.
+func merchant_is_owed() -> bool:
+	if not GameState.run_in_progress or GameState.wave_in_progress or GameState.wave <= 0:
+		return false
+	return GameState.can_buy_anything()
 
 
 func _on_wave_cleared(wave: int, _reward: int) -> void:
