@@ -6,6 +6,18 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Fixed
+
+- **Aim assist does something.** It has been a row in the options screen, a key in
+  `Settings.DEFAULTS` and a value that persisted since the settings landed, and **nothing has ever
+  read it** — `docs/menus.md` said the code would arrive with the gun, the gun arrived, and nobody
+  came back. That is the failure the same document calls worse than a missing setting, because a
+  player who needs it sets it and believes they are covered.
+- `AimComponent` now turns the aim towards the nearest body in angle, inside a 12° cone and inside
+  the reach of the attack in hand: `soft` takes half the error, `strong` takes all of it. Applied in
+  `direction()`, so the head, the body, the swing and the shot never disagree about where the player
+  is pointing.
+
 ### Added
 
 - **A credits screen the player can reach**, from a discreet line beside the version number on the

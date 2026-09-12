@@ -472,6 +472,25 @@ time; the island only has to be composed for one viewpoint; and a telegraph can 
 geometry because the player happened to have turned the camera. The cost is that the arena must be
 authored so nothing important sits in the one blind direction.
 
+### Aim assist
+
+`AimComponent.direction()` is where it happens, so the head, the body, the swing and the shot all
+agree about where the player is pointing — a round that landed somewhere the character was visibly
+not facing reads as the game missing on its own.
+
+The nearest body **in angle** to where the player is already pointing, inside a 12° cone and inside
+the reach of the attack in hand, and the aim is turned that way by the share the setting asks for:
+`soft` half of it, `strong` all of it, `off` none. Closest in angle rather than in distance, because
+the player has aimed and the thing they meant is the one nearest that line.
+
+It applies to the mouse as much as to the stick. Aim assist on a mouse is normally an insult; this
+one is an accessibility setting rather than a pad affordance, and somebody who cannot hold a line
+with a mouse needs it exactly as much.
+
+The candidate list is the `enemies` group, which `EnemyDead` leaves the moment a body dies — so
+there is no liveness test here, because one could never fire. Two group scans a frame over at most
+twelve bodies; `tools/stress_enemies.tscn` shows nothing at forty.
+
 ### Where the blind side is
 
 Measured rather than asserted, by `tools/verify_view.tscn`, which marches outward from the player

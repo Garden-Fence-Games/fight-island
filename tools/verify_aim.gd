@@ -17,6 +17,24 @@ const SETTLE: float = 0.5
 ## How close a facing has to be to count as arrived. The turn is rate-capped and lands within a
 ## degree or two; anything tighter would be testing floating point.
 const CLOSE_ENOUGH: float = 0.08
+## Where a body is stood for the assist checks: half the cone off the aim, which is inside it by a
+## margin no rounding closes and far enough out that half of it is plainly not all of it.
+const HALF_A_CONE: float = deg_to_rad(AimComponent.ASSIST_CONE * 0.5)
+## The cone this check was written against, and a bearing plainly beyond it. Both written out: see
+## `_check_the_assist_ignores_what_the_player_is_not_aiming_at`.
+const EXPECTED_CONE: float = 12.0
+const OUTSIDE_CONE: float = deg_to_rad(20.0)
+## The share `soft` is expected to take off the error. Written out, not read — see
+## `_check_soft_pulls_halfway_and_strong_goes_all_the_way`.
+const EXPECTED_SOFT_PULL: float = 0.5
+## Inside the fists' 1.4 m, and well outside it. The weapon in hand decides how far the assist
+## looks, and the fists are what a fresh run starts with.
+const IN_REACH: float = 1.2
+const OUT_OF_REACH: float = 8.0
+const FARMHAND: String = "res://data/enemies/farmhand.tres"
+## Any attack will do — it is scaled far past a farmer's health, and what is being checked is that
+## the assist stops looking at him once he is down.
+const KILLING_BLOW: String = "res://data/attacks/fist_uppercut.tres"
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -57,6 +75,11 @@ func _run() -> void:
 	await _check_the_cursor_lands_on_the_ground()
 	await _check_an_attack_commits_to_its_facing()
 	await _check_a_dodge_goes_where_the_keys_say()
+	await _check_the_assist_is_off_when_it_is_off()
+	await _check_soft_pulls_halfway_and_strong_goes_all_the_way()
+	await _check_the_assist_ignores_what_the_player_is_not_aiming_at()
+	await _check_the_assist_cannot_reach_past_what_is_in_hand()
+	await _check_a_dead_body_stops_being_a_target()
 	_put_the_run_back()
 	_report()
 
@@ -260,6 +283,142 @@ func _push_key(key: Key, pressed: bool) -> void:
 	Input.parse_input_event(event)
 
 
+## The assist, from `off` through to `strong`. It was a row in the options screen, a key in
+## `Settings.DEFAULTS` and a value that persisted, and **nothing read it** — the failure the project
+## calls worse than a missing setting, because a player who needs it sets it and believes they are
+## covered.
+##
+## Every check below drives `AimComponent.direction()` with a real body on the island and a real
+## stick push, and measures the angle that comes out.
+func _check_the_assist_is_off_when_it_is_off() -> void:
+	Settings.set_value(&"gameplay_aim_assist", "off")
+	var off := await _aim_with_a_body_at(HALF_A_CONE)
+	if absf(off) > deg_to_rad(1.0):
+		_fail("with the assist off the aim moved %.1f° towards the body" % rad_to_deg(off))
+
+
+## Halfway is the whole of what `soft` means: a player who was nearly lined up connects, and one who
+## was not still misses. A setting that quietly snapped would be `strong` under another name.
+##
+## The share is written out for the same reason the cone is: reading `ASSIST_PULL` here meant that
+## setting soft to 1.0 moved the expectation with it and the check went on passing.
+func _check_soft_pulls_halfway_and_strong_goes_all_the_way() -> void:
+	if not is_equal_approx(float(AimComponent.ASSIST_PULL["soft"]), EXPECTED_SOFT_PULL):
+		_fail(
+			(
+				"soft pulls %.2f of the error and this check was written for %.2f"
+				% [float(AimComponent.ASSIST_PULL["soft"]), EXPECTED_SOFT_PULL]
+			)
+		)
+		return
+	Settings.set_value(&"gameplay_aim_assist", "soft")
+	var soft := await _aim_with_a_body_at(HALF_A_CONE)
+	var wanted := HALF_A_CONE * EXPECTED_SOFT_PULL
+	if absf(absf(soft) - wanted) > deg_to_rad(1.0):
+		_fail(
+			(
+				"soft should pull %.1f° of the %.1f° error, it pulled %.1f°"
+				% [rad_to_deg(wanted), rad_to_deg(HALF_A_CONE), rad_to_deg(absf(soft))]
+			)
+		)
+	Settings.set_value(&"gameplay_aim_assist", "strong")
+	var strong := await _aim_with_a_body_at(HALF_A_CONE)
+	if absf(absf(strong) - HALF_A_CONE) > deg_to_rad(1.0):
+		_fail(
+			(
+				"strong should land on the body %.1f° away, it pulled %.1f°"
+				% [rad_to_deg(HALF_A_CONE), rad_to_deg(absf(strong))]
+			)
+		)
+
+
+## Outside the cone the player was pointing somewhere else, and an assist that reached anyway would
+## be choosing targets rather than steadying a hand.
+##
+## The angle is **written out rather than read off `AimComponent`**. A check that takes its bound
+## from the thing it is checking agrees with whatever that thing says: opening the cone to forty
+## degrees moved this test out to forty-six and it went on passing, which is a check that cannot
+## fail. So the constant is asserted first, and the body stands at a fixed angle beyond it.
+func _check_the_assist_ignores_what_the_player_is_not_aiming_at() -> void:
+	if not is_equal_approx(AimComponent.ASSIST_CONE, EXPECTED_CONE):
+		_fail(
+			(
+				(
+					"the assist cone is %.0f° and this check was written for %.0f° — widen OUTSIDE_CONE "
+					+ "deliberately or not at all"
+				)
+				% [AimComponent.ASSIST_CONE, EXPECTED_CONE]
+			)
+		)
+		return
+	Settings.set_value(&"gameplay_aim_assist", "strong")
+	var pulled := await _aim_with_a_body_at(OUTSIDE_CONE)
+	if absf(pulled) > deg_to_rad(1.0):
+		_fail(
+			(
+				"a body %.0f° away is outside the %.0f° cone and the aim still moved %.1f°"
+				% [rad_to_deg(OUTSIDE_CONE), EXPECTED_CONE, rad_to_deg(absf(pulled))]
+			)
+		)
+
+
+## The fists reach 1.4 m. Being dragged round towards somebody eight metres off is the aim lying
+## about what the player can do from here.
+func _check_the_assist_cannot_reach_past_what_is_in_hand() -> void:
+	Settings.set_value(&"gameplay_aim_assist", "strong")
+	var pulled := await _aim_with_a_body_at(HALF_A_CONE, OUT_OF_REACH)
+	if absf(pulled) > deg_to_rad(1.0):
+		_fail(
+			(
+				"a body %.0f m away is past the fists' reach and the aim still moved %.1f°"
+				% [OUT_OF_REACH, rad_to_deg(absf(pulled))]
+			)
+		)
+
+
+## `EnemyDead` takes the body out of the `enemies` group the moment it dies, and that is the only
+## thing standing between the assist and a corpse. Held here rather than assumed.
+func _check_a_dead_body_stops_being_a_target() -> void:
+	Settings.set_value(&"gameplay_aim_assist", "strong")
+	var pulled := await _aim_with_a_body_at(HALF_A_CONE, IN_REACH, true)
+	if absf(pulled) > deg_to_rad(1.0):
+		_fail("the aim was pulled %.1f° onto a body that is dead" % rad_to_deg(absf(pulled)))
+
+
+## Pushes the stick one way, stands a farmer that many radians off it, and returns how far the aim
+## that comes back has moved towards him. Signed, so a pull the wrong way reads as a pull.
+func _aim_with_a_body_at(offset: float, reach: float = IN_REACH, kill: bool = false) -> float:
+	_reset()
+	_push_stick(Vector2(1.0, 0.0))
+	await get_tree().physics_frame
+	var pointed := _screen_right()
+	var standing := _player.global_position + pointed.rotated(Vector3.UP, offset) * reach
+	var farmer := _stand_a_farmer_at(standing)
+	if farmer == null:
+		_fail("no farmer could be stood up for the assist checks")
+		return 0.0
+	if kill:
+		# Through the real path: `is_alive` reads the health component, and a body killed any other
+		# way would be a body this check invented a way of being dead for.
+		farmer.hurtbox.take_hit(HitInfo.new(load(KILLING_BLOW) as AttackData, _player, false, 99.0))
+	await get_tree().physics_frame
+	var aimed := _player.aim.direction()
+	farmer.retire()
+	_push_stick(Vector2.ZERO)
+	await get_tree().physics_frame
+	return pointed.signed_angle_to(aimed, Vector3.UP)
+
+
+## Placed rather than spawned: the spawn rules refuse anything this close to the player, and this is
+## about the aim rather than about where a wave may arrive.
+func _stand_a_farmer_at(where: Vector3) -> Enemy:
+	var director := _arena.get_node_or_null(^"WaveDirector/SpawnDirector") as SpawnDirector
+	var data := load(FARMHAND) as EnemyData
+	if director == null or data == null:
+		return null
+	return director.spawn_at(data, where, 1.0, 1.0, 1.0, 1.0, null, true)
+
+
 func _reset() -> void:
 	_player.machine.current.transition_to(&"Idle")
 	_player.global_position = Vector3(0.0, 1.0, 0.0)
@@ -280,7 +439,12 @@ func _fail(message: String) -> void:
 
 func _report() -> void:
 	if _failures.is_empty():
-		print("aim OK — keys still walk, stick turns, cursor lands on the ground, attack commits")
+		print(
+			(
+				"aim OK — keys still walk, stick turns, cursor lands on the ground, attack commits, "
+				+ "and the assist steadies a hand without choosing the target"
+			)
+		)
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:
