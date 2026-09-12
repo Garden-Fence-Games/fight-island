@@ -6,6 +6,30 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Fixed
+
+- **A weapon is no longer dropped where the player cannot see it.** `PickupDirector` asked the
+  camera whether a point *a metre above* the ground was in shot, then laid the weapon on the ground
+  — and the two answers differ exactly at the bottom edge of the frame, which is the blind side. It
+  now asks at `WeaponPickup.RESTING_HEIGHT`, the height the thing actually lies at. One drop in
+  roughly two hundred was landing out of shot; CI found the first one, not the machine it was
+  written on.
+- **The wheel no longer winds in close enough to hide a swing.** `CameraRig.MIN_ZOOM` goes from 6 m
+  to 11 m. The ground that stays in shot on the blind bearing is very nearly half the arm — six
+  metres showed 2.75 m of it — and a reaper strikes from 2.8 m after covering 1.8 m during his
+  wind-up, so under 4.6 m his swing began off-screen. The old floor was a setting that quietly took
+  the fight away from whoever chose it.
+
+### Added
+
+- `tools/verify_view.tscn`, which answers where the fixed camera's blind side is by measuring it:
+  36 bearings marched outward until the ground leaves the frame. It then holds the two rules that
+  depend on the answer — a melee swing begins on screen at **every** zoom the wheel reaches, and a
+  weapon dropped in the grass lands where the player can see it — 768 of them, from 96 places around
+  the island. Proven by breaking both: inverting `PickupDirector`'s view test put 179 of 192 weapons
+  out of shot, and winding the wheel to the old floor of six metres left 2.8 m of ground against the
+  4.6 m a reaper needs.
+
 ### Changed
 
 - **The island's loose stone is thinned out.** Scattered rocks drop from 424 placed to 200 and

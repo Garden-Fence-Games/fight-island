@@ -13,6 +13,10 @@ extends Area3D
 ## Where the prompt sits above the weapon, and how close the player has to be for it to appear. The
 ## radius is the collision shape's; this is only how far the label reads from.
 const LABEL_HEIGHT: float = 1.3
+## How high off the ground the weapon itself sits. What has to be in shot is the thing that reads
+## as a weapon, not the air above it — `PickupDirector` asks the camera about this height, and
+## `tools/verify_view.tscn` judges it at the same one.
+const RESTING_HEIGHT: float = 0.3
 ## Turns per second, so the thing reads as an object to be taken rather than as scenery.
 const SPIN: float = 1.2
 
