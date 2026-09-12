@@ -27,14 +27,19 @@ const FADEABLE_SHADER: String = "res://assets/shaders/fadeable.gdshader"
 ## was, and a grove of them flickering as the body walks through is worse still. What hides the
 ## player outright is a five-metre boulder, and there are six of those.
 const OCCLUDER_GROUP: StringName = &"occluder"
-## How wide a chunk of scatter is. Small enough that the camera discards most of the island, wide
-## enough that it stays a few dozen batches rather than a few hundred: a draw call is cheap and a
-## million submitted vertices is not.
-const CHUNK: float = 24.0
-## Past these, a tuft and a pebble are a few pixels each. Palms and rocks get no range: they are
-## silhouettes, and the island reading as an island depends on them.
+## How wide a chunk of scatter is, and **the strongest single lever on what this island costs**: a
+## chunk is the unit the camera keeps or drops whole, and the unit a visibility range is measured
+## to, so the grid sets how finely either can cut. It was 24 m, and at 24 m neither cut well. See
+## "What the island costs" in `docs/asset-pipeline.md` for the measurements behind 12 m.
+const CHUNK: float = 12.0
+## Past these, a tuft and a pebble are a few pixels each.
 const GRASS_FADE: float = 55.0
 const PEBBLE_FADE: float = 70.0
+## The palms get a range too, and a far more generous one: they are the island's silhouette, and a
+## tall thing popping out is worse than a tall thing costing. Set past the far edge of what the
+## fixed camera frames, so it saves nothing today and catches a wider camera tomorrow. Rocks stay
+## rangeless; 80 triangles each buys nothing.
+const PALM_FADE: float = 80.0
 ## The scattered decoration, each with its origin at its base. **The palm is ours and painted**, so
 ## it brings its own colours and the palette steps aside — see `_part_material`. The rest are
 ## Kenney's CC0 Nature Kit: untextured, cut into named parts, coloured by the island.
@@ -606,7 +611,7 @@ func _scatter() -> Node3D:
 	props.add_child(_multi("Bushes", _nature(BUSH_MODEL), bushes, _grass_wind(), GRASS_FADE, false))
 	props.add_child(_multi("Grass", _nature(GRASS_MODEL), tufts, _grass_wind(), GRASS_FADE, false))
 	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles, {}, PEBBLE_FADE, false))
-	props.add_child(_multi("Palms", _nature(PALM_MODEL), palms, _palm_wind()))
+	props.add_child(_multi("Palms", _nature(PALM_MODEL), palms, _palm_wind(), PALM_FADE))
 	props.add_child(_multi("Rocks", _nature(ROCK_MODEL), rocks))
 	props.add_child(_colliders(blocking))
 	return props

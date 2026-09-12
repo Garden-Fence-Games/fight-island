@@ -171,6 +171,55 @@ Two more rules the island had to learn the hard way:
   same question for a palm and for a boulder, it scales with whatever the prop is, and it is what
   guarantees the player can always dodge through rather than merely squeeze.
 
+## What the island costs
+
+Measured headless against the real arena camera, which sits 17.9 m from the player and 14.2 m up, and
+reaches 61.3 m to the farthest corner of the farthest chunk it still frames.
+
+| Population | Props | Triangles each | Held | Submitted |
+|---|---:|---:|---:|---:|
+| Grass | 11,892 | 35 | 416,220 | 139,615 |
+| Bushes | 90 | 2,862 | 257,580 | 97,308 |
+| Palms | 380 | 692 | 262,960 | 59,512 |
+| Rocks | 432 | 80 | 34,560 | 7,040 |
+| Pebbles | 1,500 | 16 | 24,000 | 2,528 |
+| **Scatter** | | | **995,320** | **306,003** |
+
+Add the actors — the player is 21,888 triangles and a farmer 12,792, so twelve of them is 153,504 —
+and a busy frame is a little under half a million triangles.
+
+**The chunk grid is the lever, not the fade distances.** A chunk is the unit the camera keeps or
+drops whole, and the unit a visibility range is measured to, so the grid decides how finely either
+one can cut. At the 24 m grid the island shipped with, neither cut well: the camera kept 497,000 of
+the 995,000 triangles, and a range set anywhere between 50 m and 80 m removed *nothing at all*,
+because every chunk the camera framed had its centre inside 50 m. Narrowing the grid changes that
+without touching a single model or removing one prop from view:
+
+| Grid | Chunks | Drawn | Triangles submitted |
+|---:|---:|---:|---:|
+| 24 m | 145 | 41 | 497,000 |
+| **12 m** | **414** | **80** | **306,000** |
+| 8 m | 745 | 127 | 250,000 |
+
+12 m takes 38% off the frame for twice the draw calls and costs nothing visible. 8 m buys a further
+18% for another 1.6× the calls, which is the wrong side of the trade: eighty multimesh draws is
+nothing to a GPU and three hundred thousand vertices still is.
+
+Two things follow from the same measurement:
+
+- **A fade distance above ~46 m is decoration.** That is where the 12 m grid's quantisation puts the
+  first cliff, and the frustum has already thrown away everything past it. The palms' 80 m range
+  saves nothing today; it is kept as a guard for a camera that ever pulls back.
+- **The bush is the one model out of proportion.** 2,862 triangles for a waist-high prop is four
+  times a whole palm, and 90 of them cost as much as 380 palms. Culling now carries it — 97,308
+  submitted rather than 257,580 — but decimating the model is the fix, and it is the cheapest
+  remaining win on the island by a wide margin.
+
+The sun's shadow distance is part of this, not separate from it: Godot ships it at 100 m, which paid
+for a second pass over 39 m of island the camera cannot see *and* stretched the same shadow map over
+half again as much ground. It is set to 70 m, which covers the 61.3 m reach with slack to spare and
+comes back sharper. `verify_camera` fails if that relationship breaks in either direction.
+
 ## From the art phase onward: Blender to glTF
 
 `.blend` files live in `art-source/` and are tracked by Git LFS. **`.glb` files are committed** to
