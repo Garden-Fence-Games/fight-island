@@ -37,6 +37,10 @@ var poise_left: float = 0.0
 var damage_scale: float = 1.0
 var speed_scale: float = 1.0
 var windup_scale: float = 1.0
+## What this one rolled, or null for an ordinary farmer. Held rather than flattened into the
+## multipliers because the money and the look need it too, and a body that is worth triple has to
+## still know that when it dies.
+var rank: EliteRank = null
 ## He comes, he circles, and he never swings. The first two tutorial steps need something to hit
 ## that will not hit back — and a farmer standing still would teach the player that farmers do.
 var passive: bool = false
@@ -83,9 +87,13 @@ func revive(
 	damage: float = 1.0,
 	speed: float = 1.0,
 	windup: float = 1.0,
+	elite: EliteRank = null,
 	harmless: bool = false
 ) -> void:
-	damage_scale = damage
+	# Assigned before anything reads it: the health below, the tint and the money all ask, and a
+	# pooled body that kept a previous life's rank would come back an elite nobody rolled.
+	rank = elite
+	damage_scale = damage * (rank.damage_multiplier if rank != null else 1.0)
 	speed_scale = speed
 	windup_scale = windup
 	passive = harmless
@@ -100,7 +108,8 @@ func revive(
 	if data != null:
 		poise_left = data.poise
 		if health != null:
-			health.set_max_health(data.health * health_boost, true)
+			var tougher := rank.health_multiplier if rank != null else 1.0
+			health.set_max_health(data.health * health_boost * tougher, true)
 		if mesh != null:
 			_apply_tint()
 	if hurtbox != null:
@@ -183,6 +192,14 @@ func rouse() -> void:
 			continue
 		if global_position.distance_to(other.global_position) <= carries:
 			other.rouse()
+
+
+## What this body is worth to the wallet, the elite multiplier included. Private because the wallet
+## learns it from the death on the bus, which is the only place it is ever asked.
+func _money() -> int:
+	if data == null:
+		return 0
+	return data.money * (rank.money_multiplier if rank != null else 1)
 
 
 ## Whether the player has come close enough to be noticed. Being hit does not go through here —
@@ -337,10 +354,17 @@ func is_alive() -> bool:
 	return health == null or health.is_alive()
 
 
+## The archetype's colour, and the elite's glow over the top of it. The mesh is scaled here and the
+## body is not: an elite reads bigger without its swing quietly gaining reach.
 func _apply_tint() -> void:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = data.tint
+	if rank != null:
+		material.emission_enabled = true
+		material.emission = rank.glow
+		material.emission_energy_multiplier = rank.glow_energy
 	mesh.material_override = material
+	mesh.scale = Vector3.ONE * (rank.scale if rank != null else 1.0)
 
 
 func _on_hurt(info: HitInfo) -> void:
@@ -356,8 +380,6 @@ func _on_hurt(info: HitInfo) -> void:
 
 func _on_died() -> void:
 	release_token()
-	EventBus.enemy_died.emit(
-		self, data.id if data != null else &"", data.money if data != null else 0
-	)
+	EventBus.enemy_died.emit(self, data.id if data != null else &"", _money())
 	if machine != null:
 		machine.current.transition_to(&"Dead")

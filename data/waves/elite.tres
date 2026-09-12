@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EliteRank" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/elite_rank.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+health_multiplier = 2.00
+damage_multiplier = 1.40
+money_multiplier = 3
+scale = 1.15
+glow = Color(1, 0.42, 0.16, 1)
+glow_energy = 1.60

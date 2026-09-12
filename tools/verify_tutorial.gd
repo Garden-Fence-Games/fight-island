@@ -82,7 +82,9 @@ func _check_the_tutorial_owns_wave_one() -> void:
 ## gate into WindUp, so refusing it is what makes a body harmless.
 func _check_a_passive_farmer_cannot_swing() -> void:
 	var farmhand := load("res://data/enemies/farmhand.tres") as EnemyData
-	var body := _waves.spawner.spawn_at(farmhand, Vector3(4.0, 0.5, 0.0), 1.0, 1.0, 1.0, 1.0, true)
+	var body := _waves.spawner.spawn_at(
+		farmhand, Vector3(4.0, 0.5, 0.0), 1.0, 1.0, 1.0, 1.0, null, true
+	)
 	if body == null:
 		_fail("a farmer could not be placed by hand")
 		return

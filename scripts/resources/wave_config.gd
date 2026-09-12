@@ -28,8 +28,9 @@ extends Resource
 @export var windup_floor: float = 0.75
 
 @export_group("Elites")
-## Read by the elite pass (issue #26). It lives here rather than there because it is a wave
-## coefficient, and splitting the table across two files is how tables start disagreeing.
+## What an elite is worth. Null and none ever roll, which is what lets a tutorial wave or a
+## headless check run the same director with the feature switched off.
+@export var elite: EliteRank = null
 @export var elite_first_wave: int = 4
 @export var elite_base_chance: float = 0.10
 @export var elite_chance_per_wave: float = 0.05
