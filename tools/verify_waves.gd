@@ -27,6 +27,8 @@ const MAP_SYNC_FRAMES: int = 120
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
 ## Far enough apart that neither shoves the other while they are being measured.
 const SHOULDER_TO_SHOULDER: float = 4.0
+## Long enough for a flash to settle all the way back.
+const FLASH_PATIENCE: float = 0.6
 ## How much brighter an elite has to be than the archetype it came from, in Rec. 709 luma. Written
 ## out rather than read off the resource, which would make it agree with any glow anybody sets.
 const TELLS_APART: float = 0.35
@@ -46,6 +48,8 @@ var _arena: Node3D = null
 var _player: Player = null
 var _director: WaveDirector = null
 var _spawns: Array[Vector3] = []
+## Where a body was standing the moment it arrived, if the camera could see it then.
+var _seen_arriving: Array[Vector3] = []
 var _cleared: Array = []
 var _kept_run: Dictionary = {}
 
@@ -85,7 +89,7 @@ func _run() -> void:
 	await _check_a_wave_arrives_and_clears()
 	_check_nothing_spawned_in_shot_or_underfoot()
 	_check_the_bodies_were_reused()
-	_check_an_elite_is_worse_and_obviously_so()
+	await _check_an_elite_is_worse_and_obviously_so()
 	_check_elites_keep_away_from_the_first_waves()
 	_put_the_run_back()
 	_report()
@@ -112,6 +116,7 @@ func _check_an_elite_is_worse_and_obviously_so() -> void:
 	_same("an elite's damage", elite.damage_scale, plain.damage_scale * 1.4)
 	_same("an elite's size", elite.mesh.scale.x, 1.15)
 	_check_the_elite_reads_in_greyscale(plain, elite)
+	await _check_the_elite_still_reads_after_being_hit(plain, elite)
 	_check_the_elite_pays_triple(plain, elite)
 	plain.retire()
 	elite.retire()
@@ -142,6 +147,43 @@ func _brightness(material: Material) -> float:
 	if surface.emission_enabled:
 		out += surface.emission * surface.emission_energy_multiplier
 	return 0.2126 * out.r + 0.7152 * out.g + 0.0722 * out.b
+
+
+## An elite wears its rank in the emission slot, and so does the hit flash. Flashing to nought took
+## the rank away with it — one hit and the only cue that reads at a glance was gone for the rest of
+## that body's life.
+##
+## **`HitFeedback` is built here rather than found.** It lives in `main.tscn` and every check in
+## this folder loads `arena.tscn`, so the two never met and nothing noticed. That is the whole
+## reason the bug survived a check that measures this exact material.
+func _check_the_elite_still_reads_after_being_hit(plain: Enemy, elite: Enemy) -> void:
+	var feedback := HitFeedback.new()
+	add_child(feedback)
+	var before := _brightness(elite.mesh.material_override)
+	EventBus.attack_landed.emit(elite, 10.0, true)
+	EventBus.attack_landed.emit(plain, 10.0, true)
+	await _let_the_flash_finish()
+	var after := _brightness(elite.mesh.material_override)
+	if after < before - 0.001:
+		_fail(
+			(
+				(
+					"an elite reads %.2f bright after one hit against %.2f before it — the flash took"
+					+ " its rank away"
+				)
+				% [after, before]
+			)
+		)
+	# And the flash still has to leave an ordinary farmer where it found him, or this "fix" is a
+	# farmhand that glows.
+	_check_the_elite_reads_in_greyscale(plain, elite)
+
+
+func _let_the_flash_finish() -> void:
+	var waited := 0.0
+	while waited < FLASH_PATIENCE:
+		await get_tree().process_frame
+		waited += 1.0 / 60.0
 
 
 func _check_the_elite_pays_triple(plain: Enemy, elite: Enemy) -> void:
@@ -353,16 +395,24 @@ func _check_every_point_the_search_offers() -> void:
 		_fail("the spawn search refused %d of %d points" % [refused, POINTS])
 
 
+## Feet and head both, the way the spawn director tests it: a body is taller than the point it
+## stands on, and a camera looking down catches the head first.
+func _in_shot(camera: Camera3D, where: Vector3) -> bool:
+	if camera == null:
+		return false
+	return (
+		camera.is_position_in_frustum(where)
+		or camera.is_position_in_frustum(where + Vector3.UP * HEAD_HEIGHT)
+	)
+
+
 func _passes(camera: Camera3D, world: World3D, where: Vector3) -> bool:
 	var apart := Vector2(where.x - _player.global_position.x, where.z - _player.global_position.z)
 	if apart.length() < NEAREST_SPAWN:
 		_fail("the search offered a point %.1f m from the player" % apart.length())
 		return false
-	if camera != null and camera.is_position_in_frustum(where):
-		_fail("the search offered a point inside the camera's view at %s" % where)
-		return false
-	if camera != null and camera.is_position_in_frustum(where + Vector3.UP * 1.8):
-		_fail("the search offered a point whose head is in shot at %s" % where)
+	if _in_shot(camera, where):
+		_fail("the search offered a point in shot at %s" % where)
 		return false
 	if not Ground.is_spawnable(world, where, _player.global_position):
 		_fail("the search offered a point nobody can walk out of, at %s" % where)
@@ -372,17 +422,18 @@ func _passes(camera: Camera3D, world: World3D, where: Vector3) -> bool:
 
 ## The same rules against the points the wave actually used.
 func _check_nothing_spawned_in_shot_or_underfoot() -> void:
-	var camera := get_viewport().get_camera_3d()
 	var world := _player.get_world_3d()
+	if not _seen_arriving.is_empty():
+		_fail("something arrived inside the camera's view at %s" % _seen_arriving[0])
+		return
 	for where: Vector3 in _spawns:
+		# The distance half survives being measured late: the player is shoved by a fraction of a
+		# metre and the rule is twelve.
 		var apart := Vector2(
 			where.x - _player.global_position.x, where.z - _player.global_position.z
 		)
 		if apart.length() < NEAREST_SPAWN:
 			_fail("something spawned %.1f m from the player" % apart.length())
-			return
-		if camera != null and camera.is_position_in_frustum(where):
-			_fail("something spawned inside the camera's view at %s" % where)
 			return
 		if not Ground.is_spawnable(world, where, _player.global_position):
 			_fail("something spawned where it cannot walk out of, at %s" % where)
@@ -402,6 +453,13 @@ func _check_the_bodies_were_reused() -> void:
 
 func _on_enemy_spawned(enemy: Node3D) -> void:
 	_spawns.append(enemy.global_position)
+	# Judged now, because the rule is about now. Arriving farmers shove the player, the camera
+	# follows, and a point that was legitimately out of frame when a body walked on is inside it a
+	# second later — which is how this check used to fail for a reason that was not the rule, and
+	# could equally have passed while the rule was broken.
+	var eye := get_viewport().get_camera_3d()
+	if eye != null and _in_shot(eye, enemy.global_position):
+		_seen_arriving.append(enemy.global_position)
 
 
 func _on_wave_cleared(wave: int, reward: int) -> void:
