@@ -122,10 +122,10 @@ UI_TITLE,Title
 ENEMY_FARMHAND,Farmhands
 ENEMY_REAPER,Reapers
 ENEMY_THROWER,Throwers
-TUTORIAL_MOVE,Move with [WASD / LEFT STICK]
-TUTORIAL_ATTACK,Strike with [LMB / RT]
+TUTORIAL_MOVE,Move with {0}
+TUTORIAL_ATTACK,Strike with {0}
 TUTORIAL_CHAIN,Strike again to continue the chain
 TUTORIAL_PERFECT,Strike as the flash fades
-TUTORIAL_DODGE,Roll through the swing with [SPACE / A]
-TUTORIAL_PARRY,Parry the swing with [RMB / LT]
-TUTORIAL_SPRINT,Sprint with [SHIFT / L3]
+TUTORIAL_DODGE,Roll through the swing with {0}
+TUTORIAL_PARRY,Parry the swing with {0}
+TUTORIAL_SPRINT,Sprint with {0}

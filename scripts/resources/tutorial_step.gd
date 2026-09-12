@@ -29,8 +29,12 @@ enum Condition {
 
 @export var id: StringName = &""
 ## A localisation key, never a literal — the prompt is the one string in the game a player reads
-## mid-fight, and it has to be translatable like the rest.
+## mid-fight, and it has to be translatable like the rest. `{0}` in the string is the glyph.
 @export var prompt_key: String = ""
+## Which actions the glyph names. One for most lessons; four for movement, which the player does
+## with a whole stick or a whole cluster of keys rather than with a button. Empty for the lessons
+## that are about timing and have no button to name.
+@export var prompt_actions: PackedStringArray = []
 @export var trigger: Trigger = Trigger.NONE
 @export var condition: Condition = Condition.ANY
 ## For `PLAYER_STATE`: the state whose arrival closes the step.

@@ -94,26 +94,26 @@ theme_override_constants/separation = 12
 layout_mode = 2
 size_flags_horizontal = 0
 label_key = "UI_PLAY"
-key_hint = "[A / ENTER]"
+action = "ui_accept"
 
 [node name="NewRun" parent="Content/Column/Menu" instance=ExtResource("4")]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 0
 label_key = "UI_NEW_RUN"
-key_hint = "[Y / N]"
+action = "menu_new_run"
 
 [node name="Options" parent="Content/Column/Menu" instance=ExtResource("4")]
 layout_mode = 2
 size_flags_horizontal = 0
 label_key = "UI_OPTIONS"
-key_hint = "[Y / O]"
+action = "menu_options"
 
 [node name="Quit" parent="Content/Column/Menu" instance=ExtResource("4")]
 layout_mode = 2
 size_flags_horizontal = 0
 label_key = "UI_QUIT"
-key_hint = "[B / ESC]"
+action = "ui_cancel"
 
 [node name="Version" type="Label" parent="Content/Column"]
 layout_mode = 2

@@ -147,8 +147,9 @@ func _keep_the_island_stocked(delta: float) -> void:
 	if _spawn_clock > 0.0 or waves.spawner.alive_count() >= step.enemies:
 		return
 	_spawn_clock = SPAWN_INTERVAL
+	# Never an elite: a lesson is not the place to meet one, and the tutorial owns its own numbers.
 	waves.spawner.spawn(
-		enemy, step.health_multiplier, 1.0, 1.0, step.windup_multiplier, step.passive
+		enemy, step.health_multiplier, 1.0, 1.0, step.windup_multiplier, null, step.passive
 	)
 
 
@@ -187,7 +188,7 @@ func _tick_prompt(delta: float) -> void:
 		return
 	_prompt_clock += delta
 	if _prompt_clock >= PROMPT_DELAY:
-		prompt.show_line(step.prompt_key)
+		prompt.show_line(step.prompt_key, step.prompt_actions)
 
 
 ## Wave 1 ends when there is nothing left to teach and nobody left standing — the same rule as every

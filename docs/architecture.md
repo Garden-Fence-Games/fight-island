@@ -23,7 +23,7 @@ res://
                   animation_component.gd, head_look_component.gd,
                   weapon_visual_component.gd
     actors/       player/, enemy/, merchant/ — each with its states/
-    systems/      wave_director.gd, spawn_director.gd, tutorial_director.gd, economy.gd,
+    systems/      wave_director.gd, spawn_director.gd, tutorial_director.gd, economy.gd, devices.gd,
                   save_manager.gd, settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
     camera/       camera_rig.gd
     ui/
@@ -104,6 +104,10 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
 - **`DayCycle`** — `phases: Array[DayPhase]`, in order. Their seconds add up to **one wave**. It
   answers three questions off the same array: whose *rules* are in force this far into the wave,
   what the *clock* reads, and how far the *sky* has turned toward the next phase.
+- **`EliteRank`** — what being an elite is worth: the health, damage and money multipliers, and the
+  mesh scale and emission that make it legible. One instance on `WaveConfig`, shared by every body
+  that rolls it, because an elite is the *same scene* — multipliers rather than a second archetype
+  is what keeps the difficulty curve from turning into an asset list.
 
 ## Autoloads — three, and why not four
 
@@ -125,7 +129,12 @@ See [ADR 0004](decisions/0004-three-autoloads.md).
 Rejected outright: `Settings`, `SceneManager` (a forty-line `main.gd` covers four scenes),
 `DebugManager` (a scene behind an action).
 
-**`Settings` and `InputBindings` are static classes too**, next to `SaveManager`. Nothing subscribes to a setting:
+**`EventBus` has exactly one piece of behaviour**, and it is worth knowing why. It is the only node
+that sees every event in every scene, so it is where the game notices which device the player just
+touched — but the answer is kept by `Devices`, not by the bus. The bus does the noticing; it still
+does not do the knowing, so *signals only, zero state* still holds.
+
+**`Settings`, `InputBindings` and `Devices` are static classes too**, next to `SaveManager`. Nothing subscribes to a setting:
 every reader asks for the value at the moment it needs it, which is why no signal is missing.
 The first read loads the file and applies everything, so a scene launched straight from the
 editor behaves exactly like one reached through boot.
@@ -207,8 +216,12 @@ between those two is what makes a late wave pressure rather than a wall. `enemy_
 director back; when nothing is owed and nothing is alive it emits `wave_cleared` with the reward and
 starts the breather. The economy and the HUD are listeners — the director does not know they exist.
 
-**Every number comes from the resource**, including the elite chance the elite pass will read. A
-table split across two files is a table that starts disagreeing.
+**Every number comes from the resource**, the elite chance and the `EliteRank` it hands out
+included. A table split across two files is a table that starts disagreeing.
+
+The roll is per body, not per wave: a wave is never uniformly worse, an elite is a moment inside a
+fight. A null `WaveConfig.elite` switches the whole thing off, which is how the tutorial wave and
+the headless checks run the same director without ever meeting one.
 
 ## Day and night
 

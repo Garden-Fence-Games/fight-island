@@ -150,7 +150,8 @@ func _send_one() -> void:
 		config.health_multiplier(wave),
 		config.damage_multiplier(wave, phase),
 		config.speed_multiplier(wave),
-		config.windup_multiplier(wave, phase)
+		config.windup_multiplier(wave, phase),
+		_rolled_elite()
 	)
 	# Null means nowhere passed the rules this tick, not that the wave is short of a body. It stays
 	# owed and the next tick tries again.
@@ -190,6 +191,14 @@ func _on_player_damaged(current: float, _maximum: float) -> void:
 	if _health_seen >= 0.0 and current < _health_seen:
 		_untouched = false
 	_health_seen = current
+
+
+## Whether this one comes up an elite. Rolled per body rather than per wave, so a wave is never
+## uniformly worse — an elite is a moment inside a fight, not a different fight.
+func _rolled_elite() -> EliteRank:
+	if config.elite == null:
+		return null
+	return config.elite if _rng.randf() < config.elite_chance(wave) else null
 
 
 ## The hour and the rules of the day, together, because they are the same fact. Called every frame

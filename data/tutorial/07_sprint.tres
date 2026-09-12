@@ -6,6 +6,7 @@
 script = ExtResource("1")
 id = &"sprint"
 prompt_key = "TUTORIAL_SPRINT"
+prompt_actions = PackedStringArray("sprint")
 trigger = 4
 condition = 0
 state = &"Sprint"
