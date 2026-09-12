@@ -6,11 +6,12 @@ extends Control
 ## to read on top of a moving 3D scene, so swapping it is one node.
 
 const RUN_SCENE: String = "res://scenes/main/main.tscn"
+const OPTIONS_SCENE: String = "res://scenes/ui/options_screen.tscn"
 const FADE_IN: float = 0.7
 const FADE_OUT: float = 0.35
 
 var _leaving: bool = false
-var _panel_caller: MenuEntry = null
+var _options_screen: OptionsScreen = null
 
 @onready var play: MenuEntry = $Content/Column/Menu/Play
 @onready var new_run: MenuEntry = $Content/Column/Menu/NewRun
@@ -18,10 +19,6 @@ var _panel_caller: MenuEntry = null
 @onready var quit: MenuEntry = $Content/Column/Menu/Quit
 @onready var version: Label = $Content/Column/Version
 @onready var fade: ColorRect = $Fade
-@onready var panel: Control = $Panel
-@onready var panel_heading: Label = $Panel/Center/Frame/Rows/Heading
-@onready var panel_body: Label = $Panel/Center/Frame/Rows/Body
-@onready var panel_back: MenuEntry = $Panel/Center/Frame/Rows/Back
 
 
 func _ready() -> void:
@@ -31,7 +28,6 @@ func _ready() -> void:
 	new_run.pressed.connect(_on_new_run_pressed)
 	options.pressed.connect(_on_options_pressed)
 	quit.pressed.connect(_on_quit_pressed)
-	panel_back.pressed.connect(_close_panel)
 	play.grab_focus()
 	fade.color.a = 1.0
 	create_tween().tween_property(fade, "color:a", 0.0, FADE_IN)
@@ -40,15 +36,12 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _leaving:
 		return
+	if _options_screen != null:
+		return
 	if event.is_action_pressed(&"ui_cancel"):
 		# The one place in the game allowed to quit, which is why back does not simply go nowhere.
-		if panel.visible:
-			_close_panel()
-		else:
-			_on_quit_pressed()
+		_on_quit_pressed()
 		get_viewport().set_input_as_handled()
-		return
-	if panel.visible:
 		return
 	# Y sits on both shortcuts; the run state decides which badge is on screen, so it also decides
 	# which one answers.
@@ -67,23 +60,6 @@ func _apply_run_state() -> void:
 	new_run.visible = resuming
 	# Y is spent on New run once there is a run to leave behind, so Options stops claiming it.
 	options.key_hint = "" if resuming else "[Y / O]"
-
-
-func _open_panel(heading_key: String, body: String, caller: MenuEntry) -> void:
-	_panel_caller = caller
-	panel_heading.text = tr(heading_key).to_upper()
-	panel_body.text = body
-	panel.visible = true
-	panel_back.grab_focus()
-
-
-func _close_panel() -> void:
-	if not panel.visible:
-		return
-	panel.visible = false
-	if _panel_caller != null:
-		_panel_caller.grab_focus()
-	_panel_caller = null
 
 
 func _start_run(fresh: bool) -> void:
@@ -110,7 +86,16 @@ func _on_new_run_pressed() -> void:
 
 
 func _on_options_pressed() -> void:
-	_open_panel("UI_OPTIONS", tr("UI_OPTIONS_EMPTY"), options)
+	if _options_screen != null:
+		return
+	_options_screen = (load(OPTIONS_SCENE) as PackedScene).instantiate() as OptionsScreen
+	_options_screen.closed.connect(_on_options_closed)
+	add_child(_options_screen)
+
+
+func _on_options_closed() -> void:
+	_options_screen = null
+	options.grab_focus()
 
 
 func _on_quit_pressed() -> void:

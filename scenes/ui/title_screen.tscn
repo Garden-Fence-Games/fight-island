@@ -115,63 +115,6 @@ theme_type_variation = &"Caption"
 text = "v0.0.0"
 auto_translate_mode = 2
 
-[node name="Panel" type="Control" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Scrim" type="ColorRect" parent="Panel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.68)
-
-[node name="Center" type="CenterContainer" parent="Panel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="Frame" type="PanelContainer" parent="Panel/Center"]
-custom_minimum_size = Vector2(720, 420)
-layout_mode = 2
-
-[node name="Rows" type="VBoxContainer" parent="Panel/Center/Frame"]
-layout_mode = 2
-theme_override_constants/separation = 32
-
-[node name="Heading" type="Label" parent="Panel/Center/Frame/Rows"]
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"Heading"
-auto_translate_mode = 2
-
-[node name="Body" type="Label" parent="Panel/Center/Frame/Rows"]
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 2
-theme_type_variation = &"Body"
-theme_override_constants/line_spacing = 8
-autowrap_mode = 3
-auto_translate_mode = 2
-
-[node name="Back" parent="Panel/Center/Frame/Rows" instance=ExtResource("4")]
-custom_minimum_size = Vector2(240, 64)
-layout_mode = 2
-size_flags_horizontal = 0
-label_key = "UI_BACK"
-key_hint = "[B / ESC]"
-
 [node name="Fade" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15

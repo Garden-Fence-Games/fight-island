@@ -101,6 +101,12 @@ jobs:
       - name: Verify the in-run HUD
         run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_hud.tscn
 
+      # The options screen is two lists that have to agree — the rows it draws and the settings
+      # that exist — plus a rebind that has to reach the InputMap and come back on a reset. None
+      # of that is visible in a diff.
+      - name: Verify the options screen
+        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_options.tscn
+
       # The island is generated, so the rules combat depends on have to be checked rather than
       # trusted: a clear spawn pad, a walkable gap between everything that blocks, nothing tall
       # enough to hide a fight from a camera that cannot turn, and water the player can reach.
