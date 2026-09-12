@@ -589,6 +589,13 @@ Three decisions worth keeping:
   component that complained once per transition would turn main red for having half a rig. It
   emits `clip_missing` instead, and falls back to the rig's `RESET` pose.
 
+**A second table holds a speed per state**, and `Sprint` is the only entry: there is no sprint cycle
+yet, and the walk one played twice as fast reads as running for the price of a number. It is kept
+apart from the clip table on purpose — authoring the real cycle is then one line changed in `clips`
+and one line deleted here, and the borrowed look can never quietly become the intended one. The
+speed counts as part of "which animation is playing", or a `Sprint` that shares `Move`'s clip would
+be skipped as already-playing and the player would sprint at a stroll.
+
 The state-to-clip map is explicit rather than a lowercase of the state name, because `Move` plays
 `walk` and no rule bridges that pair. It is exported, so a state can be pointed at a clip that
 already exists while the real one is still being authored.

@@ -24,11 +24,20 @@ signal clip_missing(state_name: StringName, clip: StringName)
 @export var clips: Dictionary[StringName, StringName] = {
 	&"Idle": &"idle",
 	&"Move": &"walk",
-	&"Sprint": &"sprint",
+	&"Sprint": &"walk",
 	&"Dodge": &"dodge_roll",
 	&"Parry": &"parry",
 	&"Hurt": &"hurt",
 	&"Dead": &"death",
+}
+## How fast each state plays its clip. Absent means the speed it was authored at.
+##
+## `Sprint` is here because there is no sprint cycle yet and borrowing the walk one played faster
+## reads as running for almost nothing. It stays a number rather than becoming a second clip entry
+## so that authoring the real cycle is one line in `clips` and one deletion here — and so that the
+## borrowed look never quietly becomes the intended one.
+@export var clip_speeds: Dictionary[StringName, float] = {
+	&"Sprint": 2.0,
 }
 ## Crossfade between two clips. Long enough to hide the snap, short enough that a dodge still reads
 ## as instant.
@@ -39,6 +48,7 @@ signal clip_missing(state_name: StringName, clip: StringName)
 @export var state_machine: StateMachine = null
 
 var _current_clip: StringName = &""
+var _current_speed: float = 1.0
 
 
 func _ready() -> void:
@@ -74,9 +84,14 @@ func play_state(state_name: StringName) -> bool:
 		_rest()
 		clip_missing.emit(state_name, clip)
 		return false
-	if clip != _current_clip or not animation_player.is_playing():
-		animation_player.play(String(clip), blend_time)
+	var speed: float = clip_speeds.get(state_name, 1.0)
+	# The speed is part of "which animation is playing": `Move` and `Sprint` share the walk cycle and
+	# differ only by it, so a check for the clip alone would leave a sprinting player strolling.
+	var same := clip == _current_clip and is_equal_approx(speed, _current_speed)
+	if not same or not animation_player.is_playing():
+		animation_player.play(String(clip), blend_time, speed)
 		_current_clip = clip
+		_current_speed = speed
 	return true
 
 
@@ -93,6 +108,7 @@ func play_clip(clip: StringName, seconds: float = 0.0) -> bool:
 		speed = length / seconds
 	animation_player.play(String(clip), blend_time, speed)
 	_current_clip = clip
+	_current_speed = speed
 	return true
 
 
@@ -119,6 +135,7 @@ func _on_state_machine_transitioned(state_name: StringName) -> void:
 ## previous one stopped on, which reads as a crash rather than as a missing animation.
 func _rest() -> void:
 	_current_clip = &""
+	_current_speed = 1.0
 	if animation_player == null:
 		return
 	if animation_player.has_animation("RESET"):

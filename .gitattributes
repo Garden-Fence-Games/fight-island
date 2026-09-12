@@ -41,4 +41,10 @@ export_presets.cfg -merge
 # Vendored addons keep their files as plain blobs, LFS included. A test framework's nine icons are
 # a few kilobytes, they travel with whatever version of the addon is checked in, and pushing
 # somebody else's assets through LFS would turn every upgrade of it into pointer churn.
-addons/** -filter
+#
+# All three of filter, diff and merge are unset, not just filter. Unsetting filter alone leaves the
+# earlier `*.png` line still claiming `diff=lfs merge=lfs`, so git stops smudging the file while
+# still treating it as an LFS blob — and a pointer already committed under the old rule is then
+# checked out as its own literal text. That is a 128-byte file named `.png`, which Godot reports as
+# ERR_FILE_CORRUPT on every import.
+addons/** -filter -diff -merge
