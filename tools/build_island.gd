@@ -16,6 +16,22 @@ const SEED: int = 20260911
 ## Wind, for everything that grows. One shader: a MultiMesh takes one material, and a palm
 ## that swayed on a different program from the grass beside it would be two winds on one island.
 const FOLIAGE_SHADER: String = "res://assets/shaders/foliage.gdshader"
+## The scattered decoration, from Kenney's CC0 Nature Kit. Every one of them has its origin at its
+## base and carries no texture — only per-material colours — which is exactly what the scatter and
+## the wind shader already wanted.
+const PALM_MODEL: String = "res://assets/models/nature/tree_palm.glb"
+const ROCK_MODEL: String = "res://assets/models/nature/stone_largeD.glb"
+const PEBBLE_MODEL: String = "res://assets/models/nature/stone_smallA.glb"
+const GRASS_MODEL: String = "res://assets/models/nature/grass_leafs.glb"
+## What each model measures as it ships, so the scatter can go on thinking in metres. A palm is
+## scaled by its height and the rest by their width, because that is the dimension each was drawn
+## around.
+const PALM_MODEL_HEIGHT: float = 1.51
+const ROCK_MODEL_WIDTH: float = 1.07
+const ROCK_MODEL_HEIGHT: float = 0.57
+const ROCK_MODEL_DEPTH: float = 1.03
+const PEBBLE_MODEL_WIDTH: float = 0.36
+const GRASS_MODEL_WIDTH: float = 0.26
 const IslandWater := preload("res://tools/island_water.gd")
 const IslandNavigation := preload("res://tools/island_navigation.gd")
 ## How deep the enemies may follow the player in. The navigation mesh stops here, a little under the
@@ -83,7 +99,22 @@ const GRASS_COUNT: int = 24000
 
 const SAND: Color = Color(0.86, 0.78, 0.58)
 const GRASS_GREEN: Color = Color(0.36, 0.52, 0.27)
-const ROCK_GREY: Color = Color(0.33, 0.31, 0.29)
+## The island's palette, mapped onto the parts the models name.
+##
+## The pack's own colours are not used: its leaves ship as turquoise and its stone as a pale blue
+## white, which is a palette from another island. Taking the shapes and keeping the colours also
+## puts the art direction in one place — this one — instead of spreading it across whatever files
+## happen to have been downloaded.
+##
+## Keyed by the model's material name, so a pack that renames a part says so at build time rather
+## than rendering it in whatever colour a missing entry defaults to.
+const NATURE_PALETTE: Dictionary = {
+	"woodBark": Color(0.42, 0.31, 0.2),
+	"leafsGreen": Color(0.25, 0.47, 0.24),
+	"grass": Color(0.38, 0.53, 0.3),
+	"stone": Color(0.33, 0.31, 0.29),
+	"_defaultMat": Color(0.29, 0.27, 0.26),
+}
 
 ## Grass is short and quick: it reaches full bend in half a metre and ripples every few
 ## metres. A lawn does not sway on the same clock as a five-metre palm, so it overrides the
@@ -92,12 +123,13 @@ const GRASS_WIND: Dictionary = {
 	"wind_strength": 0.11,
 	"wind_speed": 2.6,
 	"wave_length": 9.0,
-	"bend_height": 0.45,
+	"bend_height": 0.2,
 	"bend_power": 1.4,
 	"gust_length": 42.0,
 }
-## How far a frond flexes along its own length, on top of the swing it inherits from the trunk.
-const FROND_FLUTTER: float = 0.055
+## How far a palm's leaves flex along their own length, on top of the swing of the whole tree.
+## Measured from the trunk outward, so the wood itself barely moves and the fronds do.
+const LEAF_FLUTTER: float = 0.055
 
 var _rng := RandomNumberGenerator.new()
 var _noise := FastNoiseLite.new()
@@ -384,35 +416,27 @@ func _scatter() -> Node3D:
 		where.y = _height_at(where.x, where.z)
 		taken.append([where, maxf(size.x, size.z) * 0.5])
 
-	var trunks: Array[Transform3D] = []
-	var fronds: Array[Transform3D] = []
-	## Which palm each frond belongs to, so the crown can be told where its own trunk is planted.
-	var frond_roots: Array[Vector3] = []
+	var palms: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
 		PALM_COUNT, CLEAR_RADIUS, PALM_RADIUS, 3.4, Vector2(0.08, 3.0), 0.0, taken
 	):
 		var lean := Basis(Vector3.FORWARD, _rng.randf_range(-0.12, 0.12))
+		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
 		var height := _rng.randf_range(3.4, 5.2)
-		var trunk := Transform3D(lean.scaled(Vector3(1.0, height, 1.0)), spot)
-		trunks.append(trunk)
+		# Uniformly. A palm stretched only upward grows a crown that reads as a squashed umbrella,
+		# and the model already has the proportions of a palm.
+		var grown := Vector3.ONE * (height / PALM_MODEL_HEIGHT)
+		palms.append(Transform3D((lean * turn).scaled(grown), spot))
 		blocking.append([spot, PALM_RADIUS])
 		taken.append([spot, PALM_RADIUS])
-		# The tip of the trunk as it was actually placed. Leaning the bare height instead put the
-		# crowns a third of a metre downwind of the wood they sit on, because the scale in the
-		# instance is applied after the lean and flattens it.
-		var crown := trunk * Vector3(0.0, 1.0, 0.0)
-		for blade: int in 6:
-			var turn := Basis(Vector3.UP, TAU * float(blade) / 6.0 + _rng.randf_range(-0.3, 0.3))
-			var droop := Basis(Vector3.RIGHT, _rng.randf_range(0.35, 0.7))
-			fronds.append(Transform3D(turn * droop, crown))
-			frond_roots.append(spot)
 
 	var pebbles: Array[Transform3D] = []
 	for spot: Vector3 in _spots(PEBBLE_COUNT, 0.0, 0.0, 1.6, Vector2(-0.05, SHORE_BAND * 0.7)):
 		var size := _rng.randf_range(0.14, 0.42)
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
-		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(0.0, TAU))
-		pebbles.append(Transform3D((turn * tilt).scaled(Vector3.ONE * size), spot))
+		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(-0.3, 0.3))
+		var grown := Vector3.ONE * (size / PEBBLE_MODEL_WIDTH)
+		pebbles.append(Transform3D((turn * tilt).scaled(grown), spot))
 
 	var rocks: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
@@ -420,11 +444,12 @@ func _scatter() -> Node3D:
 	):
 		var size := _rng.randf_range(0.4, 1.7)
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
-		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(-0.25, 0.25))
-		var wide := size * _rng.randf_range(0.7, 1.3)
-		rocks.append(Transform3D((turn * tilt).scaled(Vector3(size, size * 0.7, wide)), spot))
-		# The rock mesh is perturbed inward as well as outward, so a collider at its full half-width
-		# stops the player well short of the stone they can see.
+		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(-0.12, 0.12))
+		var wide := size * _rng.randf_range(0.8, 1.2)
+		var grown := Vector3(size, size, wide) / ROCK_MODEL_WIDTH
+		rocks.append(Transform3D((turn * tilt).scaled(grown), spot))
+		# The boulder is narrower than its bounding box at the height a body walks through, so a
+		# collider at its full half-width stops the player well short of the stone they can see.
 		if maxf(size, wide) >= BLOCKING_ROCK:
 			var here := maxf(size, wide) * 0.34
 			blocking.append([spot, here])
@@ -436,19 +461,19 @@ func _scatter() -> Node3D:
 	):
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
 		var lean := Basis(Vector3.RIGHT, _rng.randf_range(-0.18, 0.18))
-		var size := _rng.randf_range(0.6, 1.25)
-		tufts.append(Transform3D((turn * lean).scaled(Vector3(size, size, size)), spot))
+		# Small on purpose. The ground has to read as texture, not as a field of objects: a busy
+		# floor competes with the enemies for the eye, and a telegraph at twenty metres is the one
+		# thing the player cannot afford to miss.
+		var size := _rng.randf_range(0.26, 0.46)
+		var grown := Vector3.ONE * (size / GRASS_MODEL_WIDTH)
+		tufts.append(Transform3D((turn * lean).scaled(grown), spot))
 
-	var grass_green := GRASS_GREEN.darkened(0.18)
-	var bark := Color(0.42, 0.31, 0.2)
-	var leaf := Color(0.25, 0.47, 0.24)
-	props.add_child(_multi("Grass", _tuft(), grass_green, tufts, _grass_wind(grass_green)))
-	props.add_child(_multi("Pebbles", _rock_mesh(), ROCK_GREY.lightened(0.12), pebbles))
-	props.add_child(_multi("PalmTrunks", _cylinder(0.16, 1.0), bark, trunks, _palm_wind(bark, 0.0)))
-	props.add_child(
-		_multi("PalmFronds", _frond(), leaf, fronds, _palm_wind(leaf, FROND_FLUTTER), frond_roots)
-	)
-	props.add_child(_multi("Rocks", _rock_mesh(), ROCK_GREY, rocks))
+	# The models carry their own colours, one material per part, so nothing here tints them. What the
+	# wind material replaces is the shading, not the palette.
+	props.add_child(_multi("Grass", _nature(GRASS_MODEL), tufts, _grass_wind()))
+	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles))
+	props.add_child(_multi("Palms", _nature(PALM_MODEL), palms, _palm_wind()))
+	props.add_child(_multi("Rocks", _nature(ROCK_MODEL), rocks))
 	props.add_child(_colliders(blocking))
 	return props
 
@@ -558,65 +583,100 @@ func _spots(
 	return kept
 
 
-## `anchors` is where each instance's plant meets the ground, and it is only needed for the parts
-## that are not planted at their own origin — the palm crowns. Leave it empty and the instances
-## carry no custom data at all, which reads in the shader as a plant standing on its own origin.
+## One population of one model. `wind` names the uniforms the foliage shader should take; leave it
+## out and the model keeps the flat materials it shipped with, which is what stone wants.
 func _multi(
-	name: String,
-	mesh: Mesh,
-	tint: Color,
-	transforms: Array[Transform3D],
-	material: Material = null,
-	anchors: Array[Vector3] = []
+	name: String, mesh: ArrayMesh, transforms: Array[Transform3D], wind: Dictionary = {}
 ) -> Node3D:
+	_dress(mesh, wind)
+
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D
-	multi.use_custom_data = not anchors.is_empty()
 	multi.mesh = mesh
 	multi.instance_count = transforms.size()
 	# The buffer is written directly rather than through set_instance_transform: headless runs on a
 	# dummy renderer, where the setter writes to a server that discards it and the buffer saves empty.
-	multi.buffer = _pack(transforms, anchors)
+	multi.buffer = _pack(transforms)
 
 	var instance := MultiMeshInstance3D.new()
 	instance.name = name
 	instance.multimesh = multi
-	instance.material_override = material if material != null else _matte(tint)
 	return instance
 
 
-func _matte(tint: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = tint
-	material.roughness = 0.9
-	return material
+## The mesh out of a packaged model, rebuilt as a plain ArrayMesh.
+##
+## Rebuilt rather than referenced so the built scene owns its geometry outright: it does not depend
+## on a .glb's import settings at load time, and hanging a wind material on it writes into the
+## island rather than into a shared imported resource that every other user of the model would see.
+func _nature(path: String) -> ArrayMesh:
+	var packed := load(path) as PackedScene
+	if packed == null:
+		printerr("no model at " + path)
+		return ArrayMesh.new()
+	var source := _find_mesh(packed.instantiate())
+	if source == null:
+		printerr("no mesh inside " + path)
+		return ArrayMesh.new()
+	var out := ArrayMesh.new()
+	for surface: int in source.get_surface_count():
+		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, source.surface_get_arrays(surface))
+		out.surface_set_material(surface, source.surface_get_material(surface))
+	return out
 
 
-## The palms stand in the wind the shader ships with, and neither call touches it. Trunk and crown
-## that disagree about the wind by so much as a coefficient pull apart in the air, so the only way
-## to set one of those figures is to change it for both.
-func _palm_wind(tint: Color, flutter: float) -> ShaderMaterial:
-	var material := ShaderMaterial.new()
-	material.shader = load(FOLIAGE_SHADER)
-	material.set_shader_parameter("tint", tint)
-	material.set_shader_parameter("flutter", flutter)
-	return material
+func _find_mesh(node: Node) -> Mesh:
+	var instance := node as MeshInstance3D
+	if instance != null and instance.mesh != null:
+		return instance.mesh
+	for child: Node in node.get_children():
+		var found := _find_mesh(child)
+		if found != null:
+			return found
+	return null
 
 
-func _grass_wind(tint: Color) -> ShaderMaterial:
-	var material := ShaderMaterial.new()
-	material.shader = load(FOLIAGE_SHADER)
-	material.set_shader_parameter("tint", tint)
-	for parameter: String in GRASS_WIND:
-		material.set_shader_parameter(parameter, GRASS_WIND[parameter])
-	return material
+## Dresses every surface of a model in the island's palette, and puts it in the wind if asked.
+##
+## Per surface rather than through material_override, which takes one material for the whole mesh:
+## a palm is trunk and leaves in one piece, and flattening both to a single colour is exactly what
+## buying a modelled palm was meant to stop.
+func _dress(mesh: ArrayMesh, wind: Dictionary) -> void:
+	for surface: int in mesh.get_surface_count():
+		var shipped := mesh.surface_get_material(surface)
+		var part := shipped.resource_name if shipped != null else ""
+		if not NATURE_PALETTE.has(part):
+			printerr("no colour for the part a model calls '%s'" % part)
+			continue
+		var colour: Color = NATURE_PALETTE[part]
+		if wind.is_empty():
+			var matte := StandardMaterial3D.new()
+			matte.albedo_color = colour
+			matte.roughness = 0.9
+			mesh.surface_set_material(surface, matte)
+			continue
+		var material := ShaderMaterial.new()
+		material.shader = load(FOLIAGE_SHADER)
+		material.set_shader_parameter("tint", colour)
+		for parameter: String in wind:
+			material.set_shader_parameter(parameter, wind[parameter])
+		mesh.surface_set_material(surface, material)
 
 
-## Twelve floats per instance: the three rows of the 3x4 transform, origin last on each row. Four
-## more follow each transform when anchors are given, holding the ground the instance belongs to as
-## an offset from the instance itself — a rise and a displacement in the plane.
-func _pack(transforms: Array[Transform3D], anchors: Array[Vector3] = []) -> PackedFloat32Array:
-	var stride := 16 if not anchors.is_empty() else 12
+## The palms stand in the wind the shader ships with. Nothing is set here, and that is the point:
+## every surface of every palm reads the same figures, so no part of one can bend differently from
+## another and pull away from it.
+func _palm_wind() -> Dictionary:
+	return {"flutter": LEAF_FLUTTER}
+
+
+func _grass_wind() -> Dictionary:
+	return GRASS_WIND
+
+
+## Twelve floats per instance: the three rows of the 3x4 transform, origin last on each row.
+func _pack(transforms: Array[Transform3D]) -> PackedFloat32Array:
+	var stride := 12
 	var data := PackedFloat32Array()
 	data.resize(transforms.size() * stride)
 	for index: int in transforms.size():
@@ -636,95 +696,7 @@ func _pack(transforms: Array[Transform3D], anchors: Array[Vector3] = []) -> Pack
 		data[base + 9] = basis.y.z
 		data[base + 10] = basis.z.z
 		data[base + 11] = origin.z
-		if stride == 12:
-			continue
-		var ground := anchors[index]
-		data[base + 12] = origin.y - ground.y
-		data[base + 13] = ground.x - origin.x
-		data[base + 14] = ground.z - origin.z
-		data[base + 15] = 0.0
 	return data
-
-
-func _cylinder(radius: float, height: float) -> Mesh:
-	var mesh := CylinderMesh.new()
-	mesh.top_radius = radius * 0.75
-	mesh.bottom_radius = radius
-	mesh.height = height
-	mesh.radial_segments = 6
-	mesh.rings = 1
-	# Grown from the ground rather than from its middle, so a scaled instance stays planted.
-	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, height * 0.5, 0.0)))
-
-
-## A low-poly sphere with its vertices pushed about. A cube reads as a crate; this reads as a rock,
-## and it is the least work that gets there before the art phase replaces it with a textured mesh.
-func _rock_mesh() -> Mesh:
-	var sphere := SphereMesh.new()
-	sphere.radial_segments = 7
-	sphere.rings = 4
-	sphere.radius = 0.5
-	sphere.height = 1.0
-
-	var surface := SurfaceTool.new()
-	surface.create_from(_as_array(sphere), 0)
-	var arrays := surface.commit_to_arrays()
-	var points: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	var lumps := RandomNumberGenerator.new()
-	lumps.seed = SEED + 41
-	for index: int in points.size():
-		var point := points[index]
-		var push := 1.0 + _relief.get_noise_3d(point.x * 9.0, point.y * 9.0, point.z * 9.0) * 0.45
-		points[index] = point * Vector3(push, push * 0.78, push)
-	arrays[Mesh.ARRAY_VERTEX] = points
-
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	var smoothed := SurfaceTool.new()
-	smoothed.create_from(mesh, 0)
-	smoothed.generate_normals()
-	return smoothed.commit()
-
-
-func _tuft() -> Mesh:
-	var mesh := CylinderMesh.new()
-	mesh.top_radius = 0.0
-	mesh.bottom_radius = 0.17
-	mesh.height = 0.42
-	mesh.radial_segments = 4
-	mesh.rings = 0
-	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, 0.21, 0.0)))
-
-
-func _frond() -> Mesh:
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.22, 0.05, 2.1)
-	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, 0.0, -1.0)))
-
-
-func _box(size: Vector3) -> Mesh:
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, size.y * 0.5, 0.0)))
-
-
-func _as_array(mesh: Mesh) -> ArrayMesh:
-	var surface := SurfaceTool.new()
-	surface.create_from(mesh, 0)
-	return surface.commit()
-
-
-func _shift(mesh: ArrayMesh, by: Transform3D) -> ArrayMesh:
-	var surface := SurfaceTool.new()
-	surface.create_from(mesh, 0)
-	var out := ArrayMesh.new()
-	var arrays := surface.commit_to_arrays()
-	var points: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	for index: int in points.size():
-		points[index] = by * points[index]
-	arrays[Mesh.ARRAY_VERTEX] = points
-	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return out
 
 
 # ------------------------------------------------------------------------------------- authored
@@ -753,23 +725,22 @@ func _landmark() -> StaticBody3D:
 	body.collision_layer = 1 | 256  # world | camera_occluder
 	body.collision_mask = 0
 
-	var material := StandardMaterial3D.new()
-	material.albedo_color = ROCK_GREY
-	material.roughness = 1.0
-
 	var placements := _formations()
-	var boulder := _rock_mesh()
+	var boulder := _nature(ROCK_MODEL)
+	_dress(boulder, {})
+	# The model stands on its origin, where the old sphere was centred on it — so the formations sit
+	# on the ground rather than being lifted by a share of their own height.
+	var shipped := Vector3(ROCK_MODEL_WIDTH, ROCK_MODEL_HEIGHT, ROCK_MODEL_DEPTH)
 	for placement: Array in placements:
 		var where: Vector3 = placement[0]
 		var size: Vector3 = placement[1]
 		var turn: float = placement[2]
-		where.y = _height_at(where.x, where.z) + size.y * 0.4
+		where.y = _height_at(where.x, where.z)
 
 		var visual := MeshInstance3D.new()
 		visual.name = "Rock"
 		visual.mesh = boulder
-		visual.material_override = material
-		visual.transform = Transform3D(Basis(Vector3.UP, turn).scaled(size), where)
+		visual.transform = Transform3D(Basis(Vector3.UP, turn).scaled(size / shipped), where)
 		body.add_child(visual)
 
 		# The shape is already in metres, so the collider must NOT inherit the visual's scale — doing

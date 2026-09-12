@@ -242,28 +242,32 @@ Both are shaders, and both are shaders for the same reason: the thing that has t
 thousands of times from one mesh, so nothing per-instance can drive it.
 
 **The wind** (`assets/shaders/foliage.gdshader`) runs in the vertex stage. Every plant on the
-island is one instance of a `MultiMeshInstance3D` — 380 palms, 2 280 fronds, 24 000 grass tufts
-— and instances cannot play separate animations. Phase comes from distance along the wind, so a
-gust travels across the island and neighbours are naturally out of step. **Nothing is hashed**: a
-hash is discontinuous, and a palm's crown has to agree with its own trunk to the centimetre.
+island is one instance of a `MultiMeshInstance3D` — 380 palms, 24 000 grass tufts — and instances
+cannot play separate animations. This did not change when the plants stopped being primitives and
+became modelled: a pack of rigged foliage would buy nothing, because the rig could never reach the
+instances.
 
-The crown is the hard part. A frond is a separate instance whose origin sits five metres up, so
-it has no idea how high off the ground it is — and if it bends by a different amount from the
-trunk tip it is welded to, it floats off the top of the palm. Three things hold it on:
+Phase comes from distance along the wind, so a gust travels across the island and neighbours are
+naturally out of step. **Nothing is hashed**: a hash is discontinuous, and two plants a metre apart
+must not jump to opposite ends of the cycle.
 
-- Each frond carries, in its **`MultiMesh` custom data**, where its own palm meets the ground. The
-  shader then reads one height-above-ground for the trunk tip and the crown alike, and both bend by
-  the same amount from the same formula. An instance with no custom data reads as zero, which is
-  exactly right for anything planted at its own origin — so only the fronds carry any.
-- **Neither palm material sets a single wind figure.** Both take the shader's defaults, so there is
-  nothing a tuning pass can change on only one of them. `verify_island` fails if either starts to.
-- A frond's own **flutter is measured from its own origin outward**, so it is zero where the frond
-  meets the trunk and full at the tip — a leaf flexing along its length, not a crown sliding.
+Bend is measured from the instance's own origin, and every model in the pack stands on its origin,
+so height above the ground is simply height above that origin. **A palm arrives as one mesh of two
+parts** — trunk and crown together — so the crown reads its real height and bends with the wood it
+sits on for nothing. An earlier version built a palm from a trunk mesh and six separate frond
+instances, and holding those together took an anchor per frond in the `MultiMesh` custom data,
+because a frond five metres up has no idea how high off the ground it is. The modelled palm deleted
+the problem and the machinery with it.
 
-Writing that check found a defect that predated it: the crowns had never been on the trunk tips at
-all. `Basis.scaled()` applies its scale *after* the rotation, so leaning the bare height and leaning
-the placed trunk are not the same lean — every palm on the island wore its crown 0.38 m downwind of
-the wood.
+What survived is the rule that had kept them together: **no surface of a palm may set a wind figure
+for itself.** All of them take the shader's defaults, so there is nothing a tuning pass can change
+on the crown without changing it on the trunk. `verify_island` fails if any surface starts to. And
+flutter is still measured from the instance's own origin outward, so it is nothing at the trunk and
+full at the leaf tips — a leaf flexing along its length, not a crown sliding sideways.
+
+Materials are set **per surface**, never through `material_override`, which takes one material for
+a whole mesh. A palm rendered in one flat colour is exactly what buying a modelled palm was meant
+to stop, and nothing else in the build would have noticed.
 
 **The water** (`assets/shaders/water.gdshader`) is where the shoreline comes from, and none of it is
 authored: the shallow tint, the foam band and the depth at which the sea floor disappears all come
@@ -276,9 +280,11 @@ vertex every nine metres, which facets the whole sea and loses every ripple betw
 The swell moves vertices; the ripples never reach the vertex stage, where they would be sampled at
 random and read as noise.
 
-The wind costs **0.05 ms of a 4.96 ms frame** — measured against the same geometry on a plain
-material, because headless renders nothing and a vertex program's cost cannot be guessed from a
-polygon count.
+**The models carry shapes, not colours.** The island's palette lives in `NATURE_PALETTE` in the
+generator, keyed by the material name each model gives its own parts. The pack's colours are not
+used — its leaves ship as turquoise and its stone as a pale blue-white — and keying by name means a
+pack that renames a part says so at build time instead of rendering in whatever a missing entry
+would default to.
 
 **Water the sea cannot reach is not water.** The coastline is a noise field rather than a distance
 field, so it dips below the waterline here and there well inland, and the sea is one flat sheet
@@ -391,11 +397,11 @@ Two headless guards run in CI and locally:
   capped rate,
   goes back to facing its movement when the stick is released, does not aim before any device is
   touched, commits its attack facing, and dodges away from the aim rather than into it.
-- **`tools/verify_island.tscn`** also covers the wind: that everything which grows stands in it and
-  no stone does, that no plant bends from its base, that the palms share one wind because neither
-  material overrides any of it, and that **every frond hangs off the tip of the trunk it names** to
-  within a millimetre. That last check is what found the crowns had been off their trunks since the
-  island was first generated.
+- **`tools/verify_island.tscn`** also covers the foliage: that everything which grows stands in the
+  wind and no stone does, that no plant bends from its base, that no palm surface overrides a wind
+  figure, that a palm still renders as two colours rather than one, and that palms come out between
+  3 and 5.6 m tall — a wrong figure for a model's shipped height is otherwise silent, and the island
+  simply comes back with palms three times the size of the fight.
   It also floods the terrain's own collision heights and fails if any water stands where the open
   sea cannot reach it, and it reads the swell height out of the water shader to fail if the waves
   ever grow past the height the drained sand was lifted to — one number, two files.
