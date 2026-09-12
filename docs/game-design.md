@@ -487,3 +487,18 @@ is a different game; adding one before wave 15 is tuned is how this one stops sh
 
 Change the `.tres`, update the table in this file, and say why in the pull request body. Both
 halves in the same PR — a number that disagrees with this document is a bug in the document.
+
+### Where the evidence comes from
+
+A debug build appends one row per wave to `user://telemetry.csv` — see
+[architecture.md](architecture.md). It exists so the three claims this document makes that it cannot
+argue for itself can each be answered with data rather than with a feeling:
+
+| The claim | The columns that answer it |
+|---|---|
+| *The intended shape* — 1–3 teach, 4–7 pressure, 8–11 rotate weapons, 12–15 endure | `wave`, `outcome`, `seconds`: where runs actually end, and whether the time a wave takes climbs the way the shape says it should |
+| *A run affords roughly two full tracks and change* — see **Economy** | `earned` and `spent`, summed over a run |
+| *Five tracks are five choices* | `bought` across runs. **Stamina is the prime suspect**: surviving beats killing fast when death is final, and a track chosen by everyone every run is not a track, it is a mandatory step wearing a costume |
+
+None of those figures is a balance value, so none of them belongs in a `.tres`. They are what a
+balance value is argued from.

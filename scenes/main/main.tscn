@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/arena.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="2"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="5"]
 [ext_resource type="Script" path="res://scripts/systems/run_flow.gd" id="6"]
 [ext_resource type="Resource" path="res://data/waves/standard.tres" id="7"]
+[ext_resource type="Script" path="res://scripts/systems/telemetry.gd" id="8"]
 
 [node name="Main" type="Node"]
 
@@ -14,6 +15,9 @@
 
 [node name="HitFeedback" type="Node" parent="."]
 script = ExtResource("3")
+
+[node name="Telemetry" type="Node" parent="."]
+script = ExtResource("8")
 
 [node name="Hud" parent="." instance=ExtResource("4")]
 

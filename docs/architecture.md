@@ -487,7 +487,8 @@ check first so nothing beyond the camera is considered at all.
 
 ## Save format
 
-JSON under `user://`, four files with three lifetimes:
+JSON under `user://`, four files with three lifetimes. A debug build writes a fifth file in the
+same directory, `telemetry.csv`, and it is **not a save** — see *Telemetry* below.
 
 - `settings.json` — every row of the options screen, written the moment it changes
 - `bindings.json` — **overrides only**, so changing a default binding later does not need a
@@ -515,6 +516,39 @@ must not accumulate time nobody spent playing.
 
 **Never `ResourceLoader.load()` from `user://`.** A `.tres` can carry a script path, and that is
 arbitrary code execution on a file the player can edit.
+
+## Telemetry
+
+**`Telemetry`** is a plain `Node` in `main.tscn`, beside `HitFeedback`. It appends one row per wave
+to `user://telemetry.csv` so fifteen waves can be tuned from what players did rather than from what
+the formulas promise: `run, wave, enemies, seconds, outcome, kills, perfect_hits, perfect_parries,
+earned, spent, bought, level`.
+
+Not a fourth autoload, and not `DebugManager` wearing a new name — [ADR 0004](decisions/0004-three-autoloads.md)
+rejected that, and a node in the run scene has exactly the lifetime the record wants. One run is one
+scene, and `_exit_tree` is where the last wave of a victory and the wave a player quits out of both
+leave.
+
+**Debug builds only, and not by a guard at the write.** `_ready` calls `start()` only when
+`OS.is_debug_build()`, so a release build connects no signal and opens no file — the answer to "does
+this ship" is *there is nothing there* rather than *the file stays empty*. Local, no network, no
+prompt; `docs/menus.md` lists a telemetry prompt under what is deliberately absent.
+
+**It counts nothing of its own.** Every figure is the difference between two samples of
+`GameState.stats`, the tally the run summary already reads. A second counter beside that one would
+be a second thing to get wrong, and the two would disagree quietly. The consequence is the failure
+mode worth knowing about: writing the sample instead of the difference gives every wave the sum of
+the ones before it, and wave one — where the two agree — is the row anybody eyeballing the file looks
+at first. `tools/verify_telemetry.tscn` fights two waves with unequal kill counts for that reason.
+
+**The clock is the one figure it measures itself**, accumulated in `_process` rather than taken from
+wall time, so the merchant's pause and the gap between waves are charged to neither wave.
+
+A purchase is filed under the wave that **paid** for it: the merchant opens before the next wave
+starts, so the row is still open when `upgrade_purchased` arrives.
+
+The file is appended with `FileAccess` and read back by nobody — not even to decide whether the
+header is owed, which is a question about existence rather than about contents.
 
 ## Performance budget
 
