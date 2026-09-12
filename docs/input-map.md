@@ -63,6 +63,10 @@ override a controller player literally cannot confirm or back out of a menu. Ove
 replaces it entirely, which is why the keyboard defaults are re-listed alongside the new pad
 buttons. `ui_left/right/up/down` are *not* overridden — they already carry D-pad and left stick.
 
+**`sprint` is held on a keyboard and toggled on a pad, and the shape is decided per press** — from
+the device the press came in on, not from a mode picked at launch. The player can override it in
+Gameplay → Sprint. See [ADR 0007](decisions/0007-sprint-hold-or-toggle.md).
+
 **The triggers use a 0.5 deadzone.** `attack` on RT and `parry` on LT are analog; at Godot's
 default 0.2 a half-pulled trigger registers as a press, which in a parry-timing game is a lost run.
 
