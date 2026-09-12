@@ -134,10 +134,10 @@ child and get it back the same way, so neither loses what is behind it. It runs 
 `PROCESS_MODE_ALWAYS`, because from pause the tree is stopped and a frozen options screen is a soft
 lock.
 
-**A setting whose feature does not exist yet still exists here and still persists.** Aim assist and
-tutorial prompts are stored and waiting; the code that reads them arrives with the gun and the
-tutorial. Damage numbers, hitstop, screen shake, reduce flashing and the sprint mode already have
-something listening.
+**Every setting here has something listening.** That was once an aspiration — aim assist and
+tutorial prompts were stored and waiting for the gun and the tutorial to arrive. Both arrived and
+nobody came back, so aim assist spent several milestones persisting and moving nothing. It is read
+now, by `AimComponent`, and `verify_aim` fails if it stops being.
 
 **A setting whose feature is taken away goes with it.** There was a colourblind-telegraph toggle
 here, and it thickened the ring the wind-up used to draw. The ring is gone, so the toggle is gone:
@@ -149,7 +149,7 @@ will set it and believe they are covered.
 | Setting | Default | Why it exists |
 |---|---|---|
 | Sprint | **auto** — hold on keyboard, toggle on pad, decided per press | The two audiences genuinely expect different things, and a player who disagrees can say so — [ADR 0007](decisions/0007-sprint-hold-or-toggle.md) |
-| Aim assist | soft | The gun is unplayable on a stick without it, and unsatisfying with too much |
+| Aim assist | soft | The gun is unplayable on a stick without it, and unsatisfying with too much. `soft` takes half the error off, `strong` takes all of it, and neither reaches outside a 12° cone or past what the weapon in hand can hit — a wider one starts choosing targets, which is worse than missing |
 | Show tutorial prompts | on until completed once | See [tutorial.md](tutorial.md) |
 | Damage numbers | **off** | The design says the hit should be felt; the numbers are a debugging comfort |
 | Credit numbers | **on** | The opposite default, and for the opposite reason: that a kill pays is a rule the player has to learn, and it is one number per body rather than one per hit |
