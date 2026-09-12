@@ -139,6 +139,7 @@ numbers, hitstop, reduce flashing and the sprint mode already have something lis
 | Aim assist | soft | The gun is unplayable on a stick without it, and unsatisfying with too much |
 | Show tutorial prompts | on until completed once | See [tutorial.md](tutorial.md) |
 | Damage numbers | **off** | The design says the hit should be felt; the numbers are a debugging comfort |
+| Credit numbers | **on** | The opposite default, and for the opposite reason: that a kill pays is a rule the player has to learn, and it is one number per body rather than one per hit |
 
 ### Controls
 
@@ -251,6 +252,18 @@ of zero — the panel is absent, not empty.
 
 Damage numbers float off the enemy that was hit and are **off by default**. The design says the hit
 should be felt; the numbers are a debugging comfort, and they live in Options → Gameplay.
+
+**Credit numbers are the one floating number that is on by default**, because they answer a question
+the player cannot answer by feel: whether killing that body was worth anything. They rise off the
+body that died, read the payout the wallet was actually paid — the elite multiplier included, since
+both come off the same signal — and a body worth nothing floats nothing.
+
+The money chip answers at the same time, with a short punch. A two-digit number changing in the
+corner of a fight is not something the eye catches on its own, so the chip is what carries the news
+and the counter is what confirms it. **Spending is silent**: the player pressed the button and
+watched the price, and being punched at afterwards tells them nothing they did not just do. The
+punch is also the half a player can turn off — it respects *Reduce flashing*, while the number
+itself stays, because suppressing it would remove information rather than motion.
 
 The debug overlay from M1 stays behind `F3` in debug builds, starts hidden, and a release build
 never carries it at all.

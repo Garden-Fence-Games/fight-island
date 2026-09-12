@@ -46,6 +46,11 @@ const PAGES: Array = [
 				"label": "OPT_DAMAGE_NUMBERS",
 				"kind": OptionRow.Kind.TOGGLE,
 			},
+			{
+				"setting": &"gameplay_credit_numbers",
+				"label": "OPT_CREDIT_NUMBERS",
+				"kind": OptionRow.Kind.TOGGLE,
+			},
 		],
 	},
 	{
