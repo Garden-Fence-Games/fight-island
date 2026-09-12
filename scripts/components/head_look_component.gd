@@ -9,9 +9,9 @@ extends Node
 ## without moving this.
 ##
 ## **The modifier is built in code rather than saved in the scene.** It has to be a child of the
-## `Skeleton3D`, and that skeleton lives inside the imported glTF scene — putting it in `player.tscn`
-## would mean enabling editable children and pinning the importer's node names into the scene file.
-## Building it here keeps the rig replaceable.
+## `Skeleton3D`, and that skeleton lives inside the imported glTF scene — putting it in
+## `player.tscn` would mean enabling editable children and pinning the importer's node names into
+## the scene file. Building it here keeps the rig replaceable.
 ##
 ## **The turn is clamped.** A player running north while aiming south would otherwise twist the neck
 ## through 180 degrees, which is the Exorcist and not a character. Past the limit the head simply

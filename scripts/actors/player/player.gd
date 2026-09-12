@@ -126,9 +126,9 @@ func locomotion_facing(movement: Vector3) -> Vector3:
 ## Every material the body is drawn with, as copies this body owns. Whatever wants to tint the whole
 ## silhouette — the drained colour while a chain is spent — goes through here.
 ##
-## **Copies, not the originals.** The rig's materials come out of the imported glTF and are shared by
-## every instance of it, so tinting one in place would drain the merchant and all three farmers the
-## day they use the same rig. A surface override is private to this mesh instance.
+## **Copies, not the originals.** The rig's materials come out of the imported glTF and are
+## shared by every instance of it, so tinting one in place would drain the merchant and all three
+## farmers the day they use the same rig. A surface override is private to this mesh instance.
 ##
 ## Tinting `albedo_color` rather than replacing the material with `material_override`: albedo is
 ## multiplied with the texture, so the character stays himself and merely goes the colour asked for.
