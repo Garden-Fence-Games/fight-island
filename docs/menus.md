@@ -152,14 +152,29 @@ Victory adds a single line unlocking endless, and nothing else. No score screen,
 ## HUD during the fight
 
 The least possible. Health and stamina bottom-left, ammo bottom-right when the gun is held, wave
-number and money top-right. Everything else is the world.
+number and money top-right — each **96 px in from its own corner**, nothing anywhere else.
 
-The debug overlay from M1 stays behind `F3` in debug builds and is stripped from release.
+Every element listens on the `EventBus` and holds no reference to the player, so the HUD survives a
+death, a restart and a player that does not exist yet. The health figure is the one thing allowed
+to raise its voice: under a third of maximum it turns red.
+
+**The ammo panel only exists with a ranged weapon in hand.** A melee player never sees a magazine
+of zero — the panel is absent, not empty.
+
+Damage numbers float off the enemy that was hit and are **off by default**. The design says the hit
+should be felt; the numbers are a debugging comfort, and they live in Options → Gameplay.
+
+The debug overlay from M1 stays behind `F3` in debug builds, starts hidden, and a release build
+never carries it at all.
 
 ## Localisation
 
 Every string on every screen goes through `tr()` with a key from the first line of code, prefixed
 `UI_`, `HUD_`, `OPT_` or `TUT_`. The keys live in `assets/locale/ui.csv`.
+
+**Numerals are never set in Badeen Display.** Its Latin digits are composites of the
+Arabic-Indic forms — `0` draws `٠` — so any string carrying a number is set in Inter. Badeen is for
+words.
 
 **The game ships in English and in nothing else.** The `tr()` layer stays because a menu built with
 literals is a menu that gets rewritten the day a second locale is wanted — but no second locale is
