@@ -23,6 +23,15 @@ const CLOSE_ENOUGH: float = 1.5
 ## off OcclusionFader: a check that takes its bound from the class it is checking agrees with
 ## whatever that class says, and a fade of 1.0 — invisible — passed it until this was written out.
 const STILL_THERE: float = 0.9
+## How far the fixed camera reaches — from the eye to the farthest corner of the farthest chunk of
+## scatter it still frames, measured at 61.3 m. Written out rather than recomputed: what this guards
+## is the *relationship* — the sun's shadow has to cover everything the camera can see, and has no
+## business covering much more. Godot ships that distance at 100 m, which spent a third of the
+## shadow map on island nobody can look at, and blurred the part they can.
+const CAMERA_REACH: float = 61.3
+## The slack the shadow distance is allowed above the camera's reach. Enough that a nudge to the rig
+## does not strand a shadow at the edge of frame, tight enough that the default 100 m still fails.
+const SHADOW_SLACK: float = 25.0
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -62,7 +71,46 @@ func _run() -> void:
 	await _check_nothing_fades_in_the_open()
 	await _check_a_boulder_in_the_way_fades_and_comes_back()
 	_check_the_palms_are_left_alone()
+	_check_the_sun_shadows_exactly_as_far_as_the_camera_looks()
 	_report()
+
+
+## The camera never moves, so the shadow distance is answerable: it has to reach whatever the eye
+## frames, and past that it is buying a second pass over geometry nobody will ever see shaded. Both
+## ends of that are worth failing on. Too short and something on screen loses its shadow, a fault
+## that only ever shows up in a screenshot, at the edge of frame. Too long — Godot's own
+## default is 100 m against a 61 m reach — and the same shadow map is stretched over half again as
+## much island, so the shadows that *are* on screen come back softer for nothing.
+func _check_the_sun_shadows_exactly_as_far_as_the_camera_looks() -> void:
+	var suns := _arena.find_children("*", "DirectionalLight3D", true, false)
+	if suns.is_empty():
+		_fail("the island has no sun, so nothing casts a shadow at all")
+		return
+	for node: Node in suns:
+		var sun := node as DirectionalLight3D
+		if not sun.shadow_enabled:
+			continue
+		var reach := sun.directional_shadow_max_distance
+		if reach < CAMERA_REACH:
+			_fail(
+				(
+					(
+						"the sun shadows to %.0f m and the camera frames scenery out to %.0f m, so"
+						+ " something on screen is standing without one"
+					)
+					% [reach, CAMERA_REACH]
+				)
+			)
+		elif reach > CAMERA_REACH + SHADOW_SLACK:
+			_fail(
+				(
+					(
+						"the sun shadows to %.0f m against a %.0f m reach — the far %.0f m of that is a"
+						+ " shadow pass over island nobody can see, paid for in sharpness"
+					)
+					% [reach, CAMERA_REACH, reach - CAMERA_REACH]
+				)
+			)
 
 
 ## An island with nothing in the occluder group would satisfy every check below by never fading
@@ -171,7 +219,12 @@ func _fail(message: String) -> void:
 
 func _report() -> void:
 	if _failures.is_empty():
-		print("camera OK — stone in the way goes pale, only while it is in the way, palms never")
+		print(
+			(
+				"camera OK — stone in the way goes pale, only while it is in the way, palms never, "
+				+ "and the sun shadows as far as the eye reaches and no further"
+			)
+		)
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:
