@@ -64,6 +64,10 @@ func current_clip() -> StringName:
 
 
 ## True when the state had a clip and that clip exists on the rig.
+##
+## Locomotion clips are held rather than restarted: re-entering `Move` while already walking must
+## not snap the stride back to its first frame. A clip a state names for itself goes through
+## `play_clip` instead, which always restarts — a second jab has to look like a second jab.
 func play_state(state_name: StringName) -> bool:
 	var clip: StringName = clips.get(state_name, &"")
 	if clip == &"" or animation_player == null or not animation_player.has_animation(String(clip)):
@@ -76,7 +80,38 @@ func play_state(state_name: StringName) -> bool:
 	return true
 
 
+## Plays a clip by name, from the start, optionally stretched to last `seconds`. A duration of zero
+## leaves the clip at the speed it was authored at.
+func play_clip(clip: StringName, seconds: float = 0.0) -> bool:
+	if clip == &"" or animation_player == null or not animation_player.has_animation(String(clip)):
+		_rest()
+		clip_missing.emit(&"", clip)
+		return false
+	var speed := 1.0
+	var length := animation_player.get_animation(String(clip)).length
+	if seconds > 0.0 and length > 0.0:
+		speed = length / seconds
+	animation_player.play(String(clip), blend_time, speed)
+	_current_clip = clip
+	return true
+
+
+## A state may name its own clip, and one that does wins over the table. `Attack` is the reason:
+## one state drives all nine attacks and which is running is data, so no table could answer for it.
+## Everything else stays declarative, and a state that says nothing still cannot forget to animate.
+##
+## Asked here rather than pushed by the state, because `StateMachine` runs `enter` *before* it emits
+## — a state that started its own clip would have it stopped again one line later.
 func _on_state_machine_transitioned(state_name: StringName) -> void:
+	var state := state_machine.current if state_machine != null else null
+	if state != null and state.has_method("clip_name"):
+		var named: StringName = state.call("clip_name")
+		if named != &"":
+			var seconds := 0.0
+			if state.has_method("clip_duration"):
+				seconds = float(state.call("clip_duration"))
+			play_clip(named, seconds)
+			return
 	play_state(state_name)
 
 

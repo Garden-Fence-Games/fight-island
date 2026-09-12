@@ -54,6 +54,8 @@ func _run() -> void:
 	await _check_idle_plays_idle(machine, anim)
 	await _check_clipless_state_rests(anim)
 	_check_the_body_can_be_tinted(player)
+	await _check_the_fist_combo_animates(player, machine, anim)
+	_check_the_gun_starts_hidden(player)
 	_report()
 
 
@@ -178,6 +180,70 @@ func _check_the_body_can_be_tinted(player: Player) -> void:
 		_fail("body_materials() hands back a different set each call")
 
 
+## The three punches are one state driven by three `AttackData`, so no table maps `Attack` to a
+## clip — the state names its own. This drives each index and reads back which clip started.
+##
+## It also checks the stretch. The windows in the `.tres` are balance and the clip bends to them, so
+## a jab whose clip runs at its authored speed would have the fist out a frame late for ever.
+func _check_the_fist_combo_animates(
+	player: Player, machine: StateMachine, anim: AnimationComponent
+) -> void:
+	var weapon := player.weapon
+	if weapon == null:
+		_fail("the player carries no weapon, so the combo cannot be checked")
+		return
+	for index: int in 3:
+		var attack := weapon.attack_at(index)
+		if attack == null:
+			_fail("the fists have no attack at index %d" % index)
+			continue
+		machine.current.transition_to(&"Attack", {"index": index, "perfect": false})
+		await get_tree().physics_frame
+		if machine.current_name != &"Attack":
+			_fail("attack %d left the machine in %s" % [index, machine.current_name])
+			continue
+		if anim.current_clip() != attack.animation:
+			_fail(
+				(
+					"attack %d (%s) plays %s, its AttackData names %s"
+					% [index, attack.id, anim.current_clip(), attack.animation]
+				)
+			)
+			continue
+		var clip := anim.animation_player.get_animation(String(attack.animation))
+		var wanted := clip.length / attack.total_duration()
+		if not is_equal_approx(anim.animation_player.get_playing_speed(), wanted):
+			_fail(
+				(
+					"%s runs at %.3f, it has to run at %.3f to last the attack's %.3fs"
+					% [
+						attack.animation,
+						anim.animation_player.get_playing_speed(),
+						wanted,
+						attack.total_duration()
+					]
+				)
+			)
+		machine.current.transition_to(&"Idle")
+		await get_tree().physics_frame
+
+
+## The gun is modelled into the rig rather than attached at runtime, so it is in the character's
+## hand from the first frame unless something hides it — including through all three punches.
+func _check_the_gun_starts_hidden(player: Player) -> void:
+	var visuals := player.get_node_or_null("WeaponVisual") as WeaponVisualComponent
+	if visuals == null:
+		_fail("the player carries no WeaponVisualComponent")
+		return
+	if not visuals.has_weapon_mesh():
+		_fail("no weapon mesh was found on the rig — the name in weapon_mesh_names has drifted")
+		return
+	for node: Node in player.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if mesh != null and visuals.weapon_mesh_names.has(StringName(mesh.name)) and mesh.visible:
+			_fail("%s is visible while the player is unarmed" % mesh.name)
+
+
 func _fail(message: String) -> void:
 	_failures.append(message)
 
@@ -188,8 +254,9 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"animation OK — walk, idle and hurt on the rig, the cycles loop, Move walks "
-				+ "past one cycle, Idle idles, Sprint rests, the body can be tinted"
+				"animation OK — the cycles loop, Move walks past one cycle, Idle idles, "
+				+ "the three punches play their own clip at the attack's speed, "
+				+ "the gun stays hidden, the body can be tinted"
 			)
 		)
 		get_tree().quit(0)

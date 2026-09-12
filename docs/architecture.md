@@ -20,7 +20,8 @@ res://
     resources/    attack_data.gd, weapon_data.gd, upgrade_track.gd, wave_config.gd
     components/   health_component.gd, stamina_component.gd, hitbox.gd, hurtbox.gd,
                   hit_info.gd, state_machine.gd, state.gd, aim_component.gd,
-                  animation_component.gd, head_look_component.gd
+                  animation_component.gd, head_look_component.gd,
+                  weapon_visual_component.gd
     actors/       player/, enemy/, merchant/ — each with its states/
     systems/      wave_director.gd, spawn_director.gd, tutorial_director.gd, economy.gd,
                   save_manager.gd, settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
@@ -489,12 +490,20 @@ matches the state. It does not know whose skeleton it drives: the `AnimationPlay
 are found under its parent when its exports are left null, so a reimport that renames the glTF
 nodes does not require touching the scene.
 
-Two decisions worth keeping:
+Three decisions worth keeping:
 
 - **The states do not start their own clips.** A state that had to remember would one day forget,
   and that bug is a character frozen mid-stride with nothing in the log to explain it. Driving it
   from the one signal the machine already emits means a new state cannot be added without the
   animation question being answered.
+- **A state may still *name* its own clip, and that name wins.** `Attack` is the reason: one state
+  drives all nine attacks and which one is running is `AttackData`, so no table could answer for it.
+  The component asks — `clip_name()`, and `clip_duration()` to stretch the clip to the attack's own
+  windup-active-recovery — rather than the state pushing, because `StateMachine` runs `enter` before
+  it emits and a state that started its own clip would have it stopped again one line later. The
+  clip bends to the balance figures, never the reverse: the `.tres` is where an attack's timing
+  lives, and a punch whose clip ran at its authored speed would have the fist out a frame late for
+  ever.
 - **A state with no clip plays nothing and says nothing.** The rig arrives one animation at a time,
   so most of the map points at clips that do not exist yet — that is the normal state of affairs,
   not a fault. It also keeps the build green: the import gate fails on any `WARNING` line, so a
@@ -504,6 +513,18 @@ Two decisions worth keeping:
 The state-to-clip map is explicit rather than a lowercase of the state name, because `Move` plays
 `walk` and no rule bridges that pair. It is exported, so a state can be pointed at a clip that
 already exists while the real one is still being authored.
+
+## The weapon is in the rig, not attached to it
+
+`WeaponVisualComponent` shows and hides the weapon meshes the skeleton already carries. There is no
+bone attachment and nothing is spawned: the gun is modelled into the rig, parented to the hand bone,
+because that is how the clips were authored — `idle_gun` and `walk_gun` move a gun that is part of
+the skeleton. Hiding the mesh is therefore the whole of "not holding it", and hidden is the default,
+which is what fists look like.
+
+It takes a flag rather than a `WeaponData`, so it knows neither what a weapon is nor who owns it.
+Whoever hands the gun over sets `armed`, which is what lets a pickup, a weapon switch and a headless
+check all drive it the same way.
 
 ## Head look
 
