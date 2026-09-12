@@ -7,6 +7,11 @@ extends Node
 
 const ARENA: String = "res://scenes/world/arena.tscn"
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
+const REAPER: String = "res://data/enemies/reaper.tres"
+## The least the two archetypes may differ in brightness. Hue is not enough: the camera is high, the
+## bodies are small, and a player who cannot tell a bruiser from a swarm body has no way to choose
+## what to do about either. Measured the way an eye weighs the channels.
+const GREYSCALE_GAP: float = 0.15
 const SETTLE_FRAMES: int = 8
 ## The closest the spawn search will ever put a body to the player. Written out rather than read off
 ## SpawnDirector, because a check that agrees with whatever that class says is not a check — and
@@ -60,6 +65,10 @@ func _run() -> void:
 	await _check_walking_up_to_him_starts_the_chase()
 	await _check_a_hit_wakes_him_from_any_distance()
 	await _check_noticing_spreads_to_the_men_beside_him()
+	_check_the_reaper_matches_the_table()
+	_check_the_two_farmers_differ_in_greyscale()
+	await _check_the_sweep_covers_the_sides_and_nothing_else()
+	await _check_a_sidestep_still_beats_a_farmhand()
 	_report()
 
 
@@ -278,7 +287,7 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"combat OK — hit, perfect, chain window, chain lockout, parry, "
+				"combat OK — hit, perfect, chain window, chain lockout, parry, the reaper's arc, "
 				+ "and a farmer who waits until he notices you"
 			)
 		)
@@ -402,3 +411,113 @@ func _spawn_extra(where: Vector3) -> Enemy:
 	if director == null:
 		return null
 	return director.spawner.spawn_at(load(FARMHAND) as EnemyData, where)
+
+
+## The reaper's row of docs/game-design.md, asserted against the resource that drives him.
+func _check_the_reaper_matches_the_table() -> void:
+	var data := load(REAPER) as EnemyData
+	if data == null or data.attack == null:
+		_fail("there is no reaper to check")
+		return
+	var wanted := {
+		"health": 90.0,
+		"move_speed": 2.4,
+		"poise": 30.0,
+		"attack_range": 2.8,
+	}
+	for field: String in wanted:
+		if not is_equal_approx(data.get(field), wanted[field]):
+			_fail("the reaper's %s should be %s, is %s" % [field, wanted[field], data.get(field)])
+	if data.money != 5:
+		_fail("a reaper should be worth 5, is worth %d" % data.money)
+	var swing := data.attack
+	var timing := {"damage": 16.0, "windup": 0.75, "active": 0.18, "recovery": 0.95}
+	for field: String in timing:
+		if not is_equal_approx(swing.get(field), timing[field]):
+			_fail("the sweep's %s should be %s, is %s" % [field, timing[field], swing.get(field)])
+	if not is_equal_approx(swing.reach, 2.8) or not is_equal_approx(swing.arc_degrees, 160.0):
+		_fail(
+			(
+				"the sweep should be 2.8 m across 160°, is %.1f m across %.0f°"
+				% [swing.reach, swing.arc_degrees]
+			)
+		)
+
+
+## Told apart at a glance from a high camera, which means told apart with the colour taken out.
+func _check_the_two_farmers_differ_in_greyscale() -> void:
+	var farmhand := load(FARMHAND) as EnemyData
+	var reaper := load(REAPER) as EnemyData
+	if farmhand == null or reaper == null:
+		return
+	var gap := absf(_brightness(farmhand.tint) - _brightness(reaper.tint))
+	if gap < GREYSCALE_GAP:
+		_fail("the two farmers are %.2f apart in greyscale, they need %.2f" % [gap, GREYSCALE_GAP])
+
+
+func _brightness(colour: Color) -> float:
+	return colour.r * 0.2126 + colour.g * 0.7152 + colour.b * 0.0722
+
+
+## The character, in three positions.
+##
+## A body that steps to the side stays inside the sweep where the same step would take it clear of a
+## farmhand — that is the whole reason the reaper exists, and it is the reason the parry has to have
+## been taught by wave 3. The second is the edge that the box got wrong: its corner is not the
+## weapon's reach.
+##
+## There is no check here for the far side of the arc, and there should be: see issue #70. Nothing
+## lands outside roughly the front hemisphere whatever `arc_degrees` says, so the outer third of the
+## reaper's sweep is not proven to work.
+func _check_the_sweep_covers_the_sides_and_nothing_else() -> void:
+	var reaper := _lease(REAPER)
+	if reaper == null:
+		_fail("could not lease a reaper")
+		return
+	if not await _swing_reaches(reaper, 70.0, 2.0):
+		_fail("stepping to the side should not take the player out of a 160° sweep")
+	if await _swing_reaches(reaper, 45.0, 3.4):
+		_fail("the sweep reached 3.4 m on a 2.8 m weapon — the corner of the box, not the scythe")
+	reaper.retire()
+
+
+## And the contrast that gives the reaper its meaning: against 60° of farmhand, the same sidestep
+## works. Without this the check above would pass on any arc wide enough, including every arc.
+func _check_a_sidestep_still_beats_a_farmhand() -> void:
+	if await _swing_reaches(_enemy, 70.0, 1.2):
+		_fail("a sidestep should still take the player clear of a farmhand's 60°")
+
+
+## Parks the body at a bearing and a distance from a swing, and reports whether it is hit. The
+## hitbox is armed directly rather than through the state machine, which would turn the enemy to
+## face the player and destroy the one thing being measured.
+func _swing_reaches(enemy: Enemy, degrees: float, metres: float) -> bool:
+	_reset_player()
+	# The i-frames from the previous bearing outlast the gap between two of these, and a swing
+	# negated by them reads exactly like a swing that missed. Waiting them out is what makes each
+	# bearing an independent measurement instead of a measurement of the one before it.
+	await _advance(_player.health.hit_invulnerability + 0.1)
+	# The body has to stop thinking for this. Left running it notices the player two metres away,
+	# turns to face them and swings on its own — and a hit from that swing is indistinguishable
+	# from a hit by the one being measured, which is how three of these bearings first came back
+	# green for the wrong reason.
+	enemy.machine.process_mode = Node.PROCESS_MODE_DISABLED
+	enemy.global_position = Vector3.ZERO
+	enemy.rotation.y = 0.0
+	var bearing := deg_to_rad(degrees)
+	# A Node3D faces -Z, so a bearing off its nose swings from there.
+	_player.global_position = Vector3(sin(bearing) * metres, 0.0, -cos(bearing) * metres)
+	await get_tree().physics_frame
+	var before := _player.health.current_health
+	enemy.hitbox.arm(enemy.data.attack, enemy, false)
+	await _advance(enemy.data.attack.active + 0.05)
+	enemy.hitbox.disarm()
+	enemy.machine.process_mode = Node.PROCESS_MODE_INHERIT
+	return _player.health.current_health < before
+
+
+func _lease(archetype: String) -> Enemy:
+	var director := get_child(0).get_node_or_null("WaveDirector") as WaveDirector
+	if director == null:
+		return null
+	return director.spawner.spawn_at(load(archetype) as EnemyData, Vector3(0.0, 0.0, -3.0))

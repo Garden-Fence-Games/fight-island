@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"reaper_sweep"
+display_name = "Sweep"
+damage = 16.0
+stagger = 0.45
+poise_damage = 0.0
+stamina_cost = 0.0
+ammo_cost = 0
+windup = 0.75
+active = 0.18
+recovery = 0.95
+chain_window = Vector2(0.0, 0.0)
+perfect_window = Vector2(0.0, 0.0)
+perfect_multiplier = 1.35
+hitstop = 0.08
+reach = 2.8
+arc_degrees = 160.0
+animation = &"attack_scythe"
