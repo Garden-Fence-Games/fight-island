@@ -6,7 +6,26 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **The gun is rationed by a ceiling and fed by the dead.** The player never holds more than 30
+  rounds, magazine included, and **a cleared wave no longer hands over any**. Ammunition enters a
+  run two ways now: one body in eight leaves a round behind, and the gun track hands over its six
+  the moment it is bought. An empty pocket is a reason to close on the next farmer rather than back
+  away from him, which is the opposite of what an ammunition counter usually does to a player.
+- `WeaponData.reserve_per_wave` is gone, replaced by `ammo_cap` and `scavenge_chance`. The upgrade
+  track's `reserve` now pays once, at the counter, instead of topping up every wave.
+- `EventBus.rounds_scavenged`, and the HUD's ammo panel answers it the way the money chip answers a
+  payout — rounds arrive mid-fight, which is exactly when a counter in the corner goes unread.
+
 ### Added
+
+- **No corner of the island answers the reaper's sweep with nothing.** `tools/verify_playfield.tscn`
+  walks every square metre of ground the fight can reach — nineteen thousand of them — and fails if
+  a dodge from any of them lands only in directions a 160° arc already covers. The camera never
+  turns, so a pocket is not something the player can look their way out of; and the first run of it
+  found one, on a sandbank a hundred metres out that no enemy can reach, which is what taught the
+  check to walk the ground the fight reaches rather than the ground a body can paddle to.
 
 - **Somebody lived on this island before it was an arena.** Five wooden huts stand off the fighting
   core — three of them still standing on their stilts under a plank roof, two collapsed to the bare

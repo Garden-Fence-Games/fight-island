@@ -39,11 +39,16 @@ extends Resource
 @export var reload_time: float = 0.0
 ## What the player carries beyond the magazine when the weapon is first picked up.
 @export var reserve_start: int = 0
-## And what a cleared wave adds. **Running dry mid-wave is a designed moment**, not a punishment:
-## the reserve refilling only between waves is the entire reason the gun does not trivialise the
-## middle of a run, so this number and `magazine` are the gun's rhythm the way a lockout is the
-## fists'.
-@export var reserve_per_wave: int = 0
+## Every round the player may hold at once, **magazine included**. One number rather than two
+## because one number is what the player counts: a reload moves rounds, it never makes them.
+##
+## Nothing refills this on a clock. Ammunition comes off the bodies of the people who came to kill
+## you, a round at a time, and from the merchant — so **running dry is a designed moment** and the
+## way out of it is to keep fighting rather than to wait.
+@export var ammo_cap: int = 0
+## How often a body leaves a round behind. The gun's whole supply line, and the reason an empty
+## pocket is a reason to close rather than to retreat.
+@export_range(0.0, 1.0) var scavenge_chance: float = 0.0
 
 
 func attack_at(index: int) -> AttackData:
