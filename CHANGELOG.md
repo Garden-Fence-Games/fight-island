@@ -144,6 +144,17 @@ All notable changes to this project are documented here, following
 - A shared UI theme under `assets/themes/` carrying the design tokens, the `UI_` string table in
   `assets/locale/ui.csv`, and Badeen Display and Inter under `assets/fonts/`.
 
+### Changed
+
+- **The island's grass grows in two lengths.** Half of it stands between 0.5 m and 0.85 m and the
+  other half stays under a third of a metre, drawn as height and width independently rather than
+  as one size scaled up. What read as a carpet was never the amount of grass — it was that every
+  blade of it was the same length. The tall band stops under 1.1 m, the line the camera's occlusion
+  draws to a body, which is the height at which ground cover stops dressing a fight and starts
+  hiding one.
+- Grass takes its wind over the tall band's own height, so one set of figures now serves both
+  lengths: a long blade leans over and the tuft beside it barely stirs.
+
 ### Fixed
 
 - Four headless checks read whatever run happened to be saved on the machine. `GameState` restores

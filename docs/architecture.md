@@ -430,7 +430,10 @@ naturally out of step. **Nothing is hashed**: a hash is discontinuous, and two p
 must not jump to opposite ends of the cycle.
 
 Bend is measured from the instance's own origin, and every model in the pack stands on its origin,
-so height above the ground is simply height above that origin. **A palm arrives as one mesh of two
+so height above the ground is simply height above that origin. That is also what lets grass of two
+lengths share one material: `bend_height` is set to the tall band's height, so bend comes out as
+the fraction of it a vertex stands at — a long blade leans over and the short tuft beside it barely
+stirs, from the same figures, with nothing per-instance to drive them apart. **A palm arrives as one mesh of two
 parts** — trunk and crown together — so the crown reads its real height and bends with the wood it
 sits on for nothing. An earlier version built a palm from a trunk mesh and six separate frond
 instances, and holding those together took an anchor per frond in the `MultiMesh` custom data,
