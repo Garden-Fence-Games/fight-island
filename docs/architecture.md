@@ -158,6 +158,30 @@ not instant.
 included, held per body because `EnemyData` is one shared resource on disk and scaling it in place
 would raise every farmer in the game and then save the result.
 
+## Noticing
+
+A farmer stands where he appeared until the fight reaches him. It is four lines of state and one
+field, and the only interesting parts are the edges.
+
+**The radius has to be smaller than the spawn distance or the feature does not exist.** The spawn
+search keeps bodies 12–26 m from the player; the old aggro radius was 18 m, so more than half of
+every wave arrived already charging. Nothing would have failed — there would simply have been no
+behaviour. `verify_combat` asserts the inequality directly, against a written-out 12 rather than
+against `SpawnDirector`'s own constant.
+
+**Noticing is one way.** `Chase` used to fall back to `Idle` past the radius; it no longer does. A
+leash makes the edge of a crowd breathe in and out as the player drifts back and forth, and a farmer
+who forgets he was swung at is worse than one who never noticed.
+
+**Rousing spreads, and terminates on its own guard.** `rouse()` returns immediately if the body is
+already roused, so each one is visited once however the crowd is arranged — no depth limit, no
+visited set. Being hit routes through the same call, which is what stops a thrower plinking at
+someone from outside their own notice radius forever.
+
+None of this needed a token change: tokens are claimed on entering `WindUp`, and an idle body never
+gets there. Nor did the wave director: a wave ends when the last body *dies*, not when the last one
+is fighting, so a field of men who have not noticed anything still holds the wave open.
+
 ## Camera rig
 
 `CameraRig (Node3D, yaw) → PitchPivot (Node3D) → SpringArm3D → Camera3D`.
@@ -375,6 +399,12 @@ Two headless guards run in CI and locally:
   It also floods the terrain's own collision heights and fails if any water stands where the open
   sea cannot reach it, and it reads the swell height out of the water shader to fail if the waves
   ever grow past the height the drained sand was lifted to — one number, two files.
+  `verify_combat` also covers noticing: that a farmer left well clear does not close on his own and
+  never telegraphs from outside his reach, that walking up to him starts the chase, that a hit wakes
+  him at forty metres, and that rousing crosses three metres but not twenty-five. Both of those
+  distances are written out rather than derived from the radius being tested — deriving the far one
+  from the data would place it outside any value at all, and the check could never fail. It did not,
+  until that was fixed.
 - **`tools/verify_navigation.tscn`** — asserts the island is baked, that a route past a boulder
   bends around it, that a spawn point inside one is refused, and — the only check straight-line
   chasing cannot pass — that a farmhand with a boulder between him and the player still gets there.
