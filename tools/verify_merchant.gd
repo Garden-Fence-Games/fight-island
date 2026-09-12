@@ -1,0 +1,162 @@
+extends Node
+## Headless proof of the two rules the economy is built on and the one thing the summary must not
+## get wrong: a purchase reaches the living body straight away, there is exactly one of them per
+## wave, and leftover money carries.
+##
+## The upgrade effects are the interesting half. A card that says "twenty more hit points" and does
+## not give them is a lie no diff would catch.
+## Run: godot --headless --path . res://tools/verify_merchant.tscn
+
+const ARENA: String = "res://scenes/world/arena.tscn"
+const SUMMARY: String = "res://scenes/ui/run_summary.tscn"
+const SETTLE_FRAMES: int = 8
+
+var _failures: PackedStringArray = []
+var _player: Player = null
+
+
+func _ready() -> void:
+	_run()
+
+
+func _run() -> void:
+	var arena := (load(ARENA) as PackedScene).instantiate()
+	add_child(arena)
+	await get_tree().physics_frame
+	_player = arena.get_node("Player") as Player
+	if _player == null:
+		_fail("the arena holds no player")
+		_report()
+		return
+
+	_check_tracks_are_data()
+	_check_prices_follow_the_curve()
+	await _check_health_reaches_the_body()
+	_check_one_purchase_a_wave()
+	_check_money_carries()
+	await _check_a_weapon_track_moves_the_swing()
+	await _check_the_summary_reads_the_run()
+	_report()
+
+
+func _check_tracks_are_data() -> void:
+	var tracks := Upgrades.all()
+	if tracks.size() != 5:
+		_fail("expected five upgrade tracks, found %d" % tracks.size())
+	for track: UpgradeTrack in tracks:
+		if track.id.is_empty() or track.next_level_key.is_empty():
+			_fail("a track is missing its id or its copy")
+		if tr(track.next_level_key) == track.next_level_key:
+			_fail("%s has no string for %s" % [track.id, track.next_level_key])
+
+
+## The card shows what `Economy` says and nothing of its own, so the price on screen and the price
+## in the design cannot drift apart.
+func _check_prices_follow_the_curve() -> void:
+	GameState.begin_run()
+	var track := Upgrades.find(&"health")
+	for owned: int in Economy.LEVEL_CAP:
+		GameState.upgrade_levels[track.id] = owned
+		if GameState.price_of(track) != Economy.upgrade_cost(owned):
+			_fail("the merchant price for level %d is not the cost curve" % owned)
+	GameState.upgrade_levels = {}
+
+
+func _check_health_reaches_the_body() -> void:
+	GameState.begin_run()
+	EventBus.wave_started.emit(1, 4)
+	GameState.earn(1000)
+	var track := Upgrades.find(&"health")
+	var before := _player.health.max_health
+	_player.health.current_health = 1.0
+	if not GameState.buy(track):
+		_fail("a health purchase the player could afford was refused")
+		return
+	await get_tree().process_frame
+	if not is_equal_approx(_player.health.max_health, before + track.max_health):
+		_fail(
+			(
+				"max health is %.0f, expected %.0f"
+				% [_player.health.max_health, before + track.max_health]
+			)
+		)
+	# Buying more life and not getting it now is a purchase nobody makes twice.
+	if not is_equal_approx(_player.health.current_health, _player.health.max_health):
+		_fail("the health purchase did not heal to full")
+
+
+func _check_one_purchase_a_wave() -> void:
+	var stamina := Upgrades.find(&"stamina")
+	if GameState.can_buy(stamina):
+		_fail("a second purchase was offered in the same wave")
+	if GameState.buy(stamina):
+		_fail("a second purchase in the same wave went through")
+	EventBus.wave_started.emit(2, 6)
+	if not GameState.can_buy(stamina):
+		_fail("the next wave did not open the merchant again")
+
+
+func _check_money_carries() -> void:
+	var before := GameState.money
+	var stamina := Upgrades.find(&"stamina")
+	var price := GameState.price_of(stamina)
+	if not GameState.buy(stamina):
+		_fail("the second wave's purchase was refused")
+		return
+	if GameState.money != before - price:
+		_fail("money left over did not carry")
+	if GameState.stats.money_spent <= 0:
+		_fail("the purchase was not counted as money spent")
+
+
+func _check_a_weapon_track_moves_the_swing() -> void:
+	EventBus.wave_started.emit(3, 8)
+	GameState.earn(1000)
+	var fists := Upgrades.find(&"fists")
+	var before := _player.damage_multiplier
+	if not GameState.buy(fists):
+		_fail("a fists purchase the player could afford was refused")
+		return
+	await get_tree().process_frame
+	# The player holds the fists, so the fists track pays out.
+	if not is_equal_approx(_player.damage_multiplier, before + fists.damage):
+		_fail("the fists upgrade did not reach the swing")
+	if _player.stamina_cost_multiplier >= 1.0:
+		_fail("the fists upgrade did not make the swing cheaper")
+
+
+func _check_the_summary_reads_the_run() -> void:
+	GameState.stats.perfect_hits = 12
+	GameState.stats.perfect_parries = 5
+	GameState.stats.record_kill(&"farmhand")
+	GameState.end_run()
+	var summary := (load(SUMMARY) as PackedScene).instantiate() as RunSummary
+	add_child(summary)
+	await get_tree().process_frame
+	summary.show_run(false)
+	if summary.endless.visible:
+		_fail("a death offered endless mode")
+	if summary.combat.get_child_count() != 6:
+		_fail("the combat panel is not the six lines the design asks for")
+	summary.show_run(true)
+	if not summary.endless.visible:
+		_fail("a victory did not unlock endless")
+	if summary.upgrades.get_child_count() != Upgrades.all().size():
+		_fail("the upgrades panel does not list every track")
+	summary.queue_free()
+
+
+func _fail(message: String) -> void:
+	_failures.append(message)
+
+
+func _report() -> void:
+	for _index: int in SETTLE_FRAMES:
+		await get_tree().physics_frame
+	if _failures.is_empty():
+		print("merchant OK — prices, one a wave, money carries, and the body grows")
+		get_tree().quit(0)
+		return
+	for failure: String in _failures:
+		printerr(failure)
+	get_tree().quit(1)

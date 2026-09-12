@@ -8,6 +8,16 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- Merchant between waves: five cards driven by `UpgradeTrack` resources, one purchase a wave, and
+  leftover money that carries. Effects reach the living player the moment they are bought,
+  including the heal to full on a health purchase.
+- Run summary on death and on victory, the same layout both times: waves, time, money earned and
+  spent, kills by archetype, upgrade levels, and the two perfect counters in the accent colour.
+  Victory adds one line unlocking endless and nothing else.
+- `UpgradeComponent`, which reads its body's base values once and applies `base + level × step`, so
+  re-applying never drifts.
+- `tools/verify_merchant.tscn` — headless proof that prices follow the cost curve, that a purchase
+  reaches the body, that there is exactly one a wave, and that money carries.
 - Pause menu on `Esc` / Start: Resume · Options · Restart run · Quit to title, over a blurred and
   dimmed world. Restart and Quit each confirm; nothing else in the game does. Back goes exactly one
   level, and quitting to the title keeps the run so Continue has something to continue.
@@ -49,6 +59,8 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- Strings with a comma in them were cut short on screen: the locale CSV was written without
+  quoting, so the merchant's card copy stopped at its first clause.
 - A cold checkout failed to import: `project.godot` lists a translation file the CSV importer has
   not written yet. CI now imports twice and gates on the second pass, which also proves a cold
   import converges rather than merely surviving.

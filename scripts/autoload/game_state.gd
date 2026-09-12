@@ -8,6 +8,9 @@ signal debug_overlay_toggled(visible: bool)
 ## state and the bus holds none — anything that wants to show money is already able to reach an
 ## autoload. `delta` is carried so a display can count up to the new figure rather than snap to it.
 signal money_changed(balance: int, delta: int)
+## A track went up a level. Carried rather than polled so the body that has to grow can listen and
+## the merchant does not need to know a player exists.
+signal upgrade_purchased(track: UpgradeTrack, level: int)
 
 var run_seed: int = 0
 var wave: int = 0
@@ -18,8 +21,15 @@ var money: int = 0
 ## What the run summary reads. Kept while the run happens, because half of these numbers leave no
 ## trace to reconstruct them from once the fight is over.
 var stats: RunStats = RunStats.new()
+## Track id to how many levels of it are owned. Levels rather than effects, so the body can always
+## recompute from its own base instead of carrying a running total that drifts.
+var upgrade_levels: Dictionary = {}
+
 var debug_overlay_visible: bool = false
 
+## The wave a purchase was last made in. One per wave is the whole economy: the interesting decision
+## is what the player gives up, and it stops being one if they can buy everything.
+var _bought_in_wave: int = -1
 var _rng := RandomNumberGenerator.new()
 
 
@@ -49,6 +59,8 @@ func begin_run() -> void:
 	wave = 0
 	money = 0
 	stats = RunStats.new()
+	upgrade_levels = {}
+	_bought_in_wave = -1
 	money_changed.emit(money, 0)
 
 
@@ -74,6 +86,42 @@ func spend(amount: int) -> bool:
 	stats.money_spent += amount
 	money_changed.emit(money, -amount)
 	return true
+
+
+func level_of(track: UpgradeTrack) -> int:
+	return int(upgrade_levels.get(track.id, 0)) if track != null else 0
+
+
+## What the next level of a track costs, or zero when there is no next level.
+func price_of(track: UpgradeTrack) -> int:
+	return Economy.upgrade_cost(level_of(track))
+
+
+func can_buy(track: UpgradeTrack) -> bool:
+	if track == null or _bought_in_wave == wave:
+		return false
+	if level_of(track) >= Economy.LEVEL_CAP:
+		return false
+	return money >= price_of(track)
+
+
+## Whether the purchase went through. The money leaves, the level goes up and the signal goes out
+## in that order, so nothing can see a level that has not been paid for.
+func buy(track: UpgradeTrack) -> bool:
+	if not can_buy(track):
+		return false
+	if not spend(price_of(track)):
+		return false
+	var level := level_of(track) + 1
+	upgrade_levels[track.id] = level
+	_bought_in_wave = wave
+	upgrade_purchased.emit(track, level)
+	return true
+
+
+## Whether the merchant still has something to sell this wave.
+func can_buy_anything() -> bool:
+	return _bought_in_wave != wave
 
 
 func toggle_debug_overlay() -> void:

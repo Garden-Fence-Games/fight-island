@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=38 format=3]
+[gd_resource type="Theme" load_steps=49 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/inter_semibold.ttf" id="1"]
 [ext_resource type="FontFile" path="res://assets/fonts/badeen_display.ttf" id="2"]
@@ -461,6 +461,143 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_idle"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0.1412, 0.1412, 0.149, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_focus"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0.1412, 0.1412, 0.149, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.8275, 0.2275, 0.2275, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_level"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_level_on"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.8275, 0.2275, 0.2275, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_buy"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.8275, 0.2275, 0.2275, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_purse"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0.0667, 0.0667, 0.0706, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_summary_panel"]
+content_margin_left = 32.0
+content_margin_top = 32.0
+content_margin_right = 32.0
+content_margin_bottom = 32.0
+bg_color = Color(0.0667, 0.0667, 0.0706, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_summary_rule"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 0
+border_width_top = 0
+border_width_right = 0
+border_width_bottom = 1
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_summary_button"]
+content_margin_left = 32.0
+content_margin_top = 16.0
+content_margin_right = 32.0
+content_margin_bottom = 16.0
+bg_color = Color(0.1412, 0.1412, 0.149, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_summary_button_on"]
+content_margin_left = 32.0
+content_margin_top = 16.0
+content_margin_right = 32.0
+content_margin_bottom = 16.0
+bg_color = Color(0.8275, 0.2275, 0.2275, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [resource]
 default_font = ExtResource("1")
 default_font_size = 16
@@ -502,6 +639,36 @@ Button/styles/pressed = SubResource("StyleBoxFlat_entry_pressed")
 Caption/base_type = &"Label"
 Caption/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
 Caption/font_sizes/font_size = 16
+CardBlurb/base_type = &"Label"
+CardBlurb/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
+CardBlurb/font_sizes/font_size = 18
+CardBuy/base_type = &"PanelContainer"
+CardBuy/styles/panel = SubResource("StyleBoxFlat_card_buy")
+CardBuyText/base_type = &"Label"
+CardBuyText/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
+CardBuyText/font_sizes/font_size = 16
+CardCost/base_type = &"Label"
+CardCost/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
+CardCost/font_sizes/font_size = 16
+CardLevel/base_type = &"PanelContainer"
+CardLevel/styles/panel = SubResource("StyleBoxFlat_card_level")
+CardLevelActive/base_type = &"PanelContainer"
+CardLevelActive/styles/panel = SubResource("StyleBoxFlat_card_level_on")
+CardLevelText/base_type = &"Label"
+CardLevelText/colors/font_color = Color(1, 1, 1, 1)
+CardLevelText/font_sizes/font_size = 16
+CardPrice/base_type = &"Label"
+CardPrice/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
+CardPrice/font_sizes/font_size = 18
+CardPriceOut/base_type = &"Label"
+CardPriceOut/colors/font_color = Color(0.8275, 0.2275, 0.2275, 1)
+CardPriceOut/font_sizes/font_size = 18
+CardTitle/base_type = &"Label"
+CardTitle/colors/font_color = Color(1, 1, 1, 1)
+CardTitle/font_sizes/font_size = 16
+CardTitleActive/base_type = &"Label"
+CardTitleActive/colors/font_color = Color(0.8275, 0.2275, 0.2275, 1)
+CardTitleActive/font_sizes/font_size = 16
 ColumnHeader/base_type = &"PanelContainer"
 ColumnHeader/styles/panel = SubResource("StyleBoxFlat_column_header")
 DamageNumber/base_type = &"Label"
@@ -607,6 +774,14 @@ PauseTitle/fonts/font = ExtResource("2")
 PickerArrow/base_type = &"Label"
 PickerArrow/colors/font_color = Color(0.5608, 0.5608, 0.5412, 1)
 PickerArrow/font_sizes/font_size = 16
+Purse/base_type = &"PanelContainer"
+Purse/styles/panel = SubResource("StyleBoxFlat_purse")
+PurseLabel/base_type = &"Label"
+PurseLabel/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
+PurseLabel/font_sizes/font_size = 16
+PurseValue/base_type = &"Label"
+PurseValue/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
+PurseValue/font_sizes/font_size = 36
 ResetButton/base_type = &"Button"
 ResetButton/colors/font_color = Color(1, 1, 1, 1)
 ResetButton/colors/font_focus_color = Color(1, 1, 1, 1)
@@ -637,6 +812,37 @@ SettingsRow/styles/focus = SubResource("StyleBoxFlat_row_focus")
 SettingsRow/styles/hover = SubResource("StyleBoxFlat_row_focus")
 SettingsRow/styles/normal = SubResource("StyleBoxFlat_row_idle")
 SettingsRow/styles/pressed = SubResource("StyleBoxFlat_row_focus")
+StatName/base_type = &"Label"
+StatName/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
+StatName/font_sizes/font_size = 16
+StatValue/base_type = &"Label"
+StatValue/colors/font_color = Color(1, 1, 1, 1)
+StatValue/font_sizes/font_size = 16
+StatValueHot/base_type = &"Label"
+StatValueHot/colors/font_color = Color(0.8275, 0.2275, 0.2275, 1)
+StatValueHot/font_sizes/font_size = 16
+SummaryButton/base_type = &"Button"
+SummaryButton/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
+SummaryButton/colors/font_focus_color = Color(0.8471, 0.8471, 0.8235, 1)
+SummaryButton/colors/font_hover_color = Color(0.8471, 0.8471, 0.8235, 1)
+SummaryButton/colors/font_pressed_color = Color(0.8471, 0.8471, 0.8235, 1)
+SummaryButton/font_sizes/font_size = 24
+SummaryButton/fonts/font = ExtResource("2")
+SummaryButton/styles/disabled = SubResource("StyleBoxFlat_summary_button")
+SummaryButton/styles/focus = SubResource("StyleBoxFlat_summary_button_on")
+SummaryButton/styles/hover = SubResource("StyleBoxFlat_summary_button_on")
+SummaryButton/styles/normal = SubResource("StyleBoxFlat_summary_button")
+SummaryButton/styles/pressed = SubResource("StyleBoxFlat_summary_button_on")
+SummaryHeading/base_type = &"Label"
+SummaryHeading/colors/font_color = Color(0.8275, 0.2275, 0.2275, 1)
+SummaryHeading/font_sizes/font_size = 18
+SummaryHeadingWon/base_type = &"Label"
+SummaryHeadingWon/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
+SummaryHeadingWon/font_sizes/font_size = 18
+SummaryPanel/base_type = &"PanelContainer"
+SummaryPanel/styles/panel = SubResource("StyleBoxFlat_summary_panel")
+SummaryRule/base_type = &"PanelContainer"
+SummaryRule/styles/panel = SubResource("StyleBoxFlat_summary_rule")
 TabButton/base_type = &"Button"
 TabButton/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
 TabButton/colors/font_focus_color = Color(0.8471, 0.8471, 0.8235, 1)
@@ -667,3 +873,21 @@ TogglePill/base_type = &"Panel"
 TogglePill/styles/panel = SubResource("StyleBoxFlat_toggle_off")
 TogglePillOn/base_type = &"Panel"
 TogglePillOn/styles/panel = SubResource("StyleBoxFlat_toggle_on")
+UpgradeCard/base_type = &"Button"
+UpgradeCard/colors/font_color = Color(1, 1, 1, 1)
+UpgradeCard/colors/font_focus_color = Color(1, 1, 1, 1)
+UpgradeCard/colors/font_hover_color = Color(1, 1, 1, 1)
+UpgradeCard/colors/font_pressed_color = Color(1, 1, 1, 1)
+UpgradeCard/font_sizes/font_size = 16
+UpgradeCard/fonts/font = ExtResource("1")
+UpgradeCard/styles/disabled = SubResource("StyleBoxFlat_card_idle")
+UpgradeCard/styles/focus = SubResource("StyleBoxFlat_card_focus")
+UpgradeCard/styles/hover = SubResource("StyleBoxFlat_card_focus")
+UpgradeCard/styles/normal = SubResource("StyleBoxFlat_card_idle")
+UpgradeCard/styles/pressed = SubResource("StyleBoxFlat_card_focus")
+Verdict/base_type = &"Label"
+Verdict/colors/font_color = Color(0.8275, 0.2275, 0.2275, 1)
+Verdict/font_sizes/font_size = 56
+VerdictWon/base_type = &"Label"
+VerdictWon/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
+VerdictWon/font_sizes/font_size = 56
