@@ -148,7 +148,13 @@ jobs:
       # "A player on a pad must never read the word mouse" is a sentence, not a type, and the only
       # way it stays true is a check that picks up a controller and reads the screen back.
       - name: Verify the device-aware glyphs
-        run: godot --headless --path "$GITHUB_WORKSPACE" res://tools/verify_glyphs.tscn
+        run: tools/run-check.sh res://tools/verify_glyphs.tscn
+
+      # The stick's 120° arc is a number in a .tres and the sweep it produces is geometry: the only
+      # way to know the two still agree is to stand two farmers inside one swing. The gun's half is
+      # about *when* it runs dry, which is designed rather than emergent.
+      - name: Verify the stick and the gun
+        run: tools/run-check.sh res://tools/verify_weapons.tscn
 
       # The island is generated, so the rules combat depends on have to be checked rather than
       # trusted: a clear spawn pad, a walkable gap between everything that blocks, nothing tall

@@ -6,6 +6,10 @@ extends Resource
 @export var display_name: String = ""
 @export var attacks: Array[AttackData] = []
 @export var is_ranged: bool = false
+## The wave this weapon is dropped on the island to be found. Zero for one that is never dropped,
+## which is the fists — they are never not in hand. The number lives here rather than in a director
+## because *when the stick turns up* is a fact about the stick.
+@export var found_at_wave: int = 0
 
 @export_group("Chain")
 ## How long after a full chain before the player may attack again, measured from the end of the
@@ -25,6 +29,13 @@ extends Resource
 @export_group("Ranged")
 @export var magazine: int = 0
 @export var reload_time: float = 0.0
+## What the player carries beyond the magazine when the weapon is first picked up.
+@export var reserve_start: int = 0
+## And what a cleared wave adds. **Running dry mid-wave is a designed moment**, not a punishment:
+## the reserve refilling only between waves is the entire reason the gun does not trivialise the
+## middle of a run, so this number and `magazine` are the gun's rhythm the way a lockout is the
+## fists'.
+@export var reserve_per_wave: int = 0
 
 
 func attack_at(index: int) -> AttackData:

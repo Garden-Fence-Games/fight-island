@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"stick_backhand"
+display_name = "Backhand"
+damage = 14.0
+stagger = 0.15
+poise_damage = 15.0
+stamina_cost = 10.0
+ammo_cost = 0
+windup = 0.20
+active = 0.12
+recovery = 0.30
+chain_window = Vector2(0.14, 0.50)
+perfect_window = Vector2(0.38, 0.50)
+perfect_multiplier = 1.35
+hitstop = 0.08
+reach = 2.4
+arc_degrees = 120.0
+animation = &"attack_stick_1"

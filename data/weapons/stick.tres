@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/weapon_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/stick_backhand.tres" id="2"]
+[ext_resource type="Resource" path="res://data/attacks/stick_return.tres" id="3"]
+[ext_resource type="Resource" path="res://data/attacks/stick_overhead.tres" id="4"]
+
+[resource]
+script = ExtResource("1")
+id = &"stick"
+display_name = "Stick"
+attacks = [ExtResource("2"), ExtResource("3"), ExtResource("4")]
+is_ranged = false
+found_at_wave = 2
+chain_lockout = 0.50
+perfect_lockout = 0.22
+magazine = 0
+reload_time = 0.0

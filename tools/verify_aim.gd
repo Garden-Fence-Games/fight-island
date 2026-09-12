@@ -21,6 +21,7 @@ const CLOSE_ENOUGH: float = 0.08
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
 var _player: Player = null
+var _kept_run: Dictionary = {}
 
 
 func _ready() -> void:
@@ -29,6 +30,11 @@ func _ready() -> void:
 
 func _run() -> void:
 	_arena = (load(ARENA) as PackedScene).instantiate() as Node3D
+	# From a fresh run, and the machine's own run put back at the end. `GameState` restores a
+	# saved run at boot, so a developer who has picked the gun up would start this check holding
+	# it — and every damage figure below is the fists'.
+	_kept_run = SaveManager.read_json(SaveManager.RUN_PATH)
+	GameState.begin_run()
 	add_child(_arena)
 	# Wave 1 belongs to the tutorial now, and a lesson holding it open would leave this check
 	# waiting for a parry nobody is going to throw. This one is not about the lesson.
@@ -51,6 +57,7 @@ func _run() -> void:
 	await _check_the_cursor_lands_on_the_ground()
 	await _check_an_attack_commits_to_its_facing()
 	await _check_a_dodge_goes_where_the_keys_say()
+	_put_the_run_back()
 	_report()
 
 
@@ -285,3 +292,10 @@ func _stand_the_tutorial_down(arena: Node) -> void:
 	var tutorial := arena.get_node_or_null(^"TutorialDirector") as TutorialDirector
 	if tutorial != null:
 		tutorial.stand_down()
+
+
+func _put_the_run_back() -> void:
+	if _kept_run.is_empty():
+		SaveManager.clear_run()
+		return
+	SaveManager.write_json(SaveManager.RUN_PATH, _kept_run)
