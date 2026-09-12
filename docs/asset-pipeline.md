@@ -166,15 +166,22 @@ reaches 61.3 m to the farthest corner of the farthest chunk it still frames.
 
 | Population | Props | Triangles each | Held | Submitted |
 |---|---:|---:|---:|---:|
-| Grass | 11,892 | 35 | 416,220 | 139,615 |
+| Grass | 8,228 | 35 | 287,980 | 96,600 |
 | Bushes | 90 | 2,862 | 257,580 | 97,308 |
 | Palms | 380 | 692 | 262,960 | 59,512 |
 | Rocks | 432 | 80 | 34,560 | 7,040 |
 | Pebbles | 1,500 | 16 | 24,000 | 2,528 |
-| **Scatter** | | | **995,320** | **306,003** |
+| **Scatter** | | | **867,080** | **262,988** |
 
 Add the actors — the player is 21,888 triangles and a farmer 12,792, so twelve of them is 153,504 —
-and a busy frame is a little under half a million triangles.
+and a busy frame is a little over four hundred thousand triangles.
+
+The grass figure moved once more after this table was first written. Clumping it harder and grading
+it from the water inland — see `IslandFoliage` — took it from 11,892 tufts to 8,228 without thinning
+the ground the camera frames, because what it removed was the even cover in the mid-density band.
+The first attempt removed rather more than that: grading density by the gradient *and* by the ground
+colour, both of which fall to nothing at the sand, multiplied two zeroes together and left a bare
+ring twenty-four metres wide right round the island. Hence the floor under the gradient.
 
 **The chunk grid is the lever, not the fade distances.** A chunk is the unit the camera keeps or
 drops whole, and the unit a visibility range is measured to, so the grid decides how finely either
