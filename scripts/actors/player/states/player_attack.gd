@@ -135,6 +135,9 @@ func _shoot() -> void:
 		return
 	for _round: int in maxi(_attack.shots, 1):
 		player.hitscan.fire(_attack, player, _perfect, player.damage_multiplier)
+		# Announced whether or not the ray found anybody: the report is the round leaving, and a
+		# gun that is only audible when it connects is a gun the player cannot tell they fired.
+		EventBus.weapon_fired.emit(_attack)
 
 
 func _begin_recovery() -> void:

@@ -30,6 +30,30 @@ All notable changes to this project are documented here, following
   out of shot, and winding the wheel to the old floor of six metres left 2.8 m of ground against the
   4.6 m a reaper needs.
 
+- **The island makes a sound now.** Footfalls on sand and in the surf, a roll, a reload, a dry
+  trigger, the two gunshots, taking a hit, a body going down, finding a weapon, a wave-cleared
+  sting, and a surf bed on the `Ambience` bus. Still not one audio file in the repository — all of
+  it is synthesised at startup beside the five combat signatures.
+- **The wind-up is audible, and it comes from a direction.** A second pool of
+  `AudioStreamPlayer3D` voices carries the sounds that belong to the world rather than to the
+  player, and the telegraph is the reason it exists. With the ring gone and the clip that should
+  replace it not authored yet, **this is currently the only telegraph the game has** — and the one
+  it could never have drawn anyway, for the two farmers behind the player, with three able to
+  commit at once at night. It is also the only sound in the game that **climbs**: everything else
+  reports something already over, so it falls away, and a rise is what an ear reads as a thing
+  arriving.
+- Footfalls are counted in **metres covered, not on a timer**, so a sprint's steps come faster than
+  a walk's without either speed knowing about the other, wading slows them because wading costs
+  speed, and leaning into a boulder makes no sound at all.
+- Loudness is now **declared per sound** rather than normalised to one shared peak, and the mix is
+  asserted as an ordering — footfall under swing under hit under telegraph. A footfall at a hit's
+  level walks over the fight it is walking through.
+- `EventBus.footstep_taken`, `telegraph_began` and `weapon_fired`.
+- `verify_audio` grew from five sounds to seventeen and a loop, and gained the claims that are not
+  about waveforms: that the telegraph plays positionally and at the farmer's own position, that a
+  missed shot plays nothing, that the mix is ordered, and that the surf comes back round without a
+  step in level at its seam.
+
 ### Changed
 
 - **The island's loose stone is thinned out.** Scattered rocks drop from 424 placed to 200 and
@@ -229,6 +253,17 @@ All notable changes to this project are documented here, following
   hitbox now owns the shape it resizes, and `verify_combat` swings two reaches at once.
 - A hitstop freed mid-beat left the game running at a twentieth of speed for good: the `await` that
   restores the clock belongs to a node a scene change can take away.
+- **A swing through empty air was as loud as one that connected**, came out of nowhere at full
+  level, and then washed for 540 ms over whatever the player did next — a decay of 0.09 ran its
+  buffer six time constants deep. It is now a sixth of a second, darker, under a hit, and shaped
+  like something passing: it swells, peaks in the middle and falls away.
+- **A missed gunshot played a swish.** `attack_whiffed` fires for a hitscan too, so the gun swung an
+  arm it does not have — and meanwhile the gun had no report at all, so a shot that connected was a
+  thud with no bang in front of it and a shot that missed was a whoosh. Rounds now crack when they
+  leave the barrel, per round, so the double tap cracks twice.
+- The anti-click ramp was applied after normalising, so every short sound came out under the peak it
+  was aimed at — the dry trigger landed at 0.33 against 0.55, because a click is loudest inside the
+  two milliseconds the ramp fades.
 - Four headless checks read whatever run happened to be saved on the machine. `GameState` restores
   a run at boot, so a developer carrying the gun ran `verify_combat` against gun damage and
   `verify_animation` against an empty magazine. CI never saw it — a clean checkout has no `user://`.

@@ -52,9 +52,12 @@ off a number.
 - [x] The tutorial director, driven by step resources — see [tutorial.md](tutorial.md)
 - [x] Real HUD, death screen, retry, pause, options
 - [x] Island blockout with navigable geometry
-- [ ] First audio pass — `AudioManager` voices the player's own timing and nothing else yet. No
-      music, no ambience, no enemy or menu sound, and `assets/audio/` holds a bus layout and
-      nothing else
+- [x] First audio pass — footfalls on sand and in the surf, the wind-up, the roll, the gunshots, a
+      pickup, a wave-cleared sting, and the surf bed. The wind-up is **positional**, which is the
+      part that matters most: with the ring gone and its replacement clip not authored, the sound
+      is currently the whole telegraph rather than half of one. Still
+      synthesised, so `assets/audio/` still holds a bus layout and nothing else. **No music** — it
+      needs assets this project does not have, and it takes the ducking rule in #25 with it to #84
 
 **Exit:** the run plays start to finish on a gamepad **and** on keyboard and mouse, and the balance
 table in `docs/game-design.md` matches the shipped `.tres` values.
