@@ -22,8 +22,10 @@ extends Node
 ## on the spot kicks up sand.
 @export var still_speed: float = 0.4
 @export var puff_life: float = 0.55
-## How big a puff gets, in metres. Small: this is dust, not a smoke screen.
-@export var puff_size: float = 0.16
+## How big a puff gets, in metres. It began at 0.16 m, which was dust that read as nothing at all at
+## eighteen metres from a fixed camera — the scale the puff has to survive is the one the player
+## actually watches it from, not the one it looks right at from a metre away.
+@export var puff_size: float = 0.56
 @export var dust: Color = Color(0.93, 0.89, 0.8, 0.5)
 
 var _particles: GPUParticles3D = null
