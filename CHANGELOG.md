@@ -8,6 +8,13 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- Pause menu on `Esc` / Start: Resume · Options · Restart run · Quit to title, over a blurred and
+  dimmed world. Restart and Quit each confirm; nothing else in the game does. Back goes exactly one
+  level, and quitting to the title keeps the run so Continue has something to continue.
+- `ConfirmDialog`, the only thing in the game that asks twice — and the one consumer of the
+  hold-to-confirm accessibility setting.
+- `tools/verify_pause.tscn` — headless proof that opening really stops the tree, that back goes one
+  level and not two, and that cancelling a restart changes nothing.
 - Options screen: five tabs — gameplay, controls, video, audio, accessibility — reachable from the
   title and built from one table, so the rows it draws and the settings that exist cannot drift
   apart. Every setting applies the moment it changes and is written to `user://settings.json`.
