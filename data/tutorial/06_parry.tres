@@ -6,6 +6,7 @@
 script = ExtResource("1")
 id = &"parry"
 prompt_key = "TUTORIAL_PARRY"
+prompt_actions = PackedStringArray("parry")
 trigger = 3
 condition = 0
 enemies = 1

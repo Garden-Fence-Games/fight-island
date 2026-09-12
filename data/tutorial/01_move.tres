@@ -6,6 +6,7 @@
 script = ExtResource("1")
 id = &"move"
 prompt_key = "TUTORIAL_MOVE"
+prompt_actions = PackedStringArray("move_forward", "move_left", "move_back", "move_right")
 trigger = 0
 condition = 0
 travel = 3.0

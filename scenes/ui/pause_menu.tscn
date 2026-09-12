@@ -99,7 +99,8 @@ theme_override_constants/separation = 12
 [node name="Resume" parent="Root/Content/Column/Frame/Entries" instance=ExtResource("3")]
 layout_mode = 2
 label_key = "UI_RESUME"
-key_hint = "[A / ESC]"
+action = "ui_cancel"
+gamepad_action = "ui_accept"
 
 [node name="Options" parent="Root/Content/Column/Frame/Entries" instance=ExtResource("3")]
 layout_mode = 2

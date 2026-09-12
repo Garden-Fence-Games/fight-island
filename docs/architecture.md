@@ -23,7 +23,7 @@ res://
                   animation_component.gd, head_look_component.gd,
                   weapon_visual_component.gd
     actors/       player/, enemy/, merchant/ — each with its states/
-    systems/      wave_director.gd, spawn_director.gd, tutorial_director.gd, economy.gd,
+    systems/      wave_director.gd, spawn_director.gd, tutorial_director.gd, economy.gd, devices.gd,
                   save_manager.gd, settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
     camera/       camera_rig.gd
     ui/
@@ -125,7 +125,12 @@ See [ADR 0004](decisions/0004-three-autoloads.md).
 Rejected outright: `Settings`, `SceneManager` (a forty-line `main.gd` covers four scenes),
 `DebugManager` (a scene behind an action).
 
-**`Settings` and `InputBindings` are static classes too**, next to `SaveManager`. Nothing subscribes to a setting:
+**`EventBus` has exactly one piece of behaviour**, and it is worth knowing why. It is the only node
+that sees every event in every scene, so it is where the game notices which device the player just
+touched — but the answer is kept by `Devices`, not by the bus. The bus does the noticing; it still
+does not do the knowing, so *signals only, zero state* still holds.
+
+**`Settings`, `InputBindings` and `Devices` are static classes too**, next to `SaveManager`. Nothing subscribes to a setting:
 every reader asks for the value at the moment it needs it, which is why no signal is missing.
 The first read loads the file and applies everything, so a scene launched straight from the
 editor behaves exactly like one reached through boot.

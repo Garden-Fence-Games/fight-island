@@ -187,7 +187,7 @@ func _tick_prompt(delta: float) -> void:
 		return
 	_prompt_clock += delta
 	if _prompt_clock >= PROMPT_DELAY:
-		prompt.show_line(step.prompt_key)
+		prompt.show_line(step.prompt_key, step.prompt_actions)
 
 
 ## Wave 1 ends when there is nothing left to teach and nobody left standing — the same rule as every

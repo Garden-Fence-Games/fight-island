@@ -6,6 +6,7 @@
 script = ExtResource("1")
 id = &"attack"
 prompt_key = "TUTORIAL_ATTACK"
+prompt_actions = PackedStringArray("attack")
 trigger = 1
 condition = 0
 enemies = 1
