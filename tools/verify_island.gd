@@ -24,17 +24,25 @@ const CEILING: float = 2.8
 ## What cannot block a dodge, and so cannot form a trap. Grass and shoreline pebbles collide with
 ## nothing; palm fronds sit four metres up; and a palm trunk is thirty centimetres of wood you walk
 ## past — holding those four metres apart is what made them look planted rather than grown.
-const HARMLESS: PackedStringArray = ["Grass", "PalmFronds", "Pebbles", "PalmTrunks"]
+const HARMLESS: PackedStringArray = ["Grass", "Pebbles", "Palms"]
 ## Everything that grows, and so everything the wind must reach. What is left out matters as much:
 ## a swaying boulder is worse than a still palm.
-const FOLIAGE: PackedStringArray = ["Grass", "PalmTrunks", "PalmFronds"]
+const FOLIAGE: PackedStringArray = ["Grass", "Palms"]
 const STILL: PackedStringArray = ["Rocks", "Pebbles"]
 const FOLIAGE_SHADER: String = "res://assets/shaders/foliage.gdshader"
-## The two figures a palm is allowed to set for itself. Every other figure falls through to the
-## shader, which is what keeps a crown swinging with the trunk under it.
+## The two figures a palm's surfaces are allowed to set for themselves — their own colour, and how
+## far a leaf flexes. Every wind figure falls through to the shader, so no part of a palm can bend
+## differently from the rest of the same tree.
 const PALM_OWN: PackedStringArray = ["tint", "flutter"]
-## A millimetre. Anything looser and a crown could sit off the top of its trunk by a visible amount.
-const WELD_TOLERANCE: float = 0.001
+## What a palm should measure, in metres. A wrong figure for the model's shipped height is silent:
+## the island simply comes back with palms at three times the size of the fight.
+const PALM_SHORTEST: float = 3.0
+const PALM_TALLEST: float = 5.6
+const GENERATOR: String = "res://tools/build_island.gd"
+const WATER_SHADER: String = "res://assets/shaders/water.gdshader"
+## The still waterline. Written out rather than read off the generator: a check that agrees with
+## whatever the thing it checks happens to say is not a check.
+const WATERLINE: float = -1.1
 
 var _failures: PackedStringArray = []
 
@@ -51,13 +59,16 @@ func _ready() -> void:
 	_check_boundary(island)
 	_check_only_what_grows_moves(island)
 	_check_the_palms_share_one_wind(island)
-	_check_every_crown_sits_on_its_own_trunk(island)
+	_check_a_palm_is_still_two_colours(island)
+	_check_the_palms_are_the_size_of_palms(island)
+	_check_no_water_stands_inland(island)
+	_check_the_sand_clears_the_swell()
 
 	if _failures.is_empty():
 		print(
 			(
 				"island OK — clear core, no traps, flat core, nothing walls the camera, "
-				+ "boundary in place, the wind reaches what grows"
+				+ "boundary in place, the wind reaches what grows, no water stands inland"
 			)
 		)
 		get_tree().quit(0)
@@ -187,60 +198,51 @@ func _stride(multi: MultiMesh) -> int:
 	return 16 if multi.use_custom_data else 12
 
 
-func _instance_at(multi: MultiMesh, index: int) -> Transform3D:
-	var buffer := multi.buffer
-	var base := index * _stride(multi)
-	return Transform3D(
-		Vector3(buffer[base + 0], buffer[base + 4], buffer[base + 8]),
-		Vector3(buffer[base + 1], buffer[base + 5], buffer[base + 9]),
-		Vector3(buffer[base + 2], buffer[base + 6], buffer[base + 10]),
-		Vector3(buffer[base + 3], buffer[base + 7], buffer[base + 11])
-	)
-
-
-## Where the plant behind an instance meets the ground, reconstructed from its anchor. An instance
-## with no anchor stands on its own origin.
-func _ground_under(multi: MultiMesh, index: int) -> Vector3:
-	var at := _instance_at(multi, index).origin
-	if not multi.use_custom_data:
-		return at
-	var buffer := multi.buffer
-	var base := index * 16
-	return Vector3(at.x + buffer[base + 13], at.y - buffer[base + 12], at.z + buffer[base + 14])
-
-
-func _wind_on(island: Node, name: String) -> ShaderMaterial:
+## Every wind material on one population — one per surface of its model, because a MultiMesh takes
+## one mesh and that mesh may be a trunk and a crown in the same breath.
+func _wind_on(island: Node, name: String) -> Array[ShaderMaterial]:
+	var found: Array[ShaderMaterial] = []
 	var instance := island.get_node_or_null("Props/" + name) as MultiMeshInstance3D
-	if instance == null:
-		return null
-	return instance.material_override as ShaderMaterial
+	if instance == null or instance.multimesh == null or instance.multimesh.mesh == null:
+		return found
+	if instance.material_override != null:
+		# One material for the whole mesh would flatten a modelled palm to a single colour, which is
+		# the thing buying a modelled palm was meant to stop.
+		_failures.append("%s is overridden with one material for every surface" % name)
+		return found
+	var mesh := instance.multimesh.mesh
+	for surface: int in mesh.get_surface_count():
+		var material := mesh.surface_get_material(surface) as ShaderMaterial
+		if material != null:
+			found.append(material)
+	return found
 
 
 func _check_only_what_grows_moves(island: Node) -> void:
 	for name: String in FOLIAGE:
-		var material := _wind_on(island, name)
-		if material == null or material.shader == null:
+		var materials := _wind_on(island, name)
+		if materials.is_empty():
 			_failures.append("%s does not stand in the wind" % name)
 			continue
-		if material.shader.resource_path != FOLIAGE_SHADER:
-			_failures.append("%s sways on some other shader than the island's" % name)
-			continue
-		# Below one, the base of a plant travels further than its top and it tears out of the sand.
-		var power: Variant = material.get_shader_parameter("bend_power")
-		if power != null and float(power) < 1.0:
-			_failures.append("%s bends from its base, not its top" % name)
+		for material: ShaderMaterial in materials:
+			if material.shader == null or material.shader.resource_path != FOLIAGE_SHADER:
+				_failures.append("%s sways on some other shader than the island's" % name)
+				continue
+			# Below one, the base of a plant travels further than its top and it tears out of the sand.
+			var power: Variant = material.get_shader_parameter("bend_power")
+			if power != null and float(power) < 1.0:
+				_failures.append("%s bends from its base, not its top" % name)
 	for name: String in STILL:
-		if _wind_on(island, name) != null:
+		if not _wind_on(island, name).is_empty():
 			_failures.append("%s moves in the wind, and stone does not" % name)
 
 
-## The trunk and the crown of a palm must be told the same wind, or the crown swings further than
-## the trunk it is nailed to and floats off the top of it. Neither is allowed to set a wind figure
-## at all: both take the shader's, so there is nothing for a tuning pass to change on only one.
+## A palm arrives as one mesh of two parts, and every part of it must be told the same wind. Nothing
+## but its colour and its leaf flex may be set per surface — there is then nothing a tuning pass can
+## change on the crown without changing it on the wood underneath.
 func _check_the_palms_share_one_wind(island: Node) -> void:
-	for name: String in ["PalmTrunks", "PalmFronds"]:
-		var material := _wind_on(island, name)
-		if material == null or material.shader == null:
+	for material: ShaderMaterial in _wind_on(island, "Palms"):
+		if material.shader == null:
 			continue
 		for uniform: Dictionary in material.shader.get_shader_uniform_list():
 			var parameter: String = uniform["name"]
@@ -248,46 +250,147 @@ func _check_the_palms_share_one_wind(island: Node) -> void:
 				continue
 			if material.get_shader_parameter(parameter) != null:
 				_failures.append(
-					(
-						"%s sets %s for itself, so the palms no longer share one wind"
-						% [name, parameter]
-					)
+					"a palm surface sets %s for itself, so one palm holds two winds" % parameter
 				)
 
 
-## Every frond names the palm it belongs to, and that palm's trunk must end exactly where the frond
-## begins. Both then read the same height above the ground and bend by the same amount — which is
-## the whole reason a crown stays on its trunk in the wind rather than drifting off it.
-func _check_every_crown_sits_on_its_own_trunk(island: Node) -> void:
-	var trunks := island.get_node_or_null("Props/PalmTrunks") as MultiMeshInstance3D
-	var fronds := island.get_node_or_null("Props/PalmFronds") as MultiMeshInstance3D
-	if trunks == null or fronds == null:
+## Trunk and leaves keep their own colours. A model bought for its two-tone palm that renders in one
+## flat colour has bought nothing, and nothing else here would notice.
+func _check_a_palm_is_still_two_colours(island: Node) -> void:
+	var materials := _wind_on(island, "Palms")
+	if materials.size() < 2:
+		_failures.append(
+			"a palm should render as trunk and leaves, has %d surfaces" % materials.size()
+		)
+		return
+	var colours := {}
+	for material: ShaderMaterial in materials:
+		colours[str(material.get_shader_parameter("tint"))] = true
+	if colours.size() < 2:
+		_failures.append("a palm's trunk and leaves came out the same colour")
+
+
+## The models ship at about a metre and a half and are scaled to metres here. Getting that shipped
+## figure wrong is silent — the island simply comes back with palms three times the size of the
+## fight — so the size they end up is measured rather than trusted.
+func _check_the_palms_are_the_size_of_palms(island: Node) -> void:
+	var instance := island.get_node_or_null("Props/Palms") as MultiMeshInstance3D
+	if instance == null or instance.multimesh == null:
 		_failures.append("the island has no palms")
 		return
-	if not fronds.multimesh.use_custom_data:
-		_failures.append("the fronds do not say which trunk they belong to")
-		return
-
-	var tips := {}
-	for index: int in trunks.multimesh.instance_count:
-		var trunk := _instance_at(trunks.multimesh, index)
-		# The trunk mesh runs from its origin to one unit up, scaled by the instance.
-		tips[_key(trunk.origin)] = trunk * Vector3(0.0, 1.0, 0.0)
-
-	for index: int in fronds.multimesh.instance_count:
-		var ground := _ground_under(fronds.multimesh, index)
-		var key := _key(ground)
-		if not tips.has(key):
-			_failures.append("a frond at %s names a palm that is not planted anywhere" % ground)
-			return
-		var origin := _instance_at(fronds.multimesh, index).origin
-		var apart: float = origin.distance_to(tips[key])
-		if apart > WELD_TOLERANCE:
-			_failures.append(
-				"a frond hangs %.3f m off the tip of its own trunk, at %s" % [apart, ground]
+	var model := instance.multimesh.mesh.get_aabb().size.y
+	var shortest := INF
+	var tallest := 0.0
+	var buffer := instance.multimesh.buffer
+	var stride := _stride(instance.multimesh)
+	for index: int in instance.multimesh.instance_count:
+		var up := Vector3(
+			buffer[index * stride + 1], buffer[index * stride + 5], buffer[index * stride + 9]
+		)
+		var height := up.length() * model
+		shortest = minf(shortest, height)
+		tallest = maxf(tallest, height)
+	if shortest < PALM_SHORTEST or tallest > PALM_TALLEST:
+		_failures.append(
+			(
+				"palms come out %.1f m to %.1f m, they should be %.1f to %.1f"
+				% [shortest, tallest, PALM_SHORTEST, PALM_TALLEST]
 			)
-			return
+		)
 
 
-func _key(at: Vector3) -> String:
-	return "%.3f %.3f %.3f" % [at.x, at.y, at.z]
+## No hollow anywhere on the island holds water the open sea cannot reach. Read off the terrain's
+## own collision heights, so it is the island as shipped that is checked rather than a field
+## recomputed here — and flooded independently of the generator, because a check that borrows the
+## code it is checking only proves the code agrees with itself.
+##
+## A pool joined to the sea by a channel is a lagoon and is allowed. The whole question is whether
+## the water joins up, which is why this floods rather than measuring a distance from the coast.
+func _check_no_water_stands_inland(island: Node) -> void:
+	var collision := island.get_node_or_null("TerrainBody/Collision") as CollisionShape3D
+	var terrain := collision.shape as HeightMapShape3D if collision != null else null
+	if terrain == null:
+		_failures.append("the island has no terrain to read heights off")
+		return
+	var side := terrain.map_width
+	var heights := terrain.map_data
+	var crest := WATERLINE + _swell_height()
+
+	var sea := PackedByteArray()
+	sea.resize(heights.size())
+	var open: Array[int] = []
+	for index: int in heights.size():
+		var row := index / side
+		var column := index % side
+		var edge := row == 0 or column == 0 or row == side - 1 or column == side - 1
+		if edge and heights[index] < crest:
+			sea[index] = 1
+			open.append(index)
+	var head := 0
+	while head < open.size():
+		var index: int = open[head]
+		head += 1
+		for neighbour: int in _grid_neighbours(index, side):
+			if sea[neighbour] == 1 or heights[neighbour] >= crest:
+				continue
+			sea[neighbour] = 1
+			open.append(neighbour)
+
+	var stranded := 0
+	var worst := Vector2.ZERO
+	for index: int in heights.size():
+		if sea[index] == 1 or heights[index] >= crest:
+			continue
+		stranded += 1
+		var half := float(side - 1) * 0.5
+		worst = Vector2(float(index % side) - half, float(index / side) - half)
+	if stranded > 0:
+		_failures.append(
+			"%d cells hold water the sea cannot reach, one of them at %s" % [stranded, worst]
+		)
+
+
+## The generator lifts drained ground to clear the swell, and the swell's height lives in the water
+## shader. Two files, one number: if the shader's waves grow past what the sand was lifted by, the
+## sea washes back over ground that was raised out of it and the puddles come back.
+func _check_the_sand_clears_the_swell() -> void:
+	var generator := load(GENERATOR) as GDScript
+	if generator == null:
+		_failures.append("there is no island generator to check against the water")
+		return
+	var constants := generator.get_script_constant_map()
+	var lifted: float = constants.get("POND_CLEARANCE", 0.0)
+	var assumed: float = constants.get("WAVE_CREST", 0.0)
+	var actual := _swell_height()
+	if assumed < actual:
+		_failures.append(
+			"the generator drains against a %.2f m swell, the shader makes %.2f" % [assumed, actual]
+		)
+	if lifted <= actual:
+		_failures.append("drained sand is lifted %.2f m, under a %.2f m swell" % [lifted, actual])
+
+
+## The shader's own default, read out of its source. Its compiled defaults are not reachable from a
+## headless run, and the source is the thing that ships anyway.
+func _swell_height() -> float:
+	var text := FileAccess.get_file_as_string(WATER_SHADER)
+	var found := RegEx.create_from_string("wave_height[^=]*=\\s*([0-9.]+)").search(text)
+	if found == null:
+		_failures.append("the water shader no longer declares a wave height")
+		return 0.0
+	return found.get_string(1).to_float()
+
+
+func _grid_neighbours(index: int, side: int) -> Array[int]:
+	var row := index / side
+	var column := index % side
+	var found: Array[int] = []
+	if row > 0:
+		found.append(index - side)
+	if row < side - 1:
+		found.append(index + side)
+	if column > 0:
+		found.append(index - 1)
+	if column < side - 1:
+		found.append(index + 1)
+	return found

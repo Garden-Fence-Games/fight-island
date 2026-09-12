@@ -86,12 +86,18 @@ not scale with upgrades.
 | Hit-stun | 0.25 s |
 | Stamina | 100 |
 | Stamina regen | 20/s, after 0.8 s idle — 1.2 s after a whiffed heavy |
-| Move speed | 4.2 m/s |
-| Sprint speed | 6.6 m/s |
+| Move speed | 3.2 m/s |
+| Sprint speed | 5.0 m/s |
 | Turn rate | 720°/s |
 | Movement while attacking | none — attacks are committed |
 
 Stamina gates dodge, sprint, parry and melee attacks. It never gates the gun trigger.
+
+**Walking is slower than a farmhand.** 3.2 m/s against his 3.4, so the only thing that outruns a
+farmer is a sprint, and a sprint costs stamina — retreat is a decision with a price rather than the
+state you sit in. The dodge covers its 3.2 m faster than a sprint could, and does not become the
+way to get around: 22 stamina for 3.2 m against 6.6 for the 2.75 m a sprint covers in the same time
+is three times the price per metre.
 
 ## Weapons
 
@@ -160,11 +166,36 @@ triangle that stops any single answer from working.
 | Recovery | 0.60 s | 0.95 s | 0.80 s |
 | Reach | 1.6 m, 60° | 2.8 m, **160°** | 14 m |
 | Poise | 15 | 30 | 10 |
+| Notices the player at | 9 m | 9 m | 12 m |
+| Rouses others within | 7 m | 7 m | 7 m |
 | Money on kill | 2 | 5 | 4 |
 | Enters at wave | 1 | 3 | 5 |
 
+**A farmer minds his own business until he notices you.** He stands where he appeared; he does not
+set off from the horizon. This is what lets a wave build instead of arriving as one flat press — the
+player sees a farmer before the farmer sees them, and distance carries information again.
+
+Three rules make that read as calm rather than as broken:
+
+- **Noticing spreads.** A roused farmer rouses everyone within 7 m, so a group turns together. One
+  waking alone while the two beside him keep staring at the sea looks like a bug.
+- **Being hit always wakes him**, whatever the distance. Without it the thrower could plink at
+  someone from outside their own notice radius forever.
+- **Noticing is one way.** He does not lose interest because the player stepped back. A leash would
+  make the edge of every crowd breathe in and out.
+
+The radius has to stay well under the twelve metres the spawn search keeps bodies away from the
+player, or farmers arrive already awake and none of this exists.
+
 **Farmhand.** Bare hands, quick, fragile, and always the majority of a wave. He is what teaches the
 parry, and what makes a crowd feel like a crowd.
+
+**The arc is enforced, not approximated.** A hitbox is a box around the attacker wide enough to hold
+everything the swing could reach, and a contact is then confirmed against the weapon's own `reach`
+and `arc_degrees`. The box used to *be* the shape — a rectangle from the nose out to the reach — and
+it was wrong at both ends: its corners reached half again the weapon's length, and because it ran
+from the attacker's nose backwards it clipped the arc short of its own angle, so a 160° sweep was
+never 160°. Whichever way that box was sized, the number here was not the number the player felt.
 
 **Reaper.** A scythe on a wide horizontal sweep. The 160° arc is the point: **sidestepping does not
 work on him** — you dodge backward, dodge through, or parry. He is slow enough to be read and

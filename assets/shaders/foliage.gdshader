@@ -9,7 +9,7 @@ render_mode world_vertex_coords, diffuse_burley, specular_schlick_ggx;
 //
 // Phase comes from the distance along the wind, so the gust travels across the island and no two
 // plants are in step unless they are neighbours. Nothing is hashed: a hash is discontinuous, and
-// the palm fronds have to agree with the trunk they sit on to the centimetre.
+// two plants a metre apart must not jump to opposite ends of the cycle.
 
 uniform vec3 tint : source_color = vec3(0.36, 0.52, 0.27);
 uniform float surface_roughness : hint_range(0.0, 1.0) = 0.9;
@@ -35,14 +35,12 @@ void vertex() {
 	vec2 heading = normalize(wind_heading);
 	vec3 root = MODEL_MATRIX[3].xyz;
 
-	// INSTANCE_CUSTOM carries where this instance's plant meets the ground, relative to the
-	// instance itself: .r how far above the ground the instance sits, .gb the ground's offset in
-	// the plane. Both are zero for anything planted directly — which is what an instance with no
-	// custom data reads as, so only the fronds have to carry any.
-	vec2 anchor = root.xz + INSTANCE_CUSTOM.gb;
-	float above_ground = max(INSTANCE_CUSTOM.r + (VERTEX.y - root.y), 0.0);
+	// Every plant is one instance standing on its own origin, so height above the ground is simply
+	// height above that origin. A palm arrives as one piece — trunk and crown in the same mesh — so
+	// the crown reads its real height and bends with the wood it sits on, for free.
+	float above_ground = max(VERTEX.y - root.y, 0.0);
 
-	float along = dot(anchor, heading);
+	float along = dot(root.xz, heading);
 	float gust = 1.0 - gust_depth * (0.5 + 0.5 * sin(along / gust_length * TAU - TIME * 0.19));
 	float phase = along / wave_length * TAU - TIME * wind_speed;
 	float wave = sin(phase) * 0.72 + sin(phase * 2.3 + 1.7) * 0.28;

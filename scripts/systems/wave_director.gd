@@ -37,6 +37,9 @@ var _health_seen: float = -1.0
 
 func _ready() -> void:
 	_rng.seed = GameState.run_seed + 1
+	# A run the player quit to the title comes back where it was: the wave the state remembers is
+	# the one already cleared, so the next one is the one that was interrupted.
+	wave = GameState.wave
 	EventBus.enemy_died.connect(_on_enemy_died)
 	EventBus.player_damaged.connect(_on_player_damaged)
 	if autostart:
@@ -117,7 +120,7 @@ func _send_one() -> void:
 	_first_of_wave = false
 
 
-func _on_enemy_died(_enemy: Node3D, _money: int) -> void:
+func _on_enemy_died(_enemy: Node3D, _archetype: StringName, _money: int) -> void:
 	if not _running or _left_to_send > 0:
 		return
 	# The body that just died is still in the group for this frame, so the count is read after it.

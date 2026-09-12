@@ -22,6 +22,10 @@ const REPATH_INTERVAL: float = 0.25
 ## Set by the pool before the body enters the tree. A hand-placed enemy wakes up fighting; a pooled
 ## one waits to be leased.
 var pooled: bool = false
+## Whether this farmer has noticed the fight. Until he has, he stands where he was put. It is one
+## way for the life of the body and reset on revive: a farmer who loses interest because the player
+## stepped back would make the edge of every crowd breathe in and out.
+var roused: bool = false
 var target: Node3D = null
 var poise_left: float = 0.0
 ## What this wave does to him. Held per body because EnemyData is one shared resource on disk, and
@@ -75,6 +79,7 @@ func revive(
 	rotation.y = 0.0
 	target = get_tree().get_first_node_in_group(&"player") as Node3D
 	_poise_window = 0.0
+	roused = false
 	if data != null:
 		poise_left = data.poise
 		if health != null:
@@ -139,6 +144,32 @@ func windup() -> float:
 	if data == null or data.attack == null:
 		return 0.0
 	return data.attack.windup * windup_scale
+
+
+## Noticed the fight, and so has everyone standing near him.
+##
+## The recursion terminates on the guard rather than on a depth limit: a farmer who is already
+## roused rouses nobody, so each body is visited once however the crowd is arranged.
+func rouse() -> void:
+	if roused:
+		return
+	roused = true
+	if data == null or data.rouse_radius <= 0.0:
+		return
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		var other := node as Enemy
+		if other == null or other == self or other.roused or not other.is_alive():
+			continue
+		if global_position.distance_to(other.global_position) <= data.rouse_radius:
+			other.rouse()
+
+
+## Whether the player has come close enough to be noticed. Being hit does not go through here —
+## a farmer struck from across the field has noticed, whatever his eyes say.
+func notices_target() -> bool:
+	if data == null or target == null:
+		return false
+	return distance_to_target() <= data.notice_radius
 
 
 func distance_to_target() -> float:
@@ -250,6 +281,7 @@ func _apply_tint() -> void:
 func _on_hurt(info: HitInfo) -> void:
 	if not is_alive():
 		return
+	rouse()
 	_poise_window = 2.0
 	poise_left -= info.poise_damage
 	if poise_left <= 0.0 and data != null:
@@ -259,6 +291,8 @@ func _on_hurt(info: HitInfo) -> void:
 
 func _on_died() -> void:
 	release_token()
-	EventBus.enemy_died.emit(self, data.money if data != null else 0)
+	EventBus.enemy_died.emit(
+		self, data.id if data != null else &"", data.money if data != null else 0
+	)
 	if machine != null:
 		machine.current.transition_to(&"Dead")

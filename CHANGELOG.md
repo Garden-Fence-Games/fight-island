@@ -8,6 +8,51 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- Pause menu on `Esc` / Start: Resume · Options · Restart run · Quit to title, over a blurred and
+  dimmed world. Restart and Quit each confirm; nothing else in the game does. Back goes exactly one
+  level, and quitting to the title keeps the run so Continue has something to continue.
+- `ConfirmDialog`, the only thing in the game that asks twice — and the one consumer of the
+  hold-to-confirm accessibility setting.
+- `tools/verify_pause.tscn` — headless proof that opening really stops the tree, that back goes one
+  level and not two, and that cancelling a restart changes nothing.
+- Options screen: five tabs — gameplay, controls, video, audio, accessibility — reachable from the
+  title and built from one table, so the rows it draws and the settings that exist cannot drift
+  apart. Every setting applies the moment it changes and is written to `user://settings.json`.
+- Full input rebinding, both devices, from one row each: the device the player presses with decides
+  which column changes. Overrides only, stored in `user://bindings.json`, with a reset per device.
+- `OptionRow` and `KeybindRow`, the two rows every settings screen will reuse — a ten-block slider,
+  a pill toggle and a `< value >` picker, all on the same focus chrome.
+- Damage numbers, hitstop, reduce flashing and the sprint mode now read their setting live. Aim
+  assist, tutorial prompts, screen shake and the colourblind telegraphs are stored and waiting for
+  the features that will read them.
+- `menu_prev_tab` and `menu_next_tab` input actions.
+- `tools/verify_options.tscn` — headless proof that every setting has a row, that a row writes
+  through to the file, and that a rebind moves the InputMap and comes back on a reset.
+- In-run HUD: health and stamina bottom-left, ammo bottom-right with a ranged weapon in hand,
+  wave and money top-right. Every element listens on the `EventBus` and holds no reference to the
+  player. Damage numbers exist and are off by default.
+- Run state: money, the wave index and a `RunStats` tally — perfect hits, perfect parries, kills by
+  archetype, money earned and spent, run time — collected while the run happens.
+- `Settings` and `SaveManager`, both static classes rather than autoloads: every player-facing
+  setting, applied the moment it changes and written to `user://settings.json` as JSON.
+- Four audio buses — Master, Music, SFX, Ambience — for the audio settings to act on.
+- `tools/verify_hud.tscn` — headless proof that the HUD answers every signal it claims to, that
+  ammo follows the weapon, and that damage numbers stay off until asked for.
+- Title screen: Play · Options · Quit, pad-navigable from the first frame, with Play becoming
+  Continue and a New run entry appearing once a run is under way. Built to the Figma design — the
+  tokens, the 96 px margins and the 420 × 72 menu rows. A grey wash stands in for the island until
+  the arena is composed behind it.
+- A Garden Fence intro sting before the title, skippable with any button.
+- `MenuEntry`, the menu row every screen will reuse: caret, label, and the glyph that fires it.
+- A shared UI theme under `assets/themes/` carrying the design tokens, the `UI_` string table in
+  `assets/locale/ui.csv`, and Badeen Display and Inter under `assets/fonts/`.
+
+### Fixed
+
+- A cold checkout failed to import: `project.godot` lists a translation file the CSV importer has
+  not written yet. CI now imports twice and gates on the second pass, which also proves a cold
+  import converges rather than merely surviving.
+- `menu_options` and `menu_new_run` input actions, so the glyphs the menu prints are real.
 - Playable prototype: a grey-box arena, a player who moves, sprints, dodges and parries, the
   three-attack fist chain with its chain and perfect windows, and farmhands that close the
   distance and swing.
@@ -48,6 +93,8 @@ All notable changes to this project are documented here, following
 
 ### Changed
 
+- `run/main_scene` is `boot.tscn` again, and boot now opens the intro rather than the arena.
+- The game ships in English only. The `tr()` layer stays; a second locale does not.
 - The camera is **fixed** and only follows the player. Framing it from one direction for the whole
   game means every silhouette reads the same way, the island is composed for one viewpoint, and a
   telegraph can never hide behind geometry.

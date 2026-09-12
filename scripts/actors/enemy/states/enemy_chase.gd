@@ -14,9 +14,6 @@ func physics_update(delta: float) -> void:
 	var direction := enemy.path_direction(delta)
 	enemy.apply_motion(direction, enemy.move_speed(), delta)
 	enemy.face(direction, delta)
-	if enemy.distance_to_target() > enemy.data.aggro_radius:
-		transition_to(&"Idle")
-		return
 	if enemy.distance_to_target() > enemy.data.attack_range:
 		return
 	transition_to(&"WindUp" if enemy.claim_token() else &"Strafe")

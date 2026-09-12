@@ -10,7 +10,8 @@ enemy both have health because both carry a `HealthComponent`, not because they 
 
 ```
 res://
-  assets/{models,textures,materials,audio,fonts}/   imported, engine-ready
+  assets/{models,textures,materials,audio,fonts,   imported, engine-ready
+          logo,video,locale,themes}/
   art-source/                                       .blend and texture sources, not imported
   data/{weapons,attacks,upgrades,waves}/            .tres only — the balance surface
   scenes/{boot,main,world,actors,weapons,ui,fx}/
@@ -21,7 +22,8 @@ res://
                   hit_info.gd, state_machine.gd, state.gd, aim_component.gd,
                   animation_component.gd, head_look_component.gd
     actors/       player/, enemy/, merchant/ — each with its states/
-    systems/      wave_director.gd, spawn_director.gd, economy.gd, save_manager.gd
+    systems/      wave_director.gd, spawn_director.gd, economy.gd, save_manager.gd,
+                  settings.gd, input_bindings.gd, run_stats.gd, hit_feedback.gd
     camera/       camera_rig.gd
     ui/
   tests/
@@ -111,17 +113,40 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
 node in the tree, without `_ready` ordering, and without another singleton to mock in tests.
 See [ADR 0004](decisions/0004-three-autoloads.md).
 
-Rejected outright: `Settings` (folded into `SaveManager` and `GameState`), `SceneManager` (a
-forty-line `main.gd` covers four scenes), `DebugManager` (a scene behind an action).
+Rejected outright: `Settings`, `SceneManager` (a forty-line `main.gd` covers four scenes),
+`DebugManager` (a scene behind an action).
+
+**`Settings` and `InputBindings` are static classes too**, next to `SaveManager`. Nothing subscribes to a setting:
+every reader asks for the value at the moment it needs it, which is why no signal is missing.
+The first read loads the file and applies everything, so a scene launched straight from the
+editor behaves exactly like one reached through boot.
+
+## The wallet
+
+`Economy` owns the cost curve and nothing else. The balance lives on `GameState`, and a wave's
+reward lives on `WaveConfig` with the rest of that wave's figures — three homes, none of them
+duplicating another. The kill bonus is not there at all: it is `EnemyData.money`, per archetype,
+and an elite will carry a larger one on its own body the same way it carries scaled health.
+
+**The wallet listens.** The director pays out on the bus when a wave clears and each body pays out
+as it dies; neither knows a wallet exists. Money only moves through `earn` and `spend`, so nothing
+can change it without `money_changed` going out, and `spend` answers whether the purchase went
+through — a merchant that has to check the balance itself is a merchant that can forget to.
+
+**The curve is the design.** Rewards rise by a flat twelve a wave while costs rise by three fifths
+a level, so the gap widens on purpose: fifteen waves earn 2 010 and maxing one track costs 795. The
+check asserts that ratio as a *band* — two to three tracks a run — rather than as a number, so a
+tuning pass that keeps the shape passes and one that flattens the choice does not.
 
 ## Signals
 
 Named as a past-tense fact, never as a command and never `on_*`:
 
 `wave_started(index)` · `wave_cleared(index, reward)` · `enemy_spawned(enemy)` ·
-`enemy_died(enemy, money)` · `player_damaged(current, max)` · `player_died()` ·
+`enemy_died(enemy, archetype, money)` · `player_damaged(current, max)` · `player_died()` ·
 `stamina_changed(current, max)` · `weapon_equipped(data)` · `ammo_changed(mag, reserve)` ·
-`attack_landed(info)` · `perfect_timing()` · `parry_perfect()` · `money_changed(amount)` ·
+`attack_landed(target, damage, perfect)` · `perfect_timing()` · `parry_perfect()` ·
+`money_changed(amount)` ·
 `upgrade_purchased(track_id, level)` · `run_started(seed)` · `run_ended(victory, wave)`
 
 **The rule:** a component talking to its owner uses a direct signal on the component. The
@@ -158,6 +183,30 @@ not instant.
 included, held per body because `EnemyData` is one shared resource on disk and scaling it in place
 would raise every farmer in the game and then save the result.
 
+## Noticing
+
+A farmer stands where he appeared until the fight reaches him. It is four lines of state and one
+field, and the only interesting parts are the edges.
+
+**The radius has to be smaller than the spawn distance or the feature does not exist.** The spawn
+search keeps bodies 12–26 m from the player; the old aggro radius was 18 m, so more than half of
+every wave arrived already charging. Nothing would have failed — there would simply have been no
+behaviour. `verify_combat` asserts the inequality directly, against a written-out 12 rather than
+against `SpawnDirector`'s own constant.
+
+**Noticing is one way.** `Chase` used to fall back to `Idle` past the radius; it no longer does. A
+leash makes the edge of a crowd breathe in and out as the player drifts back and forth, and a farmer
+who forgets he was swung at is worse than one who never noticed.
+
+**Rousing spreads, and terminates on its own guard.** `rouse()` returns immediately if the body is
+already roused, so each one is visited once however the crowd is arranged — no depth limit, no
+visited set. Being hit routes through the same call, which is what stops a thrower plinking at
+someone from outside their own notice radius forever.
+
+None of this needed a token change: tokens are claimed on entering `WindUp`, and an idle body never
+gets there. Nor did the wave director: a wave ends when the last body *dies*, not when the last one
+is fighting, so a field of men who have not noticed anything still holds the wave open.
+
 ## Camera rig
 
 `CameraRig (Node3D, yaw) → PitchPivot (Node3D) → SpringArm3D → Camera3D`.
@@ -179,6 +228,27 @@ The spring arm's collision mask is **zero**, on purpose. Letting it push the cam
 sounds harmless and is not: the moment the island had trees, the arm collapsed against whatever
 stood behind the player and sprang back when it cleared, which reads as the camera lurching. A
 fixed camera has to actually be fixed.
+
+## Occlusion
+
+The camera never moves, so what stands in front of the player is faded rather than dodged.
+`OcclusionFader` drives it, and three decisions in it are worth keeping.
+
+**Only the six authored boulders.** Palms are not faded — the body reads clearly through a crown of
+fronds, and thinning several hundred trees in and out as someone walks looks stranger than the trees
+did. That is a decision rather than an omission, so `verify_camera` fails if the palms are ever put
+back in the occluder group.
+
+**Plain transparency, not a dissolve.** Six objects in the transparent queue cost nothing. The
+first version dithered pixels away, which is what a `MultiMesh` of several hundred palms would have
+required — and it looked like a dissolve effect rather than like stone. Dropping the palms dropped
+the need for it.
+
+**The detector is geometry, not physics.** A ray on the `camera_occluder` layer is the obvious
+implementation and the wrong one: a boulder's collider is a box seven tenths its size sunk into the
+ground, and what hides the player is the silhouette. Each occluder is a sphere around what actually
+blocks the view, tested against the segment from the eye to the player's chest, with one distance
+check first so nothing beyond the camera is considered at all.
 
 ## Save format
 
@@ -218,28 +288,32 @@ Both are shaders, and both are shaders for the same reason: the thing that has t
 thousands of times from one mesh, so nothing per-instance can drive it.
 
 **The wind** (`assets/shaders/foliage.gdshader`) runs in the vertex stage. Every plant on the
-island is one instance of a `MultiMeshInstance3D` — 380 palms, 2 280 fronds, 24 000 grass tufts
-— and instances cannot play separate animations. Phase comes from distance along the wind, so a
-gust travels across the island and neighbours are naturally out of step. **Nothing is hashed**: a
-hash is discontinuous, and a palm's crown has to agree with its own trunk to the centimetre.
+island is one instance of a `MultiMeshInstance3D` — 380 palms, 24 000 grass tufts — and instances
+cannot play separate animations. This did not change when the plants stopped being primitives and
+became modelled: a pack of rigged foliage would buy nothing, because the rig could never reach the
+instances.
 
-The crown is the hard part. A frond is a separate instance whose origin sits five metres up, so
-it has no idea how high off the ground it is — and if it bends by a different amount from the
-trunk tip it is welded to, it floats off the top of the palm. Three things hold it on:
+Phase comes from distance along the wind, so a gust travels across the island and neighbours are
+naturally out of step. **Nothing is hashed**: a hash is discontinuous, and two plants a metre apart
+must not jump to opposite ends of the cycle.
 
-- Each frond carries, in its **`MultiMesh` custom data**, where its own palm meets the ground. The
-  shader then reads one height-above-ground for the trunk tip and the crown alike, and both bend by
-  the same amount from the same formula. An instance with no custom data reads as zero, which is
-  exactly right for anything planted at its own origin — so only the fronds carry any.
-- **Neither palm material sets a single wind figure.** Both take the shader's defaults, so there is
-  nothing a tuning pass can change on only one of them. `verify_island` fails if either starts to.
-- A frond's own **flutter is measured from its own origin outward**, so it is zero where the frond
-  meets the trunk and full at the tip — a leaf flexing along its length, not a crown sliding.
+Bend is measured from the instance's own origin, and every model in the pack stands on its origin,
+so height above the ground is simply height above that origin. **A palm arrives as one mesh of two
+parts** — trunk and crown together — so the crown reads its real height and bends with the wood it
+sits on for nothing. An earlier version built a palm from a trunk mesh and six separate frond
+instances, and holding those together took an anchor per frond in the `MultiMesh` custom data,
+because a frond five metres up has no idea how high off the ground it is. The modelled palm deleted
+the problem and the machinery with it.
 
-Writing that check found a defect that predated it: the crowns had never been on the trunk tips at
-all. `Basis.scaled()` applies its scale *after* the rotation, so leaning the bare height and leaning
-the placed trunk are not the same lean — every palm on the island wore its crown 0.38 m downwind of
-the wood.
+What survived is the rule that had kept them together: **no surface of a palm may set a wind figure
+for itself.** All of them take the shader's defaults, so there is nothing a tuning pass can change
+on the crown without changing it on the trunk. `verify_island` fails if any surface starts to. And
+flutter is still measured from the instance's own origin outward, so it is nothing at the trunk and
+full at the leaf tips — a leaf flexing along its length, not a crown sliding sideways.
+
+Materials are set **per surface**, never through `material_override`, which takes one material for
+a whole mesh. A palm rendered in one flat colour is exactly what buying a modelled palm was meant
+to stop, and nothing else in the build would have noticed.
 
 **The water** (`assets/shaders/water.gdshader`) is where the shoreline comes from, and none of it is
 authored: the shallow tint, the foam band and the depth at which the sea floor disappears all come
@@ -252,9 +326,24 @@ vertex every nine metres, which facets the whole sea and loses every ripple betw
 The swell moves vertices; the ripples never reach the vertex stage, where they would be sampled at
 random and read as noise.
 
-The wind costs **0.05 ms of a 4.96 ms frame** — measured against the same geometry on a plain
-material, because headless renders nothing and a vertex program's cost cannot be guessed from a
-polygon count.
+**The models carry shapes, not colours.** The island's palette lives in `NATURE_PALETTE` in the
+generator, keyed by the material name each model gives its own parts. The pack's colours are not
+used — its leaves ship as turquoise and its stone as a pale blue-white — and keying by name means a
+pack that renames a part says so at build time instead of rendering in whatever a missing entry
+would default to.
+
+**Water the sea cannot reach is not water.** The coastline is a noise field rather than a distance
+field, so it dips below the waterline here and there well inland, and the sea is one flat sheet
+across the whole world — it fills every one of those dips. `tools/island_water.gd` floods the height
+grid inward from its border and lifts whatever the flood cannot reach, so a pool joined to the open
+sea by a channel stays a lagoon and a pool with no way out is drained. The threshold is the whole
+thing: measured at the crest of the swell there are four bodies of water on this island — the sea
+and three puddles. Measured five centimetres higher there is one, because the damp band along the
+shore is continuous and the flood walks up the beach, round through the sand and into every puddle.
+
+The lift is *kept*, not just applied to the grid, because `_height_at` is deliberately the one place
+the mesh and the collision agree about the ground. A drain applied to the grid alone would leave
+props, colliders and the navigation bake all standing under the sand.
 
 ## Navigation
 
@@ -416,18 +505,33 @@ Two headless guards run in CI and locally:
   `max_alive`, clears when the last body dies, pays the tabled reward, and reuses bodies rather than
   making them. The spawn rules are checked against **two hundred points from the search**, not
   against the four a wave happened to use — with the "never in shot" rule deleted, a four-body wave
-  still passed, which made that check decorative.
+  still passed, which made that check decorative. It also asserts the upgrade cost curve, that a
+  run buys about two tracks out of five, and that clearing a wave puts both the reward and the
+  kills into the purse.
 - **`tools/verify_aim.tscn`** — drives a real joypad event and a real key press through the
   engine's own input path, and the real camera projection for the cursor, then asserts that holding
   a movement key still walks the body and does not follow its facing, that the body turns at a
   capped rate,
   goes back to facing its movement when the stick is released, does not aim before any device is
   touched, commits its attack facing, and dodges away from the aim rather than into it.
-- **`tools/verify_island.tscn`** also covers the wind: that everything which grows stands in it and
-  no stone does, that no plant bends from its base, that the palms share one wind because neither
-  material overrides any of it, and that **every frond hangs off the tip of the trunk it names** to
-  within a millimetre. That last check is what found the crowns had been off their trunks since the
-  island was first generated.
+- **`tools/verify_island.tscn`** also covers the foliage: that everything which grows stands in the
+  wind and no stone does, that no plant bends from its base, that no palm surface overrides a wind
+  figure, that a palm still renders as two colours rather than one, and that palms come out between
+  3 and 5.6 m tall — a wrong figure for a model's shipped height is otherwise silent, and the island
+  simply comes back with palms three times the size of the fight.
+  It also floods the terrain's own collision heights and fails if any water stands where the open
+  sea cannot reach it, and it reads the swell height out of the water shader to fail if the waves
+  ever grow past the height the drained sand was lifted to — one number, two files.
+  `verify_combat` also covers noticing: that a farmer left well clear does not close on his own and
+  never telegraphs from outside his reach, that walking up to him starts the chase, that a hit wakes
+  him at forty metres, and that rousing crosses three metres but not twenty-five. Both of those
+  distances are written out rather than derived from the radius being tested — deriving the far one
+  from the data would place it outside any value at all, and the check could never fail. It did not,
+  until that was fixed.
+- **`tools/verify_camera.tscn`** — parks the body behind a boulder and asserts it goes pale, comes
+  back when the body walks out, never fades with nothing in the way, never fades to nothing, and
+  that the palms are left alone. The renderer draws nothing headless, so this checks the decision —
+  which occluder fades and by how much — not the pixels.
 - **`tools/verify_navigation.tscn`** — asserts the island is baked, that a route past a boulder
   bends around it, that a spawn point inside one is refused, and — the only check straight-line
   chasing cannot pass — that a farmhand with a boulder between him and the player still gets there.

@@ -39,6 +39,8 @@ func _on_attack_landed(target: Node3D, _damage: float, perfect: bool) -> void:
 	var material := enemy.mesh.material_override as StandardMaterial3D
 	if material == null:
 		return
+	if bool(Settings.get_value(&"access_reduce_flashing")):
+		return
 	material.emission_enabled = true
 	material.emission = PERFECT_COLOR if perfect else NORMAL_COLOR
 	material.emission_energy_multiplier = 3.0 if perfect else 1.2
@@ -80,7 +82,7 @@ func _player_materials() -> Array[StandardMaterial3D]:
 
 
 func _on_hitstop_requested(duration: float) -> void:
-	if duration <= 0.0:
+	if duration <= 0.0 or not bool(Settings.get_value(&"access_hitstop")):
 		return
 	_stops += 1
 	Engine.time_scale = HITSTOP_SCALE

@@ -11,5 +11,6 @@ func physics_update(delta: float) -> void:
 	if try_common_transitions():
 		return
 	var out_of_breath := player.stamina != null and not player.stamina.has(0.1)
-	if direction.is_zero_approx() or not Input.is_action_pressed(&"sprint") or out_of_breath:
+	if direction.is_zero_approx() or not player.wants_sprint() or out_of_breath:
+		player.release_sprint()
 		transition_to(&"Move")

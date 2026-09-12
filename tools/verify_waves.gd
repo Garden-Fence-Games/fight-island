@@ -35,6 +35,8 @@ func _ready() -> void:
 
 func _run() -> void:
 	_check_the_formulas_match_the_table()
+	_check_the_cost_curve()
+	_check_a_run_affords_about_two_tracks()
 
 	_arena = (load(ARENA) as PackedScene).instantiate() as Node3D
 	add_child(_arena)
@@ -135,6 +137,7 @@ func _check_a_wave_arrives_and_clears() -> void:
 		_fail("wave 1 should send %d, sent %d in %.0f s" % [wanted, _spawns.size(), WAVE_PATIENCE])
 		return
 
+	var purse := GameState.money
 	_kill_everything()
 	await get_tree().physics_frame
 	await get_tree().physics_frame
@@ -145,6 +148,7 @@ func _check_a_wave_arrives_and_clears() -> void:
 	var due := config.reward_for(1, true)
 	if paid != due:
 		_fail("an untouched wave 1 should pay %d, paid %d" % [due, paid])
+	_check_the_money_reached_the_wallet(purse, paid, wanted)
 	if not _director.is_running() and _director.wave != 1:
 		_fail("the director should still be on wave 1 until the breather ends")
 
@@ -240,9 +244,62 @@ func _fail(message: String) -> void:
 
 func _report() -> void:
 	if _failures.is_empty():
-		print("waves OK — the table holds, a wave arrives out of shot, clears, and pays")
+		print(
+			(
+				"waves OK — the table holds, a wave arrives out of shot, clears, pays, "
+				+ "and the purse and the cost curve keep their shape"
+			)
+		)
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:
 		printerr(failure)
 	get_tree().quit(1)
+
+
+## The cost curve, written out. It is the one table in the game that is never read from a resource,
+## because it is not a tuning knob — it is the shape the whole run is balanced against.
+func _check_the_cost_curve() -> void:
+	var wanted: Array[int] = [50, 80, 130, 205, 330]
+	for owned: int in wanted.size():
+		var cost := Economy.upgrade_cost(owned)
+		if cost != wanted[owned]:
+			_fail("upgrade %d should cost %d, costs %d" % [owned + 1, wanted[owned], cost])
+	if Economy.upgrade_cost(Economy.LEVEL_CAP) != 0:
+		_fail("there should be nothing to buy past the level cap")
+	if Economy.track_cost() != 795:
+		_fail("maxing one track should cost 795, costs %d" % Economy.track_cost())
+
+
+## The design statement, not a number: rewards rise by a flat amount each wave while costs rise
+## geometrically, so a full run buys about two tracks out of five. Asserted as a band, so a tuning
+## pass that keeps the shape passes and one that flattens the choice does not.
+func _check_a_run_affords_about_two_tracks() -> void:
+	var config := load(CONFIG) as WaveConfig
+	if config == null:
+		return
+	var earned := 0
+	for wave_index: int in range(1, 16):
+		earned += config.reward_for(wave_index, false)
+	var track := Economy.track_cost()
+	if earned < track * 2 or earned > track * 3:
+		_fail(
+			(
+				"a fifteen-wave run earns %d against %d a track — it should buy two and change"
+				% [earned, track]
+			)
+		)
+
+
+## The wallet is a listener: the director pays out on the bus and each body pays out as it dies,
+## and neither knows a wallet exists. This is the only place that is proven.
+func _check_the_money_reached_the_wallet(before: int, paid: int, bodies: int) -> void:
+	var per_kill := 0
+	var band := _director.config.band_for(1)
+	if band != null:
+		var archetype := band.pick(RandomNumberGenerator.new(), true)
+		per_kill = archetype.money if archetype != null else 0
+	var due := paid + bodies * per_kill
+	var earned := GameState.money - before
+	if earned != due:
+		_fail("clearing wave 1 should be worth %d in the purse, was worth %d" % [due, earned])

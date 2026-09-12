@@ -12,13 +12,42 @@ const OUTPUT: String = "res://scenes/world/island.tscn"
 ## The terrain mesh is saved beside the scene rather than embedded in it: 6561 vertices as base64
 ## inside a .tscn is a megabyte of unreadable text and a new blob on every rebuild.
 const TERRAIN_MESH: String = "res://assets/models/island_terrain.res"
-## Baked here rather than at load. Recast takes a second on an island this size, and a navigation
-## mesh rebuilt at every launch is one more thing that can differ between a run and a bug report.
-const NAVIGATION_MESH: String = "res://assets/models/island_navmesh.res"
 const SEED: int = 20260911
 ## Wind, for everything that grows. One shader: a MultiMesh takes one material, and a palm
 ## that swayed on a different program from the grass beside it would be two winds on one island.
 const FOLIAGE_SHADER: String = "res://assets/shaders/foliage.gdshader"
+## Stone that gets out of the camera's way. It carries the same fade as the plants and none of the
+## wind, because a boulder that swayed would be worse than one that hid the player.
+const FADEABLE_SHADER: String = "res://assets/shaders/fadeable.gdshader"
+## What the camera fades when it comes between itself and the player — the authored formations, and
+## only those. Found by group rather than by path: a node export written into a generated .tscn does
+## not resolve (ADR 0006), and the fader has no business knowing the shape of the island's tree.
+##
+## **The palms are deliberately not in it.** A thinned-out tree is more distracting than the tree
+## was, and a grove of them flickering as the body walks through is worse still. What hides the
+## player outright is a five-metre boulder, and there are six of those.
+const OCCLUDER_GROUP: StringName = &"occluder"
+## The scattered decoration, from Kenney's CC0 Nature Kit. Every one of them has its origin at its
+## base and carries no texture — only per-material colours — which is exactly what the scatter and
+## the wind shader already wanted.
+const PALM_MODEL: String = "res://assets/models/nature/tree_palm.glb"
+const ROCK_MODEL: String = "res://assets/models/nature/stone_largeD.glb"
+const PEBBLE_MODEL: String = "res://assets/models/nature/stone_smallA.glb"
+const GRASS_MODEL: String = "res://assets/models/nature/grass_leafs.glb"
+## What each model measures as it ships, so the scatter can go on thinking in metres. A palm is
+## scaled by its height and the rest by their width, because that is the dimension each was drawn
+## around.
+const PALM_MODEL_HEIGHT: float = 1.51
+const ROCK_MODEL_WIDTH: float = 1.07
+const ROCK_MODEL_HEIGHT: float = 0.57
+const ROCK_MODEL_DEPTH: float = 1.03
+const PEBBLE_MODEL_WIDTH: float = 0.36
+const GRASS_MODEL_WIDTH: float = 0.26
+const IslandWater := preload("res://tools/island_water.gd")
+const IslandNavigation := preload("res://tools/island_navigation.gd")
+## How deep the enemies may follow the player in. The navigation mesh stops here, a little under the
+## waterline: wading the shallows is allowed, and everything past it is rejected for free.
+const NAV_WADE_LIMIT: float = WATER_LEVEL - 0.5
 
 # --- Shape -------------------------------------------------------------------------------------
 ## Flat land where the player starts, and nothing more. It used to be a thirty-metre clearing in
@@ -37,6 +66,17 @@ const SEA_DROP: float = 9.0
 ## Width of the beach, in land-field units. The ground meets the water exactly at the shoreline and
 ## climbs to the plateau over this band, so there is no step at the edge of the island.
 const SHORE_BAND: float = 0.55
+## The top of the swell, above the still waterline. Ground under this is ground the sea can cover,
+## and it is the only threshold at which the puddles are still separate bodies of water: raise it by
+## five centimetres and the damp band along the shore joins them to the ocean, after which no test
+## for connectivity can tell a puddle from a bay.
+##
+## It must stay at or above `wave_height` in `water.gdshader`. `verify_island` fails if it drifts.
+const WAVE_CREST: float = 0.11
+## Where a drained hollow's floor is put. Just clear of the crest — the gap between this and the
+## crest is the only step the drain leaves at a hollow's rim, and at five centimetres across a metre
+## of sand there is nothing to see.
+const POND_CLEARANCE: float = 0.16
 
 # --- Relief ------------------------------------------------------------------------------------
 ## Inland only, and gentle. The island rolls; it never walls. A cliff along the water would put a
@@ -67,54 +107,25 @@ const PEBBLE_COUNT: int = 3400
 const GRASS_COUNT: int = 24000
 
 # --- Navigation --------------------------------------------------------------------------------
-## The voxel the island is rasterised into, and with it the resolution of the whole navigation
-## mesh. Coarse on purpose. Every polygon is scanned linearly on the queries an agent runs each
-## frame, so the polygon count is a per-frame cost with thirty farmers on the island, and the mesh
-## only has to answer "which way round this rock" — nothing about the fight is decided on it.
-const NAV_CELL: float = 0.5
-const NAV_CELL_HEIGHT: float = 0.2
-## Far wider than the 0.35 m body. This is how much the navigation mesh is eroded away from
-## anything solid, and a generous margin is what keeps routes off the edges — a farmer who clips a
-## boulder because his path ran along its face reads as broken, and the metre costs nothing when
-## nothing on the island is closer together than MIN_GAP. It must stay a whole number of cells:
-## recast rounds it up to one and warns when that loses precision.
-const NAV_AGENT_RADIUS: float = 1.0
-const NAV_AGENT_HEIGHT: float = 1.8
-const NAV_AGENT_MAX_CLIMB: float = 0.4
-const NAV_AGENT_MAX_SLOPE: float = 50.0
-## The navigation mesh stops here, a little under the waterline. Enemies may wade the shallows —
-## they pay Water's drag for it — but they can never path out to sea, and a spawn point in the
-## water is rejected for free.
-const NAV_WADE_LIMIT: float = WATER_LEVEL - 0.5
-## How steep an obstacle's cap is, as a multiple of its own width. Recast has no notion of "too
-## high to be a floor": a flat-topped box is walkable ground four metres in the air, and the
-## navigation mesh grows an unreachable island on every rock. Anything past the max slope is not a
-## floor at all, so the caps are pitched well beyond it.
-const NAV_CAP_PITCH: float = 1.6
-## Only obstacles at least this wide are cut out of the navigation mesh. Everything narrower is a
-## bump a body slides off, and cutting it out is not free: every hole adds contour, and the whole
-## map is scanned linearly on the queries an agent runs each frame. Carving all thirteen hundred
-## props cost twenty milliseconds a frame with thirty farmers on the island; carving only what is
-## genuinely impassable costs a tenth of that and walks identically, because MIN_GAP already
-## guarantees a body-and-a-half of clearance between any two of them.
-const NAV_CARVE_RADIUS: float = 1.0
-## How far a contour may stray from the voxels it was traced from, and how long one edge may run
-## before it is split. Both loose, so the coastline comes back as a handful of long edges instead
-## of a thousand half-metre steps.
-const NAV_EDGE_ERROR: float = 4.0
-const NAV_EDGE_LENGTH: float = 24.0
-## Regions smaller than this are merged into their neighbour rather than kept as their own island.
-const NAV_MERGE_SIZE: float = 60.0
-## How many sides an obstacle is rasterised with. The navigation mesh only needs the footprint, and
-## a palm is a 0.2 m post: eight sides already lands inside one voxel of a circle.
-const NAV_OBSTACLE_SIDES: int = 8
-## How far an obstacle is pushed into the ground before it is rasterised. Deeper than any relief a
-## prop can be standing on, so its footprint is always rooted.
-const NAV_OBSTACLE_SINK: float = 4.0
 
 const SAND: Color = Color(0.86, 0.78, 0.58)
 const GRASS_GREEN: Color = Color(0.36, 0.52, 0.27)
-const ROCK_GREY: Color = Color(0.33, 0.31, 0.29)
+## The island's palette, mapped onto the parts the models name.
+##
+## The pack's own colours are not used: its leaves ship as turquoise and its stone as a pale blue
+## white, which is a palette from another island. Taking the shapes and keeping the colours also
+## puts the art direction in one place — this one — instead of spreading it across whatever files
+## happen to have been downloaded.
+##
+## Keyed by the model's material name, so a pack that renames a part says so at build time rather
+## than rendering it in whatever colour a missing entry defaults to.
+const NATURE_PALETTE: Dictionary = {
+	"woodBark": Color(0.42, 0.31, 0.2),
+	"leafsGreen": Color(0.25, 0.47, 0.24),
+	"grass": Color(0.38, 0.53, 0.3),
+	"stone": Color(0.33, 0.31, 0.29),
+	"_defaultMat": Color(0.29, 0.27, 0.26),
+}
 
 ## Grass is short and quick: it reaches full bend in half a metre and ripples every few
 ## metres. A lawn does not sway on the same clock as a five-metre palm, so it overrides the
@@ -123,12 +134,13 @@ const GRASS_WIND: Dictionary = {
 	"wind_strength": 0.11,
 	"wind_speed": 2.6,
 	"wave_length": 9.0,
-	"bend_height": 0.45,
+	"bend_height": 0.2,
 	"bend_power": 1.4,
 	"gust_length": 42.0,
 }
-## How far a frond flexes along its own length, on top of the swing it inherits from the trunk.
-const FROND_FLUTTER: float = 0.055
+## How far a palm's leaves flex along their own length, on top of the swing of the whole tree.
+## Measured from the trunk outward, so the wood itself barely moves and the fronds do.
+const LEAF_FLUTTER: float = 0.055
 
 var _rng := RandomNumberGenerator.new()
 var _noise := FastNoiseLite.new()
@@ -136,6 +148,10 @@ var _coast := FastNoiseLite.new()
 var _clump := FastNoiseLite.new()
 var _relief := FastNoiseLite.new()
 var _ground := FastNoiseLite.new()
+## How much each cell of the height grid was lifted to drain a landlocked hollow. Empty until the
+## grid has been built and drained, which is what lets `_height_at` add it without chasing its tail.
+var _lift := PackedFloat32Array()
+var _drained: int = 0
 
 
 func _initialize() -> void:
@@ -174,7 +190,7 @@ func _initialize() -> void:
 	island.add_child(_landmark())
 	island.add_child(_boundary())
 	# Last, because it reads the colliders the two calls above just placed.
-	var navigation := _navigation(island, heights)
+	var navigation := IslandNavigation.bake(island, heights, GRID, SPACING, NAV_WADE_LIMIT)
 	if navigation == null:
 		quit(1)
 		return
@@ -192,13 +208,14 @@ func _initialize() -> void:
 		return
 	print(
 		(
-			"island built — %d verts, %d palms, %d rocks, %d tufts, %d nav polys"
+			"island built — %d verts, %d palms, %d rocks, %d tufts, %d nav polys, %d cells drained"
 			% [
 				GRID * GRID,
 				PALM_COUNT,
 				ROCK_COUNT,
 				GRASS_COUNT,
-				navigation.navigation_mesh.get_polygon_count()
+				navigation.navigation_mesh.get_polygon_count(),
+				_drained
 			]
 		)
 	)
@@ -241,7 +258,7 @@ func _height_at(x: float, z: float) -> float:
 	# Whatever the field says, the fighting core is flat land.
 	var core := 1.0 - smoothstep(CORE_RADIUS - 2.0, CORE_RADIUS + 5.0, Vector2(x, z).length())
 	height = lerpf(height, 0.0, core)
-	return height + _relief_at(x, z, value)
+	return height + _relief_at(x, z, value) + _lift_at(x, z)
 
 
 ## Rolling ground away from the fight, fading out toward both the core and the shore: the arena
@@ -263,7 +280,23 @@ func _build_heights() -> PackedFloat32Array:
 			var x := float(column) * SPACING - half
 			var z := float(row) * SPACING - half
 			heights[row * GRID + column] = _height_at(x, z)
+	_drain(heights)
 	return heights
+
+
+## Water the sea cannot reach is not water — see `island_water.gd` for which hollows those are and
+## why the threshold decides it. The lift is kept so `_height_at` can add it afterwards: everything
+## placed on the island goes through that one function, and a drain applied to the grid alone would
+## leave props, colliders and the navigation mesh all standing under the sand.
+func _drain(heights: PackedFloat32Array) -> void:
+	_lift = IslandWater.drain(heights, GRID, WATER_LEVEL + WAVE_CREST, WATER_LEVEL + POND_CLEARANCE)
+	_drained = IslandWater.drained_count(_lift)
+	for index: int in heights.size():
+		heights[index] += _lift[index]
+
+
+func _lift_at(x: float, z: float) -> float:
+	return IslandWater.lift_at(_lift, GRID, SPACING, x, z)
 
 
 ## How green the ground is here, 0 for bare sand and 1 for full grass. The colour and the grass
@@ -394,35 +427,27 @@ func _scatter() -> Node3D:
 		where.y = _height_at(where.x, where.z)
 		taken.append([where, maxf(size.x, size.z) * 0.5])
 
-	var trunks: Array[Transform3D] = []
-	var fronds: Array[Transform3D] = []
-	## Which palm each frond belongs to, so the crown can be told where its own trunk is planted.
-	var frond_roots: Array[Vector3] = []
+	var palms: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
 		PALM_COUNT, CLEAR_RADIUS, PALM_RADIUS, 3.4, Vector2(0.08, 3.0), 0.0, taken
 	):
 		var lean := Basis(Vector3.FORWARD, _rng.randf_range(-0.12, 0.12))
+		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
 		var height := _rng.randf_range(3.4, 5.2)
-		var trunk := Transform3D(lean.scaled(Vector3(1.0, height, 1.0)), spot)
-		trunks.append(trunk)
+		# Uniformly. A palm stretched only upward grows a crown that reads as a squashed umbrella,
+		# and the model already has the proportions of a palm.
+		var grown := Vector3.ONE * (height / PALM_MODEL_HEIGHT)
+		palms.append(Transform3D((lean * turn).scaled(grown), spot))
 		blocking.append([spot, PALM_RADIUS])
 		taken.append([spot, PALM_RADIUS])
-		# The tip of the trunk as it was actually placed. Leaning the bare height instead put the
-		# crowns a third of a metre downwind of the wood they sit on, because the scale in the
-		# instance is applied after the lean and flattens it.
-		var crown := trunk * Vector3(0.0, 1.0, 0.0)
-		for blade: int in 6:
-			var turn := Basis(Vector3.UP, TAU * float(blade) / 6.0 + _rng.randf_range(-0.3, 0.3))
-			var droop := Basis(Vector3.RIGHT, _rng.randf_range(0.35, 0.7))
-			fronds.append(Transform3D(turn * droop, crown))
-			frond_roots.append(spot)
 
 	var pebbles: Array[Transform3D] = []
 	for spot: Vector3 in _spots(PEBBLE_COUNT, 0.0, 0.0, 1.6, Vector2(-0.05, SHORE_BAND * 0.7)):
 		var size := _rng.randf_range(0.14, 0.42)
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
-		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(0.0, TAU))
-		pebbles.append(Transform3D((turn * tilt).scaled(Vector3.ONE * size), spot))
+		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(-0.3, 0.3))
+		var grown := Vector3.ONE * (size / PEBBLE_MODEL_WIDTH)
+		pebbles.append(Transform3D((turn * tilt).scaled(grown), spot))
 
 	var rocks: Array[Transform3D] = []
 	for spot: Vector3 in _spots(
@@ -430,11 +455,12 @@ func _scatter() -> Node3D:
 	):
 		var size := _rng.randf_range(0.4, 1.7)
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
-		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(-0.25, 0.25))
-		var wide := size * _rng.randf_range(0.7, 1.3)
-		rocks.append(Transform3D((turn * tilt).scaled(Vector3(size, size * 0.7, wide)), spot))
-		# The rock mesh is perturbed inward as well as outward, so a collider at its full half-width
-		# stops the player well short of the stone they can see.
+		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(-0.12, 0.12))
+		var wide := size * _rng.randf_range(0.8, 1.2)
+		var grown := Vector3(size, size, wide) / ROCK_MODEL_WIDTH
+		rocks.append(Transform3D((turn * tilt).scaled(grown), spot))
+		# The boulder is narrower than its bounding box at the height a body walks through, so a
+		# collider at its full half-width stops the player well short of the stone they can see.
 		if maxf(size, wide) >= BLOCKING_ROCK:
 			var here := maxf(size, wide) * 0.34
 			blocking.append([spot, here])
@@ -446,19 +472,19 @@ func _scatter() -> Node3D:
 	):
 		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
 		var lean := Basis(Vector3.RIGHT, _rng.randf_range(-0.18, 0.18))
-		var size := _rng.randf_range(0.6, 1.25)
-		tufts.append(Transform3D((turn * lean).scaled(Vector3(size, size, size)), spot))
+		# Small on purpose. The ground has to read as texture, not as a field of objects: a busy
+		# floor competes with the enemies for the eye, and a telegraph at twenty metres is the one
+		# thing the player cannot afford to miss.
+		var size := _rng.randf_range(0.26, 0.46)
+		var grown := Vector3.ONE * (size / GRASS_MODEL_WIDTH)
+		tufts.append(Transform3D((turn * lean).scaled(grown), spot))
 
-	var grass_green := GRASS_GREEN.darkened(0.18)
-	var bark := Color(0.42, 0.31, 0.2)
-	var leaf := Color(0.25, 0.47, 0.24)
-	props.add_child(_multi("Grass", _tuft(), grass_green, tufts, _grass_wind(grass_green)))
-	props.add_child(_multi("Pebbles", _rock_mesh(), ROCK_GREY.lightened(0.12), pebbles))
-	props.add_child(_multi("PalmTrunks", _cylinder(0.16, 1.0), bark, trunks, _palm_wind(bark, 0.0)))
-	props.add_child(
-		_multi("PalmFronds", _frond(), leaf, fronds, _palm_wind(leaf, FROND_FLUTTER), frond_roots)
-	)
-	props.add_child(_multi("Rocks", _rock_mesh(), ROCK_GREY, rocks))
+	# The models carry their own colours, one material per part, so nothing here tints them. What the
+	# wind material replaces is the shading, not the palette.
+	props.add_child(_multi("Grass", _nature(GRASS_MODEL), tufts, _grass_wind()))
+	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles))
+	props.add_child(_multi("Palms", _nature(PALM_MODEL), palms, _palm_wind()))
+	props.add_child(_multi("Rocks", _nature(ROCK_MODEL), rocks))
 	props.add_child(_colliders(blocking))
 	return props
 
@@ -568,65 +594,106 @@ func _spots(
 	return kept
 
 
-## `anchors` is where each instance's plant meets the ground, and it is only needed for the parts
-## that are not planted at their own origin — the palm crowns. Leave it empty and the instances
-## carry no custom data at all, which reads in the shader as a plant standing on its own origin.
+## One population of one model. `wind` names the uniforms the foliage shader should take; leave it
+## out and the model keeps the flat materials it shipped with, which is what stone wants.
 func _multi(
-	name: String,
-	mesh: Mesh,
-	tint: Color,
-	transforms: Array[Transform3D],
-	material: Material = null,
-	anchors: Array[Vector3] = []
+	name: String, mesh: ArrayMesh, transforms: Array[Transform3D], wind: Dictionary = {}
 ) -> Node3D:
+	_dress(mesh, FOLIAGE_SHADER if not wind.is_empty() else "", wind)
+
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D
-	multi.use_custom_data = not anchors.is_empty()
 	multi.mesh = mesh
 	multi.instance_count = transforms.size()
 	# The buffer is written directly rather than through set_instance_transform: headless runs on a
 	# dummy renderer, where the setter writes to a server that discards it and the buffer saves empty.
-	multi.buffer = _pack(transforms, anchors)
+	multi.buffer = _pack(transforms)
 
 	var instance := MultiMeshInstance3D.new()
 	instance.name = name
 	instance.multimesh = multi
-	instance.material_override = material if material != null else _matte(tint)
 	return instance
 
 
-func _matte(tint: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = tint
-	material.roughness = 0.9
-	return material
+## The mesh out of a packaged model, rebuilt as a plain ArrayMesh.
+##
+## Rebuilt rather than referenced so the built scene owns its geometry outright: it does not depend
+## on a .glb's import settings at load time, and hanging a wind material on it writes into the
+## island rather than into a shared imported resource that every other user of the model would see.
+func _nature(path: String) -> ArrayMesh:
+	var packed := load(path) as PackedScene
+	if packed == null:
+		printerr("no model at " + path)
+		return ArrayMesh.new()
+	var source := _find_mesh(packed.instantiate())
+	if source == null:
+		printerr("no mesh inside " + path)
+		return ArrayMesh.new()
+	var out := ArrayMesh.new()
+	for surface: int in source.get_surface_count():
+		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, source.surface_get_arrays(surface))
+		out.surface_set_material(surface, source.surface_get_material(surface))
+	return out
 
 
-## The palms stand in the wind the shader ships with, and neither call touches it. Trunk and crown
-## that disagree about the wind by so much as a coefficient pull apart in the air, so the only way
-## to set one of those figures is to change it for both.
-func _palm_wind(tint: Color, flutter: float) -> ShaderMaterial:
+func _find_mesh(node: Node) -> Mesh:
+	var instance := node as MeshInstance3D
+	if instance != null and instance.mesh != null:
+		return instance.mesh
+	for child: Node in node.get_children():
+		var found := _find_mesh(child)
+		if found != null:
+			return found
+	return null
+
+
+## Dresses every surface of a model in the island's palette, and puts it in the wind if asked.
+##
+## Per surface rather than through material_override, which takes one material for the whole mesh:
+## a palm is trunk and leaves in one piece, and flattening both to a single colour is exactly what
+## buying a modelled palm was meant to stop.
+func _dress(mesh: ArrayMesh, shader: String, uniforms: Dictionary) -> void:
+	for surface: int in mesh.get_surface_count():
+		mesh.surface_set_material(surface, _part_material(mesh, surface, shader, uniforms))
+
+
+## The material for one part of a model, in the island's colour for that part.
+func _part_material(
+	mesh: ArrayMesh, surface: int, shader: String, uniforms: Dictionary
+) -> Material:
+	var shipped := mesh.surface_get_material(surface)
+	var part := shipped.resource_name if shipped != null else ""
+	if not NATURE_PALETTE.has(part):
+		printerr("no colour for the part a model calls '%s'" % part)
+		return shipped
+	var colour: Color = NATURE_PALETTE[part]
+	if shader.is_empty():
+		var matte := StandardMaterial3D.new()
+		matte.albedo_color = colour
+		matte.roughness = 0.9
+		return matte
 	var material := ShaderMaterial.new()
-	material.shader = load(FOLIAGE_SHADER)
-	material.set_shader_parameter("tint", tint)
-	material.set_shader_parameter("flutter", flutter)
+	material.shader = load(shader)
+	material.set_shader_parameter("tint", colour)
+	for parameter: String in uniforms:
+		material.set_shader_parameter(parameter, uniforms[parameter])
 	return material
 
 
-func _grass_wind(tint: Color) -> ShaderMaterial:
-	var material := ShaderMaterial.new()
-	material.shader = load(FOLIAGE_SHADER)
-	material.set_shader_parameter("tint", tint)
-	for parameter: String in GRASS_WIND:
-		material.set_shader_parameter(parameter, GRASS_WIND[parameter])
-	return material
+## The palms stand in the wind the shader ships with. Nothing is set here, and that is the point:
+## every surface of every palm reads the same figures, so no part of one can bend differently from
+## another and pull away from it.
+func _palm_wind() -> Dictionary:
+	return {"flutter": LEAF_FLUTTER}
 
 
-## Twelve floats per instance: the three rows of the 3x4 transform, origin last on each row. Four
-## more follow each transform when anchors are given, holding the ground the instance belongs to as
-## an offset from the instance itself — a rise and a displacement in the plane.
-func _pack(transforms: Array[Transform3D], anchors: Array[Vector3] = []) -> PackedFloat32Array:
-	var stride := 16 if not anchors.is_empty() else 12
+func _grass_wind() -> Dictionary:
+	return GRASS_WIND
+
+
+## Twelve floats per instance: the three rows of the 3x4 transform, origin last on each row.
+func _pack(transforms: Array[Transform3D]) -> PackedFloat32Array:
+	var stride := 12
 	var data := PackedFloat32Array()
 	data.resize(transforms.size() * stride)
 	for index: int in transforms.size():
@@ -646,262 +713,7 @@ func _pack(transforms: Array[Transform3D], anchors: Array[Vector3] = []) -> Pack
 		data[base + 9] = basis.y.z
 		data[base + 10] = basis.z.z
 		data[base + 11] = origin.z
-		if stride == 12:
-			continue
-		var ground := anchors[index]
-		data[base + 12] = origin.y - ground.y
-		data[base + 13] = ground.x - origin.x
-		data[base + 14] = ground.z - origin.z
-		data[base + 15] = 0.0
 	return data
-
-
-func _cylinder(radius: float, height: float) -> Mesh:
-	var mesh := CylinderMesh.new()
-	mesh.top_radius = radius * 0.75
-	mesh.bottom_radius = radius
-	mesh.height = height
-	mesh.radial_segments = 6
-	mesh.rings = 1
-	# Grown from the ground rather than from its middle, so a scaled instance stays planted.
-	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, height * 0.5, 0.0)))
-
-
-## A low-poly sphere with its vertices pushed about. A cube reads as a crate; this reads as a rock,
-## and it is the least work that gets there before the art phase replaces it with a textured mesh.
-func _rock_mesh() -> Mesh:
-	var sphere := SphereMesh.new()
-	sphere.radial_segments = 7
-	sphere.rings = 4
-	sphere.radius = 0.5
-	sphere.height = 1.0
-
-	var surface := SurfaceTool.new()
-	surface.create_from(_as_array(sphere), 0)
-	var arrays := surface.commit_to_arrays()
-	var points: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	var lumps := RandomNumberGenerator.new()
-	lumps.seed = SEED + 41
-	for index: int in points.size():
-		var point := points[index]
-		var push := 1.0 + _relief.get_noise_3d(point.x * 9.0, point.y * 9.0, point.z * 9.0) * 0.45
-		points[index] = point * Vector3(push, push * 0.78, push)
-	arrays[Mesh.ARRAY_VERTEX] = points
-
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	var smoothed := SurfaceTool.new()
-	smoothed.create_from(mesh, 0)
-	smoothed.generate_normals()
-	return smoothed.commit()
-
-
-func _tuft() -> Mesh:
-	var mesh := CylinderMesh.new()
-	mesh.top_radius = 0.0
-	mesh.bottom_radius = 0.17
-	mesh.height = 0.42
-	mesh.radial_segments = 4
-	mesh.rings = 0
-	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, 0.21, 0.0)))
-
-
-func _frond() -> Mesh:
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.22, 0.05, 2.1)
-	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, 0.0, -1.0)))
-
-
-func _box(size: Vector3) -> Mesh:
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	return _shift(_as_array(mesh), Transform3D(Basis.IDENTITY, Vector3(0.0, size.y * 0.5, 0.0)))
-
-
-func _as_array(mesh: Mesh) -> ArrayMesh:
-	var surface := SurfaceTool.new()
-	surface.create_from(mesh, 0)
-	return surface.commit()
-
-
-func _shift(mesh: ArrayMesh, by: Transform3D) -> ArrayMesh:
-	var surface := SurfaceTool.new()
-	surface.create_from(mesh, 0)
-	var out := ArrayMesh.new()
-	var arrays := surface.commit_to_arrays()
-	var points: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	for index: int in points.size():
-		points[index] = by * points[index]
-	arrays[Mesh.ARRAY_VERTEX] = points
-	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return out
-
-
-# ----------------------------------------------------------------------------------- navigation
-
-
-## The mesh the enemies walk on, baked from the ground and from every collider that blocks it.
-##
-## The obstacles are read back off the colliders that were just placed rather than from the list
-## that produced them. It is one more step, and it buys the one guarantee that matters: what the
-## navigation mesh avoids is exactly what the player bumps into. Two parallel lists of rocks would
-## drift apart on the first change, and the symptom — an enemy walking into thin air, or standing
-## in a tree — is nowhere near the cause.
-func _navigation(island: Node3D, heights: PackedFloat32Array) -> NavigationRegion3D:
-	var geometry := NavigationMeshSourceGeometryData3D.new()
-	geometry.add_faces(_walkable_faces(heights), Transform3D.IDENTITY)
-	for path: String in ["Props/PropColliders", "RockFormations"]:
-		var body := island.get_node_or_null(NodePath(path))
-		if body == null:
-			printerr("no colliders at " + path + " to keep the navigation mesh out of")
-			return null
-		for node: Node in body.get_children():
-			var collision := node as CollisionShape3D
-			if collision == null:
-				continue
-			var solid := _obstacle_faces(collision)
-			if solid.is_empty():
-				continue
-			geometry.add_faces(solid, Transform3D.IDENTITY)
-
-	var navmesh := NavigationMesh.new()
-	navmesh.cell_size = NAV_CELL
-	navmesh.cell_height = NAV_CELL_HEIGHT
-	navmesh.agent_radius = NAV_AGENT_RADIUS
-	navmesh.agent_height = NAV_AGENT_HEIGHT
-	navmesh.agent_max_climb = NAV_AGENT_MAX_CLIMB
-	navmesh.agent_max_slope = NAV_AGENT_MAX_SLOPE
-	# Simplification, all of it for the same reason as NAV_CELL: fewer, larger polygons. The detail
-	# mesh in particular buys height accuracy the agents never read — they walk on the terrain
-	# collider, not on the navigation mesh.
-	navmesh.detail_sample_distance = 0.0
-	navmesh.edge_max_error = NAV_EDGE_ERROR
-	navmesh.edge_max_length = NAV_EDGE_LENGTH
-	navmesh.region_merge_size = NAV_MERGE_SIZE
-	NavigationServer3D.bake_from_source_geometry_data(navmesh, geometry)
-	if navmesh.get_polygon_count() == 0:
-		printerr("the navigation mesh baked empty")
-		return null
-	if ResourceSaver.save(navmesh, NAVIGATION_MESH) != OK:
-		printerr("could not save " + NAVIGATION_MESH)
-		return null
-
-	var region := NavigationRegion3D.new()
-	region.name = "Navigation"
-	# Loaded back rather than kept, so the scene points at the file instead of inlining six thousand
-	# polygons of base64 into the .tscn.
-	region.navigation_mesh = load(NAVIGATION_MESH)
-	return region
-
-
-## The ground, as triangles, cut off where the water gets too deep to wade.
-##
-## Winding is load-bearing and silent when wrong: recast decides what is walkable from the face
-## normal, so a reversed quad is not a hole in the mesh — it is no mesh at all, with no error to
-## read. Godot winds its front faces clockwise, and so must this.
-func _walkable_faces(heights: PackedFloat32Array) -> PackedVector3Array:
-	var faces := PackedVector3Array()
-	var half := float(GRID - 1) * 0.5 * SPACING
-	for row: int in GRID - 1:
-		for column: int in GRID - 1:
-			var corners: Array[Vector3] = []
-			var dry := true
-			for offset: Vector2i in [
-				Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, 1), Vector2i(0, 1)
-			]:
-				var c := column + offset.x
-				var r := row + offset.y
-				var height := heights[r * GRID + c]
-				dry = dry and height > NAV_WADE_LIMIT
-				corners.append(
-					Vector3(float(c) * SPACING - half, height, float(r) * SPACING - half)
-				)
-			if not dry:
-				continue
-			(
-				faces
-				. append_array(
-					[
-						corners[0],
-						corners[1],
-						corners[2],
-						corners[0],
-						corners[2],
-						corners[3],
-					]
-				)
-			)
-	return faces
-
-
-## A collider as a shape recast will refuse to stand on: its own footprint, rooted well under the
-## ground and capped with a pitched roof.
-##
-## Both halves are load-bearing. Sunk, because a collider floating even a few centimetres above the
-## terrain leaves a sliver of walkable ground beneath it and the hole never appears. Pitched,
-## because a flat top is a floor as far as recast is concerned, however high up it happens to be.
-func _obstacle_faces(collision: CollisionShape3D) -> PackedVector3Array:
-	var ring := _footprint(collision.shape)
-	if ring.is_empty():
-		printerr("no navigation footprint for a " + collision.shape.get_class())
-		return PackedVector3Array()
-	var half := _obstacle_half_height(collision.shape)
-	var reach := 0.0
-	for corner: Vector2 in ring:
-		reach = maxf(reach, corner.length())
-	if reach < NAV_CARVE_RADIUS:
-		return PackedVector3Array()
-
-	var faces := PackedVector3Array()
-	var where := collision.transform
-	var apex := where * Vector3(0.0, half + reach * NAV_CAP_PITCH, 0.0)
-	for index: int in ring.size():
-		var next := ring[(index + 1) % ring.size()]
-		var here := ring[index]
-		var base_a := where * Vector3(here.x, -half - NAV_OBSTACLE_SINK, here.y)
-		var base_b := where * Vector3(next.x, -half - NAV_OBSTACLE_SINK, next.y)
-		var top_a := where * Vector3(here.x, half, here.y)
-		var top_b := where * Vector3(next.x, half, next.y)
-		faces.append_array([base_a, base_b, top_b, base_a, top_b, top_a, top_a, top_b, apex])
-	return faces
-
-
-## The outline an obstacle occupies on the ground, in its own space. Only the two shapes the island
-## actually uses; anything else would be a silent hole in the navigation mesh, so it is a loud one.
-func _footprint(shape: Shape3D) -> PackedVector2Array:
-	var ring := PackedVector2Array()
-	var cylinder := shape as CylinderShape3D
-	if cylinder != null:
-		for step: int in NAV_OBSTACLE_SIDES:
-			var angle := TAU * float(step) / float(NAV_OBSTACLE_SIDES)
-			ring.append(Vector2(cos(angle), sin(angle)) * cylinder.radius)
-		return ring
-	var box := shape as BoxShape3D
-	if box != null:
-		var wide := box.size.x * 0.5
-		var deep := box.size.z * 0.5
-		(
-			ring
-			. append_array(
-				[
-					Vector2(-wide, -deep),
-					Vector2(wide, -deep),
-					Vector2(wide, deep),
-					Vector2(-wide, deep),
-				]
-			)
-		)
-	return ring
-
-
-func _obstacle_half_height(shape: Shape3D) -> float:
-	var cylinder := shape as CylinderShape3D
-	if cylinder != null:
-		return cylinder.height * 0.5
-	var box := shape as BoxShape3D
-	if box != null:
-		return box.size.y * 0.5
-	return 0.0
 
 
 # ------------------------------------------------------------------------------------- authored
@@ -930,23 +742,28 @@ func _landmark() -> StaticBody3D:
 	body.collision_layer = 1 | 256  # world | camera_occluder
 	body.collision_mask = 0
 
-	var material := StandardMaterial3D.new()
-	material.albedo_color = ROCK_GREY
-	material.roughness = 1.0
-
 	var placements := _formations()
-	var boulder := _rock_mesh()
+	var boulder := _nature(ROCK_MODEL)
+	# The model stands on its origin, where the old sphere was centred on it — so the formations sit
+	# on the ground rather than being lifted by a share of their own height.
+	var shipped := Vector3(ROCK_MODEL_WIDTH, ROCK_MODEL_HEIGHT, ROCK_MODEL_DEPTH)
 	for placement: Array in placements:
 		var where: Vector3 = placement[0]
 		var size: Vector3 = placement[1]
 		var turn: float = placement[2]
-		where.y = _height_at(where.x, where.z) + size.y * 0.4
+		where.y = _height_at(where.x, where.z)
 
 		var visual := MeshInstance3D.new()
 		visual.name = "Rock"
 		visual.mesh = boulder
-		visual.material_override = material
-		visual.transform = Transform3D(Basis(Vector3.UP, turn).scaled(size), where)
+		visual.transform = Transform3D(Basis(Vector3.UP, turn).scaled(size / shipped), where)
+		# Per surface on the node rather than on the mesh: the six formations share one mesh, so a
+		# material hung there would fade all of them the moment one of them stood in the way.
+		for surface: int in boulder.get_surface_count():
+			visual.set_surface_override_material(
+				surface, _part_material(boulder, surface, FADEABLE_SHADER, {})
+			)
+		visual.add_to_group(OCCLUDER_GROUP, true)
 		body.add_child(visual)
 
 		# The shape is already in metres, so the collider must NOT inherit the visual's scale — doing

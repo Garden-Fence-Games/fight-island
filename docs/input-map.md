@@ -11,6 +11,9 @@ bindings.
 ## Principles
 
 - Every gameplay input is a **named action**. Never a raw key check at a call site.
+- **The table above is the default, not the law.** Options → Controls rebinds every action here
+  except `ui_*` and `debug_*`, and the overrides live in `bindings.json` — see
+  [menus.md](menus.md).
 - Both schemes are first-class and hot-swap on the first input of the other kind.
 - Godot's built-in `ui_*` actions are left alone **except** `ui_accept` and `ui_cancel`.
 
@@ -33,6 +36,21 @@ bindings.
 | `pause` | `Esc` | Start | 0.2 |
 | `ui_accept` | `Enter`, numpad `Enter`, `Space` | **A** | 0.2 |
 | `ui_cancel` | `Esc` | **B** | 0.2 |
+| `menu_options` | `O` | Y | 0.2 |
+| `menu_new_run` | `N` | Y | 0.2 |
+| `menu_prev_tab` | `Q` | LB | 0.2 |
+| `menu_next_tab` | `E` | RB | 0.2 |
+
+`menu_prev_tab` and `menu_next_tab` reuse the shoulder buttons `weapon_prev` and `weapon_next`
+already hold, and `E` already means `interact`. Nothing collides: the options screen is only ever
+open with the game paused or from the title, so no weapon swap and no interaction is listening.
+
+`menu_options` and `menu_new_run` share Y on the pad on purpose: a title screen never shows
+both badges at once, so the run state decides which one answers. They exist because the menu
+prints those glyphs, and a printed glyph that does nothing is worse than no glyph.
+
+| Action | Keyboard / mouse | Gamepad (Xbox) | Deadzone |
+|---|---|---|---|
 | `debug_overlay` | `F3` | — | 0.2 |
 | `debug_skip_wave` | `F5` | — | 0.2 |
 | `debug_give_money` | `F6` | — | 0.2 |
