@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="WaveConfig" load_steps=22 format=3]
+[gd_resource type="Resource" script_class="WaveConfig" load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/wave_config.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/resources/wave_band.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/resources/archetype_share.gd" id="3"]
 [ext_resource type="Resource" path="res://data/enemies/farmhand.tres" id="4"]
+[ext_resource type="Resource" path="res://data/enemies/reaper.tres" id="5"]
 
 [sub_resource type="Resource" id="Share_1"]
 script = ExtResource("3")
@@ -22,7 +23,7 @@ share = 0.80
 
 [sub_resource type="Resource" id="Share_3"]
 script = ExtResource("3")
-enemy = null
+enemy = ExtResource("5")
 share = 0.20
 
 [sub_resource type="Resource" id="Band_3"]
@@ -37,7 +38,7 @@ share = 0.65
 
 [sub_resource type="Resource" id="Share_5"]
 script = ExtResource("3")
-enemy = null
+enemy = ExtResource("5")
 share = 0.20
 
 [sub_resource type="Resource" id="Share_6"]
@@ -57,7 +58,7 @@ share = 0.50
 
 [sub_resource type="Resource" id="Share_8"]
 script = ExtResource("3")
-enemy = null
+enemy = ExtResource("5")
 share = 0.30
 
 [sub_resource type="Resource" id="Share_9"]
@@ -77,7 +78,7 @@ share = 0.40
 
 [sub_resource type="Resource" id="Share_11"]
 script = ExtResource("3")
-enemy = null
+enemy = ExtResource("5")
 share = 0.35
 
 [sub_resource type="Resource" id="Share_12"]

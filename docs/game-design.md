@@ -190,6 +190,13 @@ player, or farmers arrive already awake and none of this exists.
 **Farmhand.** Bare hands, quick, fragile, and always the majority of a wave. He is what teaches the
 parry, and what makes a crowd feel like a crowd.
 
+**The arc is enforced, not approximated.** A hitbox is a box around the attacker wide enough to hold
+everything the swing could reach, and a contact is then confirmed against the weapon's own `reach`
+and `arc_degrees`. The box used to *be* the shape — a rectangle from the nose out to the reach — and
+it was wrong at both ends: its corners reached half again the weapon's length, and because it ran
+from the attacker's nose backwards it clipped the arc short of its own angle, so a 160° sweep was
+never 160°. Whichever way that box was sized, the number here was not the number the player felt.
+
 **Reaper.** A scythe on a wide horizontal sweep. The 160° arc is the point: **sidestepping does not
 work on him** — you dodge backward, dodge through, or parry. He is slow enough to be read and
 punishing enough that reading him matters. He is also the reason the stick exists.
