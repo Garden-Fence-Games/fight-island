@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -22,12 +22,16 @@
 [ext_resource type="Resource" path="res://data/tutorial/07_sprint.tres" id="20"]
 [ext_resource type="PackedScene" path="res://scenes/world/island_sky.tscn" id="21"]
 [ext_resource type="Script" path="res://scripts/systems/pickup_director.gd" id="22"]
+[ext_resource type="Script" path="res://scripts/systems/effect_pool.gd" id="23"]
 
 [node name="Arena" type="Node3D"]
 
 [node name="Sky" parent="." instance=ExtResource("21")]
 
 [node name="Island" parent="." instance=ExtResource("5")]
+[node name="Effects" type="Node" parent="."]
+script = ExtResource("23")
+
 [node name="AttackTokens" type="Node" parent="."]
 script = ExtResource("4")
 melee_tokens = 2

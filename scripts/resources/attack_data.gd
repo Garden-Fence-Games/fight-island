@@ -51,6 +51,10 @@ extends Resource
 
 @export_group("Presentation")
 @export var animation: StringName = &""
+## What a landed hit looks like. A `PackedScene` export, which resolves in a hand-written scene
+## where a node export would not (ADR 0006). Null plays nothing, which is what every attack does
+## until somebody gives it one — a weapon with no effect is a weapon that still works.
+@export var vfx: PackedScene = null
 
 
 func is_finisher() -> bool:

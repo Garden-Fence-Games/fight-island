@@ -39,6 +39,10 @@ still carries separate, untextured `wood` and `woodDark` materials, which is the
 [asset-pipeline.md](asset-pipeline.md) requires and the same form the Nature Kit ships in. Same
 author, same licence, same pack — an older cut of it.
 
+No third-party file is used by the effects or the sounds: the impacts are Godot primitives driven by
+`CPUParticles3D`, the telegraph is a shader, and the five combat sounds are synthesised at startup.
+There is nothing to credit and nothing to clear before release.
+
 ## Engine and tools
 
 | | Licence |

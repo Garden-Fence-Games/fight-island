@@ -111,6 +111,14 @@ jobs:
       - name: Verify the combat loop
         run: tools/run-check.sh res://tools/verify_combat.tscn
 
+      # Effects draw nothing headless, so what is checked is the decisions in them: that a perfect
+      # hit differs in more than one way, that the telegraph is a shape rather than a colour — the
+      # only form that survives greyscale and twenty metres — and that a fight never builds one.
+      # The two accessibility settings are checked as consumers, because both were stored and read
+      # by nothing until this.
+      - name: Verify the effects
+        run: tools/run-check.sh res://tools/verify_vfx.tscn
+
       # The sounds are generated, so there is no file to listen to and nothing in a diff to read.
       # What is checked is the property the design rests on: a perfect hit rings longer *and*
       # brighter than a plain one, a perfect parry outlasts a late one, and a swing through air has
