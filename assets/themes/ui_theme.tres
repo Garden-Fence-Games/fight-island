@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=10 format=3]
+[gd_resource type="Theme" load_steps=16 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/inter_semibold.ttf" id="1"]
 [ext_resource type="FontFile" path="res://assets/fonts/badeen_display.ttf" id="2"]
@@ -92,9 +92,94 @@ shadow_color = Color(0, 0, 0, 0.35)
 shadow_size = 24
 shadow_offset = Vector2(0, 8)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip_wave"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0667, 0.0667, 0.0706, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.8275, 0.2275, 0.2275, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip_money"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0667, 0.0667, 0.0706, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_meter_back"]
+bg_color = Color(0.1412, 0.1412, 0.149, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_meter_health"]
+bg_color = Color(0.8275, 0.2275, 0.2275, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_meter_stamina"]
+bg_color = Color(0.7843, 0.7843, 0.7608, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ammo_panel"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.0667, 0.0667, 0.0706, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [resource]
 default_font = ExtResource("1")
 default_font_size = 16
+AmmoCount/base_type = &"Label"
+AmmoCount/colors/font_color = Color(0.949, 0.945, 0.9294, 1)
+AmmoCount/font_sizes/font_size = 36
+AmmoPanel/base_type = &"PanelContainer"
+AmmoPanel/styles/panel = SubResource("StyleBoxFlat_ammo_panel")
+AmmoReserve/base_type = &"Label"
+AmmoReserve/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
+AmmoReserve/font_sizes/font_size = 20
+AmmoSlash/base_type = &"Label"
+AmmoSlash/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
+AmmoSlash/font_sizes/font_size = 18
 Body/base_type = &"Label"
 Body/colors/font_color = Color(0.7843, 0.7843, 0.7608, 1)
 Body/font_sizes/font_size = 24
@@ -112,10 +197,41 @@ Button/styles/pressed = SubResource("StyleBoxFlat_entry_pressed")
 Caption/base_type = &"Label"
 Caption/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
 Caption/font_sizes/font_size = 16
+DamageNumber/base_type = &"Label"
+DamageNumber/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
+DamageNumber/font_sizes/font_size = 20
+DamageNumberPerfect/base_type = &"Label"
+DamageNumberPerfect/colors/font_color = Color(0.8275, 0.2275, 0.2275, 1)
+DamageNumberPerfect/font_sizes/font_size = 28
 Heading/base_type = &"Label"
 Heading/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
 Heading/fonts/font = ExtResource("2")
 Heading/font_sizes/font_size = 40
+HudBarHealth/base_type = &"ProgressBar"
+HudBarHealth/styles/background = SubResource("StyleBoxFlat_meter_back")
+HudBarHealth/styles/fill = SubResource("StyleBoxFlat_meter_health")
+HudBarStamina/base_type = &"ProgressBar"
+HudBarStamina/styles/background = SubResource("StyleBoxFlat_meter_back")
+HudBarStamina/styles/fill = SubResource("StyleBoxFlat_meter_stamina")
+HudChipMoney/base_type = &"PanelContainer"
+HudChipMoney/styles/panel = SubResource("StyleBoxFlat_chip_money")
+HudChipWave/base_type = &"PanelContainer"
+HudChipWave/styles/panel = SubResource("StyleBoxFlat_chip_wave")
+HudLabel/base_type = &"Label"
+HudLabel/colors/font_color = Color(0.949, 0.945, 0.9294, 1)
+HudLabel/font_sizes/font_size = 16
+HudMoney/base_type = &"Label"
+HudMoney/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
+HudMoney/font_sizes/font_size = 24
+HudValue/base_type = &"Label"
+HudValue/colors/font_color = Color(0.9608, 0.9608, 0.949, 1)
+HudValue/font_sizes/font_size = 16
+HudValueAlert/base_type = &"Label"
+HudValueAlert/colors/font_color = Color(0.8275, 0.2275, 0.2275, 1)
+HudValueAlert/font_sizes/font_size = 16
+HudWave/base_type = &"Label"
+HudWave/colors/font_color = Color(0.8275, 0.2275, 0.2275, 1)
+HudWave/font_sizes/font_size = 20
 KeyBadge/base_type = &"PanelContainer"
 KeyBadge/styles/panel = SubResource("StyleBoxFlat_badge_idle")
 KeyBadgeActive/base_type = &"PanelContainer"

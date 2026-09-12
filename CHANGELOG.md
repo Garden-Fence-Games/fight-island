@@ -8,6 +8,16 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- In-run HUD: health and stamina bottom-left, ammo bottom-right with a ranged weapon in hand,
+  wave and money top-right. Every element listens on the `EventBus` and holds no reference to the
+  player. Damage numbers exist and are off by default.
+- Run state: money, the wave index and a `RunStats` tally — perfect hits, perfect parries, kills by
+  archetype, money earned and spent, run time — collected while the run happens.
+- `Settings` and `SaveManager`, both static classes rather than autoloads: every player-facing
+  setting, applied the moment it changes and written to `user://settings.json` as JSON.
+- Four audio buses — Master, Music, SFX, Ambience — for the audio settings to act on.
+- `tools/verify_hud.tscn` — headless proof that the HUD answers every signal it claims to, that
+  ammo follows the weapon, and that damage numbers stay off until asked for.
 - Title screen: Play · Options · Quit, pad-navigable from the first frame, with Play becoming
   Continue and a New run entry appearing once a run is under way. Built to the Figma design — the
   tokens, the 96 px margins and the 420 × 72 menu rows. A grey wash stands in for the island until

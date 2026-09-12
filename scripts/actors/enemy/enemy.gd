@@ -291,6 +291,8 @@ func _on_hurt(info: HitInfo) -> void:
 
 func _on_died() -> void:
 	release_token()
-	EventBus.enemy_died.emit(self, data.money if data != null else 0)
+	EventBus.enemy_died.emit(
+		self, data.id if data != null else &"", data.money if data != null else 0
+	)
 	if machine != null:
 		machine.current.transition_to(&"Dead")

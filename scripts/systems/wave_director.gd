@@ -117,7 +117,7 @@ func _send_one() -> void:
 	_first_of_wave = false
 
 
-func _on_enemy_died(_enemy: Node3D, _money: int) -> void:
+func _on_enemy_died(_enemy: Node3D, _archetype: StringName, _money: int) -> void:
 	if not _running or _left_to_send > 0:
 		return
 	# The body that just died is still in the group for this frame, so the count is read after it.

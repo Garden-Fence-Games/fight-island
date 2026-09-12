@@ -7,3 +7,7 @@ UI_QUIT,Quit
 UI_BACK,Back
 UI_SKIP_HINT,Press any key to skip
 UI_OPTIONS_EMPTY,"Settings arrive with the options screen. Until then the game runs on its defaults."
+HUD_HEALTH,Health
+HUD_STAMINA,Stamina
+HUD_AMMO,Ammo
+HUD_WAVE,Wave %02d

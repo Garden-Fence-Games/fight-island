@@ -11,15 +11,18 @@ signal perfect_timing
 signal parry_perfect
 signal parry_late
 signal enemy_spawned(enemy: Node3D)
-signal enemy_died(enemy: Node3D, money: int)
+## The archetype travels with the death because the tally outlives the node that carried it.
+signal enemy_died(enemy: Node3D, archetype: StringName, money: int)
 signal hitstop_requested(duration: float)
-## The player has finished a chain and cannot attack for `seconds`. Presentation exists because of
-## this pair: a wait nobody can see reads as a dropped input, and the player blames the game — and
-## they are right to, because nothing told them.
 ## A wave has begun, and how many bodies it will send in total.
 signal wave_started(wave: int, enemies: int)
 ## The last of them is down. The reward travels with it so the economy can stay a listener rather
 ## than something the director has to know about.
 signal wave_cleared(wave: int, reward: int)
+## The player has finished a chain and cannot attack for `seconds`. Presentation exists because of
+## this pair: a wait nobody can see reads as a dropped input, and the player blames the game — and
+## they are right to, because nothing told them.
 signal chain_spent(seconds: float)
 signal chain_ready
+signal weapon_equipped(weapon: WeaponData)
+signal ammo_changed(magazine: int, reserve: int)
