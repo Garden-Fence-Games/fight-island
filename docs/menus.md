@@ -203,8 +203,10 @@ wants for a game, and the difference shows up as input latency.
 
 ### Audio
 
-Master, Music, SFX, Ambience. Four sliders against the four buses, in decibels internally and
-0–100 on screen, all four defaulting to 100 until the audio pass has something to balance.
+Master, Music, SFX, Ambience. Four sliders against the four buses the player owns, in decibels
+internally and 0–100 on screen, all four defaulting to 100 until the audio pass has something to
+balance. The fifth bus, **MusicDuck**, has no slider and never will: it sends to Music and exists so
+that a wind-up ducks the soundtrack underneath the player's setting instead of overwriting it.
 
 Sliders are **ten blocks, not a bar with a thumb**: a value that only ever moves in tenths is
 readable at a glance and reachable in ten presses on a pad.

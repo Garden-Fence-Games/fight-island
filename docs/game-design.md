@@ -631,8 +631,8 @@ climbs as high as his.
 
 ### The bed lifts with the island
 
-Three loops on the **Music** bus, and they are one piece of music getting louder rather than three
-cues taking turns — same length so they never drift apart, all built on stacked fifths so any pair
+Three loops on the **MusicDuck** bus, and they are one piece of music getting louder rather than
+three cues taking turns — same length so they never drift apart, all built on stacked fifths so any pair
 of them agrees, and they **stack**: a layer above its range stays full rather than handing over.
 
 | | root | arrives at | full at |
@@ -651,8 +651,13 @@ Nothing in the layers is rhythmic and nothing shares a frequency with the perfec
 any wind-up. A bed the ear can count against is a metronome, and a player fights a metronome instead
 of reading a fight.
 
-**A telegraph outranks the bed**, the way it outranks a camera knock: the Music bus drops 14 dB
+**A telegraph outranks the bed**, the way it outranks a camera knock: the MusicDuck bus drops 14 dB
 while anything is winding up and eases back after. Half a bed over a wind-up is still a bed over it.
+
+**The duck has a bus of its own, under the one the player owns.** `MusicDuck` carries the bed and
+the soundtrack and sends to **Music**, which nothing writes but the volume slider — so a wind-up
+ducks the music underneath what the player asked for rather than instead of it. Sharing one bus, the
+duck wins: it is written every frame and the slider once, and the slider then does nothing at all.
 
 ### Nothing the player needs is on a bus they may mute
 
