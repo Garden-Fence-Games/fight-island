@@ -312,10 +312,10 @@ func _check_the_formulas_match_the_table() -> void:
 		_fail("the wave reward does not match the table")
 	if config.reward_for(1, true) != 65:
 		_fail("a flawless wave 1 should pay 65, pays %d" % config.reward_for(1, true))
-	# A band that names archetypes which do not exist yet must still answer.
+	# Every wave past the last band's first still resolves to that band rather than to nothing.
 	var band := config.band_for(12)
-	if band == null or band.first_wave != 12:
-		_fail("wave 12 should use the last composition band")
+	if band == null or band.first_wave != 4:
+		_fail("wave 12 should fall back to the band that opened at wave 4")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1
 	if band != null and band.pick(rng) == null:

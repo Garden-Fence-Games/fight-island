@@ -22,7 +22,7 @@ const PIRATE_BODY: String = "res://scenes/actors/enemy_pirate.tscn"
 ## reason every list in this file is: a check that takes its list from the thing it is checking
 ## passes on a mapping that lost a row.
 const WORN_BY: Dictionary[String, Array] = {
-	ENEMY: ["farmhand", "reaper"],
+	ENEMY: ["farmhand"],
 	PIRATE_BODY: ["pirate"],
 }
 const PIPELINE: String = "res://docs/asset-pipeline.md"
@@ -35,7 +35,7 @@ const INVENTORY_CELLS: int = 3
 ## The clips the stand-in library exists to lend. Written out rather than read from the library,
 ## which would make this check agree with whatever the library happens to hold.
 const LENT: Array[String] = ["aim_gun", "parry"]
-const FARMER_LENT: Array[String] = ["windup_punch", "attack_punch", "windup_sweep", "attack_scythe"]
+const FARMER_LENT: Array[String] = ["windup_punch", "attack_punch"]
 const PIRATE_RIG: String = "res://assets/models/char_pirate.glb"
 const PIRATE_LENT: Array[String] = ["windup_club", "attack_club"]
 ## The farmer's attacks, and the joint a blow is read off. A draw and the blow that follows it are
@@ -48,7 +48,6 @@ const BLOWS: Dictionary[String, Array] = {
 	ENEMY:
 	[
 		"res://data/attacks/farmhand_swing.tres",
-		"res://data/attacks/reaper_sweep.tres",
 	],
 	PIRATE_BODY: ["res://data/attacks/pirate_club.tres"],
 }
