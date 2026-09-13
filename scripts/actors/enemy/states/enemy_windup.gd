@@ -25,10 +25,15 @@ extends EnemyState
 ## business knowing the game has audio in it.
 
 ## How far the body tips back, in degrees, at the moment the swing begins. Large on purpose: the top
-## of a capsule sits 0.85 m above its own origin, so even this only swings the silhouette about half
+## of the body sits 1.105 m above its own origin, so even this only swings the silhouette about half
 ## a metre — which against a body 0.7 m wide is the difference between "standing" and "loaded", and
 ## is what has to carry at twenty metres.
 const LEAN_DEGREES: float = 35.0
+## Which way a positive rotation tips the rig. **The visual is parented yawed 180°** — glTF faces
+## +Z and a Node3D's forward is -Z — so turning it about its own X axis tips the top the opposite
+## way round from the capsule this replaced. Rearing back is the negative of it, and this is the
+## one place that difference is written down: `verify_vfx` reads the lean back through it.
+const REARS_BACK: float = -1.0
 
 var _elapsed: float = 0.0
 
@@ -41,8 +46,8 @@ func enter(_message: Dictionary) -> void:
 ## Whatever ends the wind-up — the swing, a stagger, a death — stands the body back up. A farmer
 ## left leaning is the same lie the ring told when it outlived the commit it was drawn for.
 func exit() -> void:
-	if enemy.mesh != null:
-		enemy.mesh.rotation.x = 0.0
+	if enemy.visual != null:
+		enemy.visual.rotation.x = 0.0
 
 
 func physics_update(delta: float) -> void:
@@ -66,6 +71,6 @@ func physics_update(delta: float) -> void:
 ## whoever is about to be hit. Only the rotation is touched: the scale belongs to the elite rank and
 ## the position to the scene, and a tell that fought either would be a tell that broke them.
 func _lean(through: float) -> void:
-	if enemy.mesh == null:
+	if enemy.visual == null:
 		return
-	enemy.mesh.rotation.x = deg_to_rad(LEAN_DEGREES) * clampf(through, 0.0, 1.0)
+	enemy.visual.rotation.x = REARS_BACK * deg_to_rad(LEAN_DEGREES) * clampf(through, 0.0, 1.0)
