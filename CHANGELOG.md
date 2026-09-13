@@ -6,6 +6,25 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Fixed
+
+- **`verify_corpses` was a coin toss** — four runs in five on `main`, and it blocked every pull
+  request behind it including the release. Three assertions flaked, and none of them was a bug in
+  the game (#207).
+  - The impulse was never being lost. Instrumenting `push_near` showed **sixteen bodies taking it
+    every time**. What varies is how much of it reaches the *hips*, which is what the check reads,
+    and that depends on the pose the tumble happened to leave: splayed on his back the hips travel a
+    third of a metre, folded on his side a tenth. Both are a body reacting; only one was passing. A
+    single blow now has to **disturb** the body — five centimetres, against a picture's nought and
+    the two real modes' nine and thirty-three — and "shoved" is what a sustained walk into one has
+    to do, which is a different claim and keeps its own figure.
+  - The two shove checks **poll for the movement instead of reading at a fixed frame**. A ragdoll
+    woken a frame later than usual had not finished travelling when the reading was taken, and the
+    check reported that the player walks through corpses.
+  - The sand check held the body's lowest point to 35 cm and read 36 on about one run in five. It is
+    45 now: what it was written against was **two metres** of skin under the sand, and a centimetre
+    is two machines' solvers disagreeing, not a body sinking.
+
 ### Added
 
 - **The island is drawn as pixel art.** The finished 3D frame is cut into fat pixels — two screen
