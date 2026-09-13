@@ -145,6 +145,14 @@ func play_clip(clip: StringName, seconds: float = 0.0) -> bool:
 ## one state drives all nine attacks and which is running is data, so no table could answer for it.
 ## Everything else stays declarative, and a state that says nothing still cannot forget to animate.
 ##
+## Asks the current state again what it wants played. For a state whose answer changes partway
+## through — a knockdown that stops being a tumble and becomes a man standing up — without it
+## needing a second state to say so.
+func refresh() -> void:
+	if state_machine != null and state_machine.current_name != &"":
+		_on_state_machine_transitioned(state_machine.current_name)
+
+
 ## Asked here rather than pushed by the state, because `StateMachine` runs `enter` *before* it emits
 ## — a state that started its own clip would have it stopped again one line later.
 func _on_state_machine_transitioned(state_name: StringName) -> void:

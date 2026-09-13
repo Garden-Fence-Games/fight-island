@@ -30,7 +30,7 @@ const THROWER: String = "res://data/enemies/thrower.tres"
 ## `Enemy` — a check that agrees with whatever it is checking is not a check. They are asserted
 ## against the shipped constants below, so a retune cannot leave this testing a trajectory the
 ## thrower no longer throws.
-const THROW_HEIGHT: float = 1.1
+const THROW_HEIGHT: float = 1.44
 const CHEST_HEIGHT: float = 1.0
 ## The still waterline, and how deep the navigation mesh follows the player in. The fight happens
 ## where a thrower can stand, and out past this he does not come — the same reason
@@ -201,7 +201,7 @@ func _can_see(from: Vector3, to: Vector3) -> bool:
 func _blocked(from: Vector3, to: Vector3) -> bool:
 	# Mask 1 alone: the `world` layer, which is the half of the stone's own mask 33 that is not the
 	# player's hurtbox. What stops a stone is the island.
-	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
+	var query := PhysicsRayQueryParameters3D.create(from, to, PhysicsLayers.BIT_WORLD)
 	query.collide_with_areas = false
 	return not _space.intersect_ray(query).is_empty()
 

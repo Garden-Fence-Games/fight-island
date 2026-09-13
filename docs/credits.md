@@ -7,9 +7,10 @@ made it, its licence, and when it was added.
 
 ## Assets
 
-The island's vegetation, stone and huts come from two CC0 packs by the same author, and the player
-is now a modelled rig. The enemies, the weapons and the terrain itself are still Godot primitives —
-see [asset-pipeline.md](asset-pipeline.md).
+The island's stone and huts come from two CC0 packs by the same author. Everything that grows on
+it — the palms, the grass, the bushes — is ours, and so are the gulls; the player and the farmer are
+both modelled rigs. The weapons and the terrain itself are still Godot primitives — see
+[asset-pipeline.md](asset-pipeline.md).
 
 | File | Source | Author | Licence | Added |
 |---|---|---|---|---|
@@ -17,12 +18,16 @@ see [asset-pipeline.md](asset-pipeline.md).
 | `assets/logo/fight_island_logo_1.svg` | original, Figma | Purple-Sigil | © the project, all rights reserved | 2026-09-11 |
 | `assets/models/char_player.glb` — mesh, gun, textures and clips | original, Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-12 |
 | `assets/models/char_player.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-12 |
+| `assets/models/char_farmer.glb` — mesh, textures and clips | original, Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/char_farmer.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-13 |
 | `assets/fonts/badeen_display.ttf` | [Google Fonts](https://fonts.google.com/specimen/Badeen+Display) | The Badeen Project Authors | SIL OFL 1.1 | 2026-09-12 |
 | `assets/fonts/inter_semibold.ttf` | [Google Fonts](https://fonts.google.com/specimen/Inter) | The Inter Project Authors | SIL OFL 1.1 | 2026-09-12 |
 | `assets/models/nature/palm_tree.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-12 |
+| `assets/models/nature/grass_tuft.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/nature/bush.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/nature/bird.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/stone_largeD.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/nature/stone_smallA.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
-| `assets/models/nature/grass_leafs.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/camp/structure.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/camp/structure_base.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/camp/structure_roof.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
@@ -73,8 +78,10 @@ Mixamo animations are convenient for prototyping but their redistribution terms 
 Anything from Mixamo must be replaced or cleared before a public release, and it gets a row here
 flagged `prototype only` in the meantime.
 
-**The player's animations are original**, authored in Blender. What comes from Mixamo is the
-*skeleton*: the rig was produced by their auto-rigger, which is why all 33 bones are named
-`mixamorig:*` and why every source action arrived called `mixamo.com`. Adobe's terms do allow a
+**The animations are original**, authored in Blender, for the player and for the farmer alike.
+What comes from Mixamo is the *skeleton*: both rigs were produced by their auto-rigger, which is why
+all 33 bones of each are named `mixamorig:*` and why every source action arrived called
+`mixamo.com`. The farmer's ragdoll names sixteen of those bones in `RagdollComponent`, so replacing
+the auto-rig now costs that list as well as every clip authored on it. Adobe's terms do allow a
 Mixamo-rigged character to ship, but the flag stays until someone reads those terms against this
 project rather than assuming — replacing an auto-rig late costs every clip that was authored on it.

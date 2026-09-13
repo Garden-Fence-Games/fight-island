@@ -38,6 +38,10 @@ extends Node
 ## head does not converge on a point in front of its own face.
 @export var reach: float = 12.0
 
+## A body to keep the head on, for an owner that has no aiming device of its own. Null means "use
+## the aim, or look where the body looks" — which is the player's case and the state at rest.
+var watching: Node3D = null
+
 var _skeleton: Skeleton3D = null
 var _aim: AimComponent = null
 var _modifier: LookAtModifier3D = null
@@ -106,11 +110,21 @@ func _process(_delta: float) -> void:
 
 ## Flat on purpose. The aim is a ground direction and the camera is overhead: letting the head pitch
 ## towards a point on the floor would hide the face in the one view the game ever uses.
+##
+## Two ways in, because the two bodies know where they are looking by different means. The player
+## has an `AimComponent` and is found automatically; a farmer has no aim, so whoever roused him sets
+## `watching` and he turns his head to it. Neither is a special case for the other: the component
+## still knows nothing about who owns it, only that it was either given a node or found a device.
 func _look_direction() -> Vector3:
+	if is_instance_valid(watching) and watching.is_inside_tree():
+		var toward := watching.global_position - _body.global_position
+		toward.y = 0.0
+		if not toward.is_zero_approx():
+			return toward.normalized()
 	var aimed := _aim.direction() if _aim != null else Vector3.ZERO
 	if not aimed.is_zero_approx():
 		return Vector3(aimed.x, 0.0, aimed.z).normalized()
-	# Not aiming means "look where the body looks", which costs the head no rotation at all.
+	# Nothing to watch and nothing aimed means "look where the body looks", which costs no rotation.
 	var forward := -_body.global_transform.basis.z
 	return Vector3(forward.x, 0.0, forward.z).normalized()
 

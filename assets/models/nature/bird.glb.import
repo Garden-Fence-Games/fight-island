@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dft013rsfn4qi"
-path="res://.godot/imported/grass_leafs.glb-36199fbe453a512047ebc73a81bfa139.scn"
+uid="uid://13k2f5r0ewpv"
+path="res://.godot/imported/bird.glb-c8ffcabdd35785ab53110ed3ec7b31b5.scn"
 
 [deps]
 
-source_file="res://assets/models/nature/grass_leafs.glb"
-dest_files=["res://.godot/imported/grass_leafs.glb-36199fbe453a512047ebc73a81bfa139.scn"]
+source_file="res://assets/models/nature/bird.glb"
+dest_files=["res://.godot/imported/bird.glb-c8ffcabdd35785ab53110ed3ec7b31b5.scn"]
 
 [params]
 

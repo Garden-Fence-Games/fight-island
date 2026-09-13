@@ -55,10 +55,10 @@ func _exit_tree() -> void:
 
 func _on_attack_landed(target: Node3D, _damage: float, perfect: bool, _attack: AttackData) -> void:
 	var enemy := target as Enemy
-	if enemy == null or enemy.mesh == null:
+	if enemy == null or enemy.body_materials == null:
 		return
-	var material := enemy.mesh.material_override as StandardMaterial3D
-	if material == null:
+	var materials := enemy.body_materials.materials()
+	if materials.is_empty():
 		return
 	if bool(Settings.get_value(&"access_reduce_flashing")):
 		return
@@ -68,13 +68,16 @@ func _on_attack_landed(target: Node3D, _damage: float, perfect: bool, _attack: A
 	# body was wearing rather than to zero, which for an ordinary farmer is nothing at all.
 	var resting := enemy.rank.glow if enemy.rank != null else Color.BLACK
 	var settles_to := enemy.rank.glow_energy if enemy.rank != null else 0.0
-	material.emission_enabled = true
-	material.emission = PERFECT_COLOR if perfect else NORMAL_COLOR
-	material.emission_energy_multiplier = PERFECT_FLASH if perfect else NORMAL_FLASH
-	var tween := create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(material, "emission_energy_multiplier", settles_to, FLASH_DURATION)
-	tween.tween_property(material, "emission", resting, FLASH_DURATION)
+	# Every surface of the body, not one: a painted rig is drawn with several, and flashing only the
+	# first would light the farmer's shirt and leave his face dark. The component does that, and owns
+	# the tween, because it owns the materials and knows when the body is put away.
+	enemy.body_materials.flash(
+		PERFECT_COLOR if perfect else NORMAL_COLOR,
+		PERFECT_FLASH if perfect else NORMAL_FLASH,
+		resting,
+		settles_to,
+		FLASH_DURATION
+	)
 
 
 ## The state, held for as long as it lasts, rather than a flash when a press is refused. Seeing

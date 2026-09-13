@@ -122,9 +122,20 @@ attack's recovery, and its perfect multiplier applies to that press.
 
 **Poise** is what a hit takes off an enemy's stagger meter — 15 on a farmhand, 30 on a reaper,
 10 on a thrower. It had been in the resources since M1 with no row here, which is the drift this
-document exists to prevent, so it is tabled now. Read it against those three numbers: **the stick's
-overhead is the only single blow that staggers a reaper**, which is a large part of why the stick is
-the answer to him.
+document exists to prevent, so it is tabled now.
+
+**Poise no longer decides whether an enemy reacts, only how hard.** Every hit that lands throws
+him, and therefore opens the next one — that is what makes a combo a combo rather than three swings
+at a man who is already walking away. What breaking his poise buys is the difference between rocked
+and sprawling: the blow's own `Stagger` figure becomes a push, and a blow that broke poise pushes
+**1.8×** as hard. Read the three poise numbers against that: **the stick's overhead is the only
+single blow that sends a reaper sprawling**, which is a large part of why the stick is the answer
+to him — but every other blow still rocks him and still leaves him open.
+
+This is the one place the combat's figures are not yet in `data/`: the push per point of `Stagger`
+(12 m/s), the broken-poise multiplier (1.8) and the knockdown ceiling below live in the scripts that
+use them. They are tabled here because this document is their home; moving them into a resource is
+outstanding work.
 
 **All three weapons are in**, exactly as tabled above. `tools/verify_combat.tscn` asserts the fists'
 damage, the perfect multiplier, both chain-window boundaries, the chain lockout and the parry
@@ -241,6 +252,18 @@ stops the player from camping one corner, and he is the single best argument for
 
 States: `Spawn → Idle → Chase → Strafe → WindUp → Attack → Recover`, plus `Stagger`, `Flinch`,
 `Dead`. The thrower adds `Retreat`.
+
+**`Stagger` is two phases, and a knockdown is physics.** A hit hard enough to throw a rigged enemy
+hands his skeleton to the simulator: nothing animates while it has him, he tumbles where the blow
+sent him, and the body node catches up with wherever his hips came to rest — leaving it where he was
+hit would teleport him back in front of the player who just watched him fall. He then takes 0.7 s to
+stand.
+
+The fall ends when he stops moving, which is almost always what happens. When it does not — wedged
+against a rock, caught on a slope — he is taken back after **four times the attack's own `Stagger`
+figure**, so a jab that tips a man over does not put him down for as long as an uppercut does. An
+enemy with no rig, or one whose skeleton did not resolve, falls back to standing still for the
+attack's stagger duration, which is what this state used to be.
 
 Three global rules keep a crowd fair rather than unfair:
 

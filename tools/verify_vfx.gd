@@ -15,12 +15,14 @@ const SHAKEN_FRAMES: int = 20
 ## How far the eye may drift along its own arm while being shaken. It should be nothing at all; a
 ## centimetre is float noise.
 const ARM_SLACK: float = 0.01
-## How high the top of a farmer's capsule sits above its own origin — half of a 1.7 m body. What
-## the lean swings is the top, so this is what turns an angle into a silhouette.
-const CAPSULE_TOP: float = 0.85
-## How far that top has to swing before the tell carries at twenty metres. Against a body 0.7 m
-## wide, this is the difference between a man standing and a man loaded: it is over half his own
-## width, and at twenty metres it subtends about 1.4 degrees, which is roughly the moon.
+## How high the top of a farmer's capsule sits above its own origin — half of a 2.21 m body. What
+## the lean swings is the top, so this is what turns an angle into a silhouette. It was half of
+## 1.7 m while a farmer was a capsule; the rig is taller, and a figure that stayed behind would
+## have gone on measuring a body nobody ships.
+const CAPSULE_TOP: float = 1.105
+## How far that top has to swing before the tell carries at twenty metres. This is an angular
+## threshold, not a proportion of the body, so it does not move with the rig: at twenty metres
+## 0.45 m subtends about 1.4 degrees, which is roughly the moon.
 const READS_AT_TWENTY_METRES: float = 0.45
 ## A degree of float noise, in radians. A lean read one physics frame apart can wobble by less.
 const LEAN_SLACK: float = 0.02
@@ -29,6 +31,27 @@ const LEAN_SLACK: float = 0.02
 ## — on a wind-up halved to thirteen frames that is three degrees. What this has to separate is a
 ## tell driven by the duration from one running at its own rate, and the second lands near half.
 const COMPLETES_BY: float = 0.9
+## How long to let the flock sweep for. **Seconds, not frames**: the flock acts on accumulated time
+## and headless frames go by far faster than real ones, so a frame count that looks generous can be
+## twenty milliseconds and never reach a single sweep. Three sweeps at the shipped interval.
+const FLOCK_SECONDS: float = 0.9
+## A ceiling on the wait, so a flock that stopped processing fails the check rather than hanging it.
+const FLOCK_FRAME_CAP: int = 4000
+## The lowest a bird standing on the island may be. **Not zero**: the plateau is y = 0 here and the
+## beach descends from it to a waterline at −1.1 m, so the sea's reach is the swell's crest at
+## −0.99 m and nothing higher. Written out rather than read off the generator, which would make this
+## agree with whatever the thing it checks happens to say. This caught the flock refusing the entire
+## shore, and before that the ordering bug that put every ground bird at the origin's height.
+const DRY_SAND: float = -0.9
+## How far above the player a sky bird has to be to read as sky rather than as scenery at head
+## height. Well under the generator's own floor, so this fails on a collapse and not on a tweak.
+const OVERHEAD: float = 6.0
+## Frames to hold a direction for, long enough for the body to reach its speed and for the dust to
+## have been asked about it at least once.
+const UNDER_WAY: int = 30
+## How much more dust a sprint has to kick up than a walk. The two rates are the feature the player
+## asked for, and a ratio that drifts towards one is the feature quietly going away.
+const SPRINT_DUST_GAIN: float = 1.5
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -58,6 +81,11 @@ func _run() -> void:
 	await _check_the_telegraph_is_a_shape()
 	await _check_the_telegraph_keeps_the_wind_ups_own_time()
 	await _check_a_farmer_never_stays_leaning()
+	# The dust goes first on purpose: it is the only check here that needs the player standing on the
+	# ground he started on, and the startle check below picks him up and puts him somewhere else.
+	await _check_the_dust_rises_with_the_body()
+	await _check_the_birds_stand_on_sand_and_fly_in_the_sky()
+	await _check_a_bird_leaves_when_you_walk_into_it()
 	_report()
 
 
@@ -193,6 +221,125 @@ func _check_a_shake_does_not_move_the_eye(rig: CameraRig) -> void:
 		)
 
 
+## The birds are scenery, so nothing in a diff says whether they are anywhere a player will see
+## them. Two things can go silently wrong and both have: a ground bird placed at a guessed height
+## stands in the sea, and a sky bird that lost its altitude stands in the sand next to it.
+func _check_the_birds_stand_on_sand_and_fly_in_the_sky() -> void:
+	var flock := _arena.get_node_or_null("BirdFlock")
+	if flock == null:
+		_fail("the arena has no flock, so the island is empty of anything alive but enemies")
+		return
+	var player := _arena.get_node("Player") as Node3D
+	await _let_the_flock_sweep()
+	var grounded := 0
+	var flying := 0
+	for bird: Bird in _birds(flock):
+		if bird.is_grounded():
+			grounded += 1
+			if bird.global_position.y < DRY_SAND:
+				_fail("a bird is standing at y=%.2f, which is the sea" % bird.global_position.y)
+		elif bird.is_flying():
+			flying += 1
+			var above := bird.global_position.y - player.global_position.y
+			if above < OVERHEAD:
+				_fail("a flying bird is only %.1f m above the player" % above)
+	if grounded == 0:
+		_fail("no bird is on the ground")
+	if flying == 0:
+		_fail("no bird is in the sky")
+
+
+## The whole of what the birds are for. A shore that empties as you cross it costs nothing to
+## simulate and tells the player the island was there before he was — so the startle is the feature,
+## and a bird that sat still while being walked through would be worse than no bird.
+func _check_a_bird_leaves_when_you_walk_into_it() -> void:
+	var flock := _arena.get_node_or_null("BirdFlock")
+	if flock == null:
+		return
+	var player := _arena.get_node("Player") as Node3D
+	var target: Bird = null
+	for bird: Bird in _birds(flock):
+		if bird.is_grounded():
+			target = bird
+			break
+	if target == null:
+		_fail("there was no bird on the ground to walk into")
+		return
+	var stood := target.global_position
+	# Put back afterwards: the player is dropped onto sand that is not the height he was standing at,
+	# so leaving him there leaves him inside a dune for whatever runs next.
+	var was := player.global_position
+	player.global_position = Vector3(stood.x, stood.y + 1.0, stood.z)
+	await _let_the_flock_sweep()
+	player.global_position = was
+	if not is_instance_valid(target):
+		return
+	if target.is_grounded():
+		_fail("a bird was walked straight through and stayed on the ground")
+	elif target.global_position.y <= stood.y:
+		_fail("a startled bird left without climbing")
+
+
+## Dust is tied to speed rather than to a footfall, because the rig has no footstep event yet. That
+## makes the contrast between a walk and a sprint the only thing carrying it, and a contrast is
+## exactly what an interpolation anchored at the wrong end loses: anchored at zero instead of at
+## walking pace, a walk already emitted four fifths of a sprint.
+func _check_the_dust_rises_with_the_body() -> void:
+	var player := _arena.get_node("Player") as CharacterBody3D
+	var dust := player.find_child("Dust", true, false) as GPUParticles3D
+	if dust == null:
+		_fail("the player kicks up no dust at all")
+		return
+	if dust.emitting:
+		_fail("the player is standing still and still kicking up sand")
+	Input.action_press(&"move_forward")
+	for _frame: int in UNDER_WAY:
+		await get_tree().physics_frame
+	await get_tree().process_frame
+	var walking := dust.amount_ratio
+	var walked := dust.emitting
+	Input.action_press(&"sprint")
+	for _frame: int in UNDER_WAY:
+		await get_tree().physics_frame
+	await get_tree().process_frame
+	var sprinting := dust.amount_ratio
+	Input.action_release(&"sprint")
+	Input.action_release(&"move_forward")
+	if not walked:
+		_fail("walking kicked up no dust")
+	if sprinting < walking * SPRINT_DUST_GAIN:
+		_fail(
+			(
+				(
+					"sprinting kicks up %.2f against walking's %.2f, which is not the difference the"
+					+ " dust is there to show"
+				)
+				% [sprinting, walking]
+			)
+		)
+
+
+## Waits on the clock the flock itself runs on.
+func _let_the_flock_sweep() -> void:
+	var waited := 0.0
+	var frames := 0
+	while waited < FLOCK_SECONDS and frames < FLOCK_FRAME_CAP:
+		await get_tree().process_frame
+		waited += get_process_delta_time()
+		frames += 1
+
+
+## Every bird currently under the flock. Asked for rather than counted from the export, because one
+## that has left is gone and the flock puts a replacement somewhere new.
+func _birds(flock: Node) -> Array[Bird]:
+	var found: Array[Bird] = []
+	for child: Node in flock.get_children():
+		var bird := child as Bird
+		if bird != null:
+			found.append(bird)
+	return found
+
+
 ## The director and the tutorial both want to run a wave, and this check is not about either.
 func _stand_everything_down() -> void:
 	var director := _arena.get_node_or_null("WaveDirector") as WaveDirector
@@ -225,7 +372,8 @@ func _check_the_telegraph_is_a_shape() -> void:
 	var farmer := _a_farmer_winding_up()
 	if farmer == null:
 		return
-	var material := farmer.mesh.material_override as StandardMaterial3D
+	var surfaces := farmer.body_materials.materials()
+	var material: StandardMaterial3D = surfaces[0] if not surfaces.is_empty() else null
 	var colour_before := material.albedo_color if material != null else Color.WHITE
 	var glow_before := material.emission if material != null else Color.BLACK
 
@@ -234,7 +382,7 @@ func _check_the_telegraph_is_a_shape() -> void:
 	for _frame: int in int(windup * 60.0) + 2:
 		await get_tree().physics_frame
 		if farmer.machine.current is EnemyWindUp:
-			leans.append(farmer.mesh.rotation.x)
+			leans.append(EnemyWindUp.REARS_BACK * farmer.visual.rotation.x)
 
 	if leans.size() < 4:
 		_fail("the wind-up was over before the lean could be watched")
@@ -283,7 +431,7 @@ func _check_the_telegraph_keeps_the_wind_ups_own_time() -> void:
 	for _frame: int in int(windup * 60.0) + 2:
 		await get_tree().physics_frame
 		if farmer.machine.current is EnemyWindUp:
-			most = maxf(most, farmer.mesh.rotation.x)
+			most = maxf(most, EnemyWindUp.REARS_BACK * farmer.visual.rotation.x)
 	var through := most / deg_to_rad(EnemyWindUp.LEAN_DEGREES)
 	if through < COMPLETES_BY:
 		_fail(
@@ -307,7 +455,7 @@ func _check_a_farmer_never_stays_leaning() -> void:
 		return
 	for _frame: int in 6:
 		await get_tree().physics_frame
-	if is_zero_approx(farmer.mesh.rotation.x):
+	if is_zero_approx(farmer.visual.rotation.x):
 		_fail("the farmer never leaned at all, so standing him up proves nothing")
 		_stand_him_down(farmer)
 		return
@@ -316,9 +464,12 @@ func _check_a_farmer_never_stays_leaning() -> void:
 	await get_tree().physics_frame
 	farmer.revive(Vector3(0.0, 0.0, -6.0))
 	await get_tree().physics_frame
-	if not is_zero_approx(farmer.mesh.rotation.x):
+	if not is_zero_approx(farmer.visual.rotation.x):
 		_fail(
-			"a body retired mid-commit came back leaning %.1f°" % rad_to_deg(farmer.mesh.rotation.x)
+			(
+				"a body retired mid-commit came back leaning %.1f°"
+				% rad_to_deg(farmer.visual.rotation.x)
+			)
 		)
 	_stand_him_down(farmer)
 
@@ -333,7 +484,7 @@ func _a_farmer_winding_up(windup: float = 1.0) -> Enemy:
 	var farmer := director.spawner.spawn_at(
 		load(FARMHAND) as EnemyData, Vector3(0.0, 0.0, -6.0), 1.0, 1.0, 1.0, windup
 	)
-	if farmer == null or farmer.mesh == null:
+	if farmer == null or farmer.visual == null:
 		_fail("could not lease a farmer to watch")
 		return null
 	# **The pool lives under the director**, so standing the director down to keep waves out of this
@@ -355,8 +506,9 @@ func _report() -> void:
 		print(
 			(
 				"vfx OK — every attack names an effect, a perfect hit differs three ways, a "
-				+ "fight builds nothing, and a farmer rears back in a shape that keeps the "
-				+ "wind-up's own time and never stays leaning"
+				+ "fight builds nothing, a farmer rears back in a shape that keeps the "
+				+ "wind-up's own time and never stays leaning, the birds stand on sand and "
+				+ "leave when walked into, and a sprint kicks up more dust than a walk"
 			)
 		)
 		get_tree().quit(0)

@@ -16,9 +16,17 @@ const TURN_SPEED_DEGREES: float = 360.0
 ## farmers is most of a frame spent on a query whose answer barely moves, and the player cannot get
 ## far in a quarter of a second.
 const REPATH_INTERVAL: float = 0.25
+## What breaking a farmer's poise is worth, as a multiple of the blow's own throw. Every hit already
+## rocks him; this is the difference between rocked and sprawling.
+const BROKEN_POISE_PUSH: float = 1.8
 ## Where a stone leaves the hand and where it is aimed. Both at chest height, so a throw travels
 ## flat: an arc would be prettier and would also make the thing impossible to read at a glance.
-const THROW_HEIGHT: float = 1.1
+##
+## **The hand moved when the body did.** It was 1.1 m, which was a chest while a farmer was a 1.7 m
+## capsule; the rig stands 2.21 m and 1.1 m is his waist. What it is aimed at did not move: that is
+## the player's chest, and the player is still 1.8 m. `verify_sightlines` holds both figures against
+## these, so a rig that ships at another height fails rather than throwing from the hip.
+const THROW_HEIGHT: float = 1.44
 const CHEST_HEIGHT: float = 1.0
 
 @export var data: EnemyData = null
@@ -64,7 +72,11 @@ var _repath_clock: float = 0.0
 @onready var hitbox: Hitbox = $Hitbox
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var machine: StateMachine = $StateMachine
-@onready var mesh: MeshInstance3D = $Body
+@onready var visual: Node3D = $Visual
+@onready var body_materials: BodyMaterialsComponent = $BodyMaterials
+@onready var head_look: HeadLookComponent = get_node_or_null("HeadLook") as HeadLookComponent
+@onready var animation: AnimationComponent = get_node_or_null("Animation") as AnimationComponent
+@onready var ragdoll: RagdollComponent = get_node_or_null("Ragdoll") as RagdollComponent
 @onready var agent: NavigationAgent3D = $Agent
 
 
@@ -110,6 +122,12 @@ func revive(
 	target = get_tree().get_first_node_in_group(&"player") as Node3D
 	_poise_window = 0.0
 	roused = false
+	if head_look != null:
+		head_look.watching = null
+	# A body handed back mid-tumble comes out of the pool still tumbling, which is the kind of bug
+	# that only shows up five waves in. Cheap to call when nothing is running, so it is called always.
+	if ragdoll != null:
+		ragdoll.stop()
 	_stone = null
 	_token_owed = false
 	if data != null:
@@ -117,13 +135,12 @@ func revive(
 		if health != null:
 			var tougher := rank.health_multiplier if rank != null else 1.0
 			health.set_max_health(data.health * health_boost * tougher, true)
-		if mesh != null:
-			_apply_tint()
+		_apply_tint()
 	if hurtbox != null:
 		hurtbox.monitorable = true
 	if hitbox != null:
 		hitbox.disarm()
-	set_collision_layer_value(3, true)
+	set_collision_layer_value(PhysicsLayers.INDEX_ENEMY_BODY, true)
 	process_mode = Node.PROCESS_MODE_INHERIT
 	visible = true
 	add_to_group(&"enemies")
@@ -141,7 +158,11 @@ func sleep() -> void:
 		hurtbox.monitorable = false
 	if hitbox != null:
 		hitbox.disarm()
-	set_collision_layer_value(3, false)
+	set_collision_layer_value(PhysicsLayers.INDEX_ENEMY_BODY, false)
+	# A flash still in flight would go on writing into the materials this body keeps, and finish in
+	# whatever life it is leased for next.
+	if body_materials != null:
+		body_materials.stop_flash()
 	visible = false
 	velocity = Vector3.ZERO
 	process_mode = Node.PROCESS_MODE_DISABLED
@@ -187,6 +208,11 @@ func rouse() -> void:
 	if roused:
 		return
 	roused = true
+	# The head goes to the player the moment he is noticed, and stays there while the body walks
+	# wherever the path takes it. Before that he looks where he is going, like anyone who has not
+	# seen you yet.
+	if head_look != null:
+		head_look.watching = target
 	if data == null or data.rouse_radius <= 0.0:
 		return
 	# The hour reaches the crowd here and nowhere else. Noticing is deliberately left alone: a
@@ -352,28 +378,35 @@ func _on_stone_spent() -> void:
 		release_token()
 
 
-func stagger(duration: float) -> void:
+## The push is the attack's own stagger figure and the direction is the way the blow travelled.
+## Both are passed rather than looked up: by the time the body reacts, the swing is over.
+func stagger(duration: float, from: Vector3 = Vector3.ZERO, push: float = 0.0) -> void:
 	if machine == null or not is_alive():
 		return
 	release_token()
-	machine.current.transition_to(&"Stagger", {"duration": duration})
+	machine.current.transition_to(&"Stagger", {"duration": duration, "from": from, "push": push})
 
 
 func is_alive() -> bool:
 	return health == null or health.is_alive()
 
 
-## The archetype's colour, and the elite's glow over the top of it. The mesh is scaled here and the
-## body is not: an elite reads bigger without its swing quietly gaining reach.
+## The archetype's colour, and the elite's glow over the top of it. The visual is scaled here and
+## the body is not: an elite reads bigger without its swing quietly gaining reach.
 func _apply_tint() -> void:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = data.tint
-	if rank != null:
-		material.emission_enabled = true
-		material.emission = rank.glow
-		material.emission_energy_multiplier = rank.glow_energy
-	mesh.material_override = material
-	mesh.scale = Vector3.ONE * (rank.scale if rank != null else 1.0)
+	if body_materials == null or visual == null:
+		return
+	# Multiplied over the rig's own painted colours rather than replacing them. White is the farmer
+	# as he was painted; the two archetypes that have no texture of their own yet are still told
+	# apart by a wash, which is what their tint was for when all three were capsules.
+	body_materials.tint(data.tint)
+	body_materials.glow(
+		rank.glow if rank != null else Color.BLACK, rank.glow_energy if rank != null else 0.0
+	)
+	visual.scale = Vector3.ONE * (rank.scale if rank != null else 1.0)
+	# A wave cleared mid-wind-up retires the body through `sleep()` with no state ever exiting, so
+	# the tell is standing here or the next life starts leaning into a swing nobody threw.
+	visual.rotation.x = 0.0
 
 
 func _on_hurt(info: HitInfo) -> void:
@@ -385,9 +418,15 @@ func _on_hurt(info: HitInfo) -> void:
 	rouse()
 	_poise_window = 2.0
 	poise_left -= info.poise_damage
-	if poise_left <= 0.0 and data != null:
+	var broke := poise_left <= 0.0 and data != null
+	if broke:
 		poise_left = data.poise
-		stagger(maxf(info.stagger, 0.4))
+	# **Every hit throws him**, and every hit therefore opens the next one — that is what makes a
+	# combo a combo rather than three swings at a man who is already walking away. Poise no longer
+	# decides *whether* he reacts, only how hard: a blow that breaks it sends him sprawling, one
+	# that does not rocks him where he stands and leaves him open all the same.
+	var push := info.stagger * (BROKEN_POISE_PUSH if broke else 1.0)
+	stagger(maxf(info.stagger, 0.4), info.direction, push)
 
 
 func _on_died() -> void:
