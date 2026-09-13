@@ -275,6 +275,12 @@ jobs:
       - name: Verify nothing walks the tree per frame
         run: tools/run-check.sh res://tools/verify_lookups.tscn
 
+      # Three things that each break the other two if done wrong: he must stay, he must stop being
+      # an enemy so the pool of thirty-two can serve a run that kills hundreds, and he must not sink
+      # — which is what he used to do and what made the first two moot.
+      - name: Verify the corpses
+        run: tools/run-check.sh res://tools/verify_corpses.tscn
+
       # The only sounds in the game that are not synthesised, which makes them the only ones that
       # can go missing: a synthesised sound is code and fails loudly, a file is a file. And a voice
       # that drew level with a wind-up would drown the one sound the game is built around.

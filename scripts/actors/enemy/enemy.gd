@@ -55,6 +55,9 @@ var rank: EliteRank = null
 ## the payout happens the swing is over. One rather than zero, so a body killed by anything that is
 ## not a player's attack — a headless check applying damage straight to the health — still pays.
 var last_hit_worth: float = 1.0
+## Which way the last blow was travelling. What sends a dying man the way he was hit rather than
+## straight down, which is the difference between a body falling over and a body being killed.
+var last_hit_from: Vector3 = Vector3.FORWARD
 ## He comes, he circles, and he never swings. The first two tutorial steps need something to hit
 ## that will not hit back — and a farmer standing still would teach the player that farmers do.
 var passive: bool = false
@@ -115,6 +118,7 @@ func revive(
 	# A finisher's bonus belongs to the life it was earned in. Left behind, a recycled body would
 	# pay a combo nobody threw the next time a jab knocked it over.
 	last_hit_worth = 1.0
+	last_hit_from = Vector3.FORWARD
 	damage_scale = damage * (rank.damage_multiplier if rank != null else 1.0)
 	speed_scale = speed
 	windup_scale = windup
@@ -426,6 +430,10 @@ func _on_hurt(info: HitInfo) -> void:
 	# Recorded here rather than on death because the hurtbox reports the contact before the health
 	# is spent, so this is the last moment the killing blow is still identifiable.
 	last_hit_worth = info.money_multiplier
+	# And which way it was going, for the tumble. Read here for the same reason the money is: the
+	# hurtbox reports the contact before the health is spent, so this is the last moment the killing
+	# blow is still identifiable.
+	last_hit_from = info.direction
 	rouse()
 	_poise_window = 2.0
 	poise_left -= info.poise_damage

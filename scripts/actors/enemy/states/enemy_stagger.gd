@@ -37,7 +37,10 @@ func enter(message: Dictionary) -> void:
 ## Whatever takes him out of here — a killing blow, a wave cleared, a body returned to the pool —
 ## has to hand the skeleton back, or it comes out of the pool still tumbling.
 func exit() -> void:
-	if enemy.ragdoll != null and enemy.ragdoll.is_running():
+	# **A body on its way to `Dead` keeps its tumble.** Stopping here snapped a dying farmer upright
+	# in the frame before the corpse was taken, so every one of them ended up standing in the pile.
+	# The dead state owns the fall from that point and stops it when it lays him down.
+	if enemy.ragdoll != null and enemy.ragdoll.is_running() and enemy.is_alive():
 		enemy.ragdoll.stop()
 	if enemy.ragdoll != null and enemy.ragdoll.came_to_rest.is_connected(_on_came_to_rest):
 		enemy.ragdoll.came_to_rest.disconnect(_on_came_to_rest)
