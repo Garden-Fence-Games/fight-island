@@ -80,6 +80,11 @@ still fail.
 
 ### Fixed
 
+- **The pirate wears his own paint.** `char_pirate.glb` shipped with only the eyes' image: the body
+  and club textures in `char_pirate.blend` pointed at a folder on the artist's desktop, never loaded
+  during the export, and the exporter dropped them without a word — so Godot drew both white. They
+  point at `art-source/textures/pirate_texture.png` and `stick.png` now, and the re-exported rig
+  embeds all three images; the clips are unchanged.
 - **Nobody could find a coconut.** Reported as the feature not working at all; it worked perfectly —
   ten drops out of ten, two in a live wave, exactly the wave-1 ceiling. It was simply impossible to
   know any of it had happened. Three reasons, each measured: they were judged in frame at the palm
