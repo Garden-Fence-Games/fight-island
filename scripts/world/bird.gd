@@ -85,7 +85,10 @@ func _process(delta: float) -> void:
 		# Alive rather than placed: a couple of centimetres of breathing is the whole difference
 		# between a bird and a rock shaped like one.
 		_bob += delta * 1.7
-		position.y = _started_at + sin(_bob) * 0.02
+		# Global on both sides. `_started_at` is a world height, and writing it into local `position.y`
+		# only agreed with itself because the flock happens to be a plain `Node` with no transform of
+		# its own — reparent the birds under anything placed and every one of them would jump.
+		global_position.y = _started_at + sin(_bob) * 0.02
 		return
 	if _state == FLYING:
 		_heading = _heading.rotated(Vector3.UP, delta * 0.35).normalized()
