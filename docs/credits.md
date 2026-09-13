@@ -5,6 +5,16 @@ made it, its licence, and when it was added.
 
 **A file with no row does not ship.**
 
+## The studio
+
+Who the game belongs to, and where to find them. One row, and the address is written as text rather
+than as a link because the screen that shows it is a screen, not a browser — a player reading it is
+meant to be able to type it.
+
+| | |
+|---|---|
+| Garden Fence | gardenfence.ch |
+
 ## The people
 
 Who made the game, which is a different question from where each file came from. The table below
