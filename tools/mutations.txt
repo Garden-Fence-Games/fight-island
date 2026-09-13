@@ -86,3 +86,5 @@ scripts/systems/input_bindings.gd|		if code == KEY_NONE:|		if false:|verify_glyp
 # nothing, which is the designed behaviour and the reason the inventory has to be held from outside.
 scripts/components/animation_component.gd|&"Dodge": &"dodge_roll",|&"Dodge": &"dodge_rol",|verify_clips
 scripts/components/animation_component.gd|if mine.has_animation(clip):|if not mine.has_animation(clip):|verify_clips
+scripts/actors/player/states/player_parry.gd|const LATE_END: float = 0.22|const LATE_END: float = 0.30|verify_clips
+scripts/components/animation_component.gd|&"Parry": &"parry",|&"Parry": &"pary",|verify_clips

@@ -369,7 +369,6 @@ that is never wrong about anything is one nobody reads.
 
 | Clip | Rig | Where it bites |
 |---|---|---|
-| `parry` | player | A parry is timing the player cannot see, so the window is read off the HUD flash rather than the body. The most expensive of these. |
 | `death` | player | The run ends on the rest pose. The death screen covers it within the frame, which is why it has waited. |
 | `attack_stick_1` | player | The stick swings and nothing moves. The stick has no mesh on the rig either, so it is invisible in hand — one job, not two. |
 | `attack_stick_2` | player | As above. |
@@ -378,12 +377,21 @@ that is never wrong about anything is one nobody reads.
 | `attack_scythe` | farmer | The reaper's swing is the widest telegraph in the game and lands on nothing. |
 | `attack_throw` | farmer | The thrower's arm never comes over. The stone appears anyway. |
 
-**`attack_gun_1/2/3` are not on this list, and they are not authored either.** They are lent by
-`assets/models/char_player_stand_ins.tres`, built by `tools/build_clips.gd` from the rig's own
-`idle_gun` pose: the body is the one Purple-Sigil posed and only the recoil is generated. The
-component lends a stand-in **only** for a name the rig has no clip of, so exporting a hand-authored
-`attack_gun_1` retires the generated one on the spot — nothing to delete, no flag to flip. The
-check asserts that from both ends, so the day the rig grows its own it says so.
+**`attack_gun_1/2/3` and `parry` are not on this list, and they are not authored either.** They are
+lent by `assets/models/char_player_stand_ins.tres`, built by `tools/build_clips.tscn` from the rig's
+own poses — `idle_gun` for the shots, `idle` for the guard. The body is the one Purple-Sigil posed
+and only the movement is generated.
+
+Each one takes its **shape from the rule it belongs to**, never from a number typed beside it: the
+gun's kick lands on the frame the ray is cast and clears before the recovery ends, and the guard is
+up for exactly as long as `PlayerParry` can still do something with it and comes down across the
+recovery — which is the window where a mashed parry is punished, and now the window where the
+player can see they are open. `verify_clips` compares each stand-in's length against its rule, so a
+retune that nobody rebaked fails rather than drifts.
+
+The component lends a stand-in **only** for a name the rig has no clip of, so exporting a
+hand-authored `attack_gun_1` or `parry` retires the generated one on the spot — nothing to delete,
+no flag to flip. The check asserts that from both ends, so the day the rig grows its own it says so.
 
 ## Textures
 

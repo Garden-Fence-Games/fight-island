@@ -25,7 +25,26 @@ const INVENTORY_HEADING: String = "## Clips the rigs do not carry yet"
 const INVENTORY_CELLS: int = 3
 ## The clips the stand-in library exists to lend. Written out rather than read from the library,
 ## which would make this check agree with whatever the library happens to hold.
-const LENT: Array[String] = ["attack_gun_1", "attack_gun_2", "attack_gun_3"]
+const LENT: Array[String] = ["attack_gun_1", "attack_gun_2", "attack_gun_3", "parry"]
+## What each stand-in is as long as, and the thing it took its length from. A stand-in is built to
+## the rules rather than to a number typed beside them, and this is what holds that promise after
+## somebody retunes the rules and forgets to run `tools/build_clips.tscn` — the clip would go on
+## playing a shape that belonged to the old windows, and nothing else in the project would notice.
+const TIMED_BY: Dictionary[String, String] = {
+	"attack_gun_1": "res://data/attacks/gun_single.tres",
+	"attack_gun_2": "res://data/attacks/gun_double.tres",
+	"attack_gun_3": "res://data/attacks/gun_charged.tres",
+}
+## A frame at sixty, which is finer than any window in the game is tuned to.
+const SAME_LENGTH: float = 0.016
+## The joint the guard is read off, and how far up it still has to be when the parry stops working.
+## The length check alone would pass a clip that had the hands on the way down through the whole
+## window that matters, which is the promise the guard is actually making.
+const GUARD_JOINT: String = "Armature/Skeleton3D:mixamorig_RightArm"
+const STILL_UP: float = 0.95
+## How close to the standing pose the clip has to end. Two degrees is inside what a blend hides.
+const BACK_DOWN_DEGREES: float = 2.0
+const SAMPLES: int = 90
 ## Fewer clips asked about than this means the walk over the actors found nothing and reported a
 ## tidy pass over an empty list.
 const ASKED_AT_LEAST: int = 15
@@ -52,6 +71,7 @@ func _run() -> void:
 			)
 		)
 	_check_the_stand_ins_are_lent_and_not_the_rigs()
+	await _check_the_stand_ins_still_fit_the_rules()
 	_check_the_gaps_are_written_down(missing, documented)
 	_check_the_list_has_nothing_stale(missing, documented)
 	_report()
@@ -140,6 +160,83 @@ func _check_the_stand_ins_are_lent_and_not_the_rigs() -> void:
 				)
 			)
 	rig.free()
+
+
+## A stand-in whose length has come away from the rule it was built to. The clip is generated, so
+## the two can only agree while somebody rebakes — and the check is here rather than in the builder
+## because the builder is the thing that would not have been run.
+func _check_the_stand_ins_still_fit_the_rules() -> void:
+	var actor := (load(PLAYER) as PackedScene).instantiate()
+	add_child(actor)
+	await get_tree().physics_frame
+	var anim := actor.get_node_or_null("Animation") as AnimationComponent
+	if anim != null and anim.animation_player != null:
+		for clip: String in TIMED_BY:
+			var attack := load(TIMED_BY[clip]) as AttackData
+			if attack != null:
+				_same_length(anim.animation_player, clip, attack.total_duration(), TIMED_BY[clip])
+		_same_length(
+			anim.animation_player, "parry", PlayerParry.RECOVERY_END, "PlayerParry.RECOVERY_END"
+		)
+		_check_the_guard_is_up_while_the_parry_works(anim.animation_player)
+	actor.queue_free()
+
+
+## The guard's promise, which is not about its length: **the hands are up for as long as pressing
+## the button can still do something, and down by the time the state ends.** A clip that merely
+## lasted the right number of seconds could have the hands falling through the entire window that
+## negates a hit, and the player would be reading a body that was lying to them.
+func _check_the_guard_is_up_while_the_parry_works(player: AnimationPlayer) -> void:
+	if not player.has_animation("parry"):
+		return
+	var clip := player.get_animation("parry")
+	var track := clip.find_track(NodePath(GUARD_JOINT), Animation.TYPE_ROTATION_3D)
+	if track < 0:
+		_fail("the guard does not turn %s, so there is no guard to read" % GUARD_JOINT)
+		return
+	var standing: Quaternion = clip.rotation_track_interpolate(track, 0.0)
+	var peak := 0.0
+	for step: int in SAMPLES + 1:
+		var at := clip.length * float(step) / float(SAMPLES)
+		peak = maxf(peak, _apart(standing, clip.rotation_track_interpolate(track, at)))
+	if peak <= BACK_DOWN_DEGREES:
+		_fail("the guard never leaves the standing pose — there is nothing to see")
+		return
+	var late: float = _apart(standing, clip.rotation_track_interpolate(track, PlayerParry.LATE_END))
+	if late < peak * STILL_UP:
+		_fail(
+			(
+				(
+					"the guard is %.0f%% of the way down by PlayerParry.LATE_END — the hands fall "
+					% ((1.0 - late / peak) * 100.0)
+				)
+				+ "while the parry still works. Rebake with tools/build_clips.tscn"
+			)
+		)
+	var ended: float = _apart(
+		standing, clip.rotation_track_interpolate(track, PlayerParry.RECOVERY_END)
+	)
+	if ended > BACK_DOWN_DEGREES:
+		_fail("the guard is still %.0f degrees up when the parry state ends" % ended)
+
+
+## The angle between two turns, in degrees.
+func _apart(from: Quaternion, to: Quaternion) -> float:
+	var between := from.inverse() * to
+	return rad_to_deg(2.0 * acos(clampf(absf(between.w), -1.0, 1.0)))
+
+
+func _same_length(player: AnimationPlayer, clip: String, wanted: float, source: String) -> void:
+	if not player.has_animation(clip):
+		return
+	var got := player.get_animation(clip).length
+	if absf(got - wanted) > SAME_LENGTH:
+		_fail(
+			(
+				"%s lasts %.3fs and %s says %.3fs — rebake with tools/build_clips.tscn"
+				% [clip, got, source, wanted]
+			)
+		)
 
 
 func _check_the_gaps_are_written_down(missing: Array[String], documented: Array[String]) -> void:
