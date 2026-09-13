@@ -32,7 +32,7 @@ func refresh() -> void:
 		return
 	var owned := GameState.level_of(track)
 	var maxed: bool = owned >= Economy.LEVEL_CAP
-	title.text = track.display_name.to_upper()
+	title.text = tr(track.display_name).to_upper()
 	level.text = tr("MERCHANT_LEVEL") % owned
 	blurb.text = tr("MERCHANT_MAXED") if maxed else tr(track.next_level_key)
 	price.text = "—" if maxed else "$%d" % GameState.price_of(track)

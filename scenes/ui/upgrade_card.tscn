@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/upgrade_card.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/ui/hint_label.gd" id="2"]
 
 [node name="UpgradeCard" type="Button"]
 custom_minimum_size = Vector2(320, 0)
@@ -102,6 +103,8 @@ theme_type_variation = &"CardBuy"
 layout_mode = 2
 mouse_filter = 2
 theme_type_variation = &"CardBuyText"
-text = "[A] PURCHASE"
+script = ExtResource("2")
+action = "ui_accept"
+label_key = "HINT_PURCHASE"
 horizontal_alignment = 1
 auto_translate_mode = 2

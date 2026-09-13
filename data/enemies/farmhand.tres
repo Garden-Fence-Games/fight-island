@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1")
 id = &"farmhand"
-display_name = "Farmhand"
+display_name = "ENEMY_FARMHAND"
 health = 45.0
 move_speed = 3.4
 poise = 15.0

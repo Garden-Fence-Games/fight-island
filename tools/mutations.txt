@@ -64,3 +64,6 @@ scripts/autoload/audio_manager.gd|&"music_ground": {"root": 55.0, "voices": 2, "
 # which is how this one shipped its first draft — forty-two per-frame bodies, every one of them
 # empty, because a PackedStringArray is a value and `bodies[name].append(line)` appends to a copy.
 tools/verify_lookups.gd|bodies[name] = [] as Array[String]|bodies[name] = PackedStringArray()|verify_lookups
+
+# The hint bar. A glyph typed into a scene stops being true the moment a player rebinds.
+scripts/ui/hint_label.gd|	var glyph := _glyph()|	var glyph := ""|verify_glyphs

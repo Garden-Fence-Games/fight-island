@@ -3,6 +3,9 @@ extends Resource
 ## A weapon is its three attacks plus how it is carried. Tuning one never touches a script.
 
 @export var id: StringName = &""
+## A **translation key**, not a name. `DayPhase` has always held one here; these three held
+## plain English, which is a screen that reads the same in every language — and the merchant
+## was already printing one of them. `tools/verify_strings.tscn` holds both ends of it.
 @export var display_name: String = ""
 @export var attacks: Array[AttackData] = []
 @export var is_ranged: bool = false

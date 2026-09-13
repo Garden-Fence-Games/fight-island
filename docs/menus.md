@@ -40,6 +40,17 @@ Theora and nothing else, so the source `.mp4` is transcoded — it is not the sh
 **Any button skips it**, and a discreet hint says so after a second and a half. There is nothing
 else on the screen and nothing after it but the title.
 
+## The hint bar
+
+Every screen ends its header with a line of hints — *what this button does here*. They name an
+**action**, never a key, and their word is a **translation key**, never a word.
+
+Both halves were written out by hand on nine labels across seven screens (`[B / ESC] BACK`, and the
+same again), and both halves were wrong. The glyph stopped being true the moment a player rebound
+anything or picked up a controller — which is exactly what `MenuEntry` has done correctly since the
+menus were built — and the word was English in every language. `HintLabel` is the shared answer, and
+`verify_glyphs` fails on any scene that writes a glyph out by hand.
+
 ## Title
 
 Three entries, in this order: **Play · Options · Quit**.

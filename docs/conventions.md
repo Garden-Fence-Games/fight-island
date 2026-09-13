@@ -5,6 +5,20 @@
 English everywhere in the repository: code, identifiers, comments, commit messages, docs. French
 lives in the ZenNotes vault and in the game's FR locale file.
 
+
+## Strings the player reads
+
+Anything the player reads comes from `assets/locale/ui.csv` by key. That includes the `display_name`
+on a balance resource: `DayPhase` has always held a key there, and `WeaponData`, `UpgradeTrack` and
+`EnemyData` held plain English until it was measured — the merchant was printing one of them
+straight to the screen.
+
+`tools/verify_strings.tscn` holds both ends. A key nothing answers is a string the player reads raw,
+because `tr()` returns the key itself and logs nothing; a row nothing asks for is a string somebody
+will one day pay to have translated for a screen that no longer exists. Keys assembled at runtime
+(`"OPT_BIND_%s" % action`) are covered by their prefix — a real hole in a scanner, plugged the
+honest way rather than by dropping the half of the check that found two dead rows.
+
 ## File naming — and the conflict with the global rule
 
 The global `~/.claude/CLAUDE.md` says *"Files/folders: `kebab-case` for all languages."*

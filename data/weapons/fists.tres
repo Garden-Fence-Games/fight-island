@@ -8,7 +8,7 @@
 [resource]
 script = ExtResource("1")
 id = &"fists"
-display_name = "Fists"
+display_name = "WEAPON_FISTS"
 attacks = [ExtResource("2"), ExtResource("3"), ExtResource("4")]
 is_ranged = false
 chain_lockout = 0.35

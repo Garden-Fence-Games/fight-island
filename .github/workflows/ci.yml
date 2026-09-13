@@ -258,6 +258,13 @@ jobs:
       - name: Verify day and night
         run: tools/run-check.sh res://tools/verify_day_night.tscn
 
+      # `tr()` answers an unknown key with the key itself, which is the worst possible failure:
+      # nothing logged, nothing null, and the player reads SUMMARY_PERFECT_PARRIES off the screen.
+      # The other half matters too — a row nobody asks for is a string somebody will one day pay to
+      # have translated into eleven languages for a screen that no longer exists.
+      - name: Verify every key resolves
+        run: tools/run-check.sh res://tools/verify_strings.tscn
+
       # A path lookup in a hot body is a silent dependency on a scene's shape, and the day it
       # returns null it does so sixty times a second in the middle of a fight. Read off the source,
       # because what is being held is "nobody wrote this" and a profiler cannot tell a lookup that

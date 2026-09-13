@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"health"
-display_name = "Health"
+display_name = "UPGRADE_HEALTH"
 next_level_key = "MERCHANT_HEALTH"
 max_health = 20.0
 heals_on_purchase = true

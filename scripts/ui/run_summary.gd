@@ -87,7 +87,12 @@ func _fill_enemies(stats: RunStats) -> void:
 func _fill_upgrades() -> void:
 	_clear(upgrades)
 	for track: UpgradeTrack in Upgrades.all():
-		_row(upgrades, track.display_name, tr("MERCHANT_LEVEL") % GameState.level_of(track), false)
+		_row(
+			upgrades,
+			tr(track.display_name),
+			tr("MERCHANT_LEVEL") % GameState.level_of(track),
+			false
+		)
 
 
 func _clear(box: VBoxContainer) -> void:

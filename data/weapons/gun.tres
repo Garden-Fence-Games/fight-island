@@ -8,7 +8,7 @@
 [resource]
 script = ExtResource("1")
 id = &"gun"
-display_name = "Gun"
+display_name = "WEAPON_GUN"
 attacks = [ExtResource("2"), ExtResource("3"), ExtResource("4")]
 is_ranged = true
 found_at_wave = 4

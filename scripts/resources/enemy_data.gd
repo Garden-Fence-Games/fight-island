@@ -3,6 +3,9 @@ extends Resource
 ## One farmer archetype. The three share a rig and a mesh; they differ here and in their material.
 
 @export var id: StringName = &""
+## A **translation key**, not a name. `DayPhase` has always held one here; these three held
+## plain English, which is a screen that reads the same in every language — and the merchant
+## was already printing one of them. `tools/verify_strings.tscn` holds both ends of it.
 @export var display_name: String = ""
 
 @export_group("Stats")

@@ -12,6 +12,7 @@ extends Node
 const TITLE: String = "res://scenes/ui/title_screen.tscn"
 const PAUSE: String = "res://scenes/ui/pause_menu.tscn"
 const PROMPT: String = "res://scenes/ui/tutorial_prompt.tscn"
+const OPTIONS: String = "res://scenes/ui/options_screen.tscn"
 const TUTORIAL_STEPS: PackedStringArray = [
 	"01_move", "02_attack", "03_chain", "04_perfect", "05_dodge", "06_parry", "07_sprint"
 ]
@@ -42,6 +43,8 @@ func _run() -> void:
 	await _check_a_menu_follows_the_hand()
 	await _check_a_prompt_never_names_the_other_device()
 	_check_a_rebind_changes_the_glyph()
+	_check_no_scene_writes_a_glyph_out_by_hand()
+	await _check_a_hint_says_a_key_and_a_word()
 	_put_the_bindings_back()
 	_report()
 
@@ -230,11 +233,80 @@ func _fail(message: String) -> void:
 	_failures.append(message)
 
 
+## A glyph typed into a scene is a glyph that stops being true the moment a player rebinds or picks
+## up a controller — and nine of them were, across seven screens: `[B / ESC] BACK`, and the same
+## again. Read off the scenes rather than from a running one, because what is being held is that
+## nobody wrote it, and a screen that is never opened would never be asked.
+func _check_no_scene_writes_a_glyph_out_by_hand() -> void:
+	var bracket := RegEx.new()
+	bracket.compile('text = "\\[[^"]*"')
+	_walk_scenes("res://scenes", bracket)
+
+
+func _walk_scenes(directory: String, bracket: RegEx) -> void:
+	for name: String in DirAccess.get_directories_at(directory):
+		_walk_scenes("%s/%s" % [directory, name], bracket)
+	for name: String in DirAccess.get_files_at(directory):
+		if not name.ends_with(".tscn"):
+			continue
+		var path := "%s/%s" % [directory, name.trim_suffix(".remap")]
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file == null:
+			continue
+		for found: RegExMatch in bracket.search_all(file.get_as_text()):
+			_fail(
+				(
+					(
+						"%s writes a glyph out by hand: %s — name the action instead, the way "
+						+ "HintLabel and MenuEntry do"
+					)
+					% [path.get_file(), found.get_string(0)]
+				)
+			)
+
+
+## And the other half: a hint that names an action has to end up saying something. A label that
+## found neither a glyph nor a translation prints an empty string, and an empty hint bar looks
+## exactly like a hint bar nobody wrote.
+func _check_a_hint_says_a_key_and_a_word() -> void:
+	var screen := (load(OPTIONS) as PackedScene).instantiate() as Control
+	add_child(screen)
+	await get_tree().process_frame
+	var hints := 0
+	for node: Node in _every_child(screen):
+		var hint := node as HintLabel
+		if hint == null:
+			continue
+		hints += 1
+		if hint.text.strip_edges().is_empty():
+			_fail("a hint for %s came out empty" % hint.action)
+		elif not hint.text.contains("["):
+			_fail('the hint "%s" has no glyph in it' % hint.text)
+		elif hint.text.contains(hint.label_key):
+			_fail('the hint for %s prints its own key: "%s"' % [hint.action, hint.text])
+	if hints == 0:
+		_fail("the options screen has no hint labels, so nothing about them was tested")
+	screen.queue_free()
+	await get_tree().process_frame
+
+
+func _every_child(node: Node) -> Array[Node]:
+	var found: Array[Node] = [node]
+	for child: Node in node.get_children():
+		found.append_array(_every_child(child))
+	return found
+
+
 func _report() -> void:
 	for _index: int in SETTLE_FRAMES:
 		await get_tree().physics_frame
 	if _failures.is_empty():
-		print("glyphs OK — the badge follows the hand, and the hand follows the binding")
+		print(
+			(
+				"glyphs OK — the badge follows the hand, the hand follows the binding, and no "
+				+ "scene writes a glyph out by hand"
+			)
+		)
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:
