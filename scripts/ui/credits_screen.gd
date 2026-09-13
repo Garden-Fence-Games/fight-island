@@ -34,6 +34,7 @@ func _ready() -> void:
 	if roll == null:
 		push_error("credits: %s is missing — run tools/build_credits.gd" % ROLL)
 		return
+	_build_section("CREDITS_PEOPLE", roll.people, false)
 	_build_section("CREDITS_ASSETS", roll.assets, true)
 	_build_section("CREDITS_TOOLS", roll.tools, false)
 

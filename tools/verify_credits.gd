@@ -34,6 +34,13 @@ func _check_the_document_still_parses() -> void:
 	if fresh == null:
 		_fail("%s could not be read at all" % CreditsSource.DOCUMENT)
 		return
+	if fresh.people.is_empty():
+		_fail(
+			(
+				"%s names nobody — the people are the credit a player is actually owed"
+				% CreditsSource.DOCUMENT
+			)
+		)
 	if fresh.assets.size() < AT_LEAST or fresh.tools.is_empty():
 		_fail(
 			(
@@ -56,6 +63,7 @@ func _check_the_baked_roll_matches_the_document() -> void:
 	if baked == null:
 		_fail("%s is missing — run tools/build_credits.gd" % ROLL)
 		return
+	_compare("people", fresh.people, baked.people)
 	_compare("assets", fresh.assets, baked.assets)
 	_compare("tools", fresh.tools, baked.tools)
 

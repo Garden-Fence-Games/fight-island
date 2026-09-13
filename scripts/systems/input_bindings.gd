@@ -219,7 +219,14 @@ static func _describe_event(event: InputEvent) -> String:
 	if event is InputEventKey:
 		# Bindings are stored physically, so an AZERTY player sees A where a QWERTY player sees Q.
 		# A headless display server has no layout to ask, and that is where the checks run.
-		var code := (event as InputEventKey).physical_keycode
+		var key := event as InputEventKey
+		var code := key.physical_keycode
+		if code == KEY_NONE:
+			# Bound by logical keycode instead, which is how Godot's own `ui_*` defaults are
+			# written. Read only the physical one and the arrow keys describe to an **empty
+			# string** — which is not `UNBOUND`, so nothing noticed, and the credits screen shipped
+			# a hint that said "SCROLL" with no key in front of it.
+			return OS.get_keycode_string(key.keycode).to_upper()
 		if DisplayServer.get_name() != HEADLESS:
 			code = DisplayServer.keyboard_get_keycode_from_physical(code)
 		return OS.get_keycode_string(code).to_upper()
