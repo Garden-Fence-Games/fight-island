@@ -231,8 +231,8 @@ func _check_idle_plays_idle(machine: StateMachine, anim: AnimationComponent) -> 
 		_fail("Idle plays %s, expected idle" % [anim.current_clip()])
 
 
-## Dodge, Parry and Dead have no clip yet, which is the ordinary state of a rig that arrives one
-## animation at a time rather than an edge case. Driven through `play_state` rather than a real
+## Dead has no clip yet, which is the ordinary state of a rig that arrives one animation at a time
+## rather than an edge case. Driven through `play_state` rather than a real
 ## transition so the check does not depend on which clips happen to exist this week.
 ## The guard is that it stays silent: the gate in CI fails on any WARNING line.
 func _check_clipless_state_rests(anim: AnimationComponent) -> void:
@@ -240,14 +240,15 @@ func _check_clipless_state_rests(anim: AnimationComponent) -> void:
 	anim.clip_missing.connect(
 		func(state: StringName, _clip: StringName) -> void: missing.append(state)
 	)
-	# Parry, since the dodge got its roll. When `parry` lands on the rig this fails on purpose, and the
-	# next state still waiting for its clip takes the job.
-	var played := anim.play_state(&"Parry")
+	# Dead, since the dodge got its roll and the parry got its guard. When `death` lands this fails
+	# on purpose, and the next state still waiting for its clip takes the job — which is also how
+	# the inventory in docs/asset-pipeline.md says which states those are.
+	var played := anim.play_state(&"Dead")
 	await get_tree().physics_frame
 	if played:
-		_fail("Parry reports a clip, so this check is no longer testing a clipless state")
+		_fail("Dead reports a clip, so this check is no longer testing a clipless state")
 	if anim.current_clip() != &"":
-		_fail("Parry has no clip yet but the component reports %s" % [anim.current_clip()])
+		_fail("Dead has no clip yet but the component reports %s" % [anim.current_clip()])
 	if missing.is_empty():
 		_fail("a state with no clip should emit clip_missing")
 

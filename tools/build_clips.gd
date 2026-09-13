@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 ## Bakes assets/models/char_player_stand_ins.tres — the attack clips the rig does not carry yet.
 ##
 ## The rig arrives one clip at a time, and it arrived with `idle_gun` and `walk_gun` but nothing
@@ -17,10 +17,18 @@ extends SceneTree
 ## across the wind-up, the kick lands on the frame the ray is cast, and the arm is back at carry
 ## when the recovery ends. So an attack retuned in the inspector keeps its animation in step.
 ##
-## Run: godot --headless --path . --script tools/build_clips.gd
+## Runs as a scene rather than with --script, unlike the other builders here: the guard takes its
+## shape from `PlayerParry`, and a state script cannot even be compiled without the autoloads it
+## talks to.
+## Run: godot --headless --path . res://tools/build_clips.tscn
 
 const RIG: String = "res://assets/models/char_player.glb"
 const CARRY_CLIP: String = "idle_gun"
+## What the guard is built on. The parry is not a weapon's clip — `AnimationComponent` looks for
+## `parry_gun` first and falls straight back — so it stands on the empty-handed idle, and whatever
+## is in the hand comes up with the hand.
+const STANDING_CLIP: String = "idle"
+const GUARD_CLIP: StringName = &"parry"
 const OUTPUT: String = "res://assets/models/char_player_stand_ins.tres"
 ## The attacks to build a stand-in for, and the weight of the kick each one throws. Relative to the
 ## single shot, which is one: the double tap puts two rounds down the same barrel at the same
@@ -62,6 +70,20 @@ const KICK_ARM_LIFT: float = 20.0
 const KICK_ARM_REACH: float = -7.0
 const KICK_FOREARM_LIFT: float = 11.0
 
+## The guard, on both arms at once: hands up and in, forearms across. Larger than the shot's
+## numbers because this is a whole-body read at eleven metres rather than a flick of one wrist.
+##
+## `reach` is signed per side. A positive turn about local Z carries the right hand forward and the
+## left hand backward — the axes mirror — so the left arm takes the negative of it and both hands
+## end up in front of the same chest.
+const GUARD_ARM_LIFT: float = -52.0
+const GUARD_ARM_REACH: float = 36.0
+const GUARD_FOREARM_LIFT: float = -58.0
+const GUARD_FOREARM_REACH: float = 28.0
+## How fast the hands come up. A guard that eases into place is a guard that is not up yet when the
+## window it belongs to has already opened.
+const GUARD_SNAP: float = 0.06
+
 ## How long the arm takes to come up. The wind-up is shorter than this for both tap shots, and then
 ## the raise simply takes the whole wind-up; the charged shot is the one that has time to aim and
 ## hold, which is what makes the hold read as a charge.
@@ -72,35 +94,44 @@ const KICK_SECONDS: float = 0.05
 const RECOVER_SECONDS: float = 0.14
 
 
-func _init() -> void:
-	var carry := _carry_pose()
+func _ready() -> void:
+	_run()
+
+
+func _run() -> void:
+	var carry := _pose(CARRY_CLIP)
 	if carry == null:
-		quit(1)
+		get_tree().quit(1)
 		return
 	var library := AnimationLibrary.new()
 	for path: String in SHOTS:
 		var attack := load(path) as AttackData
 		if attack == null:
 			printerr("clips: %s is not an AttackData" % path)
-			quit(1)
+			get_tree().quit(1)
 			return
 		if attack.animation == &"":
 			printerr("clips: %s names no animation" % path)
-			quit(1)
+			get_tree().quit(1)
 			return
 		library.add_animation(attack.animation, _shot_clip(carry, attack, SHOTS[path]))
+	var standing := _pose(STANDING_CLIP)
+	if standing == null:
+		get_tree().quit(1)
+		return
+	library.add_animation(GUARD_CLIP, _guard_clip(standing))
 	if ResourceSaver.save(library, OUTPUT) != OK:
 		printerr("clips: could not save " + OUTPUT)
-		quit(1)
+		get_tree().quit(1)
 		return
 	print("clips baked — %d stand-ins in %s" % [library.get_animation_list().size(), OUTPUT])
-	quit(0)
+	get_tree().quit(0)
 
 
-## The rig's own gun-carry pose, which every stand-in is built on top of. Null when the rig cannot
-## be read or carries no such clip, because a stand-in invented from nothing would put the body in
-## a pose nobody chose.
-func _carry_pose() -> Animation:
+## One of the rig's own clips, which every stand-in is built on top of. Null when the rig cannot be
+## read or carries no such clip, because a stand-in invented from nothing would put the body in a
+## pose nobody chose.
+func _pose(named: String) -> Animation:
 	var packed := load(RIG) as PackedScene
 	if packed == null:
 		printerr("clips: cannot load " + RIG)
@@ -109,12 +140,12 @@ func _carry_pose() -> Animation:
 	var found: Animation = null
 	for node: Node in rig.find_children("*", "AnimationPlayer", true, false):
 		var player := node as AnimationPlayer
-		if player != null and player.has_animation(CARRY_CLIP):
-			found = player.get_animation(CARRY_CLIP)
+		if player != null and player.has_animation(named):
+			found = player.get_animation(named)
 			break
 	rig.free()
 	if found == null:
-		printerr("clips: the rig carries no %s to build on" % CARRY_CLIP)
+		printerr("clips: the rig carries no %s to build on" % named)
 	return found
 
 
@@ -145,6 +176,57 @@ func _shot_clip(carry: Animation, attack: AttackData, weight: float) -> Animatio
 	return clip
 
 
+## The guard, and the reason it is worth building rather than waiting for.
+##
+## Without a `parry` clip the player who presses the defensive button goes to the rest pose for
+## nearly half a second — arms at the sides, the body limp, in the one moment the game asks the most
+## of them. That is worse than no animation.
+##
+## **The shape is the state's own windows, not a guess at them.** The hands snap up in a twentieth
+## of a second and stay up for exactly as long as the parry can still do something, which is
+## `PlayerParry.LATE_END`; they come down across the recovery, which is the window where a mashed
+## parry is punished. So what the body is doing is what the rules are doing, and retuning one
+## retunes the other.
+func _guard_clip(standing: Animation) -> Animation:
+	var clip := Animation.new()
+	clip.length = PlayerParry.RECOVERY_END
+	clip.loop_mode = Animation.LOOP_NONE
+	for track: int in standing.get_track_count():
+		_copy_pose_track(standing, track, clip)
+	var held := PackedFloat32Array(
+		[0.0, GUARD_SNAP, PlayerParry.LATE_END, PlayerParry.RECOVERY_END]
+	)
+	for side: float in [1.0, -1.0]:
+		var arm := "mixamorig_RightArm" if side > 0.0 else "mixamorig_LeftArm"
+		var forearm := "mixamorig_RightForeArm" if side > 0.0 else "mixamorig_LeftForeArm"
+		_key_guard(clip, arm, held, _turn(GUARD_ARM_LIFT, GUARD_ARM_REACH * side))
+		_key_guard(clip, forearm, held, _turn(GUARD_FOREARM_LIFT, GUARD_FOREARM_REACH * side))
+	return clip
+
+
+## Up, held, down. The first and last keys are the pose the clip was built on, so the guard leaves
+## the body exactly where it found it.
+func _key_guard(clip: Animation, bone: String, times: PackedFloat32Array, up: Quaternion) -> void:
+	var track := _joint_track(clip, bone)
+	if track < 0:
+		return
+	var standing: Quaternion = clip.rotation_track_interpolate(track, 0.0)
+	clip.track_remove_key(track, 0)
+	clip.rotation_track_insert_key(track, times[0], standing)
+	clip.rotation_track_insert_key(track, times[1], standing * up)
+	clip.rotation_track_insert_key(track, times[2], standing * up)
+	clip.rotation_track_insert_key(track, times[3], standing)
+
+
+## The rotation track for one bone, or -1 with a reason. A stand-in built on a pose that does not
+## turn the joint it needs would silently animate nothing at all.
+func _joint_track(clip: Animation, bone: String) -> int:
+	var track := clip.find_track(NodePath(BONE_PREFIX + bone), Animation.TYPE_ROTATION_3D)
+	if track < 0:
+		printerr("clips: the pose being built on does not turn %s" % bone)
+	return track
+
+
 func _copy_pose_track(carry: Animation, track: int, clip: Animation) -> void:
 	var kind := carry.track_get_type(track)
 	var made := clip.add_track(kind)
@@ -170,9 +252,8 @@ func _key_joint(
 	kick_lift: float,
 	kick_reach: float
 ) -> void:
-	var track := clip.find_track(NodePath(BONE_PREFIX + bone), Animation.TYPE_ROTATION_3D)
+	var track := _joint_track(clip, bone)
 	if track < 0:
-		printerr("clips: the carry pose does not turn %s, so nothing can be built on it" % bone)
 		return
 	var carry: Quaternion = clip.rotation_track_interpolate(track, 0.0)
 	var aim := carry * _turn(aim_lift, aim_reach)

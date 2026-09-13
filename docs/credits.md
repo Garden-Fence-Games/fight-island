@@ -28,7 +28,7 @@ both modelled rigs. The weapons and the terrain itself are still Godot primitive
 | `icon.svg` | Godot project template | Godot Engine contributors | MIT | 2026-09-11 |
 | `assets/logo/fight_island_logo_1.svg` | original, Figma | Purple-Sigil | © the project, all rights reserved | 2026-09-11 |
 | `assets/models/char_player.glb` — mesh, gun, textures and clips | original, Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-12 |
-| `assets/models/char_player_stand_ins.tres` — generated recoil clips | built by `tools/build_clips.gd` from the rig's own carry pose | Purple-Sigil, posed | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/char_player_stand_ins.tres` — generated recoil and guard clips | built by `tools/build_clips.tscn` from the rig's own poses | Purple-Sigil, posed | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/char_player.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-12 |
 | `assets/models/char_farmer.glb` — mesh, textures and clips | original, Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/char_farmer.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-13 |
