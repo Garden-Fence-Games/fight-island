@@ -5,10 +5,10 @@
 
 [sub_resource type="Resource" id="Resource_nsrer"]
 script = ExtResource("1_2q5yg")
-subject = "icon.svg"
-source = "Godot project template"
-author = "Godot Engine contributors"
-licence = "MIT"
+subject = "icon.png"
+source = "original, from the logo"
+author = "Purple-Sigil"
+licence = "© the project, all rights reserved"
 
 [sub_resource type="Resource" id="Resource_vhv8o"]
 script = ExtResource("1_2q5yg")

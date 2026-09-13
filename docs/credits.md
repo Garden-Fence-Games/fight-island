@@ -36,7 +36,7 @@ the stick ride in the player's. The terrain itself is still built from Godot pri
 
 | File | Source | Author | Licence | Added |
 |---|---|---|---|---|
-| `icon.svg` | Godot project template | Godot Engine contributors | MIT | 2026-09-11 |
+| `icon.png` | original, from the logo | Purple-Sigil | © the project, all rights reserved | 2026-09-14 |
 | `assets/logo/fight_island_logo_1.svg` | original, Figma | Purple-Sigil | © the project, all rights reserved | 2026-09-11 |
 | `assets/models/char_player.glb` — mesh, gun, textures and clips | original, Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-12 |
 | `assets/models/char_player_stand_ins.tres` — generated recoil, swing and guard clips | built by `tools/build_clips.tscn` from the rig's own poses and its authored backhand | Purple-Sigil, posed | © the project, all rights reserved | 2026-09-13 |
