@@ -250,7 +250,7 @@ answer from working.
 set off from the horizon. This is what lets a wave build instead of arriving as one flat press — the
 player sees a farmer before the farmer sees them, and distance carries information again.
 
-Three rules make that read as calm rather than as broken:
+Four rules make that read as calm rather than as broken:
 
 - **Noticing spreads.** A roused farmer rouses everyone within 7 m, so a group turns together. One
   waking alone while the two beside him keep staring at the sea looks like a bug.
@@ -258,9 +258,18 @@ Three rules make that read as calm rather than as broken:
   someone from outside their own notice radius forever.
 - **Noticing is one way.** He does not lose interest because the player stepped back. A leash would
   make the edge of every crowd breathe in and out.
+- **Being ignored wakes him too.** Ten seconds standing unnoticed and he comes looking, rousing the
+  men beside him as he goes — half that after dark, because the hour's rousing is the dial that
+  already says how fast the island turns on the player.
 
 The radius has to stay well under the twelve metres the spawn search keeps bodies away from the
 player, or farmers arrive already awake and none of this exists.
+
+**The fourth rule is what stops the waiting from being the wave.** Standing still is a read, not a
+state: without a clock on it, a body nobody walks up to stands there until daybreak, and the player
+who has cleared what is near them has to go and fetch the rest one at a time. On a four-minute wave
+that is most of the wave spent walking. Ten seconds is long enough to see a farmer arrive and
+decide about him, and short enough that the island always comes to you in the end.
 
 **Farmhand.** Bare hands, quick, fragile, and always the majority of a wave. He is what teaches the
 parry, and what makes a crowd feel like a crowd.
@@ -429,8 +438,10 @@ off the edge of a crowd, after dark one farmer noticing turns the whole beach. T
 token is the other — two farmers committing at once is a fight you can answer, three is one you
 have to give ground to.
 
-**Noticing is deliberately not scaled.** A farmer arrives between 12 m and 26 m away and the
-thrower already notices at 12 m — any night bonus and every wave charges from the horizon again.
+**The notice radius is deliberately not scaled.** A farmer arrives between 12 m and 18 m away and
+the thrower already notices at 12 m — any night bonus on the radius and every wave charges from the
+horizon again. What night does scale is the **patience**: ten seconds of standing ignored in
+daylight, five after dark, on the same `rouse_scale` that already carries a shout further.
 
 **The telegraph floor wins.** Night multiplies the wind-up *before* `windup_floor`, never after, so
 it shortens telegraphs in the early waves and does nothing at all past wave 9. An unreadable
