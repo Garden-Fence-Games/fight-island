@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3]
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/player/player.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -18,6 +18,7 @@
 [ext_resource type="Script" path="res://scripts/components/aim_component.gd" id="16"]
 [ext_resource type="PackedScene" path="res://assets/models/char_player.glb" id="17"]
 [ext_resource type="Script" path="res://scripts/components/animation_component.gd" id="18"]
+[ext_resource type="AnimationLibrary" path="res://assets/models/char_player_stand_ins.tres" id="25"]
 [ext_resource type="Script" path="res://scripts/components/head_look_component.gd" id="19"]
 [ext_resource type="Script" path="res://scripts/components/weapon_visual_component.gd" id="20"]
 [ext_resource type="Script" path="res://scripts/components/footstep_dust_component.gd" id="24"]
@@ -70,6 +71,7 @@ script = ExtResource("16")
 
 [node name="Animation" type="Node" parent="."]
 script = ExtResource("18")
+stand_in_clips = ExtResource("25")
 
 [node name="HeadLook" type="Node" parent="."]
 script = ExtResource("19")

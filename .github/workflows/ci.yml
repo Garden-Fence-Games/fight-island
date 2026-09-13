@@ -246,6 +246,13 @@ jobs:
       - name: Verify animation
         run: tools/run-check.sh res://tools/verify_animation.tscn
 
+      # A clip a state or an attack names and no rig carries plays nothing and says nothing, by
+      # design — the rigs arrive one clip at a time. The gun's three attacks sat in that silence
+      # for as long as the gun existed. This holds the written inventory of what is still missing,
+      # in both directions: an undocumented gap fails, and so does a row for a clip that now plays.
+      - name: Verify clips
+        run: tools/run-check.sh res://tools/verify_clips.tscn
+
       # glTF puts a character's front at +Z, Godot's forward is -Z, and nothing reconciles them: a
       # rig imported without the 180 on its instance aims out of its own back. Cheap to check,
       # invisible in a diff, and it also guards the head-look's bone axis across a reimport.

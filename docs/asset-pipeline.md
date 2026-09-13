@@ -355,6 +355,36 @@ because glTF puts a model's front at +Z and Godot's forward is −Z.
 
 Split them in Godot's import dock, not by exporting nine files.
 
+## Clips the rigs do not carry yet
+
+`AnimationComponent` plays nothing rather than warning when a clip is missing, because a rig that
+arrives one clip at a time would otherwise turn every build red. The cost of that silence was the
+gun: `attack_gun_1/2/3` were named in `data/attacks`, absent from the rig, and fired without a bone
+moving for as long as the gun had existed — no error, no warning, nothing to notice.
+
+So the silence is allowed and the gap is not. `tools/verify_clips.tscn` asks both actors for every
+clip their states and their attacks name, and every one that no rig carries has to be on this list.
+**A clip that arrives has to leave the list**, or the check fails on the stale row — an inventory
+that is never wrong about anything is one nobody reads.
+
+| Clip | Rig | Where it bites |
+|---|---|---|
+| `parry` | player | A parry is timing the player cannot see, so the window is read off the HUD flash rather than the body. The most expensive of these. |
+| `death` | player | The run ends on the rest pose. The death screen covers it within the frame, which is why it has waited. |
+| `attack_stick_1` | player | The stick swings and nothing moves. The stick has no mesh on the rig either, so it is invisible in hand — one job, not two. |
+| `attack_stick_2` | player | As above. |
+| `attack_stick_3` | player | As above. |
+| `attack_punch` | farmer | The farmhand's wind-up reads, because that is a separate state; the blow that follows does not. |
+| `attack_scythe` | farmer | The reaper's swing is the widest telegraph in the game and lands on nothing. |
+| `attack_throw` | farmer | The thrower's arm never comes over. The stone appears anyway. |
+
+**`attack_gun_1/2/3` are not on this list, and they are not authored either.** They are lent by
+`assets/models/char_player_stand_ins.tres`, built by `tools/build_clips.gd` from the rig's own
+`idle_gun` pose: the body is the one Purple-Sigil posed and only the recoil is generated. The
+component lends a stand-in **only** for a name the rig has no clip of, so exporting a hand-authored
+`attack_gun_1` retires the generated one on the spot — nothing to delete, no flag to flip. The
+check asserts that from both ends, so the day the rig grows its own it says so.
+
 ## Textures
 
 PNG sources in `art-source/textures/`. Imported as **VRAM Compressed** for 3D albedo and
