@@ -81,7 +81,43 @@ All notable changes to this project are documented here, following
   his rig carries no `RESET` — the player's does, so the same arrangement would have stood a dying
   man upright on the frame he was knocked down. `AnimationComponent` now lets go of the rig when the
   physics takes the body and refuses to touch it until the physics gives it back.
-
+- **The music slider did nothing while the island was loaded** (#174). `Settings._apply_bus` wrote
+  the `audio_music` slider to the `Music` bus once; `MusicBed` wrote the same bus every frame, so a
+  player pulling the music down heard no change at all — and `MusicBed` runs on
+  `PROCESS_MODE_ALWAYS`, so it was still overwriting the bus while the options screen sat open over
+  a paused game. Measured at 40%, `Music` went from -7.96 dB back to -0.09 dB within a second of
+  the arena loading, while `settings.json` and `Settings.get_value` both went on agreeing with the
+  player. Leaving the arena reset the bus to 0 dB and the title screen played at full volume too.
+  - The bed and the jukebox moved to a new **`MusicDuck`** bus that sends into `Music`. The duck
+    lands under the slider instead of on it, and `Settings` is the only thing that writes `Music`.
+  - `verify_music` **required** the old behaviour — it asserted the duck came back to 0 dB on the
+    slider's own bus. It now pulls the slider down, runs a wave and a wind-up over it, and fails if
+    anything but `Settings` has moved it.
+- **One stone in the air at the wrong moment, and no farmer threw again** (#175).
+  `Enemy.release_token` defers while this body still has a stone travelling, which is right for a
+  living thrower and wrong for one leaving the fight — and `sleep()` went through the same call. A
+  thrower retired by `spawner.clear()` at the end of a wave only managed to *owe* the ranged token,
+  `revive()` cleared the debt on the way out of the pool, and the pool of one kept a retired body's
+  id for the rest of the run: every later thrower closed, circled, and never committed. `sleep()`
+  now lets go of the stone and the token outright, and disconnects the stone as well as forgetting
+  it — left connected, it reported `spent` into whatever life the body was leased for next and
+  released a token that life's own stone was holding.
+- **A weapon nobody picked up was lost for the whole run** (#176). `PickupDirector` dropped on an
+  exact `found_at_wave` match and a pickup is a node in the arena that nothing saves, so a player
+  who cleared wave 2 without walking over the stick and quit to the title resumed at wave 3 and
+  never saw it again — the gun at wave 4 taking the scavenging economy and the reload rhythm with
+  it. A weapon is **owed from** its wave now rather than offered on it, once, and the director
+  remembers what it has put down.
+- **The money chip froze mid-pulse when a kill also dropped a round** (#178). One tween handle for
+  two chips: `GameState._on_enemy_died` pays and scavenges in that order, so the ammo pulse killed
+  the money one wherever it stood — and nothing writes a chip's `scale` back except the top of that
+  chip's next pulse. A tween per chip.
+- **The run clock kept counting on the title screen** (#179). `GameState._process` was gated on
+  `wave_in_progress`, which deliberately survives a quit to the title so a player comes back into
+  the wave they walked out of rather than past it — so a laptop left open on the menu added hours
+  to the figure the summary prints, which is exactly what that gate was written to prevent. A
+  runtime `GameState.fighting` answers the clock instead: it follows the wave on the bus and the
+  wave director clears it on the way out of the tree.
 - **The arrow keys had no name.** `InputBindings` read only `physical_keycode`, and Godot's own
   `ui_*` defaults are bound by logical keycode — so they described to an **empty string**, which is
   not `UNBOUND` and which nothing therefore noticed. The credits screen shipped a hint reading
