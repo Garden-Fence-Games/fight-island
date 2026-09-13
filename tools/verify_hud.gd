@@ -44,6 +44,7 @@ func _run() -> void:
 	await _check_damage_numbers()
 	await _check_credit_numbers()
 	await _check_the_chip_answers_money_arriving()
+	await _check_two_chips_can_punch_at_once()
 	await _check_the_banner_announces_the_wave()
 	_check_stats_are_tallied()
 	_put_the_run_back()
@@ -196,6 +197,47 @@ func _check_the_chip_answers_money_arriving() -> void:
 		_fail("the chip punched with reduced flashing asked for")
 	Settings.set_value(&"access_reduce_flashing", restore)
 	await _settle(chip)
+
+
+## The money and the ammunition answer the same event: one kill pays and, one time in eight, leaves
+## a round behind. `GameState._on_enemy_died` does both in that order.
+##
+## The HUD kept **one** tween handle for both chips, so the ammo pulse killed the money one wherever
+## it stood — and nothing writes a chip's `scale` back except the top of that chip's *next* pulse.
+## A money counter left a little too big for the rest of the run is what that looked like, and it
+## survived every check here because each one only ever punched one chip.
+func _check_two_chips_can_punch_at_once() -> void:
+	var money := _hud.get_node("Root/TopRight/MoneyChip") as PanelContainer
+	var ammo := _hud.get_node("Root/BottomRight/Ammo") as PanelContainer
+	var restore: Variant = Settings.get_value(&"access_reduce_flashing")
+	Settings.set_value(&"access_reduce_flashing", false)
+	await _settle(money)
+	await _settle(ammo)
+
+	# The order a kill fires them in, in one frame.
+	GameState.earn(25)
+	EventBus.rounds_scavenged.emit(1)
+	await _sample()
+	if money.scale.x <= 1.0:
+		_fail("the money chip lost its punch to the round that came off the same body")
+	if ammo.scale.x <= 1.0:
+		_fail("the ammo panel did not answer a round arriving")
+
+	# And both come back to rest. A chip whose tween was killed mid-punch stays stretched for good.
+	await get_tree().create_timer(PULSE_SETTLE, true, false, true).timeout
+	if not is_equal_approx(money.scale.x, 1.0) or not is_equal_approx(ammo.scale.x, 1.0):
+		_fail(
+			(
+				(
+					"a chip is still at %.3f x %.3f after the punch — a killed tween never writes the "
+					+ "scale back"
+				)
+				% [money.scale.x, ammo.scale.x]
+			)
+		)
+	Settings.set_value(&"access_reduce_flashing", restore)
+	await _settle(money)
+	await _settle(ammo)
 
 
 ## Waits out a pulse and puts the chip back, so one case's tween can never be read as the next
