@@ -146,6 +146,7 @@ func _ready() -> void:
 		_tab_buttons.append(_build_tab(index))
 		_pages.append(_build_page(PAGES[index]))
 	show_page(0)
+	UiSounds.arm(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:

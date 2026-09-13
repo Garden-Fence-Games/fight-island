@@ -32,6 +32,7 @@ func _ready() -> void:
 	title.pressed.connect(_on_title_pressed)
 	retry.text = tr("UI_RETRY").to_upper()
 	title.text = tr("UI_TITLE").to_upper()
+	UiSounds.arm(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:

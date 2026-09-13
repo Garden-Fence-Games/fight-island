@@ -32,6 +32,7 @@ func _ready() -> void:
 	restart.pressed.connect(_on_restart_pressed)
 	quit.pressed.connect(_on_quit_pressed)
 	root.visible = false
+	UiSounds.arm(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:

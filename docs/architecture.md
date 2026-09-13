@@ -146,6 +146,13 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   **One instance, preloaded rather than exported** — the per-blow difference is already the stagger
   figure, so there is nothing here for a scene to choose and nothing for a pooled body to carry a
   stale copy of.
+- **`MusicTrack`** — `title`, `artist`, `stream`. One piece of music. The name the player reads is
+  data rather than a filename, because a track renamed on disk would otherwise rename itself on
+  screen. A row whose `stream` is still null is a plan and is never handed out.
+- **`MusicPlaylist`** — `tracks`. The soundtrack, drawn as a **shuffle bag**: every track is handed
+  out once before any repeats, which with a handful of them is the difference between a soundtrack
+  and a loop. `data/music/playlist.tres` ships empty until the music is delivered, and the jukebox
+  and the player in the corner both cope with that rather than assuming a track exists.
 - **`EliteRank`** — what being an elite is worth: the health, damage and money multipliers, and the
   mesh scale and emission that make it legible. One instance on `WaveConfig`, shared by every body
   that rolls it, because an elite is the *same scene* — multipliers rather than a second archetype

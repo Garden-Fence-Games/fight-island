@@ -39,6 +39,7 @@ func _ready() -> void:
 	play.grab_focus()
 	fade.color.a = 1.0
 	create_tween().tween_property(fade, "color:a", 0.0, FADE_IN)
+	UiSounds.arm(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:

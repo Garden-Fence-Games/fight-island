@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/pause_menu.gd" id="1"]
 [ext_resource type="Theme" path="res://assets/themes/ui_theme.tres" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/ui/menu_entry.tscn" id="3"]
 [ext_resource type="Shader" path="res://assets/shaders/pause_blur.gdshader" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/ui/music_player.tscn" id="5"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_blur"]
 shader = ExtResource("4")
@@ -113,3 +114,5 @@ label_key = "UI_RESTART_RUN"
 [node name="Quit" parent="Root/Content/Column/Frame/Entries" instance=ExtResource("3")]
 layout_mode = 2
 label_key = "UI_QUIT_TO_TITLE"
+
+[node name="MusicPlayer" parent="Root" instance=ExtResource("5")]

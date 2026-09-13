@@ -29,6 +29,7 @@ func _ready() -> void:
 	GameState.money_changed.connect(_on_money_changed)
 	_on_money_changed(GameState.money, 0)
 	_focus_best()
+	UiSounds.arm(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:
