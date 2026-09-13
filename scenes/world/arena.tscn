@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -26,6 +26,8 @@
 [ext_resource type="Script" path="res://scripts/systems/bird_flock.gd" id="24"]
 [ext_resource type="PackedScene" path="res://scenes/world/bird.tscn" id="25"]
 [ext_resource type="Script" path="res://scripts/systems/corpse_field.gd" id="26"]
+[ext_resource type="Script" path="res://scripts/systems/blood_field.gd" id="27"]
+[ext_resource type="PackedScene" path="res://scenes/fx/blood_splash.tscn" id="28"]
 
 [node name="Arena" type="Node3D"]
 
@@ -37,6 +39,10 @@ script = ExtResource("26")
 
 [node name="Effects" type="Node" parent="."]
 script = ExtResource("23")
+
+[node name="Blood" type="Node" parent="."]
+script = ExtResource("27")
+splash_scene = ExtResource("28")
 
 [node name="AttackTokens" type="Node" parent="."]
 script = ExtResource("4")

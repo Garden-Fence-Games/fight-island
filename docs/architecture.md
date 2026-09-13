@@ -408,6 +408,35 @@ Whatever draws it will still owe the rule the ring was built for: **a shape, not
 alone fails a colourblind player, every greyscale screenshot, and any camera far enough away that a
 tint is a few pixels.
 
+### Blood
+
+A landed blow bleeds in **three layers**, each with one job, and every figure that tunes them is in
+`data/fx/blood.tres`:
+
+- **The splash** — `BloodSplash`, leased like `Impact` and `CPUParticles3D` for the same reason.
+  Droplets are thin capsules aligned to their own velocity, so a fast one reads as a streak and a
+  slow one as a drop: liquid rather than debris, with no texture at all.
+- **The stain** — a `Decal`, sharp and fresh, placed where the droplets come down: one at the
+  victim's feet and the rest thrown downstream along the blow. Each landing point is found by casting
+  down onto the world, so a stain lands on sand, on a rock, or — over the sea — nowhere.
+- **The memory** — a mask covering the island that every stain is also stamped into, which
+  `terrain_blood.gdshader` mixes the ground towards red and towards wet. The decal fades once the
+  mask carries it, so the island keeps every fight of the run at a constant cost.
+
+`BloodField` listens for `attack_landed` the way `HitFeedback` does, so nothing that throws a punch
+knows there is blood in the game, and reads the direction off `Enemy.last_hit_from`. It gives the
+terrain its shader at runtime rather than through the island generator, which keeps the mask the
+arena's business and `island.tscn` untouched.
+
+**Nothing is built mid-fight.** The decals are made once and recycled oldest first; the mask's stamps
+are pre-drawn at a few sizes and headings, so a blow is a lookup and a native `blend_rect`. **The mask
+is uploaded in batches**, because an `ImageTexture` is sent whole: a crowd's worth of blows in one
+frame is one upload, at most every `mask_refresh`, and the decals carry the stain in the meantime.
+
+Stains are drawn **white with alpha and spraying along +X**, and coloured in the decal and the shader,
+so the red is tuned without redrawing anything. `tools/build_blood_textures.gd` generates the current
+set; a painted set under the same names replaces it file for file.
+
 ### The accessibility settings are consumers
 
 Three were stored, persisted and shown in the options screen with **nothing reading them**. Two are

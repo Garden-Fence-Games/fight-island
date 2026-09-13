@@ -8,6 +8,11 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **A blow bleeds, and the island keeps it.** Droplets are thrown the way the blow travelled,
+  stretched along their own flight rather than tumbling as cubes. Stains come down where they land —
+  at the victim's feet and thrown downstream, on sand or rock but never on the sea — first as sharp
+  decals, and for good in a mask the ground's shader turns red and wet. A perfect blow spills more.
+  Nothing is built mid-fight, and `verify_blood` holds all of it.
 - **The parry has a body.** Pressing the defensive button played nothing, so the component fell back
   to the rest pose and the player went limp for nearly half a second — arms at their sides, in the
   one moment the game asks the most of them. There is a guard now, and it is **the state's own
