@@ -15,6 +15,9 @@ const FADE: float = 0.35
 
 var _key: String = ""
 var _actions: PackedStringArray = []
+## The fade running now. One at a time: a fade out still running when the next line fades in would
+## finish afterwards and hide the line that was just shown.
+var _fade: Tween = null
 
 @onready var root: Control = $Root
 @onready var line: Label = $Root/Frame/Line
@@ -35,7 +38,7 @@ func show_line(key: String, actions: PackedStringArray = PackedStringArray()) ->
 	_actions = actions
 	_rewrite()
 	root.visible = true
-	create_tween().tween_property(root, "modulate:a", 1.0, FADE)
+	_restart_fade().tween_property(root, "modulate:a", 1.0, FADE)
 
 
 func hide_line() -> void:
@@ -43,7 +46,7 @@ func hide_line() -> void:
 		return
 	_key = ""
 	_actions = PackedStringArray()
-	var tween := create_tween()
+	var tween := _restart_fade()
 	tween.tween_property(root, "modulate:a", 0.0, FADE)
 	tween.tween_callback(_on_faded)
 
@@ -72,5 +75,13 @@ func _on_input_device_changed(_device: int) -> void:
 	_rewrite()
 
 
+func _restart_fade() -> Tween:
+	if _fade != null and _fade.is_valid():
+		_fade.kill()
+	_fade = create_tween()
+	return _fade
+
+
 func _on_faded() -> void:
-	root.visible = false
+	if _key.is_empty():
+		root.visible = false

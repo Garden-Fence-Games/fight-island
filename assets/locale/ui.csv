@@ -129,6 +129,7 @@ TUTORIAL_ANGRY,"You were drunk, now you're angry"
 TUTORIAL_FIGHT,{0} to punch and {1} to dodge
 TUTORIAL_SPRINT,{0} to sprint
 TUTORIAL_SURVIVE,"Now, survive!"
+TUTORIAL_SWITCH,{0} to switch weapons
 PICKUP_TAKE,{0} Take it
 WEAPON_FISTS,Fists
 WEAPON_STICK,Stick

@@ -16,6 +16,14 @@ When the last one goes, **wave 1 starts at once** — the ordinary wave, off the
 wave after it. The island is empty while the lines are up: the wave director is halted, nothing
 spawns, and the player can already walk, swing and roll.
 
+## The first weapon
+
+**One more line, the first time a weapon goes in the bag:** *[weapon_next] to switch weapons* —
+`Tab` on a keyboard, RB on a pad. Before that moment the player holds nothing but their fists, so
+there was nothing to switch between and nothing to teach. It shows once a run, for its own
+`seconds`, on the same runs as the opening; a weapon picked up while the opening lines are still up
+waits for them to finish instead of cutting one off.
+
 ## Why a clock and not the buttons
 
 The first tutorial was wave 1 itself: seven lessons, each closing when the player performed it —
