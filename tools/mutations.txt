@@ -94,3 +94,8 @@ scripts/components/animation_component.gd|&"Parry": &"parry",|&"Parry": &"pary",
 # moving like nothing was added.
 scripts/actors/enemy/states/enemy_attack.gd|return attack.animation if attack != null else &""|return attack.impact_sound if attack != null else &""|verify_clips
 scripts/actors/enemy/states/enemy_windup.gd|return enemy.windup()|return 0.0|verify_clips
+
+# The dying body: the throw is the blow's share of the knock rate rather than the whole of it, and
+# a fall that reads a constant instead of the blow lays every corpse the same distance away.
+scripts/actors/player/states/player_dead.gd|player.last_hit_push * KNOCKDOWN.knock_speed|KNOCKDOWN.knock_speed|verify_corpses
+scripts/actors/enemy/states/enemy_stagger.gd|var push: float = float(message.get("push", 0.0)) * Enemy.KNOCKDOWN.knock_speed|var push: float = Enemy.KNOCKDOWN.knock_speed|verify_corpses

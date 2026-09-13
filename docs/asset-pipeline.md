@@ -320,9 +320,16 @@ The importer strips these from the node name and generates the body:
 Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 
 **Player:** `idle`, `walk`, `run`, `sprint`, `dodge_roll`, `parry`, `parry_success`, `hurt`,
-`death`, `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`, plus
+`pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`, plus
 `idle_gun` and `walk_gun` — the gun is held across the whole body, so standing and walking with it
 are their own clips rather than a layer over the unarmed ones.
+
+**The player has no `death` clip and is not waiting for one.** The run ends by handing the body to
+the physics, the same `RagdollComponent` the farmers have used since they stopped sinking into the
+sand — so the fall agrees with where the player was standing, which way the blow came from and what
+they landed against, which is the part no clip could do. `AnimationComponent` refuses to touch a rig
+the simulator is driving, and `PlayerDead` pins the final pose into the skeleton once the tumble
+ends.
 
 **The gun mesh is part of the rig**, parented to the hand bone, because the gun clips animate it.
 It is hidden rather than detached when the player is unarmed — see `WeaponVisualComponent` in
@@ -369,7 +376,6 @@ that is never wrong about anything is one nobody reads.
 
 | Clip | Rig | Where it bites |
 |---|---|---|
-| `death` | player | The run ends on the rest pose. The death screen covers it within the frame, which is why it has waited. |
 | `attack_stick_1` | player | The stick swings and nothing moves. The stick has no mesh on the rig either, so it is invisible in hand — one job, not two. |
 | `attack_stick_2` | player | As above. |
 | `attack_stick_3` | player | As above. |

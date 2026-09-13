@@ -17,6 +17,10 @@ extends Node
 ## an AnimationPlayer; the state is expected to stop naming a clip for the duration, which is what
 ## `EnemyStagger` does.
 
+## The physics has the body. Announced rather than left to be noticed, because whatever else was
+## posing this skeleton has to let go of it in the same frame — a clip still running writes bone
+## poses after the simulator does, and the tumble simply does not happen.
+signal took_the_body
 ## Settled, and the body is ready to be handed back.
 signal came_to_rest
 
@@ -104,6 +108,7 @@ func knock(direction: Vector3, push: float, ceiling: float = 0.0) -> void:
 	_elapsed = 0.0
 	_ceiling = ceiling if ceiling > 0.0 else longest
 	_simulator.physical_bones_start_simulation(bones)
+	took_the_body.emit()
 	var flat := Vector3(direction.x, 0.0, direction.z)
 	var impulse := flat.normalized() * push + Vector3.UP * push * lift
 	for body: PhysicalBone3D in _bodies:
