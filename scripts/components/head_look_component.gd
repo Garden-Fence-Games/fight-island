@@ -116,7 +116,7 @@ func _process(_delta: float) -> void:
 ## `watching` and he turns his head to it. Neither is a special case for the other: the component
 ## still knows nothing about who owns it, only that it was either given a node or found a device.
 func _look_direction() -> Vector3:
-	if watching != null and watching.is_inside_tree():
+	if is_instance_valid(watching) and watching.is_inside_tree():
 		var toward := watching.global_position - _body.global_position
 		toward.y = 0.0
 		if not toward.is_zero_approx():
