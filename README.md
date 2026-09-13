@@ -141,6 +141,10 @@ goes through a pull request — nothing is merged directly into `main`. Read
 [docs/contributing.md](docs/contributing.md) before the first commit: the Godot-specific rules
 about `.tscn` conflicts and binary assets are there, and they matter.
 
+## Studio
+
+Fight Island is made by **Garden Fence** — [gardenfence.ch](https://gardenfence.ch/).
+
 ## License
 
 Code: not yet decided — see [docs/roadmap.md](docs/roadmap.md). Third-party assets keep their
