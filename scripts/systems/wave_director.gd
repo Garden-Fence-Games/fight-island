@@ -101,8 +101,19 @@ func halt() -> void:
 	_left_to_send = 0
 	_next_wave_in = 0.0
 	_elapsed = 0.0
+	GameState.fighting = false
 	if spawner != null:
 		spawner.clear()
+
+
+## The arena is going: a scene change, a restart, a quit to the title. The run clock stops here and
+## nowhere else, because this is the one node that is present exactly while a fight can be.
+##
+## `wave_in_progress` deliberately survives this — a player who walked out mid-wave has to come back
+## into that wave rather than past it — so it cannot also be what the clock reads. See
+## `GameState.fighting`.
+func _exit_tree() -> void:
+	GameState.fighting = false
 
 
 ## Takes the island back from whatever drove a wave by hand — the tutorial today, scripted waves

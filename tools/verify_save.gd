@@ -14,6 +14,9 @@ const ARENA: String = "res://scenes/world/arena.tscn"
 const SETTLE_FRAMES: int = 4
 ## Far enough ahead that no build will ever read it, which is the whole point of the refusal.
 const FUTURE_VERSION: int = 9999
+## How long the run clock is watched for, on each side of the arena going away. Long enough that a
+## clock still ticking has visibly moved, short enough not to pad the check.
+const CLOCK_WINDOW: float = 0.4
 
 var _failures: PackedStringArray = []
 var _kept_run: String = ""
@@ -35,6 +38,7 @@ func _run() -> void:
 	_check_a_finished_run_is_not_resumable()
 	_check_the_merchant_is_still_owed()
 	await _check_an_interrupted_wave_is_fought_again()
+	await _check_the_clock_stops_when_the_island_does()
 	_put_back_what_was_on_this_machine()
 	_report()
 
@@ -182,6 +186,65 @@ func _check_an_interrupted_wave_is_fought_again() -> void:
 	var handed_over := await _wave_the_director_opens()
 	if handed_over != 6:
 		_fail("a cleared wave handed over to wave %d, expected 6" % handed_over)
+
+
+## The other half of the check above, and the two pull in opposite directions.
+##
+## `wave_in_progress` has to survive a quit to the title, or the player comes back a wave late. The
+## run clock read that same flag, so it went on counting on the title screen — a laptop left open on
+## the menu added hours to the figure the summary prints, which is exactly what the gate on
+## `GameState._process` was written to prevent. `fighting` is the fact the clock actually wanted:
+## runtime only, never saved, and false the moment the arena leaves.
+func _check_the_clock_stops_when_the_island_does() -> void:
+	GameState.begin_run()
+	var arena := (load(ARENA) as PackedScene).instantiate()
+	add_child(arena)
+	await get_tree().process_frame
+	var tutorial := arena.get_node_or_null("TutorialDirector") as TutorialDirector
+	if tutorial != null:
+		tutorial.stand_down()
+	var director := arena.get_node_or_null("WaveDirector") as WaveDirector
+	if director != null:
+		director.halt()
+	EventBus.wave_started.emit(5, 8)
+	if not GameState.fighting:
+		_fail("a wave started on a loaded island and the clock was not running")
+
+	var before_the_fight := GameState.stats.seconds
+	await _wait(CLOCK_WINDOW)
+	if GameState.stats.seconds <= before_the_fight:
+		_fail("the run clock did not move while a wave was being fought")
+
+	# The quit to the title: the arena goes, the run and the wave both stay in progress.
+	arena.queue_free()
+	await get_tree().process_frame
+	if GameState.fighting:
+		_fail("the island is gone and the clock still thinks a fight is on")
+	if not GameState.wave_in_progress:
+		_fail(
+			(
+				"quitting to the title cleared wave_in_progress — the player would come back past "
+				+ "the wave they walked out of"
+			)
+		)
+
+	var before_the_menu := GameState.stats.seconds
+	await _wait(CLOCK_WINDOW)
+	if GameState.stats.seconds > before_the_menu:
+		_fail(
+			(
+				(
+					"the run clock gained %.2f s on the title screen — a run left open overnight would "
+					+ "report a time nobody spent playing"
+				)
+				% (GameState.stats.seconds - before_the_menu)
+			)
+		)
+
+
+## Real seconds, because the clock this is watching counts them.
+func _wait(seconds: float) -> void:
+	await get_tree().create_timer(seconds, true, false, true).timeout
 
 
 ## What `start_wave` would be called with, read off a director that has just woken up in a fresh

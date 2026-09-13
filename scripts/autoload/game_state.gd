@@ -25,9 +25,20 @@ var run_seed: int = 0
 ## The wave the player is on: being fought, or the one just cleared.
 var wave: int = 0
 ## Whether that wave is still being fought. It is the difference between resuming *into* wave five
-## and resuming *past* it, and getting it wrong silently skips a wave.
+## and resuming *past* it, and getting it wrong silently skips a wave. **It survives a quit to the
+## title**, deliberately, which is why it cannot also answer for whether anybody is playing.
 var wave_in_progress: bool = false
 var run_in_progress: bool = false
+## Whether a fight is actually on screen. Runtime only and never saved: it follows the wave on the
+## bus, exactly as `wave_in_progress` does, and the wave director clears it on the way out of the
+## tree — so it is false on the title screen even though the run and the wave are both still in
+## progress, and true during the tutorial, which drives wave 1 by hand.
+##
+## It exists because the clock below had nothing honest to ask. `wave_in_progress` stays true across
+## a quit to the title — the resume logic needs it to, or a player who walked out mid-wave comes
+## back a wave later — so the run clock went on counting while the title screen sat there, and a
+## laptop left open added hours to a number the summary prints.
+var fighting: bool = false
 ## Carries between waves and is spent at the merchant. It only ever changes through `earn` and
 ## `spend`, so nothing can move it without the signal going out.
 var money: int = 0
@@ -76,11 +87,11 @@ func _ready() -> void:
 	load_run()
 
 
-## The clock measures fighting, not menus. Gated on the wave rather than on the run because a run
-## that was quit to the title is still in progress, and a run waiting on a title screen overnight
-## would otherwise report a time nobody spent playing.
+## The clock measures fighting, not menus. Gated on `fighting` rather than on `wave_in_progress`,
+## because a run quit to the title is still mid-wave by every measure the save cares about and is
+## nobody playing — see `fighting`.
 func _process(delta: float) -> void:
-	if run_in_progress and wave_in_progress:
+	if run_in_progress and fighting:
 		stats.seconds += delta
 
 
@@ -90,6 +101,7 @@ func begin_run() -> void:
 	run_in_progress = true
 	wave = 0
 	wave_in_progress = false
+	fighting = false
 	money = 0
 	hour = 0.0
 	day_elapsed = 0.0
@@ -106,6 +118,7 @@ func begin_run() -> void:
 func end_run() -> void:
 	run_in_progress = false
 	wave_in_progress = false
+	fighting = false
 	stats.ended_on_wave = wave
 	_record_best_wave()
 	# A finished run is not a resumable one, whether it ended in a death or in a victory.
@@ -283,12 +296,14 @@ func toggle_debug_overlay() -> void:
 func _on_wave_started(index: int, _enemies: int) -> void:
 	wave = index
 	wave_in_progress = true
+	fighting = true
 	stats.ended_on_wave = index
 	save_run()
 
 
 func _on_wave_cleared(_index: int, reward: int) -> void:
 	wave_in_progress = false
+	fighting = false
 	stats.waves_cleared += 1
 	earn(reward)
 	save_run()
