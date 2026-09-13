@@ -538,6 +538,28 @@ hits, *what* is ringing: the perfect one carries a partial the plain one does no
 to outlast its plain version by at least twice, the perfect hit's tail has to be three times
 brighter than the plain one's, and a whiff's opening must stay well under a hit's.
 
+### One key, and room to be a mix
+
+**The whole game is in A minor.** It was already mostly true and nobody had written it down — the
+bed is stacked fifths on A, the perfect parry is a bell on A and E, the perfect signature is E, the
+pickup is E and B. Three sounds were in C and G: the wave sting, the merchant, and the two endings.
+Those are the three most *musical* moments there are, so they were the three that rang against
+everything else. They are A–C–E, A–E, and A–E–A now.
+
+The bed had the same fault one level down. A stack of fifths **leaves the key on the third step** —
+A, E, B, then F sharp, which A minor does not contain — and two of the three layers were reaching
+it, so the sound playing under every other sound disagreed with all of them. The stack stops at
+three.
+
+**Everything is 6 dB quieter, and the figure is derived.** Several sounds arrive at once — three
+farmers commit at night while a chain lands — and each was normalised to its own peak as though it
+were alone. Uncorrelated sources sum as the root of the sum of squares, so four at 0.9 reach 1.8 and
+the master clips. A headroom of one half puts those four at 0.9.
+
+The table of declared peaks is untouched: it is the **shape** of the mix, and one figure moves the
+whole thing down together rather than nine figures drifting apart. `tools/verify_mix.tscn` holds the
+order, the ceiling and the key.
+
 ### The body is the weapon, the ring is the timing
 
 A fist, a stick and a round do not land alike, so each has its own **body** — pitch, how long it

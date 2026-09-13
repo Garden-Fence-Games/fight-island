@@ -140,7 +140,6 @@ func _run() -> void:
 	_check_the_perfect_parry_rings_longer()
 	_check_a_swing_through_air_has_no_impact_in_it()
 	_check_a_swing_reads_as_a_pass()
-	_check_the_mix_is_ordered()
 	_check_the_telegraph_is_the_one_sound_that_climbs()
 	_check_every_weapon_lands_differently()
 	_check_the_perfect_ring_is_the_same_in_every_family()
@@ -251,36 +250,6 @@ func _check_a_swing_through_air_has_no_impact_in_it() -> void:
 				% [swing, contact]
 			)
 		)
-
-
-## **The mix, as an ordering rather than as a set of numbers somebody liked once.**
-##
-## This is the check that keeps the whole set usable. Every sound here is individually fine and the
-## only thing that can go wrong is their relationship: a footfall at a hit's level walks over the
-## fight, and a telegraph under one is a warning the player will not hear in a crowd. So what is
-## asserted is the order, and the order is the design — quietest is the body you already control,
-## loudest is the thing about to hit you.
-func _check_the_mix_is_ordered() -> void:
-	var rungs: Array[Array] = [
-		[&"step_sand", &"whiff"],
-		[&"step_water", &"whiff"],
-		[&"roll", &"whiff"],
-		[&"whiff", &"hit"],
-		[&"hurt", &"telegraph"],
-		[&"hit", &"telegraph"],
-	]
-	for rung: Array in rungs:
-		var under: StringName = rung[0]
-		var over: StringName = rung[1]
-		var quiet := AudioManager.peak_of(under)
-		var loud := AudioManager.peak_of(over)
-		if quiet >= loud:
-			_fail(
-				(
-					"%s peaks at %.2f and %s at %.2f — the quieter one is not quieter"
-					% [under, quiet, over, loud]
-				)
-			)
 
 
 ## **The one sound in the game that climbs.**
@@ -918,7 +887,7 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"audio OK — every sound is its own waveform at the peak it declared, three "
+				"audio OK — every sound is its own waveform, three "
 				+ "weapons land with three bodies and one signature, three archetypes wind up "
 				+ "from three pitches and the thrower's stands highest, the last round says so, "
 				+ "a swing through air passes rather than snapping, and the surf comes back "
