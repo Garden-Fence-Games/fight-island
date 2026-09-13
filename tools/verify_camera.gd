@@ -86,10 +86,12 @@ func _check_the_sun_shadows_exactly_as_far_as_the_camera_looks() -> void:
 	if suns.is_empty():
 		_fail("the island has no sun, so nothing casts a shadow at all")
 		return
+	var casting := 0
 	for node: Node in suns:
 		var sun := node as DirectionalLight3D
 		if not sun.shadow_enabled:
 			continue
+		casting += 1
 		var reach := sun.directional_shadow_max_distance
 		if reach < CAMERA_REACH:
 			_fail(
@@ -111,6 +113,13 @@ func _check_the_sun_shadows_exactly_as_far_as_the_camera_looks() -> void:
 					% [reach, CAMERA_REACH, reach - CAMERA_REACH]
 				)
 			)
+	# Every branch above hangs off a sun that casts. With none, the loop grades nothing and the check
+	# congratulates an island lit flat — which is the failure it exists to catch, arrived at from the
+	# other side.
+	if casting == 0:
+		_fail(
+			"the island has suns but not one of them casts a shadow, so nothing here was measured"
+		)
 
 
 ## An island with nothing in the occluder group would satisfy every check below by never fading
