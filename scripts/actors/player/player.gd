@@ -14,7 +14,15 @@ const SPRINT_MINIMUM: float = 10.0
 ## Ground covered between one footfall and the next. Measured in metres rather than counted on a
 ## timer, so a sprint's steps come faster than a walk's without either speed being told about the
 ## other — and so wading, which costs speed, slows the footsteps with it.
-const STRIDE: float = 0.95
+##
+## **It is the walk cycle's own stride, and it has to stay that.** It was 0.95 m, which at 3.2 m/s
+## is 202 footfalls a minute against a clip that puts down 118 — the ear heard a jog while the eye
+## watched a walk. One walk cycle is `FOOTFALLS_PER_CYCLE` steps and covers `MOVE_SPEED × length`
+## of ground, and this is that divided out. `verify_animation` holds the two together, so a
+## reimported cycle of a different length fails rather than quietly running the sound fast again.
+const STRIDE: float = 1.63
+## What one loop of the walk clip puts on the ground. Left and right: it is a cycle, not a step.
+const FOOTFALLS_PER_CYCLE: float = 2.0
 
 ## What is in hand. Set from the run state, not by the scene: a player who quits to the title and
 ## continues is holding what they were holding. The export is the fallback for a scene opened

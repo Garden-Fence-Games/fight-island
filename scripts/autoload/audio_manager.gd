@@ -432,10 +432,19 @@ func _build() -> void:
 ## The recordings, by family, taken from the file names. A directory rather than a list in code: a
 ## line added to the game is a file dropped in, and a table here would be a second place to forget.
 func _load_the_recordings() -> void:
+	var taken := {}
 	for name: String in DirAccess.get_files_at(VOICES_AT):
 		var file := name.trim_suffix(".remap").trim_suffix(".import")
 		if not file.ends_with(".wav"):
 			continue
+		# **Once each.** Running from source the directory lists `farmer_01.wav` *and*
+		# `farmer_01.wav.import`, and trimming the suffix turns the second into the first — so every
+		# clip was loaded twice and every family was twice the size it reports. Nine farmers came
+		# out as eighteen, which also quietly broke "never the same line twice running": a duplicate
+		# can follow its own original.
+		if taken.has(file):
+			continue
+		taken[file] = true
 		var kind := StringName(file.get_basename().rsplit("_", true, 1)[0])
 		var stream := load("%s/%s" % [VOICES_AT, file]) as AudioStream
 		if stream == null:
