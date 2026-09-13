@@ -984,7 +984,7 @@ Both are shaders, and both are shaders for the same reason: the thing that has t
 thousands of times from one mesh, so nothing per-instance can drive it.
 
 **The wind** (`assets/shaders/foliage.gdshader`) runs in the vertex stage. Every plant on the
-island is one instance of a `MultiMeshInstance3D` — 380 palms, 24 000 grass tufts — and instances
+island is one instance of a `MultiMeshInstance3D` — 95 palms, 1 600 tufts of grass — and instances
 cannot play separate animations. This did not change when the plants stopped being primitives and
 became modelled: a pack of rigged foliage would buy nothing, because the rig could never reach the
 instances.

@@ -85,7 +85,7 @@ func test_the_bushes_form_a_few_clumps_and_not_ninety_spots() -> void:
 
 
 func test_most_bushes_sit_at_the_foot_of_a_palm() -> void:
-	# Sixteen of the twenty-four clumps anchor on a trunk, so most bushes should be under one. This
+	# Four of the six clumps anchor on a trunk, so most bushes should be under one. This
 	# is the guard on that split: a change that quietly made every clump a shore clump would leave
 	# the trunks bare, which is the arrangement the file was written to add.
 	var bushes := _bushes([])

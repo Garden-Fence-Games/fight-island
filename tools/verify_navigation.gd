@@ -10,7 +10,7 @@ const ARENA: String = "res://scenes/world/arena.tscn"
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
 ## The first authored boulder, and its half-width once the collider's 0.7 scale is applied. The
 ## test needs a solid thing in a known place; this is the one the island guarantees.
-const BOULDER: Vector3 = Vector3(-34.0, 0.0, -26.0)
+const BOULDER: Vector3 = Vector3(-17.0, 0.0, -13.0)
 const BOULDER_HALF_WIDTH: float = 1.75
 ## Where the two of them stand, either side of that boulder, so the straight line runs through it.
 const STAND_OFF: float = 4.5

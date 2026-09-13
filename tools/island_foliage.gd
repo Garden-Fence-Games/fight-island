@@ -81,7 +81,7 @@ const INLAND_MIX: Vector3 = Vector3(0.18, 0.34, 0.48)
 
 ## How many grass clusters are asked for. A target, not a promise: the scatter gives up after so
 ## many throws, so the island lays down rather fewer.
-const GRASS_COUNT: int = 6400
+const GRASS_COUNT: int = 1600
 ## What the painted grass is multiplied by: warmer, toward yellow-green. Painted as it is, it read a
 ## shade too vivid against the sand. Above one in red on purpose — a multiply can only darken a
 ## channel, and yellow is red that was not taken away.
@@ -128,12 +128,14 @@ const SHORE_THIN: float = 0.4
 
 ## How many bushes, and how tall. A bush has no collider: getting stuck on a shrub is worse than the
 ## realism in it.
-const COUNT: int = 120
+const COUNT: int = 30
 const SIZE: Vector2 = Vector2(0.7, 1.5)
 ## How many clumps, and of which kind. The split is the look: mostly skirting trunks, with enough
-## along the sand to carry the transition.
-const TRUNK_CLUMPS: int = 16
-const SHORE_CLUMPS: int = 8
+## along the sand to carry the transition. Quartered with the island alongside `COUNT`, so a clump
+## still holds about five bushes — twenty-four clumps for thirty bushes is not a clump, it is a
+## bush with a name.
+const TRUNK_CLUMPS: int = 4
+const SHORE_CLUMPS: int = 2
 ## How far from its anchor a bush may land. The near end keeps a clump a clump; the far end is about
 ## a palm's crown, so a trunk clump sits under the shade that justifies it.
 const SPREAD: Vector2 = Vector2(0.9, 3.4)

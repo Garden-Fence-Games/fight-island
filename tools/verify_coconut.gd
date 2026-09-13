@@ -12,11 +12,12 @@ extends Node
 
 const ARENA: String = "res://scenes/world/arena.tscn"
 ## What the island scatters. A handful either way is fine; an order of magnitude is a grove that was
-## not read.
-const PALMS_AT_LEAST: int = 100
+## not read — which is the only thing this is for, so it sits well under the ninety-five the island
+## actually lays down rather than beside it.
+const PALMS_AT_LEAST: int = 40
 ## How far apart the two furthest palms have to be before the grove counts as a grove rather than a
-## pile at the origin. The island is well over a hundred metres across.
-const GROVE_SPANS: float = 40.0
+## pile at the origin. The island is eighty-eight metres across.
+const GROVE_SPANS: float = 20.0
 ## How far a coconut may land from the foot of its own palm, over what the table allows. The landing
 ## spot is snapped to walkable ground, which can move it a little further out than `lands_within`.
 const SNAP_SLACK: float = 2.0
