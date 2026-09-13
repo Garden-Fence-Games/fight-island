@@ -23,6 +23,8 @@ var _screen: Control = null
 func _ready() -> void:
 	EventBus.wave_cleared.connect(_on_wave_cleared)
 	EventBus.player_died.connect(_on_player_died)
+	# Deferred: the run scene is still readying its children, and the opening joins it as one.
+	RunIntro.open_if_owed.call_deferred(get_parent())
 	if merchant_is_owed():
 		_open_merchant()
 
