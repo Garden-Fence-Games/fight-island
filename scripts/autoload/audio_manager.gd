@@ -122,7 +122,6 @@ const IMPACTS: Dictionary = {
 const BASE_TELEGRAPH: StringName = &"farmhand"
 const TELEGRAPHS: Dictionary = {
 	&"farmhand": {"from": 300.0, "to": 690.0, "seconds": 0.30, "grain": 61},
-	&"reaper": {"from": 150.0, "to": 300.0, "seconds": 0.42, "grain": 67},
 	&"pirate": {"from": 200.0, "to": 380.0, "seconds": 0.48, "grain": 79},
 }
 ## Small random pitch on repeated sounds, so a chain does not sound like a machine. The perfect hit

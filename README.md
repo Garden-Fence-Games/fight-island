@@ -36,9 +36,9 @@ menus should sound like. See [docs/roadmap.md](docs/roadmap.md).
 - **Three weapons, no more.** Fists, a wooden stick, a gun — a different range, a different
   commitment, a different rhythm each.
 - **Wave survival.** Fifteen escalating waves on a single island, then an endless mode.
-- **Farmers who want you gone, and a pirate who is worse.** A bare-handed swarm, a scythe-swinging
-  bruiser whose wide arc cannot be sidestepped, and a rare heavy who hits for nearly three of them.
-  One rig for the farmers, one of his own for him, three very different problems.
+- **Farmers who want you gone, and a pirate who is worse.** A bare-handed swarm, and a rare heavy
+  who hits for nearly three of them and telegraphs for the longest wind-up in the game. One rig for
+  the farmer, one of his own for him.
 - **One upgrade per wave.** Health, stamina, fists, stick, gun. You cannot max them all; the
   subject of the game is what you give up.
 - **A full defensive kit.** Dodge with i-frames, sprint, and a tap parry whose perfect window

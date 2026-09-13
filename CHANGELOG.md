@@ -8,6 +8,29 @@ All notable changes to this project are documented here, following
 
 ### Removed
 
+- **The reaper is gone too. The island is the farmhand and the pirate.** Removed rather than left
+  at a share of zero — the archetype, his sweep, his telegraph, his draw and blow, his locale row,
+  and `verify_playfield`, the check that walked nineteen thousand square metres asking whether any
+  corner answered a 160° arc with nothing. That was his question and nobody else's.
+  - **Two archetypes, so two bands.** Waves 1 to 3 are farmhands and nothing else; the pirate joins
+    at wave 4 at a flat tenth and never leaves. The seven bands that existed to move the reaper's
+    share collapse into those two.
+  - **The mix stops being a difficulty lever**, and that is a consequence rather than a decision.
+    One swarm archetype and one flat hazard leave a band nothing to escalate, so every wave from the
+    fourth is composed identically and the whole curve is carried by `hp_mult`, `dmg_mult` and the
+    crowd.
+  - **The late game is gentler again.** Measured by `tools/measure_waves.tscn`, wave 15 goes from
+    81 to 73 points of incoming damage a second at the night pool and survival under full contact
+    from 1.5 s to 1.6 s — a smaller drop than the thrower's, because the reaper was competing for a
+    token the farmhand would otherwise have spent rather than carrying one of his own.
+  - **The camera's zoom floor is re-derived.** Eleven metres was set by the reaper's 2.8 m reach
+    plus the 1.8 m he covered winding up; it is now the pirate's 2.0 m plus 2.4 m, so the bound is
+    4.4 m of visible ground rather than 4.6. Eleven still clears it, and `verify_view` measures it
+    off the resources rather than the comment.
+
+
+### Removed
+
 - **The thrower is gone, and nothing stands in for him.** He was never wanted: issue #9 asked for a
   ranged farmer and #73 built him, and the design he was built into is not the one this game is.
   Removed rather than switched off — the archetype, his stone, the `Projectile` he flew, the

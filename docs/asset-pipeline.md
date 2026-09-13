@@ -8,7 +8,7 @@ settings to get wrong.
 | Thing | Primitive |
 |---|---|
 | Player | `CapsuleMesh`, 1.8 m tall, one bright colour |
-| Enemies | the same capsule in two colours — farmhand, reaper — scaled ×1.15 for elites |
+| Enemies | one capsule for the farmhand, scaled ×1.15 for elites |
 | Merchant | a third colour, and he never moves |
 | Fists | no mesh — the hitbox is the weapon |
 | Stick | `BoxMesh` 0.06 × 0.06 × 1.2 m |
@@ -133,7 +133,6 @@ whenever a constant at the top of that file changes:
 ```bash
 godot --headless --path . --script tools/build_island.gd
 godot --headless --path . res://tools/verify_island.tscn
-godot --headless --path . res://tools/verify_playfield.tscn
 ```
 
 `tools/build_credits.gd` is the other generator, and it reads a document rather than a seed: it bakes
@@ -176,13 +175,6 @@ camera is fixed, so a wall anywhere is a wall the player can never look around �
 cliff along the water, however good it would look. The island rolls instead: gentle relief inland,
 fading out toward both the fighting core and the shore, so the arena stays flat and the beach stays
 walkable. The six rock formations carry the orientation the landmark would have.
-
-**And no corner of it answers the reaper's sweep with nothing.** `verify_playfield` walks every
-square metre of ground the fight can reach — nineteen thousand of them — and checks that a dodge
-still lands somewhere the arc does not cover. The fixed camera is what makes this a check rather
-than a look: a player cannot turn to find the way out, so a pocket is not something they can play
-around. The ground a dodge may land on is deliberately wider than the ground walked: the sea is an
-escape, and a body the enemies cannot follow into is out of the fight rather than cornered in it.
 
 Two things it gets right that are easy to get wrong:
 
@@ -334,13 +326,12 @@ Direct `.blend` import is fine during blockout. Switch before the first CI expor
 
 ## Naming
 
-Files: `char_player.glb`, **`char_farmer.glb`**, `char_pirate.glb`, `char_merchant.glb`, `weapon_stick.glb`,
-`weapon_gun.glb`, `weapon_scythe.glb`, `prop_stone.glb`, `env_island.glb`, `env_palm_tree.glb`,
-`prop_crate.glb`.
+Files: `char_player.glb`, **`char_farmer.glb`**, `char_pirate.glb`, `char_merchant.glb`,
+`weapon_stick.glb`, `weapon_gun.glb`, `env_island.glb`, `env_palm_tree.glb`, `prop_crate.glb`.
 
-**The two farmers are one file.** `char_farmer.glb` carries a single rig and a single mesh; the
-archetypes are two materials — `mat_farmer_hand` and `mat_farmer_reaper` — swapped at runtime on the
-same `MeshInstance3D`. One rig means one animation set, one import to
+**The farmhand is one file.** `char_farmer.glb` carries a single rig and a single mesh, painted by
+`mat_farmer_hand`. A second archetype on the same rig would be another material swapped at runtime
+on the same `MeshInstance3D`. One rig means one animation set, one import to
 maintain, and an elite that is a tint rather than an asset.
 
 Texture direction: the three must be distinguishable **by value and hue at 20 m from a high
@@ -421,9 +412,8 @@ all, which is what the suffix exists for. A set that is only half authored degra
 time instead of leaving a state with nothing to play — which is what the stick does: it has its own
 idle, walk and roll, and every other state falls back to the empty-handed clip.
 
-**Farmer (shared by both):** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`,
-`death`, plus one attack set per archetype — `windup_punch` / `attack_punch` and
-`windup_sweep` / `attack_sweep`.
+**Farmer:** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`, `death`, and his attack
+set — `windup_punch` / `attack_punch`.
 `get_up_back` and `get_up_front` stand him up after a knockdown, off his back and off his front;
 both start lying flat with the head along the body's +Z, which is what lets the ragdoll be lined up
 with the first frame. `idle`, `walk` and `chase` loop; the get-ups play once.
@@ -518,8 +508,8 @@ starts. A re-authored swing that stopped anywhere else would pass every other ch
 the arm between hits. The return and the finisher also lost the stray frame-0 rest key on the way
 in, which would have flashed the rest pose before each of them.
 
-The farmer gets **six**, in draw-and-blow pairs: `windup_punch` / `attack_punch`,
-`windup_sweep` / `attack_scythe`, `windup_throw` / `attack_throw`. The pair is the point. A blow
+The farmer gets **two**, a draw-and-blow pair: `windup_punch` / `attack_punch`. The pair is the
+point. A blow
 lasts an eighth of a second, which is shorter than the crossfade into it, so an arm that started
 from wherever the walk cycle left it would spend the whole strike blending and read as nothing at
 all. The draw puts the arm where the blow begins, and **the blow's first key is the draw's last** —

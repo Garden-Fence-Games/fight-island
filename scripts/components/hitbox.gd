@@ -42,8 +42,8 @@ func _ready() -> void:
 ## The box is sized per swing by `_fit_to`, and the one in the actor's scene is a sub-resource —
 ## which every instance of that scene is handed, not a copy of. Thirty-two pooled bodies therefore
 ## shared a single box, and the last one to arm decided how far every open hitbox reached: a
-## farmhand arming mid-sweep pulled the reaper's live box in from 3.2 m to 2.0 m, and the sweep
-## passed through a player standing at the 2.8 m the scythe is supposed to have.
+## farmhand arming mid-swing pulled a longer body's live box in to its own 1.6 m, and the swing
+## passed through a player standing at the reach that weapon is supposed to have.
 ##
 ## Duplicated here rather than marked local to the scene, because the fix then belongs to whatever
 ## resizes the box rather than to each scene that remembers to tick a box.
@@ -93,7 +93,7 @@ func disarm() -> void:
 ## Whether a contact is really inside the swing, rather than merely inside the box that approximates
 ## it.
 ##
-## The box cannot be the whole answer, and the reaper is the proof. A 160° arc on a 2.8 m weapon
+## The box cannot be the whole answer, and a wide arc is the proof. A 160° arc on a 2.8 m weapon
 ## becomes a rectangle 5.5 m wide whose corners reach 3.9 m — nearly half again the weapon's own
 ## length, and in exactly the direction the character is built around. Confirming against the reach
 ## and the angle themselves is what makes `arc_degrees` mean what it says for every weapon in the
