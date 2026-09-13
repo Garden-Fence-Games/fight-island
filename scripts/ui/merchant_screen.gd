@@ -53,7 +53,7 @@ func _on_card_pressed(card: UpgradeCard) -> void:
 
 
 func _on_money_changed(balance: int, _delta: int) -> void:
-	purse.text = "$%s" % _grouped(balance)
+	purse.text = "$%s" % Economy.grouped(balance)
 	for card: UpgradeCard in _cards:
 		card.refresh()
 
@@ -68,13 +68,3 @@ func _focus_best() -> void:
 			return
 	if not _cards.is_empty():
 		_cards[0].grab_focus()
-
-
-func _grouped(amount: int) -> String:
-	var digits := str(absi(amount))
-	var out := ""
-	for index: int in digits.length():
-		if index > 0 and (digits.length() - index) % 3 == 0:
-			out += ","
-		out += digits[index]
-	return ("-" if amount < 0 else "") + out

@@ -43,6 +43,8 @@ func _run() -> void:
 	await _check_ammo_follows_the_weapon()
 	await _check_damage_numbers()
 	await _check_credit_numbers()
+	await _check_the_round_floats_off_the_body()
+	await _check_the_feed_reports_what_arrived()
 	await _check_the_chip_answers_money_arriving()
 	await _check_one_kill_punches_both_chips()
 	await _check_the_banner_announces_the_wave()
@@ -169,6 +171,74 @@ func _check_credit_numbers() -> void:
 	_clear(numbers)
 
 
+## A round is the second thing a kill pays, so it leaves the body the way the money does and answers
+## the same setting. The merchant's rounds must not: they were bought off a screen, and a number
+## floating off a body that is not there would land wherever the last corpse happened to be.
+func _check_the_round_floats_off_the_body() -> void:
+	var numbers := _hud.get_node("Root/Numbers") as Control
+	var restore: Variant = Settings.get_value(&"gameplay_credit_numbers")
+	Settings.set_value(&"gameplay_credit_numbers", true)
+	_clear(numbers)
+
+	EventBus.rounds_scavenged.emit(1, _target)
+	await get_tree().process_frame
+	if numbers.get_child_count() != 1:
+		_fail("a scavenged round floated nothing off the body that dropped it")
+	elif (numbers.get_child(0) as Label).text != "+1 ammo":
+		_fail("a scavenged round reads %s, expected +1 ammo" % (numbers.get_child(0) as Label).text)
+
+	_clear(numbers)
+	EventBus.rounds_scavenged.emit(2, null)
+	await get_tree().process_frame
+	if numbers.get_child_count() != 0:
+		_fail("the merchant's rounds floated a number off a body that does not exist")
+
+	Settings.set_value(&"gameplay_credit_numbers", restore)
+	_clear(numbers)
+
+
+## Driven on a feed of its own rather than the HUD's, which by this point in the run is carrying
+## lines from every case above it — and a merge reads the line already standing.
+##
+## The two things worth holding are the ceiling and the merge: a wave pays per body, so one line per
+## farmer would be a wall of text laid over the fight it is reporting on.
+func _check_the_feed_reports_what_arrived() -> void:
+	if not (_hud.get_node("Root/BottomRight/Feed") is PickupFeed):
+		_fail("the HUD's bottom-right feed is not a PickupFeed")
+	var feed := PickupFeed.new()
+	add_child(feed)
+	GameState.begin_run()
+	await get_tree().process_frame
+
+	GameState.earn(25)
+	GameState.earn(30)
+	await get_tree().process_frame
+	if feed.get_child_count() != 1:
+		_fail("two payouts in one instant took %d lines, expected one" % feed.get_child_count())
+	elif (feed.get_child(0) as Label).text != "+$55":
+		_fail("merged payouts read %s, expected +$55" % (feed.get_child(0) as Label).text)
+
+	EventBus.rounds_scavenged.emit(1, _target)
+	await get_tree().process_frame
+	if feed.get_child_count() != 2:
+		_fail("rounds landed on the money's line instead of starting their own")
+
+	for _index: int in PickupFeed.LINES + 2:
+		EventBus.weapon_found.emit(&"gun")
+	await get_tree().process_frame
+	if feed.get_child_count() != PickupFeed.LINES:
+		_fail(
+			(
+				"the feed stands %d lines deep, expected %d"
+				% [feed.get_child_count(), PickupFeed.LINES]
+			)
+		)
+
+	feed.queue_free()
+	await get_tree().process_frame
+	GameState.end_run()
+
+
 ## Money arriving has to be visible on the chip too: a two-digit number changing in the corner of a
 ## fight is not something the eye catches on its own. Spending stays silent, and a player who asked
 ## for less flashing gets the text without the punch.
@@ -212,7 +282,7 @@ func _check_one_kill_punches_both_chips() -> void:
 	await _settle(ammo)
 
 	GameState.earn(25)
-	EventBus.rounds_scavenged.emit(2)
+	EventBus.rounds_scavenged.emit(2, null)
 	await _sample()
 	if chip.scale.x <= 1.0 or ammo.scale.x <= 1.0:
 		_fail("a kill that paid and dropped a round did not punch both chips")

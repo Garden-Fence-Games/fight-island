@@ -15,6 +15,9 @@ const CREDIT_LIFE: float = 0.95
 ## Above the head rather than at it, so a killing blow's damage number and its payout do not start
 ## life on top of each other.
 const CREDIT_HEIGHT: float = 2.1
+## The round stacks over the money rather than beside it. One kill pays twice and both numbers leave
+## in the same instant — at one height they are a single unreadable number.
+const ROUNDS_HEIGHT: float = 2.6
 ## A punch, not a throb: the chip grows for a twelfth of a second and settles back over a fifth.
 ## Asymmetric on purpose — the eye catches the arrival and is not held by the departure.
 const PULSE_SCALE: float = 1.12
@@ -97,17 +100,25 @@ func _on_stamina_changed(current: float, maximum: float) -> void:
 
 
 func _on_money_changed(balance: int, delta: int) -> void:
-	money.text = "$%s" % _grouped(balance)
+	money.text = "$%s" % Economy.grouped(balance)
 	if delta > 0:
 		_pulse(money_chip)
 
 
 ## Rounds arrive off bodies, one at a time, in the middle of the fight that dropped them — which is
 ## exactly the moment a counter in the corner goes unread. Same answer as the money chip, for the
-## same reason, and it is the only reason ammunition ever announces itself: spending and reloading
-## are things the player did on purpose.
-func _on_rounds_scavenged(_rounds: int) -> void:
+## same reason, and arriving is the only thing ammunition ever announces: spending and reloading are
+## things the player did on purpose.
+##
+## It floats off the body too, for the reason the payout does — a round *is* the second thing a kill
+## pays — so it answers the same setting. Nothing floats for the merchant's rounds: those were
+## bought off a screen, and there is no body for a number to leave.
+func _on_rounds_scavenged(rounds: int, body: Node3D) -> void:
 	_pulse(ammo)
+	if body == null or not bool(Settings.get_value(&"gameplay_credit_numbers")):
+		return
+	var text := tr("HUD_ROUNDS") % rounds
+	_float_over(body, ROUNDS_HEIGHT, text, &"AmmoNumber", CREDIT_RISE, CREDIT_LIFE)
 
 
 ## A panel answers when something arrives, because the counter alone does not: a two-digit number
@@ -177,7 +188,7 @@ func _on_attack_landed(target: Node3D, damage: float, perfect: bool, _attack: At
 func _on_enemy_died(enemy: Node3D, _archetype: StringName, money_paid: int) -> void:
 	if money_paid <= 0 or not bool(Settings.get_value(&"gameplay_credit_numbers")):
 		return
-	var text := "+$%s" % _grouped(money_paid)
+	var text := "+$%s" % Economy.grouped(money_paid)
 	_float_over(enemy, CREDIT_HEIGHT, text, &"CreditNumber", CREDIT_RISE, CREDIT_LIFE)
 
 
@@ -214,14 +225,3 @@ func _spawn_number(
 	tween.tween_property(label, "position:y", at.y - rise, life)
 	tween.tween_property(label, "modulate:a", 0.0, life)
 	tween.chain().tween_callback(label.queue_free)
-
-
-## Thousands separated the way the money chip in the design shows them.
-func _grouped(amount: int) -> String:
-	var digits := str(absi(amount))
-	var out := ""
-	for index: int in digits.length():
-		if index > 0 and (digits.length() - index) % 3 == 0:
-			out += ","
-		out += digits[index]
-	return ("-" if amount < 0 else "") + out
