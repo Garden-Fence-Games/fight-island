@@ -69,14 +69,6 @@ func clip_duration() -> float:
 	return _attack.total_duration() if _attack != null else 0.0
 
 
-## How far a charge has come, nought to one, for whatever wants to draw it. Zero for every attack
-## that does not charge, which is eight of the nine.
-func charge() -> float:
-	if _attack == null or not _attack.charges or _phase != Phase.WINDUP:
-		return 0.0
-	return clampf(_elapsed / maxf(_attack.windup, 0.001), 0.0, 1.0)
-
-
 func exit() -> void:
 	if player.hitbox != null:
 		player.hitbox.disarm()

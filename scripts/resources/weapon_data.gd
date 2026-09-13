@@ -64,13 +64,6 @@ func chain_length() -> int:
 	return attacks.size()
 
 
-## Where a blow sits in the chain, or -1 for an attack this weapon does not throw. It is the only
-## way to tell a chained hit from an opening one *while it lands*: the player's `chain_index` is the
-## window a finished swing left open, and starting the next swing closes it.
-func index_of(attack: AttackData) -> int:
-	return attacks.find(attack)
-
-
 ## The wait this weapon charges for a finished chain.
 func lockout_for(perfect: bool) -> float:
 	return perfect_lockout if perfect else chain_lockout

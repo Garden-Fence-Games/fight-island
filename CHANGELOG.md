@@ -6,16 +6,6 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
-### Changed
-
-- **A change to the game is now a line in the changelog, and CI says so.** A pull request touching
-  `scripts/`, `scenes/`, `data/` or `assets/` without writing an entry fails `Pull request hygiene`.
-  Six shipped without one in a single evening — a new font, the studio credit, the whole soundtrack,
-  the length of a wave — and none of it was in the 0.1.0 notes until the release was read against
-  the merge log. Nothing in a diff shows an entry that was never written, which is the whole reason
-  it has to be a rule rather than a habit. The label `no changelog` is the way out for a change a
-  player could not notice.
-
 ### Added
 
 - **The first weapon picked up says how to switch.** Nobody could find the swap: the only thing
@@ -60,7 +50,37 @@ All notable changes to this project are documented here, following
     keys, so there the slots carry no badge and the cycle key at the end of the row is the only one
     shown. `verify_hud` moves the hand from keyboard to pad and asserts the row changes with it.
 
+### Changed
+
+- **A change to the game is now a line in the changelog, and CI says so.** A pull request touching
+  `scripts/`, `scenes/`, `data/` or `assets/` without writing an entry fails `Pull request hygiene`.
+  Six shipped without one in a single evening — a new font, the studio credit, the whole soundtrack,
+  the length of a wave — and none of it was in the 0.1.0 notes until the release was read against
+  the merge log. Nothing in a diff shows an entry that was never written, which is the whole reason
+  it has to be a rule rather than a habit. The label `no changelog` is the way out for a change a
+  player could not notice.
+
+- **Swapping weapons is `E`, and picking one up is `F`.** They were the other way round. Swapping is
+  something the player does inside a fight, several times a wave, under pressure; picking up is done
+  once, standing still, with a prompt on the ground naming the key. The hand belongs to the thing
+  done often. The pickup prompt renders whatever `interact` is bound to, so the letter on the ground
+  moved with it. `Tab` is free again — it had been sharing with `ui_focus_next`.
+  - On a pad nothing moved: the swap has been **RB** and **LB** all along.
+
 ### Removed
+
+- **Fifteen methods nothing called.** A sweep of every `func` in `scripts/` against every call site
+  in the project found fifteen with no caller at all, and three of them had been dead since the
+  archetype that used them was taken out. Two carried a docstring claiming a headless check read
+  them — `RunIntro.is_holding` and `SurfBed.on_the_coast` — which no check has ever done; a comment
+  that names a reader who does not exist is worse than no comment, because the next person believes
+  it. `AttackTokens.holds`, `WaveDirector.hand_over` and `WaveDirector.left_to_send` went with the
+  thrower's check and the old tutorial. `AimComponent.device` was the aim's own reading of the last
+  device touched, offered to the button glyphs before `Devices` existed to answer them properly.
+  The rest: `StateMachine.has_state`, `WeaponData.index_of`, `UpgradeTrack.touches_body`,
+  `CameraRig.screen_forward`, `MixTable.family_of`, `Settings.reset` and `reset_all`,
+  `WaveDirector.progress` and `PlayerAttack.charge`. No behaviour changed, and every headless check
+  still passes — which is the point: nothing was reading any of it.
 
 - **The reaper is gone too. The island is the farmhand and the pirate.** Removed rather than left
   at a share of zero — the archetype, his sweep, his telegraph, his draw and blow, his locale row,
@@ -82,19 +102,12 @@ All notable changes to this project are documented here, following
     4.4 m of visible ground rather than 4.6. Eleven still clears it, and `verify_view` measures it
     off the resources rather than the comment.
 
-
-### Removed
-
 - **The thrower is gone, and nothing stands in for him.** He was never wanted: issue #9 asked for a
   ranged farmer and #73 built him, and the design he was built into is not the one this game is.
   Removed rather than switched off — the archetype, his stone, the `Projectile` he flew, the
   `Retreat` state, the separate ranged token pool, `EnemyData.is_ranged`, `retreat_range` and
   `projectile`, the rule that no wave may open with a ranged body, his telegraph, his clips, his
   locale row, and `verify_sightlines`, which existed to answer a question only he asked.
-  - **The composition closes over him.** The pirate stays a flat ten per cent hazard and the reaper
-    takes the escalation the thrower used to carry: by wave 12 a body on the island is as likely to
-    be a reaper as a farmhand. One new archetype per wave still, the reaper at 3 and the pirate at
-    4, and nothing new after that — the mix simply hardens.
   - **The late game is measurably gentler**, and this is the price rather than a side effect. His
     token was a free one: he queued on a pool nobody else could use, so being shot at cost nothing
     the melee pool was already spending. Measured by `tools/measure_waves.tscn`, wave 15 goes from
@@ -102,15 +115,6 @@ All notable changes to this project are documented here, following
     from 1.2 s to 1.5 s.
   - **The curve is smoother for it.** The worst wave-to-wave step in the run was his arrival at 32
     per cent; the worst now is the pirate's at 17, and every other step is under 14.
-
-### Changed
-
-- **Swapping weapons is `E`, and picking one up is `F`.** They were the other way round. Swapping is
-  something the player does inside a fight, several times a wave, under pressure; picking up is done
-  once, standing still, with a prompt on the ground naming the key. The hand belongs to the thing
-  done often. The pickup prompt renders whatever `interact` is bound to, so the letter on the ground
-  moved with it. `Tab` is free again — it had been sharing with `ui_focus_next`.
-  - On a pad nothing moved: the swap has been **RB** and **LB** all along.
 
 ## [0.1.0] - 2026-09-13
 
