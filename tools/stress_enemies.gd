@@ -140,13 +140,19 @@ func _measure(placed: int) -> float:
 ## So each pass gets a frame of its own, no frame carries more than the one pass the game would
 ## have done anyway, and the phase is kept clear of the window the whole-step figure is read from.
 ##
-## The arithmetic is copied from `Enemy._separation` rather than called, because that method is
-## private and because a measurement that reaches inside a body to time it breaks when the body is
-## tidied. If the two ever drift, the growth is still the growth: the shape is what is measured.
+## **`Enemy._separation` itself, never a copy of it.** The arithmetic used to be duplicated here,
+## and a copy measures whatever the copy still does: a rule that changes leaves the tool watching it
+## reporting the cost of the rule it replaced, and neither of them is wrong about anything. Reaching
+## past the underscore is the smaller of the two evils, and it is the only thing in this repository
+## that does.
+##
+## The first body of each pass pays for the crowd grid and the rest read it, which is exactly how
+## the game spends it — the tool's pass runs before any body's own `_physics_process`, because
+## `physics_frame` is emitted ahead of them.
 func _separation_alone() -> float:
-	var bodies: Array[Node3D] = []
+	var bodies: Array[Enemy] = []
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
-		var body := node as Node3D
+		var body := node as Enemy
 		if body != null:
 			bodies.append(body)
 	if bodies.is_empty():
@@ -155,27 +161,13 @@ func _separation_alone() -> float:
 	for _pass: int in SEPARATION_PASSES:
 		await get_tree().physics_frame
 		var opened := Time.get_ticks_usec()
-		for body: Node3D in bodies:
-			_push_on(body, bodies)
+		for body: Enemy in bodies:
+			body._separation()
 		spent += Time.get_ticks_usec() - opened
 	# A breath before the whole-step samples begin, so the last pass is never one of them.
 	for _frame: int in SPIKE_FRAMES:
 		await get_tree().physics_frame
 	return float(spent) / float(SEPARATION_PASSES) / 1000.0
-
-
-static func _push_on(body: Node3D, bodies: Array[Node3D]) -> Vector3:
-	var push := Vector3.ZERO
-	for other: Node3D in bodies:
-		if other == body:
-			continue
-		var offset := body.global_position - other.global_position
-		offset.y = 0.0
-		var distance := offset.length()
-		if distance > Enemy.SEPARATION_RADIUS or is_zero_approx(distance):
-			continue
-		push += offset.normalized() * (1.0 - distance / Enemy.SEPARATION_RADIUS)
-	return push * Enemy.SEPARATION_FORCE
 
 
 ## The middle sample, in milliseconds, and never the mean. A machine with a second Godot on it

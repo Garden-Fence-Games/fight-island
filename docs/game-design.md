@@ -340,11 +340,11 @@ From wave 4, any archetype can roll elite: the same scene with health ×2.0, dam
 
 `n` is the wave index, 1-based. **A wave lasts ninety seconds** — see *The day and the night* below —
 so `enemy_count` is a budget the island draws on to stay populated for that long, not a queue to be
-emptied. `max_alive(n)` is what the player actually faces at once, and it is the real pressure dial.
+emptied.
 
 ```
-enemy_count(n)   = 12 + floor(n * 6)                     # w1=18  w5=42  w10=72  w15=102
-max_alive(n)     = clamp(4 + floor(n * 0.8), 4, 12)
+enemy_count(n)   = 16 + floor(n * 1.2)                   # w1=17  w5=22  w10=28  w15=34
+max_alive(n)     = clamp(4 + floor(n * 0.8), 4, 14)
 hp_mult(n)       = 1.0 + 0.18 * (n - 1)                  # w15 = 3.52
 dmg_mult(n)      = 1.0 + 0.10 * (n - 1)                  # w15 = 2.40
 speed_mult(n)    = min(1.0 + 0.03 * (n - 1), 1.35)
@@ -355,6 +355,21 @@ elite_chance(n)  = n < 4 ? 0.0 : min(0.10 + 0.05 * (n - 4), 0.40)
 The telegraph shortens with the waves but never drops below 0.75 of its base. An unreadable
 telegraph is not difficulty.
 
+**The roster is a budget that can be spent.** Once the island is full a body only enters when one
+falls, so what the budget costs is a rate of killing — `tools/measure_waves.tscn` measures it at a
+little over twenty bodies in ninety seconds, on the stick, at the levels the run affords. The
+figures above sit just above that: a wave ends early when the budget runs dry and nothing is
+standing, and outrunning a wave is something a good player should be able to do. It was
+`12 + floor(n * 6)` when a wave ran four minutes, which after the wave was cut to ninety seconds
+promised a hundred and two bodies at wave fifteen and delivered twenty-two.
+
+**The crowd is not what hurts, and `max_alive` is not the damage dial.** `AttackTokens` lets two
+bodies commit at once and three at night, in **every wave of the run** — so what the player takes is
+the pool's, and what the crowd adds is bodies to walk through, to see past, and to be cut off by.
+Both matter and they are not the same lever: incoming damage is carried by `dmg_mult` and by the
+mix below, and the crowd is what makes waves twelve to fifteen an endurance test rather than a
+harder version of wave six.
+
 ### Composition
 
 Each spawn rolls an archetype against the wave's mix. The result is rounded to whole enemies, and
@@ -363,10 +378,25 @@ the farmhand always takes the remainder.
 | Wave | Farmhand | Reaper | Thrower | Pirate |
 |---|---|---|---|---|
 | 1–2 | 100 % | — | — | — |
-| 3–4 | 72 % | 18 % | — | 10 % |
-| 5–7 | 59 % | 18 % | 13 % | 10 % |
+| 3 | 85 % | 15 % | — | — |
+| 4 | 72 % | 18 % | — | 10 % |
+| 5 | 66 % | 18 % | 6 % | 10 % |
+| 6–7 | 59 % | 18 % | 13 % | 10 % |
 | 8–11 | 45 % | 27 % | 18 % | 10 % |
 | 12–15 | 36 % | 32 % | 22 % | 10 % |
+
+**One new thing at a time, and never in the waves that teach.** Waves 1 and 2 are farmhands and
+nothing else, because that is where the player uses what the tutorial taught rather than meeting
+somebody new. Then the reaper at 3, the pirate at 4, the thrower at 5, and the thrower again at 6:
+four introductions across four waves, each its own step, in the band the design gives to pressure.
+
+**The thrower opens at six per cent and doubles at wave six.** He is the one archetype whose arrival
+is a step rather than a slope, and the reason is the token pool: he queues on the ranged pool, which
+is one token and nobody else's, so *one* thrower standing is the whole of what being shot at costs
+and a second adds nothing. A share is therefore the odds of paying it at all, and six per cent of
+eight bodies pays it about two times in five. Landing him whole at thirteen per cent was a
+thirty-two per cent jump in incoming damage in a single wave, against a run that otherwise steps by
+five to fifteen.
 
 **Ten per cent is a roll per spawn and not a quota.** At wave 5 the island sends forty-two bodies
 and about four of them are pirates; *which* four, and whether it is two or six, is the wave's own
@@ -381,16 +411,26 @@ rather than a ramp — he is a hazard, and a hazard that grows on a schedule sto
 A wave never opens with a thrower: the first spawn of every wave is melee, so the player is never
 shot at before anything is on screen.
 
-**Implemented in M2.** `data/waves/standard.tres` carries every coefficient above, and
+**Implemented in M2, tuned in M3.** `data/waves/standard.tres` carries every coefficient above, and
 `tools/verify_waves.tscn` asserts the table and the resource still agree — including the floors and
-ceilings, which are what a tuning pass is most likely to break. The composition bands are in the
-resource in full; the reaper and thrower rows name archetypes that do not exist yet, and a band
-normalises over what it can actually spawn, so those rows cost nothing until #8 and #9 land.
+ceilings, which are what a tuning pass is most likely to break. All four archetypes exist and a band
+normalises over what it can actually spawn, so a row naming one that is missing still costs nothing.
+
+**The curve itself is measured rather than argued about.** `tools/measure_waves.tscn` reads these
+resources and prints, for each of the fifteen, the crowd, the hit points standing, the damage coming
+in by day and by night, how long the player lives under full contact, and how much of the roster can
+physically arrive. It changes nothing and asserts nothing — it is the page a tuning pass is read
+off, and re-running it is how the next one starts.
 
 ### The intended shape
 
 Waves 1–3 teach. 4–7 add pressure through numbers. 8–11 introduce elites and force weapon
 rotation. 12–15 are an endurance test of the defensive kit.
+
+Measured at the night pool, wave to wave, incoming damage steps by about 11 and 14 per cent through
+the teaching waves, by 17 to 22 through 4–6 where three archetypes arrive, by 5 to 14 through the
+middle, and by under 5 across 12–15 — which is the endurance band doing what it says: nothing new
+to understand, and no let-up.
 
 ## The day and the night
 
@@ -510,8 +550,15 @@ means holding the first two hits back, so the bonus asks the player to plan a ki
 mash one. That is the intended trade, and it is why the figure is ×2 rather than an elite's ×3 —
 enough to be worth aiming for, not enough to make finishing every body the only correct way to play.
 
-Fifteen waves with no flawless bonus earn about **2 010** plus kills. Maxing a single track costs
-**795**, so a run affords roughly two full tracks and change. That gap is the design.
+Fifteen waves with no flawless bonus earn **2 010** in wave rewards. Maxing a single track costs
+**795**, so the rewards alone afford two full tracks and change. That gap is the design.
+
+**The bodies pay for a third.** About twenty-four a wave are felled at two apiece, which is another
+**680** or so across a run and takes it to roughly three and a half tracks out of five — measured by
+`tools/measure_waves.tscn`, which counts what can physically be killed rather than what is sent.
+`verify_waves` asserts the reward curve and not this total, because how many bodies a player fells
+is a fact about the player; the guard rail holds the *shape* — rewards flat, costs geometric — and
+the shape is what stops a run from buying everything.
 
 ### The sea
 
