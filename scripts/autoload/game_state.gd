@@ -31,6 +31,10 @@ var run_in_progress: bool = false
 ## Whether a fight is actually on screen. Runtime only and never saved: `wave_in_progress` says the
 ## run is *mid-wave*, which stays true across a quit to the title, and the clock has to stop there.
 var fighting: bool = false
+## Whether the run about to load opens on the player waking up. Runtime only and never saved: set by
+## a run started from the title and spent by `RunIntro` the moment it plays, so a resume, a retry
+## and every headless check that begins a run go straight into the game.
+var intro_owed: bool = false
 ## Carries between waves and is spent at the merchant. It only ever changes through `earn` and
 ## `spend`, so nothing can move it without the signal going out.
 var money: int = 0
@@ -87,7 +91,9 @@ func _process(delta: float) -> void:
 		stats.seconds += delta
 
 
-func begin_run() -> void:
+## `with_intro` is the title's to pass: see `intro_owed`.
+func begin_run(with_intro: bool = false) -> void:
+	intro_owed = with_intro
 	_rng.randomize()
 	run_seed = _rng.seed
 	run_in_progress = true

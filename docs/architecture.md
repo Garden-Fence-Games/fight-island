@@ -423,6 +423,18 @@ Whatever draws it will still owe the rule the ring was built for: **a shape, not
 alone fails a colourblind player, every greyscale screenshot, and any camera far enough away that a
 tint is a few pixels.
 
+### The sun on the bottles
+
+Seventy glass bottles lie within ten metres of the spawn (`IslandBottles`, baked with the island,
+colliding with nothing). `SunGlint` reads where they are out of the scatter's own buffer, the way
+`PalmGrove` reads the palms, and gives each a glinting face pointing somewhere near straight up.
+Every frame, around midday, the bottle whose face best mirrors the sun into the camera flares —
+a burst, a streak and ghosts along the line through the screen's centre, additive gradients built
+at runtime. **One flare, the best-aligned one**, so as the player moves different bottles catch and
+let go. It fades over the hours either side of `noon_hour`, and **reduced flashing switches it
+off**. The two questions it asks — how much of midday it is, how hard a face glints — are static
+and tested in `test_sun_glint`.
+
 ### The pixel look
 
 The 3D frame is drawn as pixel art: cut into fat pixels — a fixed number of rows whatever the
@@ -607,6 +619,20 @@ Fixing it is a design decision, not a simplification. Every silhouette reads the
 time; the island only has to be composed for one viewpoint; and a telegraph can never end up behind
 geometry because the player happened to have turned the camera. The cost is that the arena must be
 authored so nothing important sits in the one blind direction.
+
+### The one time the camera turns
+
+A run begun from the title opens on the player waking up (`new_run_awakening`) while the camera
+turns once round him, close and low, opening out as it comes round — and **its last point is the
+game camera's own position and rotation**, so it arrives rather than cuts. `RunIntro` does it:
+`GameState.begin_run(true)` from the title sets `intro_owed`, `RunFlow` opens it, and it spends the
+flag. For its length the state machine is stopped, input reaches nothing, the head does not follow
+the aim, the waves and the tutorial wait and the HUD is away; all of it comes back once the camera
+has settled. A retry, a restart and a resumed run skip it, and so does every check that begins a
+run. `verify_run_intro` holds both halves.
+
+This is the exception to the fixed camera, and a deliberate one: the player is not looking around,
+the island is. Nothing during play turns the camera.
 
 ### Height does not help visibility here. It hurts it.
 

@@ -1,0 +1,15 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[resource]
+resource_name = "bottle_glass"
+transparency = 1
+cull_mode = 2
+albedo_color = Color(0.55, 0.78, 0.62, 0.45)
+metallic_specular = 1.0
+roughness = 0.04
+rim_enabled = true
+rim = 0.6
+rim_tint = 0.2
+clearcoat_enabled = true
+clearcoat = 1.0
+clearcoat_roughness = 0.02
