@@ -8,6 +8,7 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+
 - **`verify_corpses` was a coin toss** — four runs in five on `main`, and it blocked every pull
   request behind it including the release. Three assertions flaked, and none of them was a bug in
   the game (#207).
@@ -32,6 +33,27 @@ All notable changes to this project are documented here, following
   palette; the interface stays sharp. `PixelLook` runs after the transparent pass, so the sea, the
   blood and the particles are styled with everything else, and `data/fx/pixel_look.tres` tunes it.
   *Pixel art* under Video switches it off, live.
+
+### Changed
+
+- **The island is half the size.** `MAX_RADIUS` was 88 m — a hundred and seventy-six metres across
+  for a fight that happens inside eighteen. Forty-four is still two and a half times the ring bodies
+  arrive in: room to give ground and to break a thrower's line, and not room to get lost in.
+  - **Halving a radius quarters an area**, so everything scattered by an absolute count came down
+    with it — palms, rocks, pebbles, grass and bushes are each a quarter of what they were, or the
+    same island would have been four times as dense.
+  - **Five of the six rock formations would have been standing in the sea.** They sat a little past
+    half the old radius, at the edge of the plateau. They and the five huts are *scaled* rather than
+    re-placed, so the composition the fixed camera was chosen for is the one it was. `CORE_RADIUS`
+    did not move: nine metres of flat ground is sized to the player, not to the island.
+  - **The sea was audible in the middle** — 1.7 dB quieter inland than it was ankle-deep, where it
+    is meant to be ten. `SurfBed.CARRIES` is a distance, and the only distance it is about is the
+    one from the middle to the water, so it halved with the island. `FROM_THE_MIDDLE_DB` did not
+    have to move at all.
+  - `verify_navigation` aims at one authored boulder by its coordinates, written out on purpose;
+    `verify_coconut` held the grove against a hundred palms and a forty-metre spread. Both follow
+    the island now, and the coconut bounds sit well under what the island lays down rather than
+    beside it — they are there to catch a `MultiMesh` that was not read, not to re-state a count.
 
 ### Changed
 
