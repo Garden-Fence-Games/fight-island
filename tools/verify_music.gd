@@ -29,6 +29,9 @@ const AUDIBLE: float = 0.001
 const FLOATING_POINT: float = 0.0001
 ## How much louder a full island has to be than a nearly empty one before the lift is worth having.
 const LIFTS_BY: float = 3.0
+## What the music slider is pulled down to while the check watches whether anything moves it back.
+## Well clear of 100, so a bus quietly reset to its default reads as a failure rather than as noise.
+const QUIETENED: int = 40
 
 var _failures: PackedStringArray = []
 var _main: Node = null
@@ -62,6 +65,7 @@ func _run() -> void:
 	_check_the_bed_only_ever_rises()
 	await _check_the_breather_is_silent_and_a_crowd_is_not()
 	await _check_a_wind_up_ducks_the_bed_and_it_comes_back()
+	await _check_the_music_slider_survives_the_island()
 	_check_nothing_the_player_needs_is_on_a_bus_they_may_mute()
 	_report()
 
@@ -193,6 +197,54 @@ func _check_a_wind_up_ducks_the_bed_and_it_comes_back() -> void:
 		)
 
 
+## A slider that persists, applies, and is then overwritten is a slider that does nothing — and it
+## looks exactly like one that works, because `settings.json` and `Settings.get_value` both agree
+## with the player right up until the ear disagrees with both.
+##
+## This shipped. The bed ducked by writing the `Music` bus every frame and the slider wrote the same
+## bus once, so a player who pulled the music down heard no change at all while the island was
+## loaded — and `MusicBed` runs on `PROCESS_MODE_ALWAYS`, so it was still overwriting the bus while
+## the options screen was open over a paused game. The bed now owns `MusicDuck` and `Settings` owns
+## `Music`, and this is what holds them apart.
+func _check_the_music_slider_survives_the_island() -> void:
+	var restore: Variant = Settings.get_value(&"audio_music")
+	Settings.set_value(&"audio_music", QUIETENED)
+	var wanted := linear_to_db(float(QUIETENED) / 100.0)
+	# Long enough for the bed to have written its own bus a few hundred times.
+	await _advance(SETTLES)
+	var music := AudioServer.get_bus_volume_db(
+		AudioServer.get_bus_index(String(MusicBed.MUSIC_BUS))
+	)
+	if not is_equal_approx(music, wanted):
+		_fail(
+			(
+				(
+					"the music slider asked for %d%% (%.2f dB) and the Music bus sat at %.2f dB after "
+					+ "%.0f s on the island — something other than Settings is writing it"
+				)
+				% [QUIETENED, wanted, music, SETTLES]
+			)
+		)
+	# And it has to survive a duck, which is the one moment the bed touches a bus volume on purpose.
+	EventBus.telegraph_began.emit(Vector3.ZERO, load(FARMHAND) as EnemyData)
+	await _advance(0.5)
+	var ducked := AudioServer.get_bus_volume_db(
+		AudioServer.get_bus_index(String(MusicBed.MUSIC_BUS))
+	)
+	if not is_equal_approx(ducked, wanted):
+		_fail(
+			(
+				(
+					"a wind-up moved the Music bus from %.2f dB to %.2f dB — the duck belongs on %s, "
+					+ "under the slider, not on the slider's own bus"
+				)
+				% [wanted, ducked, MusicBed.DUCK_BUS]
+			)
+		)
+	await _advance(SETTLES)
+	Settings.set_value(&"audio_music", restore)
+
+
 ## The line the whole thing rests on. Music and Ambience exist to be switched off; if anything that
 ## tells the player something plays on either of them, a slider at the bottom is a player who has
 ## been quietly made worse at the game.
@@ -210,12 +262,13 @@ func _check_nothing_the_player_needs_is_on_a_bus_they_may_mute() -> void:
 	var box := AudioManager.jukebox()
 	if box == null:
 		_fail("there is no jukebox, so there is no soundtrack to mute")
-	elif box.bus != &"Music":
+	elif not _under_the_music_slider(box.bus):
 		_fail(
 			(
 				(
-					"the soundtrack plays on %s rather than Music — on anything else the player cannot "
-					+ "switch it off, and a soundtrack they cannot switch off is information"
+					"the soundtrack plays on %s, which the music slider does not reach — on anything "
+					+ "else the player cannot switch it off, and a soundtrack they cannot switch off "
+					+ "is information"
 				)
 				% box.bus
 			)
@@ -243,9 +296,14 @@ func _check_nothing_the_player_needs_is_on_a_bus_they_may_mute() -> void:
 			if (
 				player != null
 				and player.stream == AudioManager.sound(id)
-				and player.bus != &"Music"
+				and not _under_the_music_slider(player.bus)
 			):
-				_fail("the %s layer plays on %s rather than Music" % [id, player.bus])
+				_fail(
+					(
+						"the %s layer plays on %s, which the music slider does not reach"
+						% [id, player.bus]
+					)
+				)
 				return
 
 
@@ -259,6 +317,16 @@ func _check_the_sea_is_all_on_one_bus(sea: Node) -> void:
 		if not bus.is_empty() and bus != &"Ambience":
 			_fail("a stretch of the sea plays on %s rather than Ambience" % bus)
 			return
+
+
+## Whether a bus is one the `audio_music` slider actually turns down: the music bus itself, or one
+## that sends into it. The duck bus is the second case, and it is why this is a question rather than
+## a name comparison — see `MusicBed.DUCK_BUS`.
+func _under_the_music_slider(bus: StringName) -> bool:
+	if bus == MusicBed.MUSIC_BUS:
+		return true
+	var index := AudioServer.get_bus_index(String(bus))
+	return index >= 0 and AudioServer.get_bus_send(index) == MusicBed.MUSIC_BUS
 
 
 func _sound_on(flat: AudioStreamPlayer, placed: AudioStreamPlayer3D) -> StringName:

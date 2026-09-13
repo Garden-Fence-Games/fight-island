@@ -1,6 +1,6 @@
 class_name MusicBed
 extends Node
-## Three loops on the Music bus, lifted by how much trouble the player is in.
+## Three loops on the MusicDuck bus, lifted by how much trouble the player is in.
 ##
 ## The only pacing tool the game has between waves. A wave is six minutes and the fighting is not
 ## evenly spread through it; what the bed does is make the difference audible before the player has
@@ -23,6 +23,18 @@ extends Node
 ## How fast the mix follows the island, per second of real time. Slow on purpose — a bed that
 ## tracked the body count frame by frame would pump every time somebody died.
 const FOLLOWS: float = 0.35
+## The bus the player's `audio_music` slider owns, and **the only writer of it is
+## `Settings._apply_bus`**.
+const MUSIC_BUS: StringName = &"Music"
+## Where the soundtrack and the three layers actually play, sending into `MUSIC_BUS` — so the slider
+## still reaches all of it while the duck below lands somewhere the slider never looks.
+##
+## A duck is a bus volume set every frame; a slider is a bus volume set once. Sharing one bus, the
+## frame loop wins and the slider does nothing at all: measured at 40%, `Music` went from -7.96 dB
+## back to -0.09 dB within a second of the arena loading, while `settings.json` and
+## `Settings.get_value` both went on agreeing with the player. A bus each ends that rather than
+## sequencing it.
+const DUCK_BUS: StringName = &"MusicDuck"
 ## How far the music drops while something is winding up, and how fast it gets there and comes back.
 ## **A telegraph outranks the music**, the way it outranks a camera knock: the wind-up is the one
 ## thing the player has to hear, and half a bed over it is still a bed over it.
@@ -55,10 +67,12 @@ var _bus: int = -1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_bus = AudioServer.get_bus_index("Music")
+	# The duck bus, not the music bus. What is ducked here is written every frame, and the music bus
+	# belongs to the player's slider — see `DUCK_BUS` for what sharing it cost.
+	_bus = AudioServer.get_bus_index(String(DUCK_BUS))
 	for id: StringName in AudioManager.LAYERS:
 		var player := AudioStreamPlayer.new()
-		player.bus = &"Music"
+		player.bus = DUCK_BUS
 		player.stream = AudioManager.sound(id)
 		player.volume_db = SILENT
 		add_child(player)
@@ -80,6 +94,8 @@ func _exit_tree() -> void:
 		# assigned leaves the engine reporting one object leaked on the way out, and CI fails the
 		# boot on any warning at all.
 		player.stream = null
+	# The duck comes off, and only the duck. This used to reset `Music` and so left the title screen
+	# playing at full volume whatever the player had asked for.
 	if _bus >= 0:
 		AudioServer.set_bus_volume_db(_bus, 0.0)
 
