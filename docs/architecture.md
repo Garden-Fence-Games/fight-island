@@ -535,6 +535,33 @@ six formations, the shape of the coast.
 The practical rule for anyone placing props: nothing above about 6 m earns its height in
 legibility, and past 10 m it is scenery for the vista camera and nothing else.
 
+### Nothing walks the tree while the game is running
+
+`@onready` everywhere, and no path lookup in any body that runs every frame. The cost is the smaller
+half of it; the larger half is that a lookup in a hot body is a **silent dependency on a scene's
+shape**, and the day it returns null it does so sixty times a second in the middle of a fight.
+
+`tools/verify_lookups.tscn` reads the source and holds it — `_process`, `_physics_process` and the
+states' own `physics_update` and `update`, plus every private helper those call in the same file.
+It stops at the file boundary on purpose: following `aim.direction()` into `AimComponent` would mean
+writing a resolver for a language this project already has a compiler for. `StateMachine` is the one
+script allowed a lookup, because resolving a state by name is the whole of what it does and it
+happens on a transition rather than on a frame.
+
+**Group queries are not path lookups and are not banned.** Four of them run per frame — the player's
+facing and the neck both ask the aim component, which scans the `enemies` group, and the music bed
+scans it once. Measured on an M2 Pro at thirty bodies:
+
+| | |
+|---|---|
+| `get_nodes_in_group("enemies")` | 0.386 µs |
+| `AimComponent.direction()` with the assist on | 0.331 µs |
+| four of each, per frame | **2.9 µs of a 16 667 µs frame** |
+
+That is 0.017% of the budget, so there is no cache here and there should not be one until that
+figure says otherwise — the same answer, for the same reason, as the spatial grid in
+[the crowd's cost](#the-crowds-cost) below.
+
 ### The emphasis budget
 
 `scripts/systems/emphasis.gd` is the one table that decides how loud anything in a fight is allowed
