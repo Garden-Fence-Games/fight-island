@@ -65,6 +65,13 @@ func _ready() -> void:
 		stamina.stamina_changed.connect(_on_stamina_changed)
 	if machine != null:
 		machine.transitioned.connect(_on_state_transitioned)
+	# The dust scales with how fast this body goes, so it is told the two speeds rather than reaching
+	# in for them. They are this class's figures and stay here; the component stays ignorant of whose
+	# dust it is kicking up.
+	var dust := get_node_or_null(^"FootstepDust") as FootstepDustComponent
+	if dust != null:
+		dust.walking_speed = MOVE_SPEED
+		dust.sprinting_speed = SPRINT_SPEED
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	_on_weapon_equipped(GameState.loadout.weapon())
 
