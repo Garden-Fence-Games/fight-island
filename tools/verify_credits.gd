@@ -34,6 +34,13 @@ func _check_the_document_still_parses() -> void:
 	if fresh == null:
 		_fail("%s could not be read at all" % CreditsSource.DOCUMENT)
 		return
+	if fresh.studio.is_empty():
+		_fail(
+			(
+				"%s names no studio — the game has to say whose it is and where to find them"
+				% CreditsSource.DOCUMENT
+			)
+		)
 	if fresh.people.is_empty():
 		_fail(
 			(
@@ -63,6 +70,7 @@ func _check_the_baked_roll_matches_the_document() -> void:
 	if baked == null:
 		_fail("%s is missing — run tools/build_credits.gd" % ROLL)
 		return
+	_compare("studio", fresh.studio, baked.studio)
 	_compare("people", fresh.people, baked.people)
 	_compare("assets", fresh.assets, baked.assets)
 	_compare("tools", fresh.tools, baked.tools)
@@ -111,6 +119,11 @@ func _check_every_row_reaches_the_screen() -> void:
 			_fail('"%s" is credited in %s and is nowhere on the screen' % [entry.subject, ROLL])
 		if not entry.licence.is_empty() and not drawn.has(entry.licence):
 			_fail('"%s" is on screen without its licence, "%s"' % [entry.subject, entry.licence])
+		# A source is an address or a provenance, and both are the half of the row that says where
+		# to go next. The studio's is the only one a player is meant to type, which is why it is
+		# checked rather than assumed to have come along with the name.
+		if not entry.source.is_empty() and not drawn.has(entry.source):
+			_fail('"%s" is on screen without its source, "%s"' % [entry.subject, entry.source])
 	screen.queue_free()
 	await get_tree().process_frame
 

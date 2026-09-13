@@ -34,6 +34,7 @@ func _ready() -> void:
 	if roll == null:
 		push_error("credits: %s is missing — run tools/build_credits.gd" % ROLL)
 		return
+	_build_section("CREDITS_STUDIO", roll.studio, false)
 	_build_section("CREDITS_PEOPLE", roll.people, false)
 	_build_section("CREDITS_ASSETS", roll.assets, true)
 	_build_section("CREDITS_TOOLS", roll.tools, false)
@@ -88,15 +89,21 @@ func _gap() -> Control:
 
 ## One credit, as a line: what it is, who made it, under what, and where it came from. The source
 ## keeps its link text rather than its URL — a raw address in a column reads as noise, and the
-## document beside it is where somebody chasing the licence will go anyway.
+## document beside it is where somebody chasing the licence will go anyway. The studio is the one
+## row that breaks that rule, because an address nobody can read is not a way of being found.
+##
+## **Only the cells a row actually has.** Every table here is a different shape — the studio carries
+## an address and no licence, a person carries a role and no source — and drawing the empty ones
+## would hold a column open across sections that have nothing to put in it.
 func _row(entry: CreditEntry, with_author: bool) -> HBoxContainer:
 	var line := HBoxContainer.new()
 	line.add_theme_constant_override("separation", 16)
 	line.add_child(_cell(entry.subject, SUBJECT_WIDTH, false))
 	if with_author:
 		line.add_child(_cell(entry.author, AUTHOR_WIDTH, true))
-	line.add_child(_cell(entry.licence, LICENCE_WIDTH, true))
-	if with_author:
+	if not entry.licence.is_empty():
+		line.add_child(_cell(entry.licence, LICENCE_WIDTH, true))
+	if not entry.source.is_empty():
 		line.add_child(_cell(entry.source, 0.0, true))
 	return line
 
