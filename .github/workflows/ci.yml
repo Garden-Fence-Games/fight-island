@@ -477,6 +477,42 @@ jobs:
           done < commits.tsv
           exit $failed
 
+      # **A change to the game is a line in the changelog.** Six pull requests shipped without one
+      # in a single evening — a new font, the studio credit, the whole soundtrack, the wave length —
+      # and none of it was in the 0.1.0 notes until somebody read the release against the merge log.
+      # Nothing in a diff shows an entry that was never written, which is why this is a rule rather
+      # than a habit.
+      #
+      # It asks only that the file was touched, not what was written: a check that graded prose
+      # would be a check people route around. `no changelog` on the pull request is the way out, for
+      # a change a player could not notice.
+      - name: A change to the game is a line in the changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          set -o pipefail
+          if printf '%s' "$LABELS" | tr ',' '\n' | grep -qx 'no changelog'; then
+            echo "::notice::Labelled 'no changelog' - skipping."
+            exit 0
+          fi
+          gh api --paginate "repos/${{ github.repository }}/pulls/$PR_NUMBER/files" \
+            --jq '.[].filename' > files.txt
+          # What a player can meet: the code, the scenes, the tuning and the assets. Everything
+          # else - tools, checks, docs, the workflows - is the project talking to itself.
+          if ! grep -qE '^(scripts|scenes|data|assets)/' files.txt; then
+            echo "::notice::Nothing a player meets was changed - no entry needed."
+            exit 0
+          fi
+          if grep -qx 'CHANGELOG.md' files.txt; then
+            exit 0
+          fi
+          echo "::error::This changes the game and writes no changelog entry. Add one under" \
+            "'## [Unreleased]', or label the pull request 'no changelog' if a player could not" \
+            "notice the change."
+          exit 1
+
   gate:
     name: CI gate
     runs-on: ubuntu-24.04

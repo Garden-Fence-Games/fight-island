@@ -6,6 +6,16 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **A change to the game is now a line in the changelog, and CI says so.** A pull request touching
+  `scripts/`, `scenes/`, `data/` or `assets/` without writing an entry fails `Pull request hygiene`.
+  Six shipped without one in a single evening — a new font, the studio credit, the whole soundtrack,
+  the length of a wave — and none of it was in the 0.1.0 notes until the release was read against
+  the merge log. Nothing in a diff shows an entry that was never written, which is the whole reason
+  it has to be a rule rather than a habit. The label `no changelog` is the way out for a change a
+  player could not notice.
+
 ### Added
 
 - **The first weapon picked up says how to switch.** Nobody could find the swap: the only thing
