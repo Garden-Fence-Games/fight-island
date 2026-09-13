@@ -659,6 +659,29 @@ Damage numbers exist but are **off by default** — the feedback should be felt.
 **Rumble does not exist yet.** When it does it comes through this table like everything else, and it
 is off whenever the screen-shake slider is at zero.
 
+### The floor under the switches
+
+Every accessibility switch takes something away, and each of them was written to remove a *visual*:
+the shake, the freeze, the flash. They are checked one at a time — the slider means nought at
+nought, reduce-flashing damps the flare and leaves the debris — and one at a time is not the
+question a player who needs all of them is asking.
+
+So the rule is stated once, and `verify_access` holds it with every switch at the end of its travel
+at the same time. **A switch may take away emphasis. It may never take away a signal.** Three things
+survive whatever is turned off, and the game cannot be played without any of them:
+
+- **The telegraph**, because it is geometry. A body rears back over its wind-up, and a lean survives
+  greyscale, a colourblind player, a camera twenty metres up and every switch in the menu. That is
+  the argument for the lean over the ring it replaced, and it is why no colourblind option is needed
+  for it.
+- **The difference between a perfect hit and an ordinary one**, in more than one way that is neither
+  colour nor brightness: more debris, thrown faster, lasting longer. Damage numbers are off by
+  default, so the effect is carrying the whole message — and the two things these switches touch are
+  exactly colour and brightness.
+- **A clock nobody left stopped.** Hitstop off means the game never slows, including after a burst
+  of requests: a counter that goes up without coming back down is how a clock ends up stopped for
+  good.
+
 ### The visible half
 
 A landed hit throws debris and a flare; a **perfect** one throws more of it, further, for longer,
