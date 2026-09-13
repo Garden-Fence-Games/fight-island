@@ -25,18 +25,16 @@ const NEAREST_SPAWN: float = 12.0
 ## one the player has to go and fetch: it notices at nine metres, so every extra metre out here is a
 ## metre walked before anything happens, once per body, on a four-minute clock.
 const FURTHEST_SPAWN: float = 18.0
-## What the rule is allowed to have drifted by before this is read as a violation.
+## How far past the ring a point the search offers may land.
 ##
-## **`SpawnDirector` checks the distance when it places the body; this checks it afterwards**, and
-## in between the player keeps walking — the comment below already said so and then compared with
-## no slack at all. A spawn that landed legitimately at 12.00 m is 11.98 m by the time anything
-## looks, and the check failed intermittently on exactly that, roughly one CI run in four, with
-## "something spawned 12.0 m from the player".
+## **The search snaps its guess to walkable ground and only re-checks the near end afterwards.**
+## Snapping pulls a point by up to a metre, so a guess taken at 17.9 m answers at 18.4 and is not a
+## body the player has to go and fetch — it is the navigation mesh, doing what the near end already
+## has a comment about.
 ##
-## Half a metre is far more than the player moves in the frames between the two, and far less than
-## the failure this guards against: a wave arriving on top of somebody is metres inside the rule,
-## not centimetres.
-const MEASURED_LATE: float = 0.5
+## Half a metre is less than the failure this guards against: a ring that has drifted out is metres
+## wrong, not centimetres.
+const SNAPPED_OUTWARD: float = 0.5
 ## The navigation map is built on a physics step, and until it answers, every point is refused.
 ## This is also why the first wave is not instant in the game.
 const MAP_SYNC_FRAMES: int = 120
@@ -81,6 +79,9 @@ var _director: WaveDirector = null
 var _spawns: Array[Vector3] = []
 ## Where a body was standing the moment it arrived, if the camera could see it then.
 var _seen_arriving: Array[Vector3] = []
+## A body that arrived inside the ring, written out at the instant it did: how far off the player
+## was then, and where it stood.
+var _seen_underfoot: PackedStringArray = []
 var _cleared: Array = []
 var _kept_run: Dictionary = {}
 
@@ -451,7 +452,7 @@ func _passes(camera: Camera3D, world: World3D, where: Vector3) -> bool:
 	if apart.length() < NEAREST_SPAWN:
 		_fail("the search offered a point %.1f m from the player" % apart.length())
 		return false
-	if apart.length() > FURTHEST_SPAWN + MEASURED_LATE:
+	if apart.length() > FURTHEST_SPAWN + SNAPPED_OUTWARD:
 		_fail(
 			(
 				"the search offered a point %.1f m out — the player would go and fetch it"
@@ -474,15 +475,10 @@ func _check_nothing_spawned_in_shot_or_underfoot() -> void:
 	if not _seen_arriving.is_empty():
 		_fail("something arrived inside the camera's view at %s" % _seen_arriving[0])
 		return
+	if not _seen_underfoot.is_empty():
+		_fail("something spawned %s" % _seen_underfoot[0])
+		return
 	for where: Vector3 in _spawns:
-		# The distance half survives being measured late: the player is shoved by a fraction of a
-		# metre and the rule is twelve.
-		var apart := Vector2(
-			where.x - _player.global_position.x, where.z - _player.global_position.z
-		)
-		if apart.length() < NEAREST_SPAWN - MEASURED_LATE:
-			_fail("something spawned %.2f m from the player" % apart.length())
-			return
 		if not Ground.is_spawnable(world, where, _player.global_position):
 			_fail("something spawned where it cannot walk out of, at %s" % where)
 			return
@@ -547,6 +543,18 @@ func _on_enemy_spawned(enemy: Node3D) -> void:
 	var eye := get_viewport().get_camera_3d()
 	if eye != null and _in_shot(eye, enemy.global_position):
 		_seen_arriving.append(enemy.global_position)
+	# And the distance, for the same reason. `SpawnDirector` measures it against where the player
+	# stands when it places the body; the wave then shoves him a few centimetres, and a spawn that
+	# landed legitimately at 12.00 m reads as 11.49 afterwards. Measured here, the rule and the
+	# check are the same measurement and there is nothing to excuse.
+	var apart := Vector2(
+		enemy.global_position.x - _player.global_position.x,
+		enemy.global_position.z - _player.global_position.z
+	)
+	if apart.length() < NEAREST_SPAWN:
+		_seen_underfoot.append(
+			"%.2f m from the player, at %s" % [apart.length(), enemy.global_position]
+		)
 
 
 func _on_wave_cleared(wave: int, reward: int) -> void:
