@@ -16,12 +16,17 @@ const TURN_SPEED_DEGREES: float = 360.0
 ## farmers is most of a frame spent on a query whose answer barely moves, and the player cannot get
 ## far in a quarter of a second.
 const REPATH_INTERVAL: float = 0.25
-## Where a stone leaves the hand and where it is aimed. Both at chest height, so a throw travels
-## flat: an arc would be prettier and would also make the thing impossible to read at a glance.
 ## What breaking a farmer's poise is worth, as a multiple of the blow's own throw. Every hit already
 ## rocks him; this is the difference between rocked and sprawling.
 const BROKEN_POISE_PUSH: float = 1.8
-const THROW_HEIGHT: float = 1.1
+## Where a stone leaves the hand and where it is aimed. Both at chest height, so a throw travels
+## flat: an arc would be prettier and would also make the thing impossible to read at a glance.
+##
+## **The hand moved when the body did.** It was 1.1 m, which was a chest while a farmer was a 1.7 m
+## capsule; the rig stands 2.21 m and 1.1 m is his waist. What it is aimed at did not move: that is
+## the player's chest, and the player is still 1.8 m. `verify_sightlines` holds both figures against
+## these, so a rig that ships at another height fails rather than throwing from the hip.
+const THROW_HEIGHT: float = 1.44
 const CHEST_HEIGHT: float = 1.0
 
 @export var data: EnemyData = null
@@ -135,7 +140,7 @@ func revive(
 		hurtbox.monitorable = true
 	if hitbox != null:
 		hitbox.disarm()
-	set_collision_layer_value(3, true)
+	set_collision_layer_value(PhysicsLayers.INDEX_ENEMY_BODY, true)
 	process_mode = Node.PROCESS_MODE_INHERIT
 	visible = true
 	add_to_group(&"enemies")
@@ -153,7 +158,11 @@ func sleep() -> void:
 		hurtbox.monitorable = false
 	if hitbox != null:
 		hitbox.disarm()
-	set_collision_layer_value(3, false)
+	set_collision_layer_value(PhysicsLayers.INDEX_ENEMY_BODY, false)
+	# A flash still in flight would go on writing into the materials this body keeps, and finish in
+	# whatever life it is leased for next.
+	if body_materials != null:
+		body_materials.stop_flash()
 	visible = false
 	velocity = Vector3.ZERO
 	process_mode = Node.PROCESS_MODE_DISABLED
@@ -382,12 +391,12 @@ func is_alive() -> bool:
 	return health == null or health.is_alive()
 
 
-## The archetype's colour, and the elite's glow over the top of it. The mesh is scaled here and the
-## body is not: an elite reads bigger without its swing quietly gaining reach.
+## The archetype's colour, and the elite's glow over the top of it. The visual is scaled here and
+## the body is not: an elite reads bigger without its swing quietly gaining reach.
 func _apply_tint() -> void:
 	if body_materials == null or visual == null:
 		return
-		# Multiplied over the rig's own painted colours rather than replacing them. White is the farmer
+	# Multiplied over the rig's own painted colours rather than replacing them. White is the farmer
 	# as he was painted; the two archetypes that have no texture of their own yet are still told
 	# apart by a wash, which is what their tint was for when all three were capsules.
 	body_materials.tint(data.tint)
@@ -395,6 +404,9 @@ func _apply_tint() -> void:
 		rank.glow if rank != null else Color.BLACK, rank.glow_energy if rank != null else 0.0
 	)
 	visual.scale = Vector3.ONE * (rank.scale if rank != null else 1.0)
+	# A wave cleared mid-wind-up retires the body through `sleep()` with no state ever exiting, so
+	# the tell is standing here or the next life starts leaning into a swing nobody threw.
+	visual.rotation.x = 0.0
 
 
 func _on_hurt(info: HitInfo) -> void:
