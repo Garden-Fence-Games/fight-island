@@ -94,13 +94,13 @@ func _refill() -> void:
 		_put_down(false)
 
 
-func _put_down(on_the_ground: bool) -> void:
+func _put_down(on_sand: bool) -> void:
 	if _player == null or not is_instance_valid(_player):
 		return
 	var angle := _rng.randf_range(0.0, TAU)
 	var reach := _rng.randf_range(spawn_ring.x, spawn_ring.y)
 	var at := _player.global_position + Vector3(cos(angle), 0.0, sin(angle)) * reach
-	if on_the_ground:
+	if on_sand:
 		var ground := _ground_under(at)
 		if is_nan(ground):
 			return
@@ -114,7 +114,7 @@ func _put_down(on_the_ground: bool) -> void:
 		# parented is never collected, and turns up as a leak at exit rather than as a bad export.
 		made.free()
 		return
-	bird.launch(on_the_ground, Vector3(_rng.randf() - 0.5, 0.0, _rng.randf() - 0.5))
+	bird.launch(on_sand, Vector3(_rng.randf() - 0.5, 0.0, _rng.randf() - 0.5))
 	add_child(bird)
 	bird.global_position = at
 	_birds.append(bird)
@@ -128,7 +128,7 @@ func _ground_under(at: Vector3) -> float:
 		return NAN
 	var from := Vector3(at.x, at.y + 40.0, at.z)
 	var to := Vector3(at.x, at.y - 40.0, at.z)
-	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
+	var query := PhysicsRayQueryParameters3D.create(from, to, PhysicsLayers.BIT_WORLD)
 	var hit := space.intersect_ray(query)
 	if hit.is_empty():
 		return NAN
