@@ -8,6 +8,22 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The dead stay where they fall.** A killed farmer is thrown by the ragdoll, lands, and the pose
+  he landed in is kept. The pile builds across the waves — it is the record of the run, and it used
+  to sink into the sand at 1.2 m/s.
+- **A corpse is not an enemy.** The body goes straight back to the pool of thirty-two; what stays is
+  the picture, with no script, no collision, no physics and **no skeleton**. `PosedMesh` skins every
+  vertex once on the processor and leaves a static mesh — without that a corpse cost 0.4 ms a frame
+  even stripped and disabled, because a `Skeleton3D` updates on an engine notification rather than
+  in `_process`, and sixteen of them came to 15 ms of a 16.7 ms frame.
+- `RagdollComponent.settle_pose()`, which pins where the physics actually put the bones into the
+  skeleton. The simulator is a `SkeletonModifier3D`: its output reaches the skin but never the
+  skeleton's own pose, so a corpse read off the skeleton came out standing to attention.
+- `tools/verify_corpses.tscn` — he lands, he lies down, his lowest vertex clears the sand, his body
+  returns to the pool, and the pile has a ceiling.
+
+### Added
+
 - **The farmers have voices.** Nine recorded lines, the project's own — the first sounds in this
   game that are not synthesised, because a voice is the one thing a sine cannot do. A farmer speaks
   when he notices you and now and then on the way over, and **not on his wind-up**: everything here

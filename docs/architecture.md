@@ -542,6 +542,43 @@ six formations, the shape of the coast.
 The practical rule for anyone placing props: nothing above about 6 m earns its height in
 legibility, and past 10 m it is scenery for the vista camera and nothing else.
 
+### The bodies stay where they fell
+
+A wave is a fight you win by killing everybody in it, and until now the evidence sank into the sand.
+The pile is the record of the run.
+
+**A corpse is not an enemy.** Bodies are pooled — thirty-two, leased and handed back — and fifteen
+waves kill several hundred. What is kept is the *picture*: the visual, duplicated, with the pose it
+died in baked into it. No script, no collision, no physics, no navigation, no sound, and no
+skeleton.
+
+**No skeleton is the whole reason it is affordable.** A `Skeleton3D` updates its bone transforms on
+an engine notification rather than in `_process`, so a stripped, disabled, physics-free duplicate
+still cost about 0.4 ms a frame — sixteen bodies came to 15 ms of a 16.7 ms frame. `PosedMesh`
+skins every vertex once on the processor, drops the bone and weight arrays, and leaves a static
+mesh. Measured at 1080p on an M2 Pro:
+
+| | draw calls | frame |
+|---|---|---|
+| no corpses | 465 | 9.61 ms |
+| 48 | 597 | 11.28 ms |
+| 128 | 825 | 13.38 ms |
+
+**+2.8 draw calls and +0.029 ms each.** The ceiling is 48 and it is an export, so raising it is an
+informed choice rather than a guess — 128 spends a quarter of the frame on scenery.
+
+**Two things that cost an afternoon, both because a screenshot lied.** The
+`PhysicalBoneSimulator3D` is a `SkeletonModifier3D`: its output reaches the skin but never the
+skeleton's own pose, so a corpse copied off the skeleton came out **standing to attention** — and
+from a camera seventeen metres up and tipped fifty degrees, that is genuinely hard to see. It took
+measuring the bounding box (2.38 m tall against 1.49 m across) to believe it. `RagdollComponent`
+pins the pose from the physical bodies now, which are the only thing that knows where the body
+actually is.
+
+And the settle was measured on the **origin**, which for a rig is between its feet — so a body baked
+lying down had its shoulder buried while its origin sat neatly on the sand. It is measured on the
+lowest vertex now.
+
 ### Nothing walks the tree while the game is running
 
 `@onready` everywhere, and no path lookup in any body that runs every frame. The cost is the smaller
