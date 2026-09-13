@@ -52,5 +52,13 @@ func _first_in_the_way(attack: AttackData, source: Node3D) -> Hurtbox:
 	query.collide_with_areas = true
 	query.collide_with_bodies = false
 	query.collision_mask = mask
-	query.exclude = [source.get_rid()]
-	return world.direct_space_state.intersect_ray(query).get("collider") as Hurtbox
+	var excluded: Array[RID] = [source.get_rid()]
+	# Past any corpse in the way. A body lying in the line of fire is not cover, and a round it
+	# swallowed would be a miss on the farmer standing behind it.
+	for _corpse: int in 8:
+		query.exclude = excluded
+		var found := world.direct_space_state.intersect_ray(query).get("collider") as Hurtbox
+		if not (found is CorpseHurtbox):
+			return found
+		excluded.append(found.get_rid())
+	return null

@@ -21,6 +21,11 @@ signal stamina_changed(current: float, maximum: float)
 ## one that does not would otherwise have to ask the bag what is in hand at the moment of contact,
 ## and a swap during a swing would make that a lie.
 signal attack_landed(target: Node3D, damage: float, perfect: bool, attack: AttackData)
+## A blow found a corpse: where the body is, which way the blow travelled, and whether it was
+## perfect. Its own signal rather than `attack_landed`, because everything listening to that one
+## pays for a hit — the combo, the money, the hitstop — and a pile must not be a free source of
+## any of them. Only the blood hears this.
+signal corpse_struck(where: Vector3, direction: Vector3, perfect: bool)
 ## A swing whose active window closed without touching anything. It carries the attack because what
 ## a whiff sounds like depends on what was swung, and because nothing else can reconstruct it once
 ## the state has moved on.
