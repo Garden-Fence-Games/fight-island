@@ -203,10 +203,9 @@ jobs:
       - name: Verify saving and resuming a run
         run: tools/run-check.sh res://tools/verify_save.tscn
 
-      # The tutorial's whole design target is a player who never sees a prompt, and the only way to
-      # know that still holds is to land a chained perfect hit and assert three lessons closed at
-      # once. Playing it well is exactly the case a human tester never reproduces on purpose.
-      - name: Verify the tutorial wave
+      # The tutorial runs on a clock so no missing input can hold a run: the check presses nothing,
+      # lets time pass, and asserts every line gives way and wave 1 starts.
+      - name: Verify the tutorial
         run: tools/run-check.sh res://tools/verify_tutorial.tscn
 
       # "A player on a pad must never read the word mouse" is a sentence, not a type, and the only

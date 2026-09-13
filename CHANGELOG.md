@@ -34,6 +34,13 @@ All notable changes to this project are documented here, following
 
 ### Changed
 
+- **The tutorial runs on a clock, before wave 1.** It was wave 1 itself, seven lessons each waiting
+  for the player to perform them, and the parry lesson could hold the wave open for ever. After the
+  new-run opening, four lines now follow one another on an empty island — how the player got here,
+  punch and dodge, sprint, survive — each for its own `seconds` in `data/tutorial/`, with the real
+  buttons of the device in hand. Then wave 1 starts at once. Nothing waits for an input. It shows on
+  every run begun from the title, like the opening; a retry, a restart or a resume skips it.
+
 - **The merchant sells what you carry.** A weapon's upgrade track is refused until the weapon is in
   the bag — the stick is found in wave 2 and the gun in wave 4, and fifteen per cent more damage on
   something the player cannot swing yet is money spent on nothing they would only discover was

@@ -125,13 +125,10 @@ ENEMY_FARMHAND,Farmhands
 ENEMY_REAPER,Reapers
 ENEMY_THROWER,Throwers
 ENEMY_PIRATE,Pirates
-TUTORIAL_MOVE,Move with {0}
-TUTORIAL_ATTACK,Strike with {0}
-TUTORIAL_CHAIN,Strike again to continue the chain
-TUTORIAL_PERFECT,Strike as the flash fades
-TUTORIAL_DODGE,Roll through the swing with {0}
-TUTORIAL_PARRY,Parry the swing with {0}
-TUTORIAL_SPRINT,Sprint with {0}
+TUTORIAL_ANGRY,"You were drunk, now you're angry"
+TUTORIAL_FIGHT,{0} to punch and {1} to dodge
+TUTORIAL_SPRINT,{0} to sprint
+TUTORIAL_SURVIVE,"Now, survive!"
 PICKUP_TAKE,{0} Take it
 WEAPON_FISTS,Fists
 WEAPON_STICK,Stick

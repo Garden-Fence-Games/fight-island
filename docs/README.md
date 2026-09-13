@@ -5,7 +5,7 @@
 | [game-design.md](game-design.md) | The game: loop, timing system, waves, economy, and **every balance number** |
 | [architecture.md](architecture.md) | Scene composition, components, state machines, autoloads, save format |
 | [conventions.md](conventions.md) | GDScript style, and why file naming overrides the global rule |
-| [tutorial.md](tutorial.md) | How the game teaches itself — wave 1 is the tutorial |
+| [tutorial.md](tutorial.md) | The opening lines before wave 1, on a clock |
 | [menus.md](menus.md) | Title, pause, options, merchant, run summary, HUD |
 | [input-map.md](input-map.md) | Every action on both schemes, and the decisions behind them |
 | [asset-pipeline.md](asset-pipeline.md) | Primitives now, Blender to glTF later |

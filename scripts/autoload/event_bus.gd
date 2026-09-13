@@ -88,12 +88,8 @@ signal weapon_reloaded
 ## cracks twice — and separate from `attack_landed` because a gun that only makes a noise when it
 ## hits is a gun the player cannot tell they fired.
 signal weapon_fired(attack: AttackData)
-## A blow arrived while the player was rolling through it. Distinct from a dodge that merely
-## happened: the lesson is not the button, it is the moment — and only this says the moment was
-## right.
-signal dodge_evaded
 ## The player's state machine moved. Cross-cutting because a sprint, a roll and a death are each
-## something audio and the tutorial want to know about without holding the player.
+## something audio wants to know about without holding the player.
 signal player_state_changed(state: StringName)
 ## The hand moved from the keyboard to the pad or back. Everything that prints a glyph listens, so
 ## a player who picks up a controller mid-menu never reads the word "mouse".

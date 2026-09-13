@@ -348,10 +348,6 @@ func _on_hurt(info: HitInfo) -> void:
 			parry.resolve(info)
 			return
 	if health != null and health.is_invulnerable():
-		# Rolling through a swing rather than merely rolling. Announced here because this is the one
-		# place that knows the blow arrived and was refused.
-		if machine != null and machine.current is PlayerDodge:
-			EventBus.dodge_evaded.emit()
 		return
 	# Taking a hit is the loudest thing that happens to the player and the only one they did not
 	# choose, so it spends from the same budget every blow they land does — see `Emphasis`. Here
