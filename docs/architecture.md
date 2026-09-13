@@ -114,7 +114,10 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   centre to centre, which is why `Hitbox` adds half a body on top of it.
 - **`EnemyData`** — `id`, `display_name`, `health`, `move_speed`, `poise`, `money`,
   `attack: AttackData`, `notice_radius`, `rouse_radius`, `attack_range`, `is_ranged`,
-  `preferred_range`, `retreat_range`, `projectile: PackedScene`, `tint`, `first_wave`.
+  `preferred_range`, `retreat_range`, `projectile: PackedScene`, `tint`.
+  **There is no "first_wave" here either.** When an archetype starts appearing is decided by the
+  `WaveBand` it is listed in, and a second copy of that number on the enemy would be a balance
+  figure with two homes — correct until the day somebody retunes the bands and not after it.
   **There is no damage here** — a farmer's damage belongs to the swing he throws, so it lives on
   the `AttackData` and the wave scales it per body.
 - **`WeaponData`** — `id`, `display_name`, `attacks: Array[AttackData]`, `is_ranged`,

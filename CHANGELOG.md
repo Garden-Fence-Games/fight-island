@@ -97,6 +97,15 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- **`EnemyData.first_wave` decided nothing, and looked like it decided when an archetype joins the
+  fight.** Every `.first_wave` the code reads belongs to a `WaveBand`; nothing has ever read an
+  enemy's. All three archetypes set it in their `.tres`, so anyone asking "when does the reaper
+  turn up?" would have found the answer sitting on `reaper.tres`, changed it, and watched nothing
+  happen — the real answer is the band shares in `standard.tres`.
+  The two agreed today, which is what made it worth removing rather than fixing: a balance number
+  with two homes is correct right up until somebody retunes one of them.
+
+
 - **`EventBus.perfect_timing` was raised on every perfect hit and heard by nobody.** It had a
   declaration, a docstring, a line in `docs/architecture.md` and an emitter in `PlayerAttack` — and
   no connection anywhere in the project, because everything that cares already reads the `perfect`
