@@ -7,20 +7,17 @@ extends Resource
 @export var shares: Array[ArchetypeShare] = []
 
 
-## An archetype, rolled against the mix. `melee_only` covers the rule that no wave opens with a
-## thrower: the player is never shot at before anything is on screen.
+## An archetype, rolled against the mix.
 ##
 ## Normalised over what can actually be spawned rather than over the table, so a share naming an
 ## archetype that does not exist yet simply does not come up, and the remaining shares keep their
-## proportions to each other. That is what lets the real table live in the data file while the
-## reaper and the thrower are still issues.
-func pick(rng: RandomNumberGenerator, melee_only: bool = false) -> EnemyData:
+## proportions to each other — which is what lets the real table live in the data file while an
+## archetype is still an issue.
+func pick(rng: RandomNumberGenerator) -> EnemyData:
 	var available: Array[ArchetypeShare] = []
 	var total := 0.0
 	for entry: ArchetypeShare in shares:
 		if entry == null or entry.enemy == null or entry.share <= 0.0:
-			continue
-		if melee_only and entry.enemy.is_ranged:
 			continue
 		available.append(entry)
 		total += entry.share

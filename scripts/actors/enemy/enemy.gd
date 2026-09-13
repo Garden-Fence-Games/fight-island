@@ -22,14 +22,9 @@ const REPATH_INTERVAL: float = 0.25
 ## are the same figures for every attack and every archetype in the game, so there is nothing for a
 ## scene to choose and nothing for a pooled body to carry a stale copy of.
 const KNOCKDOWN: KnockdownData = preload("res://data/combat/knockdown.tres")
-## Where a stone leaves the hand and where it is aimed. Both at chest height, so a throw travels
-## flat: an arc would be prettier and would also make the thing impossible to read at a glance.
-##
-## **The hand moved when the body did.** It was 1.1 m, which was a chest while a farmer was a 1.7 m
-## capsule; the rig stands 2.21 m and 1.1 m is his waist. What it is aimed at did not move: that is
-## the player's chest, and the player is still 1.8 m. `verify_sightlines` holds both figures against
-## these, so a rig that ships at another height fails rather than throwing from the hip.
-const THROW_HEIGHT: float = 1.44
+## The player's chest, which is what a blow is aimed at. He is 1.8 m and this is where the middle of
+## him is; `verify_sightlines` holds the figure, so a rig that ships at another height fails rather
+## than swinging at a knee.
 const CHEST_HEIGHT: float = 1.0
 ## The rigs are modelled facing the camera and a body's forward is -Z, so every one of them is
 ## turned about. One figure rather than a transform per scene: a rig that disagrees is a pipeline
@@ -78,12 +73,6 @@ var last_hit_push: float = 0.0
 ## He comes, he circles, and he never swings. The first two tutorial steps need something to hit
 ## that will not hit back — and a farmer standing still would teach the player that farmers do.
 var passive: bool = false
-
-## The stone this body has in the air, if any. The ranged token is held until it lands rather than
-## until the throw finishes, because the design says at most one stone is in the air — and a throw
-## whose recovery is shorter than its own stone's flight would otherwise let a second one go.
-var _stone: Projectile = null
-var _token_owed: bool = false
 
 var _tokens: AttackTokens = null
 var _gravity: float = 9.8
@@ -172,8 +161,6 @@ func revive(
 	# that only shows up five waves in. Cheap to call when nothing is running, so it is called always.
 	if ragdoll != null:
 		ragdoll.stop()
-	_stone = null
-	_token_owed = false
 	if data != null:
 		poise_left = data.poise
 		if health != null:
@@ -196,7 +183,6 @@ func revive(
 ## Out of the fight and out of the way, without announcing anything. Used for the pool's own
 ## pre-warm, where thirty-two spawn notifications would be thirty-two lies.
 func sleep() -> void:
-	_forget_the_stone()
 	release_token()
 	remove_from_group(&"enemies")
 	if hurtbox != null:
@@ -269,8 +255,8 @@ func rouse() -> void:
 	if data == null or data.rouse_radius <= 0.0:
 		return
 	# The hour reaches the crowd here and nowhere else. Noticing is deliberately left alone: a
-	# farmer arrives no closer than twelve metres and the thrower already notices at twelve, so a
-	# night bonus on that would have every wave charging from the horizon again.
+	# farmer arrives no closer than twelve metres and notices at nine, so a night bonus on that
+	# would have every wave charging from the horizon again.
 	var carries := data.rouse_radius * GameState.rouse_scale()
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		var other := node as Enemy
@@ -296,14 +282,6 @@ func notices_target() -> bool:
 	if data == null or target == null:
 		return false
 	return distance_to_target() <= data.notice_radius
-
-
-## Whether the player has come closer than this archetype will tolerate. Nought means he stands his
-## ground, which is every archetype but the thrower.
-func wants_room() -> bool:
-	if data == null or data.retreat_range <= 0.0 or target == null:
-		return false
-	return distance_to_target() < data.retreat_range
 
 
 func distance_to_target() -> float:
@@ -391,25 +369,6 @@ func face(direction: Vector3, delta: float) -> void:
 	rotation.y = rotate_toward(rotation.y, wanted, deg_to_rad(TURN_SPEED_DEGREES) * delta)
 
 
-## Sends a stone on its way, and keeps the ranged token until it is spent.
-func throw_at(target_position: Vector3) -> void:
-	if data == null or data.attack == null or data.projectile == null:
-		return
-	var stone := data.projectile.instantiate() as Projectile
-	if stone == null:
-		push_error("%s throws something that is not a projectile" % name)
-		return
-	# Into the tree beside the thrower, not under it: a stone parented to a body that dies mid-flight
-	# would be freed in the air.
-	get_parent().add_child(stone)
-	var from := global_position + Vector3.UP * THROW_HEIGHT
-	stone.global_position = from
-	var toward := target_position + Vector3.UP * CHEST_HEIGHT - from
-	stone.launch(data.attack, self, toward, damage_scale)
-	stone.spent.connect(_on_stone_spent)
-	_stone = stone
-
-
 ## The one gate every path into WindUp goes through, which is why refusing here is all it takes to
 ## make a body harmless. He keeps closing and keeps circling, so he still reads as a threat.
 func claim_token() -> bool:
@@ -417,40 +376,13 @@ func claim_token() -> bool:
 		return false
 	if _tokens == null:
 		return true
-	return _tokens.claim(self, data != null and data.is_ranged)
+	return _tokens.claim(self)
 
 
 func release_token() -> void:
 	if _tokens == null:
 		return
-	if _stone != null and is_instance_valid(_stone):
-		# Owed, not released. Letting go here would put a second stone in the air while the first is
-		# still travelling, which is the one thing the ranged pool of 1 exists to prevent.
-		_token_owed = true
-		return
-	_token_owed = false
-	_tokens.release(self, data != null and data.is_ranged)
-
-
-func _on_stone_spent() -> void:
-	_stone = null
-	if _token_owed:
-		_token_owed = false
-		release_token()
-
-
-## A body leaving the fight owes nothing. The stone finishes its flight on its own — it is parented
-## to the arena, not to the thrower — and the token has to go back before the body does, or the next
-## thrower out of the pool stands there politely waiting for a life that has ended.
-##
-## Disconnecting matters as much as the release: a stone outlives the life it was thrown in, and an
-## old one still wired to this handler would null the stone and free the token of whatever life the
-## body is leased for next.
-func _forget_the_stone() -> void:
-	if _stone != null and is_instance_valid(_stone) and _stone.spent.is_connected(_on_stone_spent):
-		_stone.spent.disconnect(_on_stone_spent)
-	_stone = null
-	_token_owed = false
+	_tokens.release(self)
 
 
 ## The push is the attack's own stagger figure and the direction is the way the blow travelled.

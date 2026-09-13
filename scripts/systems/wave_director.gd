@@ -33,7 +33,6 @@ var _left_to_send: int = 0
 var _next_wave_in: float = 0.0
 var _next_spawn_in: float = 0.0
 var _untouched: bool = true
-var _first_of_wave: bool = true
 var _elapsed: float = 0.0
 var _rng := RandomNumberGenerator.new()
 var _health_seen: float = -1.0
@@ -87,7 +86,6 @@ func start_wave(index: int) -> void:
 	_left_to_send = config.enemy_count(wave)
 	_running = true
 	_untouched = true
-	_first_of_wave = true
 	_next_spawn_in = 0.0
 	_elapsed = 0.0
 	_mark_the_hour()
@@ -147,8 +145,7 @@ func _send_one() -> void:
 	var band := config.band_for(wave)
 	if band == null:
 		return
-	# No wave opens with a thrower: the player is never shot at before anything is on screen.
-	var data := band.pick(_rng, _first_of_wave)
+	var data := band.pick(_rng)
 	if data == null:
 		return
 	# Read now rather than at the top of the wave: a farmer who walks on at dusk is a dusk farmer,
@@ -167,7 +164,6 @@ func _send_one() -> void:
 	if sent == null:
 		return
 	_left_to_send -= 1
-	_first_of_wave = false
 
 
 func _on_enemy_died(_enemy: Node3D, _archetype: StringName, _money: int) -> void:
