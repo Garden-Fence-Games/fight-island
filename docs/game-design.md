@@ -285,9 +285,9 @@ and he is the only archetype that can take a quarter of the player's health off 
 
 Two things keep that fair rather than cheap. He telegraphs for **0.80 s**, the longest wind-up in
 the game, and his warning is the lowest and the longest of the four: a pirate committing is
-audible under a crowd and readable across the island. And **he is rare**. He is never more than a
-twentieth of a wave until the last band, where he is a twelfth — so he arrives as an event rather
-than as a pressure, and the wave he arrives in is the one where the player's answer has to change.
+audible under a crowd and readable across the island. And **he is a tenth of a wave** — enough that
+every wave from the third has some, few enough that he is read one at a time rather than fought as
+a crowd.
 
 He is deliberately **not** a heavier reaper. The reaper's 160° sweep is a geometry problem: you
 cannot sidestep it. The pirate's 90° arc can be walked out of by anyone who saw it coming, and the
@@ -354,16 +354,20 @@ the farmhand always takes the remainder.
 | Wave | Farmhand | Reaper | Thrower | Pirate |
 |---|---|---|---|---|
 | 1–2 | 100 % | — | — | — |
-| 3–4 | 75 % | 20 % | — | 5 % |
-| 5–7 | 60 % | 20 % | 15 % | 5 % |
-| 8–11 | 45 % | 30 % | 20 % | 5 % |
-| 12–15 | 32 % | 35 % | 25 % | 8 % |
+| 3–4 | 72 % | 18 % | — | 10 % |
+| 5–7 | 59 % | 18 % | 13 % | 10 % |
+| 8–11 | 45 % | 27 % | 18 % | 10 % |
+| 12–15 | 36 % | 32 % | 22 % | 10 % |
 
-**The pirate's share comes out of the farmhand's**, so the triangle the other three form is exactly
-the one it was. Five per cent is a roll per spawn and not a quota: at wave 5 the island sends
-forty-two bodies and about two of them are pirates, and *which* two is the wave's own business. A
-fixed number per wave would be a schedule the player learns; a low chance is a thing that happens
-to them.
+**Ten per cent is a roll per spawn and not a quota.** At wave 5 the island sends forty-two bodies
+and about four of them are pirates; *which* four, and whether it is two or six, is the wave's own
+business. A fixed number per wave would be a schedule the player learns. A chance is a thing that
+happens to them, and the pirate is the archetype that has to be able to arrive at the wrong moment.
+
+**His share is taken proportionally from the other three, not off the farmhand alone**, so the
+triangle they form is untouched at every band: the reaper is still half again the thrower, and the
+farmhand is still the most common thing on the island in every wave of the run. Ten per cent flat
+rather than a ramp — he is a hazard, and a hazard that grows on a schedule stops being one.
 
 A wave never opens with a thrower: the first spawn of every wave is melee, so the player is never
 shot at before anything is on screen.
