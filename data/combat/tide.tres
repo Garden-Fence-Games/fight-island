@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="TideData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/tide_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+drains_from = 1.1
+drowns_at = 1.6
+drains = 20.0
