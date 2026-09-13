@@ -49,6 +49,18 @@ still fail.
 
 ### Fixed
 
+- **The reaper was rendering as a black hole, and he is the "black farmer".** He wears the farmer's
+  rig and his tint is multiplied over it, so `Color(0.2, 0.22, 0.3)` — a wash chosen when all three
+  archetypes were untextured capsules — crushed a painted character to twenty per cent of himself.
+  From the fixed camera, which mostly sees a hat, he read as a black disc. The wash is
+  `Color(0.52, 0.56, 0.66)` now: still the cool, dark one, still told apart from the warm farmhand
+  and the pale thrower, with the paint underneath surviving it.
+- **The pirate was a ghost.** `char_pirate.glb` embeds one image, the eyes, and his body and club
+  materials carry neither a base colour texture nor a base colour factor — so Godot painted both
+  white (#227). He carries a leather-brown tint until the rig is exported with its texture, which
+  is paint standing in for a texture rather than a fix.
+
+
 - **The mix was written in peaks, and peaks measure the wrong thing.** Two sounds normalised to the
   same peak are not the same loudness and are not close — measured across this game's own sounds the
   gap reached seventeen decibels. The farmers sat at a footstep's loudness because a voice level was

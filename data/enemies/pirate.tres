@@ -18,4 +18,4 @@ attack_range = 2.0
 is_ranged = false
 telegraph_sound = &"telegraph_pirate"
 preferred_range = 1.8
-tint = Color(1, 1, 1, 1)
+tint = Color(0.62, 0.48, 0.38, 1)
