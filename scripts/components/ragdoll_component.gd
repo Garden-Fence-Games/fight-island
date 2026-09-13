@@ -46,7 +46,7 @@ signal came_to_rest
 @export var thickness: float = 0.28
 ## What the body collides with while it tumbles: the world, and nothing else. A ragdoll that pushed
 ## the player or the living would turn a knockdown into a shove nobody asked for.
-@export_flags_3d_physics var collision_mask: int = 1
+@export_flags_3d_physics var collision_mask: int = PhysicsLayers.BIT_WORLD
 ## How much of the push goes upward. A blow travels flat, and a body shoved flat has its feet on the
 ## ground: the impulse goes straight into friction and a man who should have been sent sprawling
 ## shuffles four centimetres. Lifting him clear is what turns a shove into a knockdown.
@@ -55,7 +55,8 @@ signal came_to_rest
 @export var rest_speed: float = 0.35
 @export var stillness: float = 0.35
 ## However heavy the hit, a body that never settles has to be taken back eventually — a corpse
-## wedged against a rock would otherwise wait for ever.
+## wedged against a rock would otherwise wait for ever. A backstop for a tumble that was given no
+## ceiling of its own, not the figure a knockdown is meant to run to.
 @export var longest: float = 3.0
 
 var _skeleton: Skeleton3D = null
@@ -64,6 +65,7 @@ var _bodies: Array[PhysicalBone3D] = []
 var _running: bool = false
 var _still_for: float = 0.0
 var _elapsed: float = 0.0
+var _ceiling: float = 0.0
 
 
 func _ready() -> void:
@@ -82,12 +84,19 @@ func is_running() -> bool:
 
 ## Knocks the body down. `push` is in metres per second, applied along `direction` and shared by
 ## every bone so the whole body leaves together rather than tearing at the waist.
-func knock(direction: Vector3, push: float) -> void:
+##
+## `ceiling` is how long this particular tumble may run before the body is taken back whether it has
+## settled or not. It is passed per knock rather than read off `longest` because **how long a man
+## stays down is the blow's figure, not the ragdoll's** — a jab that tips him over and an uppercut
+## that lifts him are not the same knockdown, and the difference is already tabled in the attack.
+## Zero falls back to `longest`, which is what a caller with nothing to say should send.
+func knock(direction: Vector3, push: float, ceiling: float = 0.0) -> void:
 	if not is_ready() or _running:
 		return
 	_running = true
 	_still_for = 0.0
 	_elapsed = 0.0
+	_ceiling = ceiling if ceiling > 0.0 else longest
 	_simulator.physical_bones_start_simulation(bones)
 	var flat := Vector3(direction.x, 0.0, direction.z)
 	var impulse := flat.normalized() * push + Vector3.UP * push * lift
@@ -125,7 +134,7 @@ func _physics_process(delta: float) -> void:
 	for body: PhysicalBone3D in _bodies:
 		fastest = maxf(fastest, body.linear_velocity.length())
 	_still_for = _still_for + delta if fastest < rest_speed else 0.0
-	if _still_for < stillness and _elapsed < longest:
+	if _still_for < stillness and _elapsed < _ceiling:
 		return
 	_running = false
 	came_to_rest.emit()
