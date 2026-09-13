@@ -169,6 +169,7 @@ func revive(
 ## Out of the fight and out of the way, without announcing anything. Used for the pool's own
 ## pre-warm, where thirty-two spawn notifications would be thirty-two lies.
 func sleep() -> void:
+	_forget_the_stone()
 	release_token()
 	remove_from_group(&"enemies")
 	if hurtbox != null:
@@ -401,6 +402,20 @@ func _on_stone_spent() -> void:
 	if _token_owed:
 		_token_owed = false
 		release_token()
+
+
+## A body leaving the fight owes nothing. The stone finishes its flight on its own — it is parented
+## to the arena, not to the thrower — and the token has to go back before the body does, or the next
+## thrower out of the pool stands there politely waiting for a life that has ended.
+##
+## Disconnecting matters as much as the release: a stone outlives the life it was thrown in, and an
+## old one still wired to this handler would null the stone and free the token of whatever life the
+## body is leased for next.
+func _forget_the_stone() -> void:
+	if _stone != null and is_instance_valid(_stone) and _stone.spent.is_connected(_on_stone_spent):
+		_stone.spent.disconnect(_on_stone_spent)
+	_stone = null
+	_token_owed = false
 
 
 ## The push is the attack's own stagger figure and the direction is the way the blow travelled.
