@@ -28,6 +28,9 @@ var wave: int = 0
 ## and resuming *past* it, and getting it wrong silently skips a wave.
 var wave_in_progress: bool = false
 var run_in_progress: bool = false
+## Whether a fight is actually on screen. Runtime only and never saved: `wave_in_progress` says the
+## run is *mid-wave*, which stays true across a quit to the title, and the clock has to stop there.
+var fighting: bool = false
 ## Carries between waves and is spent at the merchant. It only ever changes through `earn` and
 ## `spend`, so nothing can move it without the signal going out.
 var money: int = 0
@@ -76,11 +79,11 @@ func _ready() -> void:
 	load_run()
 
 
-## The clock measures fighting, not menus. Gated on the wave rather than on the run because a run
-## that was quit to the title is still in progress, and a run waiting on a title screen overnight
-## would otherwise report a time nobody spent playing.
+## The clock measures fighting, not menus. Gated on `fighting` rather than on the wave because a run
+## quit to the title mid-wave is still mid-wave — deliberately, so it resumes into that wave — and a
+## run waiting on a title screen overnight would otherwise report a time nobody spent playing.
 func _process(delta: float) -> void:
-	if run_in_progress and wave_in_progress:
+	if run_in_progress and fighting:
 		stats.seconds += delta
 
 

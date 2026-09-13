@@ -91,6 +91,7 @@ func start_wave(index: int) -> void:
 	_next_spawn_in = 0.0
 	_elapsed = 0.0
 	_mark_the_hour()
+	GameState.fighting = true
 	EventBus.wave_started.emit(wave, _left_to_send)
 
 
@@ -101,8 +102,16 @@ func halt() -> void:
 	_left_to_send = 0
 	_next_wave_in = 0.0
 	_elapsed = 0.0
+	GameState.fighting = false
 	if spawner != null:
 		spawner.clear()
+
+
+## The run clock counts what is on screen, and every way the island can leave — a quit to the title,
+## a restart, a death, the victory — takes the director with it. The pause menu keeps the run on
+## purpose, so nothing there can be trusted to stop the clock.
+func _exit_tree() -> void:
+	GameState.fighting = false
 
 
 ## Takes the island back from whatever drove a wave by hand — the tutorial today, scripted waves
@@ -179,6 +188,7 @@ func _check_wave_cleared() -> void:
 func _finish_the_wave() -> void:
 	_running = false
 	_next_wave_in = breather
+	GameState.fighting = false
 	if spawner != null:
 		spawner.clear()
 	EventBus.wave_cleared.emit(wave, config.reward_for(wave, _untouched))

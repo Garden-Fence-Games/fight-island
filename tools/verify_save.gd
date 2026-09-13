@@ -14,6 +14,9 @@ const ARENA: String = "res://scenes/world/arena.tscn"
 const SETTLE_FRAMES: int = 4
 ## Far enough ahead that no build will ever read it, which is the whole point of the refusal.
 const FUTURE_VERSION: int = 9999
+## How long the title screen is left up. Real time rather than frames, because the fault being
+## checked for is a clock that counts seconds nobody spent playing.
+const TITLE_IDLE: float = 0.3
 
 var _failures: PackedStringArray = []
 var _kept_run: String = ""
@@ -35,6 +38,7 @@ func _run() -> void:
 	_check_a_finished_run_is_not_resumable()
 	_check_the_merchant_is_still_owed()
 	await _check_an_interrupted_wave_is_fought_again()
+	await _check_the_clock_stops_at_the_title()
 	_put_back_what_was_on_this_machine()
 	_report()
 
@@ -182,6 +186,42 @@ func _check_an_interrupted_wave_is_fought_again() -> void:
 	var handed_over := await _wave_the_director_opens()
 	if handed_over != 6:
 		_fail("a cleared wave handed over to wave %d, expected 6" % handed_over)
+
+
+## The other half of the same fact. Quitting to the title keeps the run *and* keeps the wave — that
+## is what makes it resume into that wave rather than past it — so the clock cannot be gated on
+## either of them, and a laptop left open on the menu used to add hours to the run summary.
+func _check_the_clock_stops_at_the_title() -> void:
+	GameState.begin_run()
+	var arena := (load(ARENA) as PackedScene).instantiate()
+	add_child(arena)
+	await get_tree().process_frame
+	var director := arena.get_node("WaveDirector") as WaveDirector
+	if director == null:
+		_fail("the arena has no wave director to fight a wave with")
+		return
+	director.start_wave(5)
+	var before_a_frame := GameState.stats.seconds
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if GameState.stats.seconds <= before_a_frame:
+		_fail("the run clock did not count while a wave was being fought")
+
+	# What a quit to the title does: the island goes, the run stays, and the wave stays with it.
+	arena.queue_free()
+	await get_tree().process_frame
+	if not GameState.run_in_progress or not GameState.wave_in_progress:
+		_fail("quitting mid-wave dropped the wave, so the run would resume past it")
+	var at_the_title := GameState.stats.seconds
+	await get_tree().create_timer(TITLE_IDLE, true, false, true).timeout
+	if GameState.stats.seconds > at_the_title:
+		_fail(
+			(
+				"the clock ran on the title screen for %.2f s of a %.2f s wait"
+				% [GameState.stats.seconds - at_the_title, TITLE_IDLE]
+			)
+		)
+	GameState.end_run()
 
 
 ## What `start_wave` would be called with, read off a director that has just woken up in a fresh
