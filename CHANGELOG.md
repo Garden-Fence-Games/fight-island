@@ -8,6 +8,17 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The stick swings, and the pirate is on the shelf.** Purple-Sigil's clips that had been sitting
+  outside the project are in it now, exported and imported, and wired to nothing that was not
+  already asking for them:
+  - `attack_stick_1` plays the moment the stick swings, because the stick already named it. The
+    stick itself is in the player's rig, keyed by each stick clip where it was held and a thousandth
+    of its size everywhere else, with its swing trail.
+  - `idle_stick`, `walk_stick` and `dodge_roll_stick` wait on `clip_suffix = &"_stick"`.
+  - `char_pirate.glb` — Ennemi_2 — with `idle`, `walk`, `chase`, `attack` and both get-ups, its
+    weapon keyed in every clip. No scene or archetype uses it yet.
+
+  Sources are in `art-source/`; what is left to wire is in `docs/asset-pipeline.md`.
 - **The player falls when they die.** The run ended on the rest pose — a body standing to attention
   under the screen that says it is over. The body goes to the physics now, the same
   `RagdollComponent` the farmers have used since they stopped sinking into the sand, so the fall
