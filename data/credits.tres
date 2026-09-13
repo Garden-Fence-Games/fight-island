@@ -133,25 +133,39 @@ licence = "CC0 1.0"
 
 [sub_resource type="Resource" id="Resource_jfifh"]
 script = ExtResource("1_2q5yg")
+subject = "assets/audio/voice/farmer_01..09.wav"
+source = "original recording"
+author = "Purple-Sigil"
+licence = "© the project, all rights reserved"
+
+[sub_resource type="Resource" id="Resource_eaha6"]
+script = ExtResource("1_2q5yg")
+subject = "assets/audio/voice/gull_01..02.wav"
+source = "original recording"
+author = "Purple-Sigil"
+licence = "© the project, all rights reserved"
+
+[sub_resource type="Resource" id="Resource_52eap"]
+script = ExtResource("1_2q5yg")
 subject = "assets/models/camp/floor.glb"
 source = "Survival Kit, the 1.0 export on Poly Pizza"
 source_url = "https://kenney.nl/assets/survival-kit"
 author = "Kenney"
 licence = "CC0 1.0"
 
-[sub_resource type="Resource" id="Resource_eaha6"]
+[sub_resource type="Resource" id="Resource_vjvk4"]
 script = ExtResource("1_2q5yg")
 subject = "Godot Engine 4.7.2"
 source_url = "https://godotengine.org"
 licence = "MIT"
 
-[sub_resource type="Resource" id="Resource_52eap"]
+[sub_resource type="Resource" id="Resource_kfdfc"]
 script = ExtResource("1_2q5yg")
 subject = "Jolt Physics"
 source_url = "https://github.com/jrouwe/JoltPhysics"
 licence = "MIT"
 
-[sub_resource type="Resource" id="Resource_vjvk4"]
+[sub_resource type="Resource" id="Resource_tic2b"]
 script = ExtResource("1_2q5yg")
 subject = "gdUnit4 6.2.1, vendored in addons/gdUnit4"
 source_url = "https://github.com/MikeSchulze/gdUnit4"
@@ -159,5 +173,5 @@ licence = "MIT"
 
 [resource]
 script = ExtResource("2_ptgt7")
-assets = Array[ExtResource("1_2q5yg")]([SubResource("Resource_nsrer"), SubResource("Resource_vhv8o"), SubResource("Resource_btpt5"), SubResource("Resource_q8wms"), SubResource("Resource_p5aey"), SubResource("Resource_56av3"), SubResource("Resource_xxy2o"), SubResource("Resource_8eb3d"), SubResource("Resource_j4xby"), SubResource("Resource_t6bex"), SubResource("Resource_xfmof"), SubResource("Resource_yk254"), SubResource("Resource_rk4m6"), SubResource("Resource_4lkwu"), SubResource("Resource_tgv8e"), SubResource("Resource_o5woe"), SubResource("Resource_e6gsf"), SubResource("Resource_jfifh")])
-tools = Array[ExtResource("1_2q5yg")]([SubResource("Resource_eaha6"), SubResource("Resource_52eap"), SubResource("Resource_vjvk4")])
+assets = Array[ExtResource("1_2q5yg")]([SubResource("Resource_nsrer"), SubResource("Resource_vhv8o"), SubResource("Resource_btpt5"), SubResource("Resource_q8wms"), SubResource("Resource_p5aey"), SubResource("Resource_56av3"), SubResource("Resource_xxy2o"), SubResource("Resource_8eb3d"), SubResource("Resource_j4xby"), SubResource("Resource_t6bex"), SubResource("Resource_xfmof"), SubResource("Resource_yk254"), SubResource("Resource_rk4m6"), SubResource("Resource_4lkwu"), SubResource("Resource_tgv8e"), SubResource("Resource_o5woe"), SubResource("Resource_e6gsf"), SubResource("Resource_jfifh"), SubResource("Resource_eaha6"), SubResource("Resource_52eap")])
+tools = Array[ExtResource("1_2q5yg")]([SubResource("Resource_vjvk4"), SubResource("Resource_kfdfc"), SubResource("Resource_tic2b")])

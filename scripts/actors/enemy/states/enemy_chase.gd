@@ -11,6 +11,10 @@ func physics_update(delta: float) -> void:
 	if enemy.data == null or enemy.target == null:
 		enemy.apply_motion(Vector3.ZERO, 0.0, delta)
 		return
+	# On the way over, on his own clock. `VoiceComponent` is what decides he has been quiet long
+	# enough; this only says he is walking towards you, which is the state the sound is about.
+	if enemy.voice != null:
+		enemy.voice.speak()
 	var direction := enemy.path_direction(delta)
 	enemy.apply_motion(direction, enemy.move_speed(), delta)
 	enemy.face(direction, delta)

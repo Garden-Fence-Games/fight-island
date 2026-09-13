@@ -73,6 +73,12 @@ func _process(delta: float) -> void:
 		# on the ground, and one leaving is already leaving.
 		if bird.is_grounded() and away < startle_radius:
 			bird.startle(here)
+			continue
+		# And one of the settled ones speaks up now and then. Each bird keeps its own clock, so the
+		# shore is a shore rather than a chorus — asking every frame costs nothing because the
+		# answer is almost always "not yet".
+		if bird.is_grounded():
+			bird.cry()
 	_refill()
 
 

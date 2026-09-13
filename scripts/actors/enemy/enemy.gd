@@ -72,6 +72,7 @@ var _repath_clock: float = 0.0
 
 @onready var health: HealthComponent = $Health
 @onready var hitbox: Hitbox = $Hitbox
+@onready var voice: VoiceComponent = get_node_or_null(^"Voice") as VoiceComponent
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var machine: StateMachine = $StateMachine
 @onready var visual: Node3D = $Visual
@@ -167,6 +168,9 @@ func sleep() -> void:
 		body_materials.stop_flash()
 	visible = false
 	velocity = Vector3.ZERO
+	# Or the next man out of the pool finishes this one's sentence.
+	if voice != null:
+		voice.hush()
 	process_mode = Node.PROCESS_MODE_DISABLED
 
 
@@ -210,6 +214,11 @@ func rouse() -> void:
 	if roused:
 		return
 	roused = true
+	# The one line he is guaranteed to say. Noticing you is the moment the fight becomes about him,
+	# and it is also the moment he is furthest away — which is what gives the Doppler something to
+	# do on the way in.
+	if voice != null:
+		voice.speak()
 	# The head goes to the player the moment he is noticed, and stays there while the body walks
 	# wherever the path takes it. Before that he looks where he is going, like anyone who has not
 	# seen you yet.
