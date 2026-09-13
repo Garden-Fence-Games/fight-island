@@ -35,7 +35,7 @@ var _fader: Tween = null
 
 
 func _ready() -> void:
-	bus = &"MusicDuck"
+	bus = AudioManager.DUCK_BUS
 	# A stream still playing when the engine tears down is reported as a leak, and CI fails a boot on
 	# any warning at all. The bed already sits this out for the same reason; the jukebox joins it.
 	process_mode = Node.PROCESS_MODE_ALWAYS
