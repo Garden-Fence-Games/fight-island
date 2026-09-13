@@ -258,3 +258,7 @@ rendering_device/driver.windows="d3d12"
 textures/default_filters/anisotropic_filtering_level=3
 anti_aliasing/quality/msaa_3d=1
 anti_aliasing/quality/use_debanding=true
+; Apple Silicon reads ASTC and nothing else. Without this the macOS preset refuses to export at
+; all — "Cannot export for universal or arm64 if ETC2 ASTC texture format is disabled" — and the
+; release workflow fails on the first tag rather than on the first build anybody tried.
+textures/vram_compression/import_etc2_astc=true

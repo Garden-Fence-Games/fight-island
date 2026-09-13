@@ -59,6 +59,18 @@ const GAMEPAD_EXEMPT: PackedStringArray = [
 	"debug_give_money",
 ]
 
+## Project settings an export preset needs, and what refuses to build without them. Held here
+## rather than discovered on a tag: an export preset and a project setting can disagree for months
+## while every check in this repository passes, because nothing else in the project reads either.
+##
+## `import_etc2_astc` is the one that caught it. Apple Silicon reads ASTC and nothing else, so a
+## macOS preset set to universal or arm64 will not export at all without it — the first tag would
+## have failed on "Cannot export for universal or arm64 if ETC2 ASTC texture format is disabled",
+## with the release already cut and nothing to publish.
+const REQUIRED_FOR_EXPORT: Dictionary[String, bool] = {
+	"rendering/textures/vram_compression/import_etc2_astc": true,
+}
+
 ## The mouse aims by where it *is*, not by an action — there is no key that means "look north-east".
 ## So the four aim actions are the stick's alone, and the cursor covers the other device.
 const KEYBOARD_EXEMPT: PackedStringArray = [
@@ -100,11 +112,24 @@ func _init() -> void:
 	if ProjectSettings.get_setting("application/config/version", "") == "":
 		failures.append("application/config/version is not set")
 
+	for setting: String in REQUIRED_FOR_EXPORT:
+		if bool(ProjectSettings.get_setting(setting, false)) != REQUIRED_FOR_EXPORT[setting]:
+			failures.append(
+				(
+					"%s is %s and the export presets need %s"
+					% [
+						setting,
+						ProjectSettings.get_setting(setting, false),
+						REQUIRED_FOR_EXPORT[setting]
+					]
+				)
+			)
+
 	if failures.is_empty():
 		print(
 			(
-				"project config OK — %d actions, %d layers"
-				% [REQUIRED_ACTIONS.size(), REQUIRED_LAYERS.size()]
+				"project config OK — %d actions, %d layers, %d settings the exports need"
+				% [REQUIRED_ACTIONS.size(), REQUIRED_LAYERS.size(), REQUIRED_FOR_EXPORT.size()]
 			)
 		)
 		quit(0)
