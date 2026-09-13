@@ -503,7 +503,7 @@ fitted its capsules to those vertices, the animation found that skeleton, the he
 modifier on it — so swapping a pirate into a farmer at revive would mean rebuilding every component
 that ever looked at the rig. `EnemyPool.bodies` maps an `EnemyData.id` to a scene of its own and
 `lease(id)` picks the shelf; everything absent from that map is made from `enemy_scene`, which is
-how the three farmers go on sharing one rig. The shared shelf holds thirty-two and each extra holds
+how anything on the farmer rig is made. The shared shelf holds thirty-two and each extra holds
 sixteen — `max_alive` tops out at twelve, so sixteen covers a wave that rolled nothing else and
 still has bodies going into the ground.
 
