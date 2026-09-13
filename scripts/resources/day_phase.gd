@@ -15,6 +15,15 @@ extends Resource
 ## phase runs from here to the next one's start, so the array of them is a whole day and the spans
 ## cannot leave a gap without someone noticing the clock skip.
 @export_range(0.0, 24.0) var starts_at_hour: float = 0.0
+## **How much of this phase is spent turning into the next one**, as a share of its own span. A
+## quarter suits a phase whose job is to hold a look: a sky that is always halfway between two
+## things never looks like either.
+##
+## **Dawn and dusk are the opposite**, and they carry one. They exist to be the turn — holding a
+## dusk and then flipping into night in the last few seconds of it is the abrupt version of exactly
+## the thing they were added to smooth. At one, the light slides continuously from the day, through
+## the dusk's own colours, into the night, and never sits still in between.
+@export_range(0.0, 1.0) var turning_share: float = 0.25
 
 @export_group("Rules")
 @export var damage_scale: float = 1.0
