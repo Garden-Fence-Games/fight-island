@@ -125,8 +125,8 @@ func play_state(state_name: StringName) -> bool:
 
 
 ## Plays a clip by name, from the start, optionally stretched to last `seconds`. A duration of zero
-## leaves the clip at the speed it was authored at.
-func play_clip(clip: StringName, seconds: float = 0.0) -> bool:
+## leaves the clip at the speed it was authored at. A negative `blend` takes the component's own.
+func play_clip(clip: StringName, seconds: float = 0.0, blend: float = -1.0) -> bool:
 	if clip == &"" or animation_player == null or not animation_player.has_animation(String(clip)):
 		_rest()
 		clip_missing.emit(&"", clip)
@@ -135,7 +135,7 @@ func play_clip(clip: StringName, seconds: float = 0.0) -> bool:
 	var length := animation_player.get_animation(String(clip)).length
 	if seconds > 0.0 and length > 0.0:
 		speed = length / seconds
-	animation_player.play(String(clip), blend_time, speed)
+	animation_player.play(String(clip), blend if blend >= 0.0 else blend_time, speed)
 	_current_clip = clip
 	_current_speed = speed
 	return true
@@ -155,6 +155,10 @@ func refresh() -> void:
 
 ## Asked here rather than pushed by the state, because `StateMachine` runs `enter` *before* it emits
 ## — a state that started its own clip would have it stopped again one line later.
+##
+## A state may also say how fast to fade in, through `clip_blend()`. The get-up is why: the ragdoll
+## hands the skeleton back in its *standing* rest pose, so the usual crossfade would stand a man up
+## for a tenth of a second between lying on the ground and lying on the ground.
 func _on_state_machine_transitioned(state_name: StringName) -> void:
 	var state := state_machine.current if state_machine != null else null
 	if state != null and state.has_method("clip_name"):
@@ -163,7 +167,10 @@ func _on_state_machine_transitioned(state_name: StringName) -> void:
 			var seconds := 0.0
 			if state.has_method("clip_duration"):
 				seconds = float(state.call("clip_duration"))
-			play_clip(named, seconds)
+			var blend := -1.0
+			if state.has_method("clip_blend"):
+				blend = float(state.call("clip_blend"))
+			play_clip(named, seconds, blend)
 			return
 	play_state(state_name)
 

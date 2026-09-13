@@ -337,6 +337,14 @@ is only half authored degrades one clip at a time instead of leaving a state wit
 **Farmer (shared by all three):** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`,
 `death`, plus one attack set per archetype — `windup_punch` / `attack_punch`,
 `windup_sweep` / `attack_sweep`, `windup_throw` / `attack_throw` — and `retreat` for the thrower.
+`get_up_back` and `get_up_front` stand him up after a knockdown, off his back and off his front;
+both start lying flat with the head along the body's +Z, which is what lets the ragdoll be lined up
+with the first frame. `idle`, `walk` and `chase` loop; the get-ups play once.
+
+**The farmer's sources are in centimetres behind a 0.01 `delta_scale`**, and the rig in
+`art-source/char_farmer.blend` is in metres and a third taller. A clip appended from a source file
+has every location key scaled by 0.013 on the way in, and loses the stray frame-0 key Mixamo leaves
+behind — which is the idle pose, and stands him up for one frame at the start of a get-up.
 
 **Bird:** `bird_fly` (wings beating) and `bird_fly_idle` (wings held out, gliding), both looping, on
 the flying rig `assets/models/nature/bird_fly.glb`. A startled bird only beats; a cruising one
