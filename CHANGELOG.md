@@ -6,26 +6,10 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
-### Changed
+## [0.2.0] - 2026-09-14
 
-- **A change to the game is now a line in the changelog, and CI says so.** A pull request touching
-  `scripts/`, `scenes/`, `data/` or `assets/` without writing an entry fails `Pull request hygiene`.
-  Six shipped without one in a single evening — a new font, the studio credit, the whole soundtrack,
-  the length of a wave — and none of it was in the 0.1.0 notes until the release was read against
-  the merge log. Nothing in a diff shows an entry that was never written, which is the whole reason
-  it has to be a rule rather than a habit. The label `no changelog` is the way out for a change a
-  player could not notice.
-
-### Fixed
-
-- **The macOS build could not be opened at all.** The `.app` shipped with a signature claiming
-  resources it did not carry — Godot's export templates are cross-platform but a macOS bundle's
-  seal is not, and the Linux runner cannot write one. macOS calls that *damaged* rather than
-  *unsigned*, which is the refusal with **no Open Anyway offered**: the player has no way through
-  it. The bundle is now re-sealed ad-hoc on a macOS runner, which turns the hard refusal into the
-  ordinary unidentified-developer one that System Settings can approve. Measured both ways on the
-  published 0.1.0 archive, and through a full zip round-trip. Notarisation (#88) is what removes the
-  approval step; this only makes it reachable.
+Two archetypes leave the island and nothing replaces them; the sea kills for the first time;
+and the macOS build can be opened, which the 0.1.0 one could not.
 
 ### Added
 
@@ -71,6 +55,23 @@ All notable changes to this project are documented here, following
     keys, so there the slots carry no badge and the cycle key at the end of the row is the only one
     shown. `verify_hud` moves the hand from keyboard to pad and asserts the row changes with it.
 
+### Changed
+
+- **A change to the game is now a line in the changelog, and CI says so.** A pull request touching
+  `scripts/`, `scenes/`, `data/` or `assets/` without writing an entry fails `Pull request hygiene`.
+  Six shipped without one in a single evening — a new font, the studio credit, the whole soundtrack,
+  the length of a wave — and none of it was in the 0.1.0 notes until the release was read against
+  the merge log. Nothing in a diff shows an entry that was never written, which is the whole reason
+  it has to be a rule rather than a habit. The label `no changelog` is the way out for a change a
+  player could not notice.
+
+- **Swapping weapons is `E`, and picking one up is `F`.** They were the other way round. Swapping is
+  something the player does inside a fight, several times a wave, under pressure; picking up is done
+  once, standing still, with a prompt on the ground naming the key. The hand belongs to the thing
+  done often. The pickup prompt renders whatever `interact` is bound to, so the letter on the ground
+  moved with it. `Tab` is free again — it had been sharing with `ui_focus_next`.
+  - On a pad nothing moved: the swap has been **RB** and **LB** all along.
+
 ### Removed
 
 - **The reaper is gone too. The island is the farmhand and the pirate.** Removed rather than left
@@ -93,9 +94,6 @@ All notable changes to this project are documented here, following
     4.4 m of visible ground rather than 4.6. Eleven still clears it, and `verify_view` measures it
     off the resources rather than the comment.
 
-
-### Removed
-
 - **The thrower is gone, and nothing stands in for him.** He was never wanted: issue #9 asked for a
   ranged farmer and #73 built him, and the design he was built into is not the one this game is.
   Removed rather than switched off — the archetype, his stone, the `Projectile` he flew, the
@@ -114,14 +112,16 @@ All notable changes to this project are documented here, following
   - **The curve is smoother for it.** The worst wave-to-wave step in the run was his arrival at 32
     per cent; the worst now is the pirate's at 17, and every other step is under 14.
 
-### Changed
+### Fixed
 
-- **Swapping weapons is `E`, and picking one up is `F`.** They were the other way round. Swapping is
-  something the player does inside a fight, several times a wave, under pressure; picking up is done
-  once, standing still, with a prompt on the ground naming the key. The hand belongs to the thing
-  done often. The pickup prompt renders whatever `interact` is bound to, so the letter on the ground
-  moved with it. `Tab` is free again — it had been sharing with `ui_focus_next`.
-  - On a pad nothing moved: the swap has been **RB** and **LB** all along.
+- **The macOS build could not be opened at all.** The `.app` shipped with a signature claiming
+  resources it did not carry — Godot's export templates are cross-platform but a macOS bundle's
+  seal is not, and the Linux runner cannot write one. macOS calls that *damaged* rather than
+  *unsigned*, which is the refusal with **no Open Anyway offered**: the player has no way through
+  it. The bundle is now re-sealed ad-hoc on a macOS runner, which turns the hard refusal into the
+  ordinary unidentified-developer one that System Settings can approve. Measured both ways on the
+  published 0.1.0 archive, and through a full zip round-trip. Notarisation (#88) is what removes the
+  approval step; this only makes it reachable.
 
 ## [0.1.0] - 2026-09-13
 
@@ -1299,5 +1299,6 @@ still fail.
 - Five input actions that a fixed camera has no use for: `camera_left`, `camera_right`,
   `camera_up`, `camera_down`, `camera_recenter`.
 
-[Unreleased]: https://github.com/pepito2t/fight-island/compare/v0.1.0...main
+[Unreleased]: https://github.com/pepito2t/fight-island/compare/v0.2.0...main
+[0.2.0]: https://github.com/pepito2t/fight-island/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/pepito2t/fight-island/releases/tag/v0.1.0
