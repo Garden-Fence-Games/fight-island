@@ -35,6 +35,12 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The stick's return and finisher are authored.** `attack_stick_2` and `attack_stick_3` come from
+  `Boy_stick_fight_2/3`, each with its own trail (`StickTrail2`, `StickTrail3`), and replace the
+  stand-ins that replayed the backhand. The three swings were drawn on different guards, so the
+  first two end with a key on the next swing's opening pose and the combo does not snap between
+  hits; `verify_clips` holds the joins.
+
 - **The island is drawn as pixel art.** The finished 3D frame is cut into fat pixels — two screen
   pixels across at 1080p — outlined along silhouettes and lit along creases, on a slightly smaller
   palette; the interface stays sharp. `PixelLook` runs after the transparent pass, so the sea, the
