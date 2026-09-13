@@ -81,7 +81,28 @@ All notable changes to this project are documented here, following
   his rig carries no `RESET` — the player's does, so the same arrangement would have stood a dying
   man upright on the frame he was knocked down. `AnimationComponent` now lets go of the rig when the
   physics takes the body and refuses to touch it until the physics gives it back.
-
+- **The music slider reached nothing.** `MusicBed` lerped the `Music` bus towards nought every frame
+  while `Settings` wrote the player's figure to it once, so the slider was overwritten within about
+  a second of the arena loading — and `_exit_tree` handed full volume back on the way to the title.
+  A bus each fixes it for good: the bed and the jukebox now sit on a new **`MusicDuck`** bus that
+  sends to `Music`, the duck happens under the player's setting rather than instead of it, and
+  `Settings` is the only thing that ever writes `Music`.
+- **One stone in the air at the wrong moment and no farmer threw again.** A thrower retired or
+  killed mid-flight only *deferred* its ranged token, went into the pool, and `revive` cleared the
+  debt — so the pool of one stayed booked to a body that no longer existed and every later thrower
+  was refused a wind-up. A body leaving the fight now lets go of both the stone and the token, and
+  disconnects the old stone so it cannot release the token its successor is holding.
+- **A weapon nobody picked up was lost for the run.** The pickup director dropped a weapon on the
+  one wave matching its `found_at_wave`, and a pickup is a node in the arena rather than a saved
+  fact — so clearing wave 2 without walking over the stick and resuming meant playing out the run on
+  fists. A weapon is **owed** from its wave onwards now, once per run.
+- **The money chip froze mid-pulse.** The HUD kept one tween handle for two chips, and the payout
+  and the scavenged round come off the same body — so the second pulse killed the first one's tween
+  and left the money chip stretched for the rest of the run. A tween per chip.
+- **The run clock counted the title screen.** Quitting mid-wave keeps the run and the wave on
+  purpose, which is what makes it resume into that wave — so the clock cannot be gated on either. It
+  follows a runtime `fighting` flag the wave director owns instead, and a laptop left open on the
+  menu no longer adds hours to the summary.
 - **The arrow keys had no name.** `InputBindings` read only `physical_keycode`, and Godot's own
   `ui_*` defaults are bound by logical keycode — so they described to an **empty string**, which is
   not `UNBOUND` and which nothing therefore noticed. The credits screen shipped a hint reading
