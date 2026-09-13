@@ -37,6 +37,9 @@ const MEASURED_LATE: float = 0.5
 ## This is also why the first wave is not instant in the game.
 const MAP_SYNC_FRAMES: int = 120
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
+const THROWER: String = "res://data/enemies/thrower.tres"
+## Long enough for a stone thrown at nine metres to land, whatever it meets on the way.
+const STONE_FLIGHT: float = 4.0
 ## Far enough apart that neither shoves the other while they are being measured.
 const SHOULDER_TO_SHOULDER: float = 4.0
 ## Long enough for a flash to settle all the way back.
@@ -103,6 +106,7 @@ func _run() -> void:
 	_check_the_bodies_were_reused()
 	await _check_an_elite_is_worse_and_obviously_so()
 	_check_elites_keep_away_from_the_first_waves()
+	await _check_a_wave_cleared_mid_throw_leaves_the_throwers_throwing()
 	_put_the_run_back()
 	_report()
 
@@ -596,6 +600,70 @@ func _check_a_wave_never_opens_with_a_thrower() -> void:
 				break
 		if wave_index >= 5 and not ever_ranged:
 			_fail("no thrower ever appears at wave %d, where the table says they do" % wave_index)
+
+
+## The commonest way a run loses its throwers. `_finish_the_wave` clears the island, and a thrower
+## whose stone is still travelling used to retire holding the one ranged token — from the next wave
+## on, every thrower closed and circled and never committed, and nothing anywhere said so.
+##
+## The rule that made it happen is a good one: a thrower keeps the token until its stone lands, so a
+## recovery shorter than a flight cannot put two stones up. It protects a *living* thrower. A body
+## going back to the pool has no second throw to protect, so it must let go of both.
+func _check_a_wave_cleared_mid_throw_leaves_the_throwers_throwing() -> void:
+	var tokens := get_tree().get_first_node_in_group(&"attack_tokens") as AttackTokens
+	var data := load(THROWER) as EnemyData
+	var thrower := _director.spawner.spawn_at(data, Vector3(0.0, 0.0, -9.0))
+	if tokens == null or data == null or thrower == null:
+		_fail("could not stand up a thrower and find its token pool")
+		return
+	_hold_still(thrower, true)
+	thrower.claim_token()
+	thrower.throw_at(_player.global_position)
+	if get_tree().get_nodes_in_group(&"projectiles").is_empty():
+		_fail("the thrower this check needs put no stone in the air")
+		return
+
+	# The end of a wave, which retires everyone standing whatever they have in the air.
+	_director.spawner.clear()
+	if tokens.holds(thrower, true):
+		_fail("a thrower retired with its stone in the air kept the ranged token")
+
+	var next := _director.spawner.spawn_at(data, Vector3(3.0, 0.0, -9.0))
+	var spare: Enemy = null
+	if next == thrower:
+		# The one body this may not be is the one that just retired: a pool answers `true` to an id
+		# it already holds, which is what makes the fault read as "the throwers went quiet".
+		spare = next
+		next = _director.spawner.spawn_at(data, Vector3(-3.0, 0.0, -9.0))
+	if next == null:
+		_fail("the pool would not lease a second thrower")
+		return
+	_hold_still(next, true)
+	if not next.claim_token():
+		_fail("the next thrower out of the pool was refused the ranged token")
+
+	# And the old life's stone must not take the token off the thrower now holding it.
+	var waited := 0.0
+	while not get_tree().get_nodes_in_group(&"projectiles").is_empty() and waited < STONE_FLIGHT:
+		await get_tree().physics_frame
+		waited += 1.0 / 60.0
+	await get_tree().physics_frame
+	if not tokens.holds(next, true):
+		_fail("an old life's stone landing took the token off the thrower now holding it")
+	_hold_still(next, false)
+	if spare != null:
+		spare.retire()
+	next.retire()
+
+
+## A body the check drives by hand rather than lets fight, so a state machine cannot walk it out of
+## the measurement.
+func _hold_still(enemy: Enemy, still: bool) -> void:
+	if enemy == null or enemy.machine == null:
+		return
+	enemy.machine.process_mode = (
+		Node.PROCESS_MODE_DISABLED if still else Node.PROCESS_MODE_INHERIT
+	)
 
 
 func _stand_the_tutorial_down(arena: Node) -> void:

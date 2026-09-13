@@ -38,8 +38,6 @@ const LEAST_INVULNERABILITY: float = 0.2
 ## a little over eight seconds; twenty is generous enough that only a sprint costing nothing reaches
 ## it, and it is written out rather than derived from the drain for the usual reason.
 const LONGEST_SPRINT: float = 20.0
-## Long enough for a stone thrown at nine metres to land, whatever it hits on the way.
-const STONE_FLIGHT: float = 4.0
 
 var _failures: PackedStringArray = []
 var _player: Player = null
@@ -107,7 +105,6 @@ func _run() -> void:
 	await _check_he_backs_away_when_crowded()
 	await _check_only_one_stone_is_ever_in_the_air()
 	await _check_the_ranged_token_is_held_until_the_stone_lands()
-	await _check_a_thrower_retired_mid_flight_hands_the_token_back()
 	# Last of the checks, because it is the one that kills the sparring partner on purpose — and
 	# before the run goes back, because it pays money into the wallet on its way through.
 	await _check_a_finisher_pays_double()
@@ -963,51 +960,6 @@ func _check_the_ranged_token_is_held_until_the_stone_lands() -> void:
 		_fail("a thrower kept the ranged token after its stone had landed")
 	_hold_still(thrower, false)
 	thrower.retire()
-
-
-## The other side of the same rule, and the one that used to cost a run. Holding the token until the
-## stone lands protects a *living* thrower from throwing twice; a body being handed back to the pool
-## has no second throw to protect, so it must let go of both. A wave ending is the common way in —
-## `spawner.clear()` retires everyone standing, stone in the air or not — and the token stayed
-## booked to a retired body for the rest of the run, with every later thrower refused a wind-up.
-func _check_a_thrower_retired_mid_flight_hands_the_token_back() -> void:
-	var tokens := get_tree().get_first_node_in_group(&"attack_tokens") as AttackTokens
-	var thrower := _lease(THROWER)
-	# Leased before the first one retires, or the pool could hand the same body back — and a pool
-	# answers `true` to an id it already holds, which is what makes this fault intermittent.
-	var next := _lease(THROWER)
-	if tokens == null or thrower == null or next == null:
-		_fail("could not lease two throwers and their token pool")
-		return
-	_hold_still(thrower, true)
-	_hold_still(next, true)
-	thrower.global_position = Vector3(0.0, 0.0, -9.0)
-	next.global_position = Vector3(3.0, 0.0, -9.0)
-	_player.global_position = Vector3.ZERO
-	thrower.claim_token()
-	thrower.throw_at(_player.global_position)
-	if get_tree().get_nodes_in_group(&"projectiles").is_empty():
-		_fail("the thrower this check needs put no stone in the air")
-		return
-
-	# What the end of a wave does to a body that is still holding one.
-	thrower.retire()
-	if tokens.holds(thrower, true):
-		_fail("a thrower retired with its stone in the air kept the ranged token")
-
-	if not next.claim_token():
-		_fail("the next thrower out of the pool was refused the ranged token")
-
-	# The retired body's stone must not release the token its successor is now holding.
-	var waited := 0.0
-	while not get_tree().get_nodes_in_group(&"projectiles").is_empty() and waited < STONE_FLIGHT:
-		await get_tree().physics_frame
-		waited += 1.0 / 60.0
-	await get_tree().physics_frame
-	if not tokens.holds(next, true):
-		_fail("an old life's stone landing took the token off the thrower now holding it")
-	_hold_still(next, false)
-	next.retire()
 
 
 func _put_the_run_back() -> void:
