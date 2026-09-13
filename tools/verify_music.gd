@@ -29,6 +29,11 @@ const AUDIBLE: float = 0.001
 const FLOATING_POINT: float = 0.0001
 ## How much louder a full island has to be than a nearly empty one before the lift is worth having.
 const LIFTS_BY: float = 3.0
+## The bus the bed and the soundtrack duck, which sends to the one the player's slider owns.
+const DUCKED_BUS: StringName = &"MusicDuck"
+## Where the music slider is pulled to. Well clear of both ends, so a bus that reads back at nought
+## or at silence cannot pass by accident.
+const HALFWAY_DOWN: int = 40
 
 var _failures: PackedStringArray = []
 var _main: Node = null
@@ -63,6 +68,8 @@ func _run() -> void:
 	await _check_the_breather_is_silent_and_a_crowd_is_not()
 	await _check_a_wind_up_ducks_the_bed_and_it_comes_back()
 	_check_nothing_the_player_needs_is_on_a_bus_they_may_mute()
+	# Last, because it takes the bed out of the tree to prove what leaving the island does.
+	await _check_the_volume_slider_survives_a_wave()
 	_report()
 
 
@@ -203,6 +210,22 @@ func _check_nothing_the_player_needs_is_on_a_bus_they_may_mute() -> void:
 	if AudioServer.get_bus_index(String(INFORMATION)) < 0:
 		_fail("there is no %s bus" % INFORMATION)
 		return
+	# Everything musical sits on the ducked bus, so muting still has to reach it — which it only
+	# does through the bus the slider owns.
+	var ducked := AudioServer.get_bus_index(String(DUCKED_BUS))
+	if ducked < 0:
+		_fail("there is no %s bus for the bed and the soundtrack to duck" % DUCKED_BUS)
+		return
+	if AudioServer.get_bus_send(ducked) != &"Music":
+		_fail(
+			(
+				(
+					"%s sends to %s rather than Music, so the volume slider no longer reaches the "
+					+ "soundtrack the player is allowed to switch off"
+				)
+				% [DUCKED_BUS, AudioServer.get_bus_send(ducked)]
+			)
+		)
 	# The soundtrack belongs on a bus the player may mute — that is the whole of what it is for — so
 	# it is the one child besides the bed that is allowed off `SFX`. Recognised by identity rather
 	# than by a name or a stream: a jukebox renamed, or playing nothing because the playlist is
@@ -210,14 +233,14 @@ func _check_nothing_the_player_needs_is_on_a_bus_they_may_mute() -> void:
 	var box := AudioManager.jukebox()
 	if box == null:
 		_fail("there is no jukebox, so there is no soundtrack to mute")
-	elif box.bus != &"Music":
+	elif box.bus != DUCKED_BUS:
 		_fail(
 			(
 				(
-					"the soundtrack plays on %s rather than Music — on anything else the player cannot "
+					"the soundtrack plays on %s rather than %s — off the ducked bus the player cannot "
 					+ "switch it off, and a soundtrack they cannot switch off is information"
 				)
-				% box.bus
+				% [box.bus, DUCKED_BUS]
 			)
 		)
 	for child: Node in AudioManager.get_children():
@@ -243,9 +266,9 @@ func _check_nothing_the_player_needs_is_on_a_bus_they_may_mute() -> void:
 			if (
 				player != null
 				and player.stream == AudioManager.sound(id)
-				and player.bus != &"Music"
+				and player.bus != DUCKED_BUS
 			):
-				_fail("the %s layer plays on %s rather than Music" % [id, player.bus])
+				_fail("the %s layer plays on %s rather than %s" % [id, player.bus, DUCKED_BUS])
 				return
 
 
@@ -259,6 +282,45 @@ func _check_the_sea_is_all_on_one_bus(sea: Node) -> void:
 		if not bus.is_empty() and bus != &"Ambience":
 			_fail("a stretch of the sea plays on %s rather than Ambience" % bus)
 			return
+
+
+## The slider is the only thing that may write the `Music` bus, and the island has to leave it
+## alone. The bed used to lerp that same bus towards nought every frame, so a player who pulled the
+## music down mid-wave heard nothing change and got full volume back on the title screen — the
+## setting was kept perfectly and reached the ear nowhere.
+func _check_the_volume_slider_survives_a_wave() -> void:
+	var music := AudioServer.get_bus_index("Music")
+	var restore: Variant = Settings.get_value(&"audio_music")
+	Settings.set_value(&"audio_music", HALFWAY_DOWN)
+	var asked := AudioServer.get_bus_volume_db(music)
+	if asked >= -FLOATING_POINT:
+		_fail("the music slider at %d%% left the Music bus at %.2f dB" % [HALFWAY_DOWN, asked])
+
+	# A wave's worth of bed, with a wind-up in the middle of it — which is what does the writing.
+	await _advance(SETTLES)
+	EventBus.telegraph_began.emit(Vector3.ZERO, load(FARMHAND) as EnemyData)
+	await _advance(SETTLES)
+	var during := AudioServer.get_bus_volume_db(music)
+	if not is_equal_approx(during, asked):
+		_fail(
+			(
+				(
+					"the Music bus moved from %.2f dB to %.2f while the island played — something "
+					+ "other than the slider is writing it"
+				)
+				% [asked, during]
+			)
+		)
+
+	# And what quitting to the title does: the bed leaves, and it resets its own bus, not this one.
+	_bed.get_parent().remove_child(_bed)
+	_bed.queue_free()
+	_bed = null
+	await get_tree().process_frame
+	var after := AudioServer.get_bus_volume_db(music)
+	if not is_equal_approx(after, asked):
+		_fail("leaving the island moved the music from %.2f dB to %.2f" % [asked, after])
+	Settings.set_value(&"audio_music", restore)
 
 
 func _sound_on(flat: AudioStreamPlayer, placed: AudioStreamPlayer3D) -> StringName:

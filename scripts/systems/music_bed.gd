@@ -1,6 +1,6 @@
 class_name MusicBed
 extends Node
-## Three loops on the Music bus, lifted by how much trouble the player is in.
+## Three loops on the MusicDuck bus, lifted by how much trouble the player is in.
 ##
 ## The only pacing tool the game has between waves. A wave is six minutes and the fighting is not
 ## evenly spread through it; what the bed does is make the difference audible before the player has
@@ -19,6 +19,12 @@ extends Node
 ##
 ## **It carries no information and is allowed to be muted.** Everything that tells the player
 ## something is on the SFX bus; this is atmosphere, and `verify_music` holds the line.
+##
+## **The duck has a bus of its own, under the one the player owns.** `MusicDuck` sends to `Music`,
+## the bed and the jukebox both sit on it, and the only thing that ever writes `Music` is the volume
+## slider in Settings. Two writers on one bus is what silently overwrote that slider every frame —
+## an offset remembered here would have fixed the symptom and left the next writer free to do it
+## again.
 
 ## How fast the mix follows the island, per second of real time. Slow on purpose — a bed that
 ## tracked the body count frame by frame would pump every time somebody died.
@@ -55,10 +61,10 @@ var _bus: int = -1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_bus = AudioServer.get_bus_index("Music")
+	_bus = AudioServer.get_bus_index("MusicDuck")
 	for id: StringName in AudioManager.LAYERS:
 		var player := AudioStreamPlayer.new()
-		player.bus = &"Music"
+		player.bus = &"MusicDuck"
 		player.stream = AudioManager.sound(id)
 		player.volume_db = SILENT
 		add_child(player)
@@ -80,6 +86,8 @@ func _exit_tree() -> void:
 		# assigned leaves the engine reporting one object leaked on the way out, and CI fails the
 		# boot on any warning at all.
 		player.stream = null
+	# The duck's own bus, never the player's. Resetting `Music` here is what used to set the music
+	# volume back to full every time the island was left.
 	if _bus >= 0:
 		AudioServer.set_bus_volume_db(_bus, 0.0)
 

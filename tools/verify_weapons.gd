@@ -54,6 +54,7 @@ func _run() -> void:
 	_check_the_wheel_only_offers_what_was_found()
 	await _check_a_swap_drops_the_chain()
 	await _check_a_pickup_hands_the_weapon_over()
+	await _check_a_weapon_owed_from_an_earlier_wave_still_arrives()
 	await _check_the_gun_on_the_ground_is_the_gun()
 	_put_the_run_back()
 	_report()
@@ -299,6 +300,50 @@ func _check_a_pickup_hands_the_weapon_over() -> void:
 	var again := pickups.drop(stick)
 	if again != null:
 		_fail("a weapon already in the bag was dropped again")
+
+
+## A pickup is a node in the arena and not a saved fact, and the bag records what was *found* rather
+## than what is lying in the grass. So a weapon is owed from its wave onwards: a player who cleared
+## wave 2 without walking over the stick and resumed at wave 3 used to play the rest of the run on
+## fists, and nothing ever offered it again.
+func _check_a_weapon_owed_from_an_earlier_wave_still_arrives() -> void:
+	GameState.begin_run()
+	var pickups := _arena.get_node_or_null("PickupDirector") as PickupDirector
+	if pickups == null:
+		_fail("the arena has no pickup director")
+		return
+	_clear_the_ground(pickups)
+
+	# Wave 3, in a run that was never handed the stick due on wave 2.
+	EventBus.wave_started.emit(3, 0)
+	await get_tree().physics_frame
+	if _lying_about(pickups, &"stick") != 1:
+		_fail("a run resumed past wave 2 was not given the stick it never received")
+
+	EventBus.wave_started.emit(4, 0)
+	await get_tree().physics_frame
+	if _lying_about(pickups, &"stick") != 1:
+		_fail("the stick already lying on the island was dropped a second time")
+	if _lying_about(pickups, &"gun") != 1:
+		_fail("the gun due on wave 4 did not arrive with it")
+	_clear_the_ground(pickups)
+
+
+func _lying_about(pickups: PickupDirector, id: StringName) -> int:
+	var count := 0
+	for child: Node in pickups.get_children():
+		var pickup := child as WeaponPickup
+		if pickup != null and pickup.weapon_id == id and not pickup.is_queued_for_deletion():
+			count += 1
+	return count
+
+
+## Freed by hand rather than with `queue_free` alone, so one case's leftovers can never be counted
+## as the next case's answer a frame later.
+func _clear_the_ground(pickups: PickupDirector) -> void:
+	for child: Node in pickups.get_children():
+		pickups.remove_child(child)
+		child.queue_free()
 
 
 ## A gun lying on the sand has to be the gun. It was a carved brown box the same shape as the stick

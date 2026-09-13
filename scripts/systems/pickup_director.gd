@@ -1,6 +1,6 @@
 class_name PickupDirector
 extends Node
-## Puts the stick and the gun on the island, on the wave each of them says it turns up.
+## Puts the stick and the gun on the island, from the wave each of them says it turns up.
 ##
 ## It owns no schedule of its own: **each weapon carries its own `found_at_wave`**, because when the
 ## stick turns up is a fact about the stick. The director only listens for a wave starting and asks
@@ -18,6 +18,10 @@ const FURTHEST: float = 13.0
 ## landed behind the camera.
 const ATTEMPTS: int = 48
 const PICKUP_SCENE: String = "res://scenes/world/weapon_pickup.tscn"
+
+## Weapons already put on the island this run. A pickup is a node in the arena and not a saved fact,
+## so what stops a second stick is this rather than the wave number — see `_on_wave_started`.
+var _dropped: Array[StringName] = []
 
 var _rng := RandomNumberGenerator.new()
 
@@ -72,7 +76,16 @@ func _can_be_seen(camera: Camera3D, standing: Vector3) -> bool:
 	return camera.is_position_in_frustum(standing + Vector3.UP * WeaponPickup.RESTING_HEIGHT)
 
 
+## A weapon is **owed** from the wave it is due on, not offered on that wave alone. A player who
+## cleared wave 2 without walking over the stick and resumed at wave 3 used to lose it for the run,
+## and a weapon the player never received is worse than one that arrives a wave late.
 func _on_wave_started(wave: int, _enemies: int) -> void:
 	for weapon: WeaponData in Arsenal.all():
-		if weapon.found_at_wave == wave:
-			drop(weapon)
+		if weapon.found_at_wave <= 0 or wave < weapon.found_at_wave:
+			continue
+		if _dropped.has(weapon.id) or GameState.loadout.owns(weapon.id):
+			continue
+		# Nowhere to stand leaves the weapon owed, and the next wave tries again — the same promise
+		# the spawn director makes about a spawn point.
+		if drop(weapon) != null:
+			_dropped.append(weapon.id)

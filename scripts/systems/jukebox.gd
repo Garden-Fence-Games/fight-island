@@ -8,9 +8,11 @@ extends AudioStreamPlayer
 ## the global that owns sound and already owns the `Music` bus, so the jukebox is its child rather
 ## than another singleton ([ADR 0004](../../docs/decisions/0004-three-autoloads.md)).
 ##
-## **On the `Music` bus with the bed, deliberately.** A wind-up ducks that whole bus, so a telegraph
-## gets out from under the soundtrack for free and by the same rule that already governs the bed —
-## the one sound the player must hear outranks the one they may switch off.
+## **On the `MusicDuck` bus with the bed, deliberately.** A wind-up ducks that whole bus, so a
+## telegraph gets out from under the soundtrack for free and by the same rule that already governs
+## the bed — the one sound the player must hear outranks the one they may switch off. `MusicDuck`
+## sends to `Music`, which the volume slider owns and nothing else writes, so a duck happens *under*
+## what the player asked for rather than instead of it.
 ##
 ## Muting is the jukebox's own, not the bus's: the bus carries the bed as well, and somebody turning
 ## the songs off has not asked for the island to go quiet.
@@ -33,7 +35,7 @@ var _fader: Tween = null
 
 
 func _ready() -> void:
-	bus = &"Music"
+	bus = &"MusicDuck"
 	# A stream still playing when the engine tears down is reported as a leak, and CI fails a boot on
 	# any warning at all. The bed already sits this out for the same reason; the jukebox joins it.
 	process_mode = Node.PROCESS_MODE_ALWAYS
