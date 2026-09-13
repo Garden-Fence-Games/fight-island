@@ -30,6 +30,13 @@ const HURT_BY: float = 60.0
 ## a coconut dropped before the map answers is not a coconut that failed to fall — it is a check
 ## that ran too early.
 const MAP_SYNC_FRAMES: int = 240
+## How many drops the visibility check takes, and what share of them have to be in shot. Not all of
+## them: the fallback to a palm the camera cannot see is deliberate, because a coconut behind the
+## camera still beats no coconut. Most of them is the claim.
+const TRIES: int = 6
+const MOSTLY: float = 0.6
+## The height the camera is asked about — the coconut, not the ground it rests on.
+const LOOKED_AT: float = 0.25
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -49,6 +56,7 @@ func _run() -> void:
 		return
 	_check_the_grove_is_a_grove()
 	_check_the_table_is_read()
+	await _check_a_coconut_can_be_found()
 	await _check_one_falls_by_its_own_palm()
 	await _check_it_heals_by_what_the_table_says()
 	await _check_it_cannot_overfill()
@@ -149,6 +157,97 @@ func _check_the_table_is_read() -> void:
 		)
 	if data.heals <= 0.0:
 		_fail("a coconut heals %.1f — it is not worth walking to" % data.heals)
+
+
+## **Findable, which is a different claim from placed.**
+##
+## This is the check the feature shipped without, and the whole feature was invisible behind the
+## gap. Two things have to be true and neither was: the coconut has to be somewhere the fixed camera
+## is pointing — four of six drops landed outside it — and it has to be something a player can pick
+## out of sand, brown trunks and a pixel filter at fifteen metres, which a dark sphere is not.
+##
+## So: most of a handful of drops land in frustum, and the thing carries its own light.
+func _check_a_coconut_can_be_found() -> void:
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		_fail("no camera — nothing can be judged visible")
+		return
+	var seen := 0
+	var placed: Array[Coconut] = []
+	for _drop: int in TRIES:
+		var coconut := _director.drop()
+		if coconut == null:
+			continue
+		placed.append(coconut)
+		if camera.is_position_in_frustum(coconut.lands_at + Vector3.UP * LOOKED_AT):
+			seen += 1
+	if placed.is_empty():
+		_fail("nothing dropped at all")
+		return
+	if seen < placed.size() * MOSTLY:
+		_fail(
+			(
+				(
+					"%d of %d coconuts landed where the camera is pointing — a fixed camera makes an "
+					+ "unseen drop a drop that never happened"
+				)
+				% [seen, placed.size()]
+			)
+		)
+	_check_it_carries_its_own_light(placed[0])
+	await _check_the_feed_is_told(placed[0])
+	for coconut: Coconut in placed:
+		# One of them was taken by the check above and no longer exists.
+		if is_instance_valid(coconut):
+			coconut.queue_free()
+	await get_tree().physics_frame
+
+
+## A dark sphere on sand is not a pickup, whatever the arithmetic says. **On the coconut, not
+## around it**: the first attempt was a billboard behind it, which renders as exactly what it is —
+## a square.
+func _check_it_carries_its_own_light(coconut: Coconut) -> void:
+	var body := coconut.get_node_or_null(^"Mesh") as MeshInstance3D
+	var glow := (
+		body.get_surface_override_material(0) as StandardMaterial3D if body != null else null
+	)
+	if glow == null or not glow.emission_enabled or glow.emission_energy_multiplier <= 0.0:
+		_fail("the coconut does not light itself — it cannot be picked out of the sand")
+	var lamp := coconut.get_node_or_null(^"Glow") as OmniLight3D
+	if lamp == null or lamp.light_energy <= 0.0:
+		_fail("the coconut throws no light on the sand it lies on")
+	for node: Node in coconut.get_children():
+		var quad := node as MeshInstance3D
+		if quad != null and quad.mesh is QuadMesh:
+			_fail("the coconut carries a quad — a billboard reads as a square, not as a glow")
+
+
+## **The feed is told, and told the amount.** Walking over a coconut is the one pickup with no
+## prompt and no button, so the line at the bottom of the screen is the only thing that confirms it
+## happened — without it a player watching the fight cannot tell a coconut from nothing.
+func _check_the_feed_is_told(coconut: Coconut) -> void:
+	var stood := _player.global_position
+	# **It has to have landed first.** The drops above are judged for framing the instant they are
+	# made, which is while they are still in the air — and a coconut in the air is deliberately not
+	# takeable, so walking onto one mid-fall proves nothing and fails for the wrong reason.
+	for _frame: int in FALL_FRAMES:
+		if coconut.monitoring:
+			break
+		await get_tree().physics_frame
+	var heard: Array[float] = []
+	var listener := func(healed: float) -> void: heard.append(healed)
+	EventBus.coconut_taken.connect(listener)
+	_hurt(HURT_BY)
+	var taken := await _walk_onto(coconut)
+	EventBus.coconut_taken.disconnect(listener)
+	_player.global_position = stood
+	if not taken:
+		_fail("the player stood on a coconut and it was not taken")
+		return
+	if heard.is_empty():
+		_fail("a coconut was taken and nothing was announced — the feed cannot word it")
+	elif not is_equal_approx(heard[0], _director.data.heals):
+		_fail("the feed was told %.1f and the table says %.1f" % [heard[0], _director.data.heals])
 
 
 func _check_one_falls_by_its_own_palm() -> void:
@@ -265,7 +364,8 @@ func _report() -> void:
 		print(
 			(
 				"coconut OK — the grove is read from the buffer and spread over the island, one "
-				+ "falls by the foot of its own palm, it gives back what the table says, it is "
+				+ "falls by the foot of its own palm where the camera is pointing and lights "
+				+ "itself, it gives back what the table says, it is "
 				+ "left alone at full health, and it rots"
 			)
 		)

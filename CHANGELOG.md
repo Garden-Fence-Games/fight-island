@@ -6,7 +6,31 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-13
+
+The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
+between waves — held by 42 headless checks in CI and 50 mutations that prove those checks can
+still fail.
+
 ### Added
+
+- **A soundtrack.** Five licensed tracks, drawn as a shuffle bag so everything plays before
+  anything repeats, and playing from the first frame — before the intro, which is a silent video, so
+  the music is its audio. A track carries its **own measured loudness** and the gain is derived from
+  it, the way a recorded voice already was: five masters six decibels apart would otherwise step the
+  level every time the track changed.
+- **The sea is where the sea is.** The surf was one flat loop at a fixed level everywhere — as loud
+  in the middle of the island as with your feet in the water. The shoreline is now found by asking
+  the terrain rather than assuming a radius, and a ring of eight sources sits on it, deliberately
+  out of phase so they do not comb-filter into one loop played eight times. Measured: **-42.7 dB
+  inland against -30.8 dB at the water**.
+- **Ten more farmer lines**, nineteen in all, each levelled to the family's own measured loudness.
+  Five arrived as voice messages recorded nine decibels hot, one clipped at source; dropped in raw
+  they would have been nine decibels louder than every other farmer on the island.
+- **The draw budget is measured with the crowd in the frame.** `measure_draw` places thirty bodies
+  in front of the camera and reports a frame time against the 16.7 ms a 60 Hz frame has. On an M2
+  Pro at 1080p: **9.74 ms empty, 10.32 at thirty, 10.83 at sixty.** Double the budget costs 1.1 ms
+  more than an empty island, which costs 9.74 on its own — the crowd is not what spends the frame.
 
 - **The sea is deep enough to drown in** (#196). Past the wading limit the bar comes down, faster
   the deeper you are — nothing at 1.1 m, twenty health a second by 1.6 — and at zero the run ends
@@ -25,6 +49,18 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- **The mix was written in peaks, and peaks measure the wrong thing.** Two sounds normalised to the
+  same peak are not the same loudness and are not close — measured across this game's own sounds the
+  gap reached seventeen decibels. The farmers sat at a footstep's loudness because a voice level was
+  applied to recordings already louder than it. The table is in loudness now, and so is the check
+  that should have caught it: it had compared a gain against a peak, two numbers in different units,
+  neither of them a loudness.
+- **The soundtrack shipped inaudible**, at -46.6 dB: under the menu click and barely over a
+  footstep, so in a menu the button was louder than the music. Same fault as the farmers, on the one
+  family still measured in the wrong unit — a level applied as a gain to an already-mastered
+  recording. Two guards now hold it: the soundtrack must sit above the furniture and under a
+  wind-up, and every shipped track must declare a measured loudness.
+
 - **A body could sit at zero health, alive, for ever.** `HealthComponent` lost a death to floating
   point: a drain lands on the floor by subtraction rather than by a blow that overshoots it, and
   `0.333333 - 0.333333` is not exactly zero. The bar held a billionth of a point, `current_health <=
@@ -40,6 +76,34 @@ All notable changes to this project are documented here, following
   punch and dodge, sprint, survive — each for its own `seconds` in `data/tutorial/`, with the real
   buttons of the device in hand. Then wave 1 starts at once. Nothing waits for an input. It shows on
   every run begun from the title, like the opening; a retry, a restart or a resume skips it.
+
+- **The fifteen waves are tuned, off a measurement rather than off the formulas** (#82). The curve
+  now steps by about 11 and 14 per cent through the waves that teach, by 17 to 22 through 4–6 where
+  three archetypes arrive one per wave, and by under 5 across 12–15, which is the endurance band
+  doing what its name says.
+  - **The cliff was the thrower, and it was the token pool that made it one.** He queues on the
+    ranged pool, which is one token and nobody else's, so *one* thrower standing is the whole of
+    what being shot at costs and a second adds nothing. Landing him whole at thirteen per cent in
+    wave 5 was a **32 per cent jump in incoming damage in a single wave**, against a run that
+    otherwise steps by five to fifteen. He opens at six per cent in wave 5 and doubles at wave 6.
+  - **The archetypes no longer arrive together.** Waves 1 and 2 are farmhands and nothing else —
+    that is where the player uses what the tutorial taught rather than meeting somebody new. Then
+    the reaper at 3, the pirate at 4, the thrower at 5.
+  - **The roster budget is a budget again.** `enemy_count` was `12 + floor(n * 6)`, sized for a
+    four-minute wave; after the wave was cut to ninety seconds it promised a hundred and two bodies
+    at wave fifteen and delivered twenty-two, and the number *fell* as the waves rose because bodies
+    harden faster than the player's damage grows. It is `16 + floor(n * 1.2)` — just above what can
+    physically be killed, so outrunning a wave is something a good player can do.
+  - **The crowd climbs to the end**: `max_alive` caps at 14 rather than 12, and reaches it at wave
+    13 instead of stopping at 10. It is not the damage dial — the pool is two bodies by day and
+    three at night in every wave of the run — so what a bigger crowd adds is somebody always in the
+    way, which is the difference between an endurance test and a harder wave six.
+
+  `docs/game-design.md` said `max_alive` was "the real pressure dial" and that a run affords about
+  two tracks of five. Neither was true: the pool caps damage whatever the crowd, and the run earns
+  another 680 or so in kill money on top of the 2 010 in rewards — about three and a half tracks.
+  Both are corrected rather than tuned away; the wind-up floor was not touched.
+
 
 - **The merchant sells what you carry.** A weapon's upgrade track is refused until the weapon is in
   the bag — the stick is found in wave 2 and the gun in wave 4, and fifteen per cent more damage on
@@ -92,6 +156,18 @@ All notable changes to this project are documented here, following
     is two machines' solvers disagreeing, not a body sinking.
 
 ### Added
+
+- **`tools/measure_waves.tscn`** — the fifteen waves, read off the shipped resources: the crowd, the
+  hit points standing, the damage coming in by day and by night, how long the player lives under
+  full contact, how much of the roster can physically arrive, and what the run earns against what a
+  track costs. It changes nothing and asserts nothing. A tuning pass is read off this page, and
+  re-running it is how the next one starts.
+
+- **The stick's return and finisher are authored.** `attack_stick_2` and `attack_stick_3` come from
+  `Boy_stick_fight_2/3`, each with its own trail (`StickTrail2`, `StickTrail3`), and replace the
+  stand-ins that replayed the backhand. The three swings were drawn on different guards, so the
+  first two end with a key on the next swing's opening pose and the combo does not snap between
+  hits; `verify_clips` holds the joins.
 
 - **The island is drawn as pixel art.** The finished 3D frame is cut into fat pixels — two screen
   pixels across at 1080p — outlined along silhouettes and lit along creases, on a slightly smaller
@@ -1053,4 +1129,5 @@ All notable changes to this project are documented here, following
 - Five input actions that a fixed camera has no use for: `camera_left`, `camera_right`,
   `camera_up`, `camera_down`, `camera_recenter`.
 
-[Unreleased]: https://github.com/pepito2t/fight-island/commits/main
+[Unreleased]: https://github.com/pepito2t/fight-island/compare/v0.1.0...main
+[0.1.0]: https://github.com/pepito2t/fight-island/releases/tag/v0.1.0

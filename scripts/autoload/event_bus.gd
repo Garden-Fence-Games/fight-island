@@ -42,6 +42,8 @@ signal footstep_taken(wading: bool)
 ## The archetype rides along for the same reason. A reaper's wind-up and a thrower's must not sound
 ## alike: the thrower is the one the player cannot see coming, and sound is the only warning the
 ## design gives them.
+## A coconut was walked over, and how much of the bar it gave back.
+signal coconut_taken(healed: float)
 signal telegraph_began(where: Vector3, archetype: EnemyData)
 signal enemy_spawned(enemy: Node3D)
 ## The archetype travels with the death because the tally outlives the node that carried it.
