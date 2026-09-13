@@ -42,6 +42,10 @@ collision_mask = 5
 script = ExtResource("1")
 weapon = ExtResource("15")
 
+[node name="Ear" type="AudioListener3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+current = true
+
 [node name="Visual" parent="." instance=ExtResource("17")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
 
