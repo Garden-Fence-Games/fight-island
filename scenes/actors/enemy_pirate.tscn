@@ -1,0 +1,13 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://assets/models/char_pirate.glb" id="2"]
+[ext_resource type="Resource" path="res://data/enemies/pirate.tres" id="3"]
+[ext_resource type="AnimationLibrary" path="res://assets/models/char_pirate_stand_ins.tres" id="4"]
+
+[node name="Enemy" instance=ExtResource("1")]
+data = ExtResource("3")
+body = ExtResource("2")
+
+[node name="Animation" parent="." index="1"]
+stand_in_clips = ExtResource("4")

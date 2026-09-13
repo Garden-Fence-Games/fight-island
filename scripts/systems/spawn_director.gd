@@ -72,7 +72,7 @@ func spawn_at(
 ) -> Enemy:
 	if pool == null or data == null:
 		return null
-	var enemy := pool.lease()
+	var enemy := pool.lease(data.id)
 	if enemy == null:
 		return null
 	enemy.data = data

@@ -194,25 +194,26 @@ same toll, so backing into the shallows is a real decision rather than a free es
 
 ## Enemies
 
-Three farmers, **one rig and one mesh, three textures**. They are behaviourally distinct — three
-identical bodies in different shirts would be decoration, not design — and together they form a
-triangle that stops any single answer from working.
+Three farmers, **one rig and one mesh, three textures** — and one pirate, who has a model of his own
+and is therefore the only body in the game pooled apart. They are behaviourally distinct — identical
+bodies in different shirts would be decoration, not design — and together they stop any single
+answer from working.
 
-| | Farmhand | Reaper | Thrower |
-|---|---|---|---|
-| Role | the swarm | the bruiser | the pressure |
-| Health | 45 | 90 | 40 |
-| Damage | 8 | 16 | 10 |
-| Move speed | 3.4 m/s | 2.4 m/s | 2.8 m/s |
-| Windup — the telegraph | 0.45 s | 0.75 s | 0.60 s |
-| Active | 0.12 s | 0.18 s | projectile |
-| Recovery | 0.60 s | 0.95 s | 0.80 s |
-| Reach | 1.6 m, 60° | 2.8 m, **160°** | 14 m |
-| Poise | 15 | 30 | 10 |
-| Notices the player at | 9 m | 9 m | 12 m |
-| Rouses others within | 7 m | 7 m | 7 m |
-| Money on kill | 2 | 5 | 4 |
-| Enters at wave | 1 | 3 | 5 |
+| | Farmhand | Reaper | Thrower | Pirate |
+|---|---|---|---|---|
+| Role | the swarm | the bruiser | the pressure | the punishment |
+| Health | 45 | 90 | 40 | 70 |
+| Damage | 8 | 16 | 10 | **22** |
+| Move speed | 3.4 m/s | 2.4 m/s | 2.8 m/s | 3.0 m/s |
+| Windup — the telegraph | 0.45 s | 0.75 s | 0.60 s | **0.80 s** |
+| Active | 0.12 s | 0.18 s | projectile | 0.20 s |
+| Recovery | 0.60 s | 0.95 s | 0.80 s | 0.90 s |
+| Reach | 1.6 m, 60° | 2.8 m, **160°** | 14 m | 2.0 m, 90° |
+| Poise | 15 | 30 | 10 | 25 |
+| Notices the player at | 9 m | 9 m | 12 m | 9 m |
+| Rouses others within | 7 m | 7 m | 7 m | 7 m |
+| Money on kill | 2 | 5 | 4 | 8 |
+| Enters at wave | 1 | 3 | 5 | 3 |
 
 **A farmer minds his own business until he notices you.** He stands where he appeared; he does not
 set off from the horizon. This is what lets a wave build instead of arriving as one flat press — the
@@ -247,6 +248,19 @@ punishing enough that reading him matters. He is also the reason the stick exist
 **Thrower.** Stays at range and lobs stones. The projectile is slow enough to sidestep, so he is
 never unfair, but he **never stops** — he retreats when the player comes within 5 m. He is what
 stops the player from camping one corner, and he is the single best argument for the gun.
+
+**Pirate.** A length of wood, swung with both hands. He hits for **22** — nearly three farmhands —
+and he is the only archetype that can take a quarter of the player's health off a single mistake.
+
+Two things keep that fair rather than cheap. He telegraphs for **0.80 s**, the longest wind-up in
+the game, and his warning is the lowest and the longest of the four: a pirate committing is
+audible under a crowd and readable across the island. And **he is rare**. He is never more than a
+twentieth of a wave until the last band, where he is a twelfth — so he arrives as an event rather
+than as a pressure, and the wave he arrives in is the one where the player's answer has to change.
+
+He is deliberately **not** a heavier reaper. The reaper's 160° sweep is a geometry problem: you
+cannot sidestep it. The pirate's 90° arc can be walked out of by anyone who saw it coming, and the
+whole of him is whether you did.
 
 ## Enemy AI
 
@@ -306,13 +320,19 @@ telegraph is not difficulty.
 Each spawn rolls an archetype against the wave's mix. The result is rounded to whole enemies, and
 the farmhand always takes the remainder.
 
-| Wave | Farmhand | Reaper | Thrower |
-|---|---|---|---|
-| 1–2 | 100 % | — | — |
-| 3–4 | 80 % | 20 % | — |
-| 5–7 | 65 % | 20 % | 15 % |
-| 8–11 | 50 % | 30 % | 20 % |
-| 12–15 | 40 % | 35 % | 25 % |
+| Wave | Farmhand | Reaper | Thrower | Pirate |
+|---|---|---|---|---|
+| 1–2 | 100 % | — | — | — |
+| 3–4 | 75 % | 20 % | — | 5 % |
+| 5–7 | 60 % | 20 % | 15 % | 5 % |
+| 8–11 | 45 % | 30 % | 20 % | 5 % |
+| 12–15 | 32 % | 35 % | 25 % | 8 % |
+
+**The pirate's share comes out of the farmhand's**, so the triangle the other three form is exactly
+the one it was. Five per cent is a roll per spawn and not a quota: at wave 5 the island sends
+forty-two bodies and about two of them are pirates, and *which* two is the wave's own business. A
+fixed number per wave would be a schedule the player learns; a low chance is a thing that happens
+to them.
 
 A wave never opens with a thrower: the first spawn of every wave is melee, so the player is never
 shot at before anything is on screen.
@@ -612,22 +632,27 @@ The fists keep the plain `hit` and `perfect` ids rather than getting a fourth wa
 weapon the player never puts down and never runs out of, so a blow in this game sounds like a fist
 landing unless something else is in hand.
 
-### Three archetypes, three warnings
+### Four archetypes, four warnings
 
 Every wind-up **climbs** — a warning that does not rise reads as a drone — and they differ in where
-they climb from and to, which is the one thing that survives three of them at once in a crowd at
+they climb from and to, which is the one thing that survives several of them at once in a crowd at
 night:
 
 | | climbs | over |
 |---|---|---|
 | Farmhand | 300 → 690 Hz | 0.30 s |
 | Reaper | 150 → 300 Hz | 0.42 s |
+| Pirate | 200 → 380 Hz | 0.48 s |
 | **Thrower** | **520 → 1240 Hz** | 0.36 s |
 
 The thrower is the outlier on purpose. He strikes from fourteen metres and is the one archetype the
 player may never see coming, so sound is the only warning the design gives them: his is the highest,
 the longest climb, and the only one that crosses an octave. The check fails if any other archetype
 climbs as high as his.
+
+The pirate is the other end of the same argument. He hits hardest and from arm's length, so his is
+the lowest and the longest warning there is — the one that carries under a crowd at night, which is
+exactly when he turns up.
 
 ### The bed lifts with the island
 
