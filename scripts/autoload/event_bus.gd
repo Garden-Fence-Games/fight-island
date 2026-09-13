@@ -75,7 +75,10 @@ signal weapon_found(id: StringName)
 signal ammo_changed(magazine: int, reserve: int)
 ## A body left a round behind. Separate from `ammo_changed` because that one fires for spending and
 ## reloading too, and the HUD only has something to announce when ammunition *arrives*.
-signal rounds_scavenged(rounds: int)
+##
+## `body` is what dropped them, so the number can be shown over the thing that paid it. It is null
+## when the rounds came from the merchant, which is a counter and not a place on the island.
+signal rounds_scavenged(rounds: int, body: Node3D)
 ## The trigger was pulled on an empty magazine. It exists so the moment is **audible**: a press that
 ## does nothing at all reads as a dropped input, and the player blames the game rather than their
 ## own ammunition.

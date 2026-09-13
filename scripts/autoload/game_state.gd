@@ -175,7 +175,7 @@ func buy(track: UpgradeTrack) -> bool:
 	# per-wave grant to grow. The merchant is one of the two ways ammunition enters a run.
 	var handed := loadout.take(track.reserve)
 	if handed > 0:
-		EventBus.rounds_scavenged.emit(handed)
+		EventBus.rounds_scavenged.emit(handed, null)
 	upgrade_purchased.emit(track, level)
 	save_run()
 	return true
@@ -301,12 +301,12 @@ func _on_wave_cleared(_index: int, reward: int) -> void:
 ## the bodies of the people who came to kill you, a round at a time, and from nowhere else but the
 ## merchant. An empty pocket is therefore a reason to close rather than to back away, which is the
 ## opposite of what an ammunition counter usually does to a player.
-func _on_enemy_died(_enemy: Node3D, archetype: StringName, reward: int) -> void:
+func _on_enemy_died(enemy: Node3D, archetype: StringName, reward: int) -> void:
 	stats.record_kill(archetype)
 	earn(reward)
 	var scavenged := loadout.scavenge(_rng.randf())
 	if scavenged > 0:
-		EventBus.rounds_scavenged.emit(scavenged)
+		EventBus.rounds_scavenged.emit(scavenged, enemy)
 
 
 func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool, _attack: AttackData) -> void:

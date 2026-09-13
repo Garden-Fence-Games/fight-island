@@ -10,6 +10,9 @@ HUD_STAMINA,Stamina
 HUD_AMMO,Ammo
 HUD_WAVE,Wave %02d
 HUD_WAVE_PASSED,Wave %02d passed
+HUD_ROUNDS,+%d ammo
+HUD_FEED_FOUND,%s found
+HUD_FEED_UPGRADE,%s upgraded
 PHASE_DAWN,Dawn
 PHASE_DAY,Day
 PHASE_DUSK,Dusk

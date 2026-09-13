@@ -29,3 +29,16 @@ static func track_cost() -> int:
 	for owned: int in LEVEL_CAP:
 		total += upgrade_cost(owned)
 	return total
+
+
+## Thousands separated the way every screen that prints money shows them. Here rather than on each
+## of them: the purse, the HUD and the feed all print the same balance, and three copies of one
+## rule is three places for a comma to go missing from.
+static func grouped(amount: int) -> String:
+	var digits := str(absi(amount))
+	var out := ""
+	for index: int in digits.length():
+		if index > 0 and (digits.length() - index) % 3 == 0:
+			out += ","
+		out += digits[index]
+	return ("-" if amount < 0 else "") + out
