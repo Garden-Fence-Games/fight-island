@@ -13,6 +13,14 @@ extends Area3D
 ## stepping on it, which is the kind of rule nobody reads as a rule — they read it as the game
 ## taking something away.
 ##
+## **It glows, and that is not decoration.** A coconut is a fourteen-centimetre sphere of brown, on
+## sand, under brown palm trunks, between ten and twenty metres from a fixed camera, through a
+## pixel-art filter that quantises the frame to fat pixels. Measured on a real frame it was not
+## findable — the thing worked perfectly and no player would ever have known it existed. So it
+## carries its own light — **on the coconut, not around it**. An emissive body with a lit rim, and a
+## small lamp that spills onto the sand it is lying on, both breathing together. A billboard behind
+## it was the first attempt and it read as exactly what it was: a square.
+##
 ## It is takeable **only once it has landed.** In the air it is an object falling out of a tree, and
 ## a player who happened to be standing under the palm catching one at head height is not what "it
 ## fell from a palm" is meant to mean.
@@ -20,6 +28,15 @@ extends Area3D
 ## Turns per second while it lies there — the same trick the weapon pickups use to keep a thing on
 ## the ground from reading as scenery, at a fraction of the speed because a coconut is not a prize.
 const SPIN: float = 0.6
+## How fast the halo breathes, in cycles a second, and how far either side of its own size it goes.
+## Slow and shallow: a pulse fast enough to read as an alarm competes with a wind-up, and nothing in
+## this game is allowed to do that.
+const PULSE_HZ: float = 0.8
+const PULSE_DEPTH: float = 0.16
+## What the light and the body sit at when the breath is at rest. Kept here rather than read off the
+## scene, so the pulse has something to return to that a later edit of the material cannot drift.
+const LAMP_ENERGY: float = 2.4
+const GLOW_ENERGY: float = 0.55
 ## How long it spends fading out at the end of its life, inside `lies_for` rather than after it. A
 ## coconut that vanished between frames reads as a bug; one that has visibly been going for a second
 ## reads as a chance that was missed.
@@ -31,14 +48,20 @@ var data: CoconutData = null
 ## three hundred and eighty palms on the island, *some* palm is always a metre or two away; the only
 ## question worth asking is whether it is **this** one.
 var fell_from: Vector3 = Vector3.ZERO
+## Where it will come to rest. Public because **where it ends up is the only position worth asking
+## about**: for its first second it is at the crown of the palm, five metres up, and a check that
+## read `global_position` there was judging the framing of the tree's canopy.
+var lands_at: Vector3 = Vector3.ZERO
 
 var _from: Vector3 = Vector3.ZERO
 var _to: Vector3 = Vector3.ZERO
 var _falling: float = 0.0
 var _landed: bool = false
 var _lying_for: float = 0.0
+var _pulsing: float = 0.0
 
 @onready var view: MeshInstance3D = get_node_or_null("Mesh") as MeshInstance3D
+@onready var lamp: OmniLight3D = get_node_or_null("Glow") as OmniLight3D
 
 
 func _ready() -> void:
@@ -46,11 +69,12 @@ func _ready() -> void:
 	monitorable = false
 
 
-## Which palm it leaves and where it lands. Called before it enters the tree so nothing is ever seen
-## at the origin for a frame on its way to the palm it fell out of. The crown is worked out here
-## rather than handed in, so where a coconut leaves a tree is decided in one place.
+## Which palm it leaves and where it lands. Called **once it is in the tree**, because a global
+## position written before that is discarded by the engine. The crown is worked out here rather than
+## handed in, so where a coconut leaves a tree is decided in one place.
 func drop_from(palm: Transform3D, sand: Vector3) -> void:
 	fell_from = palm.origin
+	lands_at = sand
 	_from = PalmGrove.crown_of(palm)
 	_to = sand
 	global_position = _from
@@ -71,6 +95,19 @@ func _physics_process(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	rotate_y(SPIN * delta)
+	_breathe(delta)
+
+
+## The light, swelling and settling. Brightness rather than size: a thing that changes size reads as
+## coming closer, and this one is lying still in the sand.
+func _breathe(delta: float) -> void:
+	_pulsing = fposmod(_pulsing + delta * PULSE_HZ, 1.0)
+	var swell := 1.0 + sin(_pulsing * TAU) * PULSE_DEPTH
+	if lamp != null:
+		lamp.light_energy = LAMP_ENERGY * swell
+	var material := view.get_surface_override_material(0) if view != null else null
+	if material != null:
+		material.emission_energy_multiplier = GLOW_ENERGY * swell
 
 
 ## Accelerating rather than linear, because a coconut does not descend. The curve is the square of
@@ -98,20 +135,28 @@ func _take_if_it_is_worth_taking() -> void:
 			continue
 		if health.current_health >= health.max_health:
 			continue
-		health.heal(_heals())
+		var given := health.heal(_heals())
+		# Announced rather than shown here: the feed at the bottom of the screen already words every
+		# other thing the player picks up, and a coconut that reported itself its own way would be a
+		# second voice saying the same kind of sentence.
+		EventBus.coconut_taken.emit(given)
 		queue_free()
 		return
 
 
+## Both the body and its light go together at the end. A halo that outlived the thing it was
+## pointing at would be a light over nothing, which reads as a bug rather than as a chance missed.
 func _fade() -> void:
-	if view == null:
-		return
 	var left := _lies_for() - _lying_for
 	if left > FADES_FOR:
 		return
-	var material := view.get_surface_override_material(0)
-	if material != null:
-		material.albedo_color.a = clampf(left / FADES_FOR, 0.0, 1.0)
+	var share := clampf(left / FADES_FOR, 0.0, 1.0)
+	if view != null:
+		var material := view.get_surface_override_material(0)
+		if material != null:
+			material.albedo_color.a = share
+	if lamp != null:
+		lamp.light_energy = LAMP_ENERGY * share
 
 
 func _heals() -> float:
