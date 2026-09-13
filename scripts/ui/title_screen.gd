@@ -89,7 +89,8 @@ func _start_run(fresh: bool) -> void:
 		return
 	_leaving = true
 	if fresh:
-		GameState.begin_run()
+		# A run begun here is the only kind that opens on the player waking up.
+		GameState.begin_run(true)
 	var tween: Tween = create_tween()
 	tween.tween_property(fade, "color:a", 1.0, FADE_OUT)
 	tween.tween_callback(_change_to_run)
