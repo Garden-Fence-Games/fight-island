@@ -119,6 +119,12 @@ jobs:
       - name: Verify the knockdown
         run: tools/run-check.sh res://tools/verify_knockdown.tscn
 
+      # The sea is the one thing that can end a run without a fight — nothing swung, no telegraph,
+      # no parry to miss. So both halves are held: it takes the bar down at the depth the tide says,
+      # and it does nothing at all on the beach, which is a place the fight happens in.
+      - name: Verify the drowning
+        run: tools/run-check.sh res://tools/verify_drowning.tscn
+
       - name: Verify the effects
         run: tools/run-check.sh res://tools/verify_vfx.tscn
 

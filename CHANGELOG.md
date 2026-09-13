@@ -6,6 +6,32 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **The sea is deep enough to drown in** (#196). Past the wading limit the bar comes down, faster
+  the deeper you are — nothing at 1.1 m, twenty health a second by 1.6 — and at zero the run ends
+  through `player_died`, the same door as any other death.
+  - **The push is untouched.** It already beat a walk before the water was over a head, which is
+    exactly what makes this fair: a walk out against it stalls at about 1.4 m and a sprint at 1.6,
+    so drowning costs five to eight seconds of holding yourself out there while watching it happen.
+    Stop pushing and the sea carries you back in. There is no line you cross.
+  - **It drains rather than killing at a depth.** A threshold is unreadable — fine, then the run is
+    over — while a bar coming down is on the screen the player already watches and tells them how
+    long they have.
+  - **No drowning clip, and this does not fake one.** The body sinking is the terrain falling away
+    under it, which is free and already true. When the clip lands it plays where every other death
+    animation does, and nothing here has to change.
+  - Figures in `data/combat/tide.tres`, and in `docs/game-design.md` once.
+
+### Fixed
+
+- **A body could sit at zero health, alive, for ever.** `HealthComponent` lost a death to floating
+  point: a drain lands on the floor by subtraction rather than by a blow that overshoots it, and
+  `0.333333 - 0.333333` is not exactly zero. The bar held a billionth of a point, `current_health <=
+  0.0` was false, nobody died — and the next frame was swallowed by the no-change guard, because a
+  billionth is inside `is_equal_approx`. Found by the drowning check, which is the first thing in
+  the game to take health away a fraction at a time rather than in whole blows.
+
 ### Changed
 
 - **The fifteen waves are tuned, off a measurement rather than off the formulas** (#82). The curve
@@ -46,6 +72,18 @@ All notable changes to this project are documented here, following
   - The gate is on `can_buy`, not on the button. A card is one of two ways to reach a purchase and
     `buy()` is the other, so greying out a button that `buy()` would still honour is not a gate —
     which `verify_merchant` now proves by calling `buy()` directly with an empty bag.
+- **`stress_enemies` times the real separation rule, not a copy of it.** The tool held its own copy
+  of the arithmetic because the method was private, and a copy measures whatever the copy still
+  does — the day the rule changes, the tool goes on reporting the cost of the one it replaced and
+  neither of them is wrong. The isolated pass calls `Enemy._separation()` itself, reaching past the
+  underscore rather than keeping a copy that can drift.
+- The spatial grid for #31 was written a **third** time — bucketed, over pairs, addressed by index
+  into packed arrays rather than through a dictionary — measured against the scan in the same
+  process, and thrown away a third time: 15 µs per body against 27 at thirty, 8 against 49 at a
+  hundred and twenty. The pass really is about twice as fast at the budget — what makes it not worth
+  shipping is where the time goes, because that pass is 0.36 ms of a frame whose other 9.7 ms are
+  the island being drawn. `docs/architecture.md` carries the three sets of figures so the fourth
+  attempt has somewhere to read them.
 
 ### Fixed
 

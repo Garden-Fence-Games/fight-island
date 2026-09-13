@@ -560,6 +560,31 @@ Fifteen waves with no flawless bonus earn **2 010** in wave rewards. Maxing a si
 is a fact about the player; the guard rail holds the *shape* — rewards flat, costs geometric — and
 the shape is what stops a run from buying everything.
 
+### The sea
+
+**Wading costs speed. Standing in it costs health.** The island is not round, so the boundary has
+always been depth rather than a circle: walk down the sand, wade in to the shins, and the sea pushes
+back. Nothing is ever blocked, so the edge of the world is felt as the shape of the place.
+
+The push alone was a wall to bounce off — it beats a walk before the water is over a head, so nobody
+could ever reach anything out there. Now the bar comes down past the wading limit, faster the deeper
+you are:
+
+| | Depth | |
+|---|---|---|
+| Wading | 0 – 1.1 m | costs speed, down to 35 % at the limit |
+| Out of your depth | 1.1 – 1.6 m | the bar comes down, 0 to **20 health a second** |
+| Drowned | — | 0 HP ends the run, the same as any other death |
+
+A walk out against the push stalls at about 1.4 m and a sprint at about 1.6, so five to eight
+seconds of insisting is what it costs to drown. **Every point of it is reversible**: stop pushing
+outward and the sea carries you back in. There is no line you cross and no threshold that kills —
+a threshold is unreadable, the player is fine and then the run is over, while a bar coming down is
+on the screen they already watch and it tells them how long they have.
+
+It is the only thing in the game that can end a run **without a fight**, which is why the warning is
+the whole of the feature and the death is only where it stops.
+
 ### Upgrade tracks
 
 Level cap 5, one purchase per wave, bought from the merchant. Leftover money carries over.
