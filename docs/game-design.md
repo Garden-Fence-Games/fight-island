@@ -293,8 +293,9 @@ parry, and what makes a crowd feel like a crowd.
 everything the swing could reach, and a contact is then confirmed against the weapon's own `reach`
 and `arc_degrees`. The box used to *be* the shape — a rectangle from the nose out to the reach — and
 it was wrong at both ends: its corners reached half again the weapon's length, and because it ran
-from the attacker's nose backwards it clipped the arc short of its own angle, so a 160° sweep was
-never 160°. Whichever way that box was sized, the number here was not the number the player felt.
+from the attacker's nose backwards it clipped the arc short of its own angle, so a wide swing was
+never its own width. Whichever way that box was sized, the number here was not the number the
+player felt.
 
 **Pirate.** A length of wood, swung with both hands. He hits for **22** — nearly three farmhands —
 and he is the only archetype that can take a quarter of the player's health off a single mistake.
@@ -650,6 +651,29 @@ Damage numbers exist but are **off by default** — the feedback should be felt.
 
 **Rumble does not exist yet.** When it does it comes through this table like everything else, and it
 is off whenever the screen-shake slider is at zero.
+
+### The floor under the switches
+
+Every accessibility switch takes something away, and each of them was written to remove a *visual*:
+the shake, the freeze, the flash. They are checked one at a time — the slider means nought at
+nought, reduce-flashing damps the flare and leaves the debris — and one at a time is not the
+question a player who needs all of them is asking.
+
+So the rule is stated once, and `verify_access` holds it with every switch at the end of its travel
+at the same time. **A switch may take away emphasis. It may never take away a signal.** Three things
+survive whatever is turned off, and the game cannot be played without any of them:
+
+- **The telegraph**, because it is geometry. A body rears back over its wind-up, and a lean survives
+  greyscale, a colourblind player, a camera twenty metres up and every switch in the menu. That is
+  the argument for the lean over the ring it replaced, and it is why no colourblind option is needed
+  for it.
+- **The difference between a perfect hit and an ordinary one**, in more than one way that is neither
+  colour nor brightness: more debris, thrown faster, lasting longer. Damage numbers are off by
+  default, so the effect is carrying the whole message — and the two things these switches touch are
+  exactly colour and brightness.
+- **A clock nobody left stopped.** Hitstop off means the game never slows, including after a burst
+  of requests: a counter that goes up without coming back down is how a clock ends up stopped for
+  good.
 
 ### The visible half
 

@@ -232,6 +232,12 @@ jobs:
       - name: Verify the island
         run: tools/run-check.sh res://tools/verify_island.tscn
 
+      # Every accessibility switch at the end of its travel at the same time. Each is already held
+      # on its own; what nothing asked before is whether the fight is still legible with all of them
+      # down together — a signal that survives each switch alone can still be the only one left.
+      - name: Verify accessibility
+        run: tools/run-check.sh res://tools/verify_access.tscn
+
       # The navigation mesh comes out of the same generator, and nothing about a wrong one is
       # visible in a diff or a screenshot — enemies simply walk into rocks. This walks one of them
       # around a boulder and checks a spawn point inside the rock is refused.
