@@ -100,8 +100,8 @@ scripts/actors/player/states/player_dead.gd|player.last_hit_push * KNOCKDOWN.kno
 scripts/actors/enemy/states/enemy_stagger.gd|var push: float = float(message.get("push", 0.0)) * Enemy.KNOCKDOWN.knock_speed|var push: float = Enemy.KNOCKDOWN.knock_speed|verify_corpses
 scripts/actors/enemy/states/enemy_idle.gd|const PATIENCE: float = 10.0|const PATIENCE: float = 1000.0|verify_waves
 scripts/systems/spawn_director.gd|const MAX_PLAYER_DISTANCE: float = 18.0|const MAX_PLAYER_DISTANCE: float = 60.0|verify_waves
-scripts/resources/tide_data.gd|@export var drains: float = 20.0|@export var drains: float = 0.0|verify_drowning
-scripts/resources/tide_data.gd|@export var drains_from: float = 1.1|@export var drains_from: float = 0.2|verify_drowning
+data/combat/tide.tres|drains = 20.0|drains = 0.0|verify_drowning
+data/combat/tide.tres|drains_from = 1.1|drains_from = 0.2|verify_drowning
 # The accessibility floor: a switch may take away emphasis and never a signal. A perfect hit is not
 # in this table on purpose — it differs in three ways and `verify_access` asks for two, so no single
 # line can take the difference away. That redundancy is the design, and a mutation that survives it

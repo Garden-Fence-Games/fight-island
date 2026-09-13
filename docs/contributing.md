@@ -109,8 +109,10 @@ if not is_equal_approx(Player.TURN_SPEED_DEGREES, EXPECTED_TURN_RATE):
 `tools/mutate.sh` measures it rather than trusting anyone's reading: it breaks one constant at a
 time, runs the checks that should notice, and reports the ones that did not. The table lives in
 `tools/mutations.txt`, and a line in it is a claim — *if somebody changed this by accident, one of
-these checks would say so*. It runs weekly in CI and takes about half an hour, so run it by hand
-when you add a guard rather than waiting for Sunday:
+these checks would say so*. **CI runs the whole table on every pull request**, so a guard that has
+gone quiet is caught by the change that quietened it rather than by a sweep next Sunday. Run it by
+hand anyway when you add an entry, because a line nobody has watched fail is a line that proves
+nothing:
 
 ```
 tools/mutate.sh
@@ -119,6 +121,10 @@ tools/mutate.sh
 A **survivor** is either a guard reading its bound off what it guards, or a property nobody ever
 wrote a guard for. Both are worth a morning. A line added to the table without once being run in
 the broken state is a line that means nothing.
+
+A **STALE** entry is the same failure wearing a different coat: the original text it names is no
+longer in the file, so the mutation cannot be applied and nothing is measured. It counts as a
+survivor, which is why moving or renaming a constant the table watches is a change to the table too.
 
 ## Definition of done
 

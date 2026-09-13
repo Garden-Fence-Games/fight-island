@@ -67,6 +67,18 @@ All notable changes to this project are documented here, following
   moved with it. `Tab` is free again — it had been sharing with `ui_focus_next`.
   - On a pad nothing moved: the swap has been **RB** and **LB** all along.
 
+- **The mutation sweep runs on every pull request instead of once a week.** It breaks the game on
+  purpose one constant at a time and reports which breakages no check notices — and it was kept off
+  pull requests because it "takes the better part of half an hour". That figure was never measured.
+  Its last sweep finished in **seven minutes nineteen**, which is about what the checks it audits
+  cost, because it runs each of them once and stops at the first that fails.
+  - Weekly is not a cadence this repository has. That green sweep ran on a Sunday morning against a
+    twenty-six line table; ninety-one commits landed in the day after it, ten of them appending to
+    the table, and by the Monday three entries named constants that had been renamed, moved or
+    deleted. A guard that goes quiet is now caught by the change that quietened it.
+  - `.github/workflows/mutation.yml` is gone and the job lives in `ci.yml`, behind the same CI gate
+    as every other job, so a survivor blocks a merge rather than sending a mail on Sunday.
+
 ### Fixed
 
 - **Three of the mutations pointed at code that had moved, so `mutate.sh` could not run.** The table
@@ -76,9 +88,12 @@ All notable changes to this project are documented here, following
   become `MixTable.HEADROOM_DB` and changed units with it, and one entry still broke the thrower's
   telegraph. Both survivors are repointed and proved — the peak mutation makes `verify_audio` report
   two sounds twenty decibels under what they declared, and the headroom mutation makes `verify_mix`
-  say in as many words that a night wave clips. Nothing warned about it, because `mutate.sh` is not
-  in CI: it costs about a minute a mutation, so it is run by hand, and a table that rots between
-  runs is what that buys.
+  say in as many words that a night wave clips.
+  - **And with the table able to run again, two entries turned out to measure nothing.** The tide's
+    `drains` and `drains_from` were mutated on the `@export` default in `tide_data.gd`, which
+    `data/combat/tide.tres` overrides on every load — so the game got the shipped figure whatever
+    the mutation said, and `verify_drowning` was right not to notice. Both now mutate the `.tres`,
+    where the number actually lives, and both are caught. They were the only two of their kind.
 
 ### Removed
 
