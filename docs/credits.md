@@ -10,6 +10,9 @@ made it, its licence, and when it was added.
 Who made the game, which is a different question from where each file came from. The table below
 answers the second; this one is the answer the player is owed.
 
+The studio is **Garden Fence** — [gardenfence.ch](https://gardenfence.ch/) — which is also whose
+logo the intro sting carries.
+
 | | |
 |---|---|
 | Pepito2t | Developer |
