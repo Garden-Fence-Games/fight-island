@@ -34,7 +34,7 @@ const INVENTORY_HEADING: String = "## Clips the rigs do not carry yet"
 const INVENTORY_CELLS: int = 3
 ## The clips the stand-in library exists to lend. Written out rather than read from the library,
 ## which would make this check agree with whatever the library happens to hold.
-const LENT: Array[String] = ["aim_gun", "attack_stick_2", "attack_stick_3", "parry"]
+const LENT: Array[String] = ["aim_gun", "parry"]
 const FARMER_LENT: Array[String] = [
 	"windup_punch", "attack_punch", "windup_sweep", "attack_scythe", "windup_throw", "attack_throw"
 ]
@@ -65,18 +65,9 @@ const SAME_POSE_DEGREES: float = 0.5
 const A_SHORTER_NIGHT: float = 0.5
 ## How far the playing speed may sit from the stretch the wind-up asked for.
 const SAME_SPEED: float = 0.02
-## What each stand-in is as long as, and the thing it took its length from. A stand-in is built to
-## the rules rather than to a number typed beside them, and this is what holds that promise after
-## somebody retunes the rules and forgets to run `tools/build_clips.tscn` — the clip would go on
-## playing a shape that belonged to the old windows, and nothing else in the project would notice.
-const TIMED_BY: Dictionary[String, String] = {
-	"attack_stick_2": "res://data/attacks/stick_return.tres",
-	"attack_stick_3": "res://data/attacks/stick_overhead.tres",
-}
 ## The stick's chain, in the order it is thrown. Each swing has to begin on the pose the one before
-## it ended on, and what makes that possible is that the authored backhand opens and closes on the
-## grip — which is also the only reason the other two can be it again. A swing that ended somewhere
-## else would snap the arm back between hits, and three swings in a row is where that shows.
+## it ended on: a swing that ended somewhere else would snap the arm back between hits, and three
+## swings in a row is where that shows.
 const CHAIN: Array[String] = ["attack_stick_1", "attack_stick_2", "attack_stick_3"]
 ## The weapon whose suffix is being read, and the states that have a variant to find behind it.
 ## The clip a shot is fired from, and the two joints it must **not** carry. The recoil is a ragdoll
@@ -255,10 +246,6 @@ func _check_the_stand_ins_still_fit_the_rules() -> void:
 	await get_tree().physics_frame
 	var anim := actor.get_node_or_null("Animation") as AnimationComponent
 	if anim != null and anim.animation_player != null:
-		for clip: String in TIMED_BY:
-			var attack := load(TIMED_BY[clip]) as AttackData
-			if attack != null:
-				_same_length(anim.animation_player, clip, attack.total_duration(), TIMED_BY[clip])
 		_same_length(
 			anim.animation_player, "parry", PlayerParry.RECOVERY_END, "PlayerParry.RECOVERY_END"
 		)
@@ -528,9 +515,8 @@ func _check_the_shooting_arm_is_left_to_the_physics(player: AnimationPlayer) -> 
 
 
 ## The stick's three swings read as one movement or as three, and the arm is where that is decided:
-## each swing has to leave it where the next one picks it up. Only the backhand is authored and the
-## other two are it again, so this holds the property that lets them be — a re-authored swing that
-## ended on its follow-through would pass every other check here and still snap between hits.
+## each swing has to leave it where the next one picks it up. A re-authored swing that ended on its
+## follow-through would pass every other check here and still snap between hits.
 func _check_the_stick_chain_joins_up() -> void:
 	var actor := (load(PLAYER) as PackedScene).instantiate()
 	add_child(actor)
@@ -563,7 +549,7 @@ func _check_one_join(player: AnimationPlayer, ends: String, opens: String) -> vo
 					"%s ends %.1f degrees from where %s starts — the chain snaps the arm back "
 					% [ends, apart, opens]
 				)
-				+ "between hits. Rebake with tools/build_clips.tscn"
+				+ "between hits"
 			)
 		)
 
