@@ -183,6 +183,14 @@ jobs:
       - name: Verify the merchant and the run summary
         run: tools/run-check.sh res://tools/verify_merchant.tscn
 
+      # The palms are baked into MultiMesh batches, and the accessor for reading one back answers
+      # with the identity matrix on a headless renderer — so a coconut check written the obvious way
+      # finds 380 palms in a pile at the origin and passes for the wrong reason. This one asserts the
+      # grove is spread out, and that a coconut lands by the palm it actually fell from rather than
+      # near whichever palm happens to be closest, which on this island is always one of them.
+      - name: Verify the coconuts
+        run: tools/run-check.sh res://tools/verify_coconut.tscn
+
       # The save file is the one thing in the game the player owns and can edit, so every way it
       # can be wrong is a check: missing, truncated, not an object, or from a build that does not
       # exist yet. None of that is reachable from a diff, and all of it crashes a launch.
