@@ -31,6 +31,13 @@ const UNDER_A_WIND_UP: float = 6.0
 const OVER_THE_SEA: float = 6.0
 ## What the engine will not amplify a close source past, which is `max_db`'s default.
 const CLOSE_CEILING: float = 3.0
+## How much louder the sea has to be with the player's feet in it than from the middle of the
+## island. Ten decibels is the point at which one place sounds like somewhere else rather than like
+## the same place a little louder.
+const LOUDER_AT_THE_WATER: float = 10.0
+## How far into the water the ear is put for the loud end of the measurement. Ankle deep: the
+## furthest `PlayableArea` lets anyone go.
+const ANKLE_DEEP: float = 1.0
 ## Where a RIFF file's first chunk starts, and how much of each chunk is its own header.
 const RIFF_HEADER: int = 12
 const CHUNK_HEADER: int = 8
@@ -72,6 +79,7 @@ func _run() -> void:
 	_check_the_table_is_what_plays()
 	_check_the_recordings_are_where_the_mix_thinks()
 	_check_a_voice_stays_under_a_wind_up_at_every_range()
+	await _check_the_sea_is_louder_at_the_water()
 	_check_a_busy_fight_does_not_clip()
 	_check_everything_tonal_is_in_the_same_key()
 	_report()
@@ -152,8 +160,8 @@ func _check_the_mix_is_ordered() -> void:
 	for rung: Array in rungs:
 		var under: StringName = rung[0]
 		var over: StringName = rung[1]
-		var quiet := linear_to_db(AudioManager.level_of(under))
-		var loud := linear_to_db(AudioManager.level_of(over))
+		var quiet := _heard(under)
+		var loud := _heard(over)
 		if quiet >= loud:
 			_fail(
 				(
@@ -208,9 +216,9 @@ func _check_the_recordings_are_where_the_mix_thinks() -> void:
 			total += level
 		var heard := linear_to_db(maxf(total / float(levels.size()), QUIETEST))
 		var written: float = (
-			AudioManager.GULL_AS_RECORDED if kind == &"gull" else AudioManager.FARMER_AS_RECORDED
+			MixTable.GULL_AS_RECORDED if kind == &"gull" else MixTable.FARMER_AS_RECORDED
 		)
-		if absf(heard - written) > AudioManager.AS_RECORDED_TOLERANCE:
+		if absf(heard - written) > MixTable.AS_RECORDED_TOLERANCE:
 			_fail(
 				(
 					"the %s clips average %.1f dB and the mix is built on %.1f — the gain over them is wrong"
@@ -225,10 +233,8 @@ func _check_the_recordings_are_where_the_mix_thinks() -> void:
 ## that pair.
 func _check_a_voice_stays_under_a_wind_up_at_every_range() -> void:
 	var warning := linear_to_db(AudioManager.level_of(&"telegraph"))
-	var shout := (
-		linear_to_db(AudioManager.gain_of_voice(&"farmer")) + AudioManager.FARMER_AS_RECORDED
-	)
-	var floor_level := linear_to_db(AudioManager.level_of(&"surf"))
+	var shout := linear_to_db(AudioManager.gain_of_voice(&"farmer")) + MixTable.FARMER_AS_RECORDED
+	var floor_level := _heard(&"surf")
 	for metres: float in RANGES:
 		var heard := shout + _carries(AudioManager.VOICE_UNIT, metres)
 		var over := warning + _carries(AudioManager.POSITIONAL_UNIT, metres)
@@ -243,6 +249,74 @@ func _check_a_voice_stays_under_a_wind_up_at_every_range() -> void:
 					% [metres, heard, floor_level]
 				)
 			)
+
+
+## **The sea, from the two places it has to be different.**
+##
+## A flat bed was the same level in the middle of the island as it was with the player's feet in the
+## water, and no single figure could be right in both: quiet enough for the fight meant inaudible on
+## the beach, and audible on the beach meant the sea over a wind-up sixty metres inland. So the
+## check is the difference, measured on the coast the game actually maps rather than on a radius
+## somebody wrote down.
+func _check_the_sea_is_louder_at_the_water() -> void:
+	var sea := AudioManager.bed()
+	if sea == null:
+		_fail("there is no sea")
+		return
+	var arena := (load(ARENA) as PackedScene).instantiate() as Node3D
+	add_child(arena)
+	var tutorial := arena.get_node_or_null(^"TutorialDirector") as TutorialDirector
+	if tutorial != null:
+		tutorial.stand_down()
+	for _index: int in SETTLE_FRAMES:
+		await get_tree().process_frame
+	var coast := sea.coastline()
+	if coast.size() < SurfBed.EMITTERS:
+		_fail("the sea never found the coast, so it is playing from nowhere")
+		arena.queue_free()
+		return
+	var middle := _sea_at(coast, Vector3.ZERO)
+	var water := _sea_at(coast, coast[0] + (Vector3.ZERO - coast[0]).normalized() * ANKLE_DEEP)
+	if water - middle < LOUDER_AT_THE_WATER:
+		_fail(
+			(
+				(
+					"the sea is %.1f dB in the middle and %.1f at the water — %.1f apart, "
+					+ "and it is meant to be %.1f"
+				)
+				% [middle, water, water - middle, LOUDER_AT_THE_WATER]
+			)
+		)
+	# And the flat bed a menu plays has to be the same sea, heard from the middle of the island.
+	var written := linear_to_db(AudioManager.level_of(&"surf")) + SurfBed.FROM_THE_MIDDLE_DB
+	if absf(written - middle) > SurfBed.MIDDLE_TOLERANCE:
+		_fail(
+			(
+				"a menu plays the sea at %.1f dB and the island sounds like %.1f from the middle"
+				% [written, middle]
+			)
+		)
+	arena.queue_free()
+
+
+## **What a sound is worth to the player, which is not always the level it was baked to.** Every
+## sound in the table is heard at the level it declares except one: the sea is a ring of sources, so
+## what arrives is the sum of them, and comparing another sound against a single stretch of coast
+## would be comparing it against a fraction of the sea.
+func _heard(id: StringName) -> float:
+	var level := linear_to_db(AudioManager.level_of(id))
+	return level + SurfBed.FROM_THE_MIDDLE_DB if id == AudioManager.BED_SOUND else level
+
+
+## What the ring adds up to at a point: uncorrelated sources sum as the root of the sum of squares,
+## and the emitters are started out of phase with each other precisely so that they are.
+func _sea_at(coast: PackedVector3Array, ear: Vector3) -> float:
+	var square := 0.0
+	for where: Vector3 in coast:
+		var apart := maxf(where.distance_to(ear), 0.01)
+		var gain := minf(pow(SurfBed.CARRIES / apart, 2.0), db_to_linear(CLOSE_CEILING))
+		square += gain * gain
+	return linear_to_db(AudioManager.level_of(&"surf")) + linear_to_db(maxf(sqrt(square), QUIETEST))
 
 
 func _carries(unit: float, metres: float) -> float:

@@ -733,9 +733,12 @@ func _silence_everything() -> void:
 
 func _anything_playing() -> bool:
 	for voice: Node in AudioManager.get_children():
+		# The sea is the exception: it is meant to be playing, and headless it never starts. Skipped
+		# by identity rather than by what it carries, because it is a subtree of its own now.
+		if voice == AudioManager.bed():
+			continue
 		var flat := voice as AudioStreamPlayer
-		# The bed is the exception: it is meant to be playing, and headless it never starts.
-		if flat != null and flat.playing and flat != AudioManager.bed():
+		if flat != null and flat.playing:
 			return true
 		var placed := voice as AudioStreamPlayer3D
 		if placed != null and placed.playing:

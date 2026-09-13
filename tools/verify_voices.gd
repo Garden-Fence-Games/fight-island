@@ -93,9 +93,7 @@ func _check_a_line_is_short_and_mono() -> void:
 ## further — so the comparison is made where the player stands rather than at the source.
 func _check_a_voice_stays_under_a_wind_up() -> void:
 	var warning := linear_to_db(AudioManager.level_of(&"telegraph"))
-	var shout := (
-		linear_to_db(AudioManager.gain_of_voice(&"farmer")) + AudioManager.FARMER_AS_RECORDED
-	)
+	var shout := linear_to_db(AudioManager.gain_of_voice(&"farmer")) + MixTable.FARMER_AS_RECORDED
 	for metres: float in RANGES:
 		var heard := shout + _carries(AudioManager.VOICE_UNIT, metres)
 		var over := warning + _carries(AudioManager.POSITIONAL_UNIT, metres)

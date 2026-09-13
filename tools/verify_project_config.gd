@@ -31,6 +31,7 @@ const REQUIRED_ACTIONS: PackedStringArray = [
 	"menu_prev_tab",
 	"menu_next_tab",
 	"debug_overlay",
+	"debug_mix_desk",
 	"debug_skip_wave",
 	"debug_give_money",
 ]
@@ -53,6 +54,7 @@ const GAMEPAD_EXEMPT: PackedStringArray = [
 	"weapon_stick",
 	"weapon_gun",
 	"debug_overlay",
+	"debug_mix_desk",
 	"debug_skip_wave",
 	"debug_give_money",
 ]
