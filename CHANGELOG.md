@@ -13,9 +13,10 @@ All notable changes to this project are documented here, following
   the player's health off one mistake.
   - Two things keep that fair. He telegraphs for **0.80 s**, the longest wind-up there is, with the
     lowest and longest warning of the four — a pirate committing carries under a crowd at night,
-    which is when he turns up. And he is **rare**: a twentieth of a wave, a twelfth in the last
-    band, rolled per spawn rather than scheduled. His share comes out of the farmhand's, so the
-    triangle the other three form is exactly the one it was.
+    which is when he turns up. And he is **a tenth of a wave**, rolled per spawn rather than
+    scheduled — a chance, not a quota, so whether a wave brings two of him or six is the wave's own
+    business. His share is taken proportionally from the other three, so the triangle they form is
+    untouched and the farmhand is still the most common thing on the island in every wave.
   - **His telegraph and his blow are cut out of the swing he already had.** The clip is one movement
     across three states, so `char_pirate_stand_ins.tres` slices it rather than inventing either
     half. Where to cut was measured off the shoulder's turn per twenty-fifth of the clip — a lift, a
