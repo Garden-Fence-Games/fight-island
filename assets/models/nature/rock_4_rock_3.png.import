@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://7tjdcxc72glv"
-path.s3tc="res://.godot/imported/grass_tuft_grass.png-340d33f77b2e84997d6146201a34bd08.s3tc.ctex"
-path.etc2="res://.godot/imported/grass_tuft_grass.png-340d33f77b2e84997d6146201a34bd08.etc2.ctex"
+uid="uid://dip81p2k65t6b"
+path.s3tc="res://.godot/imported/rock_4_rock_3.png-7e632c35b16d925badcf967cc0c71c08.s3tc.ctex"
+path.etc2="res://.godot/imported/rock_4_rock_3.png-7e632c35b16d925badcf967cc0c71c08.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "df41171c0160ae4873347c06ec3775ff"
+"md5": "e04a5f50b8f5266bd094f64e87bfd26e"
 }
 
 [deps]
 
-source_file="res://assets/models/nature/grass_tuft_grass.png"
-dest_files=["res://.godot/imported/grass_tuft_grass.png-340d33f77b2e84997d6146201a34bd08.s3tc.ctex", "res://.godot/imported/grass_tuft_grass.png-340d33f77b2e84997d6146201a34bd08.etc2.ctex"]
+source_file="res://assets/models/nature/rock_4_rock_3.png"
+dest_files=["res://.godot/imported/rock_4_rock_3.png-7e632c35b16d925badcf967cc0c71c08.s3tc.ctex", "res://.godot/imported/rock_4_rock_3.png-7e632c35b16d925badcf967cc0c71c08.etc2.ctex"]
 
 [params]
 

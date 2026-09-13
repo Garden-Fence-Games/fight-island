@@ -10,12 +10,14 @@ render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_sc
 // a thinned-out tree reads as stranger than the tree did.
 
 uniform vec3 tint : source_color = vec3(0.33, 0.31, 0.29);
+// A painted stone supplies this; an unset sampler reads white, so a flat-coloured one is unchanged.
+uniform sampler2D albedo_texture : source_color, hint_default_white;
 uniform float surface_roughness : hint_range(0.0, 1.0) = 0.9;
 // Driven per node by the occlusion fader. Zero is solid, which is what an untouched material is.
 uniform float faded : hint_range(0.0, 1.0) = 0.0;
 
 void fragment() {
-	ALBEDO = tint;
+	ALBEDO = tint * texture(albedo_texture, UV).rgb;
 	ALPHA = 1.0 - faded;
 	ROUGHNESS = surface_roughness;
 	SPECULAR = 0.15;
