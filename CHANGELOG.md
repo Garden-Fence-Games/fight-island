@@ -78,6 +78,13 @@ still fail.
 
 ### Changed
 
+- **The tutorial runs on a clock, before wave 1.** It was wave 1 itself, seven lessons each waiting
+  for the player to perform them, and the parry lesson could hold the wave open for ever. After the
+  new-run opening, four lines now follow one another on an empty island — how the player got here,
+  punch and dodge, sprint, survive — each for its own `seconds` in `data/tutorial/`, with the real
+  buttons of the device in hand. Then wave 1 starts at once. Nothing waits for an input. It shows on
+  every run begun from the title, like the opening; a retry, a restart or a resume skips it.
+
 - **The fifteen waves are tuned, off a measurement rather than off the formulas** (#82). The curve
   now steps by about 11 and 14 per cent through the waves that teach, by 17 to 22 through 4–6 where
   three archetypes arrive one per wave, and by under 5 across 12–15, which is the endurance band
