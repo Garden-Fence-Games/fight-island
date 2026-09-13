@@ -12,7 +12,7 @@ const ARENA: String = "res://scenes/world/arena.tscn"
 const CONFIG: String = "res://data/waves/standard.tres"
 ## Long enough for a shortened wave to run its day and its night, with room for refused points.
 const WAVE_PATIENCE: float = 12.0
-## A wave is six minutes of real time, which is not a thing a headless check can sit through. The
+## A wave is four minutes of real time, which is not a thing a headless check can sit through. The
 ## cycle is shrunk to this and the proportions of its phases are kept, so what is checked is the
 ## rule — the wave ends when its night does — and not the number.
 const A_QUICK_WAVE: float = 2.4
@@ -468,8 +468,17 @@ func _check_the_bodies_were_reused() -> void:
 	if pool == null:
 		_fail("the spawn director has no pool")
 		return
-	if pool.made_count() != EnemyPool.SIZE:
-		_fail("the pool made %d bodies rather than leasing them" % pool.made_count())
+	# The shared shelf plus one reserve for every archetype that brought a rig of its own. Written
+	# as the sum rather than read off the pool, or a pool that had quietly started making bodies per
+	# spawn would move the figure this is held against.
+	var shelves := EnemyPool.SIZE + EnemyPool.RESERVE * pool.bodies.size()
+	if pool.made_count() != shelves:
+		_fail(
+			(
+				"the pool made %d bodies rather than leasing them — its shelves hold %d"
+				% [pool.made_count(), shelves]
+			)
+		)
 
 
 func _on_enemy_spawned(enemy: Node3D) -> void:

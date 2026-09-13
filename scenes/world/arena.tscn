@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=31 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -28,6 +28,7 @@
 [ext_resource type="Script" path="res://scripts/systems/corpse_field.gd" id="26"]
 [ext_resource type="Script" path="res://scripts/systems/blood_field.gd" id="27"]
 [ext_resource type="PackedScene" path="res://scenes/fx/blood_splash.tscn" id="28"]
+[ext_resource type="PackedScene" path="res://scenes/actors/enemy_pirate.tscn" id="29"]
 
 [node name="Arena" type="Node3D"]
 
@@ -77,6 +78,9 @@ script = ExtResource("7")
 [node name="EnemyPool" type="Node" parent="WaveDirector/SpawnDirector"]
 script = ExtResource("8")
 enemy_scene = ExtResource("2")
+bodies = {
+&"pirate": ExtResource("29")
+}
 
 [node name="BirdFlock" type="Node" parent="."]
 script = ExtResource("24")

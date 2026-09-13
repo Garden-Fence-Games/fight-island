@@ -329,14 +329,28 @@ One row in the game names a **different action per device**, and it is the pause
 that both mean *get me out of here*, which is why `MenuEntry` carries a `gamepad_action` override at
 all. Nothing else uses it.
 
+## Typography
+
+Two faces, both SIL OFL, both in `assets/fonts/` and both credited.
+
+- **Oswald Medium** is the display face: headings, menu titles, buttons, dialog buttons and the
+  pause title. Eight theme type variations point at it, so it is one line in
+  `assets/themes/ui_theme.tres` and nothing else.
+- **Inter SemiBold** is everything else — every row, caption, value and readout.
+
+The display face is **condensed and open**, and that is a requirement rather than a taste. It
+replaced Badeen Display, which was chosen for impact and failed on the only thing a menu owes the
+player: at 40 px, `THE STUDIO` read as a row of filled blocks, because the counters close up at
+every size. A face whose counters survive is the bar for replacing this one too.
+
+Badeen also drew its Latin digits as composites of the Arabic-Indic forms — its `0` printed `٠` —
+which had forced a standing rule that no string carrying a number could be set in it. **That rule is
+gone with the font.** Oswald's digits are Latin digits, so a number can be set wherever it belongs.
+
 ## Localisation
 
 Every string on every screen goes through `tr()` with a key from the first line of code, prefixed
 `UI_`, `HUD_`, `OPT_` or `TUT_`. The keys live in `assets/locale/ui.csv`.
-
-**Numerals are never set in Badeen Display.** Its Latin digits are composites of the
-Arabic-Indic forms — `0` draws `٠` — so any string carrying a number is set in Inter. Badeen is for
-words.
 
 **The game ships in English and in nothing else.** The `tr()` layer stays because a menu built with
 literals is a menu that gets rewritten the day a second locale is wanted — but no second locale is

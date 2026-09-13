@@ -146,6 +146,13 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   **One instance, preloaded rather than exported** — the per-blow difference is already the stagger
   figure, so there is nothing here for a scene to choose and nothing for a pooled body to carry a
   stale copy of.
+- **`RagdollData`** — `body_mass`, `shares`, `joints`, `angular_damp`, `linear_damp`, `friction`,
+  `bounce`, `fit_share`, `smallest_radius`. What a ragdoll's body is made of. The shares are
+  **Winter's anthropometric segment table**, not tuned. The capsules are fitted to the vertices each bone carries, `fit_share` of them. One instance,
+  `data/combat/ragdoll_human.tres`.
+- **`JointLimits`** — `flex`, `twist`, `side`, `bends_back`. One joint's range in degrees **from the
+  rig's rest pose**, in an anatomical frame: flexion towards the front (towards the back for a knee),
+  twist about the bone, and across. The ranges contain every pose the farmer is animated in.
 - **`MusicTrack`** — `title`, `artist`, `stream`. One piece of music. The name the player reads is
   data rather than a filename, because a track renamed on disk would otherwise rename itself on
   screen. A row whose `stream` is still null is a plan and is never handed out.
@@ -301,7 +308,8 @@ Named as a past-tense fact, never as a command and never `on_*`:
 `enemy_died(enemy, archetype, money)` · `player_damaged(current, max)` · `player_died()` ·
 `stamina_changed(current, max)` · `weapon_equipped(data)` · `ammo_changed(mag, reserve)` ·
 `rounds_scavenged(rounds)` ·
-`attack_landed(target, damage, perfect, attack)` · `parry_perfect()` ·
+`attack_landed(target, damage, perfect, attack)` · `corpse_struck(where, direction, perfect)` ·
+`parry_perfect()` ·
 `money_changed(amount)` ·
 `upgrade_purchased(track_id, level)` · `run_started(seed)` · `run_ended(victory, wave)`
 
@@ -455,6 +463,15 @@ rather than staying on the screen as a switch that moves nothing.
 where bodies come from, which owns the bodies. They are children rather than exported node
 references, because node exports do not resolve in a hand-written `.tscn` (ADR 0006).
 
+**The pool has one shelf per body.** A leased enemy keeps the rig it was made with — the ragdoll
+fitted its capsules to those vertices, the animation found that skeleton, the head-look built its
+modifier on it — so swapping a pirate into a farmer at revive would mean rebuilding every component
+that ever looked at the rig. `EnemyPool.bodies` maps an `EnemyData.id` to a scene of its own and
+`lease(id)` picks the shelf; everything absent from that map is made from `enemy_scene`, which is
+how the three farmers go on sharing one rig. The shared shelf holds thirty-two and each extra holds
+sixteen — `max_alive` tops out at twelve, so sixteen covers a wave that rolled nothing else and
+still has bodies going into the ground.
+
 `WaveDirector.start_wave(n)` reads `WaveConfig`, emits `wave_started`, then **drip-feeds**: the
 count is how many arrive in total, `max_alive(n)` is how many the player faces at once, and the gap
 between those two is what makes a late wave pressure rather than a wall. `enemy_died` brings the
@@ -584,15 +601,27 @@ A wave is a fight you win by killing everybody in it, and until now the evidence
 The pile is the record of the run.
 
 **A corpse is not an enemy.** Bodies are pooled — thirty-two, leased and handed back — and fifteen
-waves kill several hundred. What is kept is the *picture*: the visual, duplicated, with the pose it
-died in baked into it. No script, no collision, no physics, no navigation, no sound, and no
-skeleton.
+waves kill several hundred. The dying enemy's visual is copied into a `Corpse`, which **takes over
+the tumble** — every bone where the enemy's was, moving the way it moved — and the pool gets its body
+back. No script of the enemy's, no navigation, no sound.
 
-**No skeleton is the whole reason it is affordable.** A `Skeleton3D` updates its bone transforms on
-an engine notification rather than in `_process`, so a stripped, disabled, physics-free duplicate
-still cost about 0.4 ms a frame — sixteen bodies came to 15 ms of a 16.7 ms frame. `PosedMesh`
-skins every vertex once on the processor, drops the bone and weight arrays, and leaves a static
-mesh. Measured at 1080p on an M2 Pro:
+**But it is still a body.** The build-6 corpses were pictures lifted onto the navigation mesh, which
+sits above the sand: every one hovered, and one caught mid-slide by the fall's ceiling froze there.
+A `Corpse` keeps its ragdoll until it is actually still, so it lands on the terrain itself. Walked
+into by the player it is shoved along; struck, it bleeds and is thrown. The strike goes through a
+`CorpseHurtbox`, which **never consumes the blow** — no `attack_landed`, so a pile is not a free
+source of combo, money or hitstop — and raises `corpse_struck`, which only the blood hears. The gun's
+ray looks past corpses: a body lying in the line of fire is not cover.
+
+**Resting, it has no skeleton, and that is the whole reason it is affordable.** A `Skeleton3D`
+updates its bone transforms on an engine notification rather than in `_process`, so a stripped,
+disabled, physics-free duplicate still cost about 0.4 ms a frame — sixteen bodies came to 15 ms of a
+16.7 ms frame. So a corpse that has been still for a moment bakes its pose with `PosedMesh` (every
+vertex skinned once on the processor, bone and weight arrays dropped) and takes its skeleton, bodies
+and joints **out of the tree**. Anything that touches it puts them back exactly as they lay. A
+resting pile of 48 measured headless at 0.68 ms of physics against 0.60–0.75 ms with none; the draw
+calls below are the frozen-picture version's, and a resting corpse draws the same static mesh.
+Measured at 1080p on an M2 Pro:
 
 | | draw calls | frame |
 |---|---|---|
@@ -614,6 +643,23 @@ actually is.
 And the settle was measured on the **origin**, which for a rig is between its feet — so a body baked
 lying down had its shoulder buried while its origin sat neatly on the sand. It is measured on the
 lowest vertex now.
+
+### A body, not a sock
+
+The build-6 ragdoll was sixteen one-kilogram capsules a few centimetres across on the same loose
+cone: sixteen kilograms of body that folded like cloth, with skin a metre into the sand while the
+capsules inside it rested on top. `RagdollComponent` now builds it from `RagdollData`:
+
+- **Anthropometric masses.** Heavy in the middle and light at the ends, a body tumbles about its hips
+  instead of flailing about its wrists.
+- **Capsules fitted to the mesh.** Every skinned vertex goes to the simulated bone it hangs from
+  most heavily, and the capsule spans those vertices. Measured against the span and not the bone:
+  the farmer's head bone is eight centimetres long under a head a metre tall. Skin under the sand
+  during a fall went from over a metre to at most about twenty centimetres.
+- **6DOF joints in an anatomical frame**, limited from the rest pose. Godot measures a joint's limits
+  from the pose the simulation starts in, so a knee knocked mid-stride would have kept its stride as
+  its zero. The simulation starts with the skeleton at rest and every body is put straight back
+  where the animation had it.
 
 ### Nothing walks the tree while the game is running
 

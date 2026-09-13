@@ -14,6 +14,60 @@ still fail.
 
 ### Added
 
+- **The pirate comes ashore.** The rig arrived with #192 and nothing used it. He is an archetype
+  now, and he is the hardest blow in the game: **22 damage**, nearly three farmhands, a quarter of
+  the player's health off one mistake.
+  - Two things keep that fair. He telegraphs for **0.80 s**, the longest wind-up there is, with the
+    lowest and longest warning of the four — a pirate committing carries under a crowd at night,
+    which is when he turns up. And he is **rare**: a twentieth of a wave, a twelfth in the last
+    band, rolled per spawn rather than scheduled. His share comes out of the farmhand's, so the
+    triangle the other three form is exactly the one it was.
+  - **His telegraph and his blow are cut out of the swing he already had.** The clip is one movement
+    across three states, so `char_pirate_stand_ins.tres` slices it rather than inventing either
+    half. Where to cut was measured off the shoulder's turn per twenty-fifth of the clip — a lift, a
+    still, a strike, a still — and both ends of a slice are sampled rather than snapped to the
+    nearest key, so the wind-up hands the blow a body it is already standing in.
+  - **A body is pooled with the rig it was made with.** The ragdoll fitted its capsules to those
+    vertices and the animation found that skeleton, so a pirate revived into a farmer's body would
+    mean rebuilding every component that ever looked at a rig. `EnemyPool` keeps a shelf per body
+    and `EnemyData.id` picks it; the three farmers go on sharing one.
+  - `Enemy.body` is a `PackedScene` put on in `_enter_tree` rather than an instance saved into the
+    scene — an inherited scene cannot swap a child that is already one, and `enemy_pirate.tscn`
+    overrides the rig, the data and the stand-ins and nothing else.
+
+- **The stick is in hand.** The clips arrived last; this is them reaching the game.
+  - `idle_stick`, `walk_stick` and `dodge_roll_stick` play, off one line in
+    `data/weapons/stick.tres` — `clip_suffix = &"_stick"` — and no code at all. That is what the
+    suffix was built for, and `verify_clips` now equips the stick and reads the clip that comes out
+    of the component, so clearing that line fails the build instead of quietly walking the player
+    around empty-handed with a stick in his fist.
+  - **The second and third swings move.** The rig carries the backhand and only the backhand, so the
+    return and the finisher are that swing again, stretched to their own windows and lent by
+    `char_player_stand_ins.tres`. Before this they played nothing: the arm held the last pose of the
+    first swing through both of them while the damage went out.
+  - Stretched from the clip's own keys rather than posed like the gun's stand-ins, which is what
+    keeps the stick in the hand — `attack_stick_1` keys `Stick` and `StickTrail` frame by frame, and
+    a posed stand-in would have swung an empty fist.
+  - Not reversed, which was the obvious thing to try. The authored swing opens and closes on the
+    grip, nought degrees apart, so playing it backwards travels the same arc and only moves where
+    the fast part of it lands — a guess about somebody else's timing. That the swing opens and
+    closes on the grip is what lets it be repeated at all, so the check holds each join to half a
+    degree.
+  - The inventory in `docs/asset-pipeline.md` is now **empty**: every clip either actor asks for
+    exists or is lent. The section stays, and `verify_clips` reads the section rather than its rows,
+    so the next gap has somewhere to be written down.
+
+- **The stick swings, and the pirate is on the shelf.** Purple-Sigil's clips that had been sitting
+  outside the project are in it now, exported and imported, and wired to nothing that was not
+  already asking for them:
+  - `attack_stick_1` plays the moment the stick swings, because the stick already named it. The
+    stick itself is in the player's rig, keyed by each stick clip where it was held and a thousandth
+    of its size everywhere else, with its swing trail.
+  - `idle_stick`, `walk_stick` and `dodge_roll_stick` wait on `clip_suffix = &"_stick"`.
+  - `char_pirate.glb` — Ennemi_2 — with `idle`, `walk`, `chase`, `attack` and both get-ups, its
+    weapon keyed in every clip. No scene or archetype uses it yet.
+
+  Sources are in `art-source/`; what is left to wire is in `docs/asset-pipeline.md`.
 - **The player falls when they die.** The run ended on the rest pose — a body standing to attention
   under the screen that says it is over. The body goes to the physics now, the same
   `RagdollComponent` the farmers have used since they stopped sinking into the sand, so the fall
@@ -100,6 +154,16 @@ still fail.
   his rig carries no `RESET` — the player's does, so the same arrangement would have stood a dying
   man upright on the frame he was knocked down. `AnimationComponent` now lets go of the rig when the
   physics takes the body and refuses to touch it until the physics gives it back.
+- **A ragdoll is a body, not a sock.** Build 6 threw sixteen one-kilogram capsules a few
+  centimetres across on the same loose cone, and a farmer folded like cloth with his skin a metre
+  into the sand. Each bone now weighs its anthropometric share of the body, its capsule is fitted to
+  the vertices it carries, and its joint is limited in an anatomical frame — a knee folds back, a
+  neck does not turn the head round. `RagdollData` and `JointLimits` carry all of it.
+- **Corpses lie on the sand and stay bodies.** They were pictures lifted onto the navigation mesh,
+  which sits above the terrain, so every one hovered and a body still sliding when the fall ended
+  froze in place. A corpse now takes the tumble over and keeps its ragdoll until it is still, then
+  rests as a baked mesh with no skeleton in the tree. Walking into one shoves it; striking one
+  throws it and it bleeds, without the blow counting as a hit. `verify_corpses` holds all of it.
 - **The music slider reached nothing.** `MusicBed` lerped the `Music` bus towards nought every frame
   while `Settings` wrote the player's figure to it once, so the slider was overwritten within about
   a second of the arena loading — and `_exit_tree` handed full volume back on the way to the title.
@@ -133,6 +197,17 @@ still fail.
   asks `tr()` now, which is the question the screen asks.
 
 ### Changed
+
+- **A wave is four minutes rather than six** — two of daylight and two of dark. Every phase keeps
+  its share of the turn, its opening hour and every rule in its column, so the ramp is the one the
+  design already describes, walked at a pace that does not ask for ninety minutes to see fifteen
+  waves. The one thing it changes beyond the clock: a late wave, which ended on the hour rather
+  than on an empty roster, now sends a third fewer bodies before daybreak.
+
+- The duck bus is named once, on `AudioManager`, instead of written out as `"MusicDuck"` in the bed,
+  the jukebox and the bus lookup. A rename in the layout used to leave `get_bus_index` returning -1
+  in whichever of the three was missed, with nothing to say so — a silent bed, or a duck that never
+  came off. Carried over from the closed #181, which had it right.
 
 - **A new intro video** with the VFX pass — impact shake, bloom, chromatic aberration, grain and a
   particle layer keyed to where the logo's planks land. The two scripts that generate it are in

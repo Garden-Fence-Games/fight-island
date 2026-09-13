@@ -6,9 +6,9 @@ extends EnemyState
 ## back to the pool and the island forgot him. A wave is a fight you win by killing everybody in it,
 ## and the evidence disappearing was the game quietly declining to say so.
 ##
-## Now the physics takes the body, it lands, and what it looks like when it lands is handed to
-## `CorpseField` — which keeps the picture and nothing else, so the pool gets its body back on the
-## same schedule it always did. The pile is the record of the run.
+## Now the physics takes the body, and once it lands — or the fall's ceiling comes — the tumble is
+## handed to `CorpseField`, which copies the body into a corpse that carries on falling, so the pool
+## gets its body back on the same schedule it always did. The pile is the record of the run.
 ##
 ## A body with no rig to throw still has to die, so there is a fallback: it waits out the same
 ## ceiling standing where it fell and is retired without leaving anything behind. A capsule, a
@@ -52,18 +52,14 @@ func physics_update(delta: float) -> void:
 		return
 	if not _laid:
 		_laid = true
-		# The pose has to be pinned into the skeleton before anything is copied off it. The
-		# simulator is a modifier: its output reaches the skin but never the skeleton's own pose,
-		# so a corpse read straight off the bones came out standing to attention — measured at
-		# 2.38 m tall against 1.49 m across, which is how a body that is not lying down reads.
-		if enemy.ragdoll != null:
-			enemy.ragdoll.settle_pose()
 		_lay_him_down()
 	enemy.finish_dying()
 
 
-## The picture, handed over before the pool resets the body. Nothing happens when there is no field
-## in the scene, which is what a prototype arena and most of the headless checks are.
+## The body handed over while its ragdoll is still running, so the corpse carries on the tumble
+## rather than starting a new one — a body still sliding when the ceiling came used to freeze in
+## place, and one caught in the air hung there. Nothing happens when there is no field in the scene,
+## which is what a prototype arena and most of the headless checks are.
 func _lay_him_down() -> void:
 	var field := enemy.get_tree().get_first_node_in_group(&"corpses") as CorpseField
 	if field != null:

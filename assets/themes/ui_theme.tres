@@ -1,7 +1,7 @@
 [gd_resource type="Theme" load_steps=50 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/inter_semibold.ttf" id="1"]
-[ext_resource type="FontFile" path="res://assets/fonts/badeen_display.ttf" id="2"]
+[ext_resource type="FontFile" path="res://assets/fonts/oswald_medium.ttf" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_entry_idle"]
 content_margin_left = 24.0

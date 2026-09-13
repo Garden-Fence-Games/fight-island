@@ -119,6 +119,7 @@ UI_TITLE,Title
 ENEMY_FARMHAND,Farmhands
 ENEMY_REAPER,Reapers
 ENEMY_THROWER,Throwers
+ENEMY_PIRATE,Pirates
 TUTORIAL_MOVE,Move with {0}
 TUTORIAL_ATTACK,Strike with {0}
 TUTORIAL_CHAIN,Strike again to continue the chain

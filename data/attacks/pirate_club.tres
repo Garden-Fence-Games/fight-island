@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/attack_data.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/fx/impact.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"pirate_club"
+display_name = "Club"
+damage = 22.0
+stagger = 0.55
+poise_damage = 0.0
+stamina_cost = 0.0
+ammo_cost = 0
+windup = 0.80
+active = 0.20
+recovery = 0.90
+chain_window = Vector2(0.0, 0.0)
+perfect_window = Vector2(0.0, 0.0)
+perfect_multiplier = 1.35
+hitstop = 0.08
+reach = 2.0
+arc_degrees = 90.0
+windup_animation = &"windup_club"
+animation = &"attack_club"
+vfx = ExtResource("2")

@@ -194,25 +194,26 @@ same toll, so backing into the shallows is a real decision rather than a free es
 
 ## Enemies
 
-Three farmers, **one rig and one mesh, three textures**. They are behaviourally distinct — three
-identical bodies in different shirts would be decoration, not design — and together they form a
-triangle that stops any single answer from working.
+Three farmers, **one rig and one mesh, three textures** — and one pirate, who has a model of his own
+and is therefore the only body in the game pooled apart. They are behaviourally distinct — identical
+bodies in different shirts would be decoration, not design — and together they stop any single
+answer from working.
 
-| | Farmhand | Reaper | Thrower |
-|---|---|---|---|
-| Role | the swarm | the bruiser | the pressure |
-| Health | 45 | 90 | 40 |
-| Damage | 8 | 16 | 10 |
-| Move speed | 3.4 m/s | 2.4 m/s | 2.8 m/s |
-| Windup — the telegraph | 0.45 s | 0.75 s | 0.60 s |
-| Active | 0.12 s | 0.18 s | projectile |
-| Recovery | 0.60 s | 0.95 s | 0.80 s |
-| Reach | 1.6 m, 60° | 2.8 m, **160°** | 14 m |
-| Poise | 15 | 30 | 10 |
-| Notices the player at | 9 m | 9 m | 12 m |
-| Rouses others within | 7 m | 7 m | 7 m |
-| Money on kill | 2 | 5 | 4 |
-| Enters at wave | 1 | 3 | 5 |
+| | Farmhand | Reaper | Thrower | Pirate |
+|---|---|---|---|---|
+| Role | the swarm | the bruiser | the pressure | the punishment |
+| Health | 45 | 90 | 40 | 70 |
+| Damage | 8 | 16 | 10 | **22** |
+| Move speed | 3.4 m/s | 2.4 m/s | 2.8 m/s | 3.0 m/s |
+| Windup — the telegraph | 0.45 s | 0.75 s | 0.60 s | **0.80 s** |
+| Active | 0.12 s | 0.18 s | projectile | 0.20 s |
+| Recovery | 0.60 s | 0.95 s | 0.80 s | 0.90 s |
+| Reach | 1.6 m, 60° | 2.8 m, **160°** | 14 m | 2.0 m, 90° |
+| Poise | 15 | 30 | 10 | 25 |
+| Notices the player at | 9 m | 9 m | 12 m | 9 m |
+| Rouses others within | 7 m | 7 m | 7 m | 7 m |
+| Money on kill | 2 | 5 | 4 | 8 |
+| Enters at wave | 1 | 3 | 5 | 3 |
 
 **A farmer minds his own business until he notices you.** He stands where he appeared; he does not
 set off from the horizon. This is what lets a wave build instead of arriving as one flat press — the
@@ -247,6 +248,19 @@ punishing enough that reading him matters. He is also the reason the stick exist
 **Thrower.** Stays at range and lobs stones. The projectile is slow enough to sidestep, so he is
 never unfair, but he **never stops** — he retreats when the player comes within 5 m. He is what
 stops the player from camping one corner, and he is the single best argument for the gun.
+
+**Pirate.** A length of wood, swung with both hands. He hits for **22** — nearly three farmhands —
+and he is the only archetype that can take a quarter of the player's health off a single mistake.
+
+Two things keep that fair rather than cheap. He telegraphs for **0.80 s**, the longest wind-up in
+the game, and his warning is the lowest and the longest of the four: a pirate committing is
+audible under a crowd and readable across the island. And **he is rare**. He is never more than a
+twentieth of a wave until the last band, where he is a twelfth — so he arrives as an event rather
+than as a pressure, and the wave he arrives in is the one where the player's answer has to change.
+
+He is deliberately **not** a heavier reaper. The reaper's 160° sweep is a geometry problem: you
+cannot sidestep it. The pirate's 90° arc can be walked out of by anyone who saw it coming, and the
+whole of him is whether you did.
 
 ## Enemy AI
 
@@ -284,7 +298,7 @@ From wave 4, any archetype can roll elite: the same scene with health ×2.0, dam
 
 ## Waves
 
-`n` is the wave index, 1-based. **A wave lasts six minutes** — see *The day and the night* below —
+`n` is the wave index, 1-based. **A wave lasts four minutes** — see *The day and the night* below —
 so `enemy_count` is a budget the island draws on to stay populated for that long, not a queue to be
 emptied. `max_alive(n)` is what the player actually faces at once, and it is the real pressure dial.
 
@@ -306,13 +320,19 @@ telegraph is not difficulty.
 Each spawn rolls an archetype against the wave's mix. The result is rounded to whole enemies, and
 the farmhand always takes the remainder.
 
-| Wave | Farmhand | Reaper | Thrower |
-|---|---|---|---|
-| 1–2 | 100 % | — | — |
-| 3–4 | 80 % | 20 % | — |
-| 5–7 | 65 % | 20 % | 15 % |
-| 8–11 | 50 % | 30 % | 20 % |
-| 12–15 | 40 % | 35 % | 25 % |
+| Wave | Farmhand | Reaper | Thrower | Pirate |
+|---|---|---|---|---|
+| 1–2 | 100 % | — | — | — |
+| 3–4 | 75 % | 20 % | — | 5 % |
+| 5–7 | 60 % | 20 % | 15 % | 5 % |
+| 8–11 | 45 % | 30 % | 20 % | 5 % |
+| 12–15 | 32 % | 35 % | 25 % | 8 % |
+
+**The pirate's share comes out of the farmhand's**, so the triangle the other three form is exactly
+the one it was. Five per cent is a roll per spawn and not a quota: at wave 5 the island sends
+forty-two bodies and about two of them are pirates, and *which* two is the wave's own business. A
+fixed number per wave would be a schedule the player learns; a low chance is a thing that happens
+to them.
 
 A wave never opens with a thrower: the first spawn of every wave is melee, so the player is never
 shot at before anything is on screen.
@@ -335,7 +355,7 @@ through, and the player finishes it in the dark. Survive the night and the wave 
 banner says so, and the next wave begins at daybreak.
 
 ```
-Dawn 0:30  →  Day 2:15  →  Dusk 0:30  →  Night 2:45    = six minutes, one wave
+Dawn 0:20  →  Day 1:40  →  Dusk 0:20  →  Night 1:40    = four minutes, one wave
 07:00         09:00        18:00         19:00          → back to 07:00
 ```
 
@@ -347,13 +367,13 @@ difficulty. They are not told the wave is about to get harder; the light tells t
 | | Dawn | Day | Dusk | Night |
 |---|---|---|---|---|
 | Opens at | 07:00 | 09:00 | 18:00 | 19:00 |
-| Lasts | 0:30 | 2:15 | 0:30 | 2:45 |
+| Lasts | 0:20 | 1:40 | 0:20 | 1:40 |
 | Damage | ×1.00 | ×1.00 | ×1.10 | ×1.25 |
 | Telegraph | ×1.00 | ×1.00 | ×0.95 | ×0.88 |
 | Rousing carries | ×1.0 | ×1.0 | ×1.4 | ×2.0 |
 | Melee attack tokens | 2 | 2 | 2 | 3 |
 
-**Dawn carries the day's rules on purpose.** It is thirty seconds taken off the day, not added to
+**Dawn carries the day's rules on purpose.** It is twenty seconds taken off the day, not added to
 the wave, and every rule in its column is the day's — so the ramp, the economy and how long a wave
 lasts are exactly what they were before there was a dawn. What it buys is the read: a player who
 starts in low orange light and watches the sun climb has been shown the shape of the turn before
@@ -389,9 +409,9 @@ which is what a player fast enough to outpace the island has earned. Bodies stil
 daybreak are **sent home rather than killed**: the wave is passed, and nobody is paid for a fight
 that did not happen.
 
-**Consequence, stated plainly:** fifteen waves at six minutes is about an hour and a half of play,
-not the forty minutes this document used to assume. The wave length is one number in
-`data/day/`, and shortening the run is a matter of changing it or of shipping fewer waves.
+**Consequence, stated plainly:** fifteen waves at four minutes is about an hour of play. The wave
+length is four numbers in `data/day/` and nothing else reads it, so changing how long a run takes
+is a tuning pass rather than a rewrite — which is exactly how six minutes became four.
 
 ### The clock and the sky
 
@@ -612,22 +632,27 @@ The fists keep the plain `hit` and `perfect` ids rather than getting a fourth wa
 weapon the player never puts down and never runs out of, so a blow in this game sounds like a fist
 landing unless something else is in hand.
 
-### Three archetypes, three warnings
+### Four archetypes, four warnings
 
 Every wind-up **climbs** — a warning that does not rise reads as a drone — and they differ in where
-they climb from and to, which is the one thing that survives three of them at once in a crowd at
+they climb from and to, which is the one thing that survives several of them at once in a crowd at
 night:
 
 | | climbs | over |
 |---|---|---|
 | Farmhand | 300 → 690 Hz | 0.30 s |
 | Reaper | 150 → 300 Hz | 0.42 s |
+| Pirate | 200 → 380 Hz | 0.48 s |
 | **Thrower** | **520 → 1240 Hz** | 0.36 s |
 
 The thrower is the outlier on purpose. He strikes from fourteen metres and is the one archetype the
 player may never see coming, so sound is the only warning the design gives them: his is the highest,
 the longest climb, and the only one that crosses an octave. The check fails if any other archetype
 climbs as high as his.
+
+The pirate is the other end of the same argument. He hits hardest and from arm's length, so his is
+the lowest and the longest warning there is — the one that carries under a crowd at night, which is
+exactly when he turns up.
 
 ### The bed lifts with the island
 
@@ -641,7 +666,7 @@ of them agrees, and they **stack**: a layer above its range stays full rather th
 | Pulse | 82.5 Hz | 0.20 | 0.55 |
 | Edge | 220 Hz | 0.60 | 0.95 |
 
-**Pressure is bodies on the island, not time.** A wave five minutes through is not a tense wave if
+**Pressure is bodies on the island, not time.** A wave three minutes through is not a tense wave if
 nobody is left, and a wave thirty seconds in with eight farmers closing is. Measured against what
 *this* wave allows at once rather than a constant, so a full island sounds full at wave 1 and at
 wave 15. Between waves it is zero, and the breather is silent — which is the only pacing tool the

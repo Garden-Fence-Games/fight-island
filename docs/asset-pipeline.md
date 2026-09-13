@@ -279,7 +279,7 @@ Direct `.blend` import is fine during blockout. Switch before the first CI expor
 
 ## Naming
 
-Files: `char_player.glb`, **`char_farmer.glb`**, `char_merchant.glb`, `weapon_stick.glb`,
+Files: `char_player.glb`, **`char_farmer.glb`**, `char_pirate.glb`, `char_merchant.glb`, `weapon_stick.glb`,
 `weapon_gun.glb`, `weapon_scythe.glb`, `prop_stone.glb`, `env_island.glb`, `env_palm_tree.glb`,
 `prop_crate.glb`.
 
@@ -322,7 +322,8 @@ Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 **Player:** `idle`, `walk`, `run`, `sprint`, `dodge_roll`, `parry`, `parry_success`, `hurt`,
 `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`, plus
 `idle_gun` and `walk_gun` — the gun is held across the whole body, so standing and walking with it
-are their own clips rather than a layer over the unarmed ones.
+are their own clips rather than a layer over the unarmed ones. The stick has the same pair,
+`idle_stick` and `walk_stick`, both looping, and a roll of its own, `dodge_roll_stick`.
 
 **The player has no `death` clip and is not waiting for one.** The run ends by handing the body to
 the physics, the same `RagdollComponent` the farmers have used since they stopped sinking into the
@@ -335,11 +336,29 @@ ends.
 It is hidden rather than detached when the player is unarmed — see `WeaponVisualComponent` in
 [architecture.md](architecture.md).
 
+**The stick is in the rig too, and it is hidden by its clips rather than by code.** Purple-Sigil
+held the stick differently in every stick clip, so `Stick` is not parented once and forgotten: it
+hangs off the right hand and **every stick clip keys it**, frame by frame, where the source file had
+it. Out of those clips it rests at a thousandth of its size — the RESET and every other clip carry
+that — so it shows during `idle_stick`, `walk_stick`, `dodge_roll_stick` and `attack_stick_1` and
+nowhere else, with nothing in `WeaponVisualComponent` to switch. `StickTrail` under it is the swing's
+smear, scaled up and back down inside `attack_stick_1`.
+
+**Re-exporting a rig whose clips move an object takes NLA tracks.** In `char_player.blend` and
+`char_pirate.blend` each clip is one action with a slot for the armature and one for the held
+object. Exported as plain actions, the object's slot is dropped; exported with one NLA track per
+clip, named after the clip, on both the armature and the object (`NLA_TRACKS`, merged by track
+name, *keep object animation* on), each glTF animation carries both. An object under NLA also rests
+at its defaults, so `Stick` and `StickTrail` get their thousandth written back into the exported
+file's rest scale.
+
 **The `_gun` ending is a suffix the code appends, not a separate table.** `WeaponData.clip_suffix`
-carries it — `_gun` on the gun, empty on the fists and, for now, the stick — and
-`AnimationComponent` tries `<clip><suffix>` before falling back to `<clip>`. So authoring
-`walk_stick` and `idle_stick` and setting `clip_suffix = &"_stick"` is the whole job, and a set that
-is only half authored degrades one clip at a time instead of leaving a state with nothing to play.
+carries it — `_gun` on the gun, `_stick` on the stick, empty on the fists — and `AnimationComponent`
+tries `<clip><suffix>` before falling back to `<clip>`. So `idle_stick`, `walk_stick` and
+`dodge_roll_stick` reached the game as a one-line change to `data/weapons/stick.tres` and no code at
+all, which is what the suffix exists for. A set that is only half authored degrades one clip at a
+time instead of leaving a state with nothing to play — which is what the stick does: it has its own
+idle, walk and roll, and every other state falls back to the empty-handed clip.
 
 **Farmer (shared by all three):** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`,
 `death`, plus one attack set per archetype — `windup_punch` / `attack_punch`,
@@ -352,6 +371,24 @@ with the first frame. `idle`, `walk` and `chase` loop; the get-ups play once.
 `art-source/char_farmer.blend` is in metres and a third taller. A clip appended from a source file
 has every location key scaled by 0.013 on the way in, and loses the stray frame-0 key Mixamo leaves
 behind — which is the idle pose, and stands him up for one frame at the start of a get-up.
+
+**Pirate (`char_pirate.glb`, Ennemi_2):** `idle`, `walk`, `chase`, `attack`, `get_up_back`,
+`get_up_front`, on its own Mixamo rig with the same 33 bone names as the farmer's. `idle`, `walk`
+and `chase` loop. It was built the farmer's way: metres instead of a hundredth in `delta_scale`, grown by the
+same 1.3 so the two stand the same height, and the stray frame-0 key dropped from both get-ups.
+`chase` is `Pirate_walk_attack`, the name the farmer's aware walk already has. `PirateWeapon` hangs
+off the right hand and every clip keys it where the source had it — it moves in both get-ups — so
+it needs no attaching. Its rest transform is not a grip; only the clips are.
+
+**His telegraph and his blow are slices of his `attack`.** He is the farmer's problem the other way
+round: the farmer had archetypes with no swing, the pirate has a swing and nothing that announces
+it. The clip is one movement across three states — the club goes up, holds, comes down, holds, and
+is lowered — so `char_pirate_stand_ins.tres` cuts `windup_club` and `attack_club` out of it rather
+than inventing either. Where to cut was **measured**: the shoulder's turn per twenty-fifth of the
+clip runs 3 15 28 42 56 53 45 32 11 4 0 0 0 2 10 23 44 53 55 51 36 27 18 10 1 0 0, which is a lift,
+a still, a strike and a still, and the two floors between them are the cuts. Both ends of a slice
+are sampled rather than snapped to the nearest key, so the telegraph hands the blow a body it is
+already standing in — a two-tenths strike has no time to spend on a crossfade.
 
 **Bird:** `bird_fly` (wings beating) and `bird_fly_idle` (wings held out, gliding), both looping, on
 the flying rig `assets/models/nature/bird_fly.glb`. A startled bird only beats; a cruising one
@@ -376,15 +413,33 @@ that is never wrong about anything is one nobody reads.
 
 | Clip | Rig | Where it bites |
 |---|---|---|
-| `attack_stick_1` | player | The stick swings and nothing moves. The stick has no mesh on the rig either, so it is invisible in hand — one job, not two. |
-| `attack_stick_2` | player | As above. |
-| `attack_stick_3` | player | As above. |
 
-**The gun's three shots, the parry, and all three farmer blows are not on this list and are not
-authored either.** They are lent by `assets/models/char_player_stand_ins.tres` and
+**The list is empty, and that is a state it is allowed to be in.** Every clip either actor asks for
+now either exists on a rig or is lent by a stand-in. The heading stays whatever the table holds —
+the check reads the section, not the rows, so the next clip the game learns to ask for has a place
+to be written down rather than a section to re-invent.
+
+**The gun's three shots, the stick's second and third swings, the parry, and all three farmer blows
+are lent rather than authored.** They come from `assets/models/char_player_stand_ins.tres` and
 `assets/models/char_farmer_stand_ins.tres`, built by `tools/build_clips.tscn` from each rig's own
-poses — `idle_gun` for the shots, `idle` for the guard and for every farmer clip. The body is the
-one Purple-Sigil posed and only the movement is generated.
+poses — `idle_gun` for the shots, `idle` for the guard and for every farmer clip, and the authored
+`attack_stick_1` for the other two swings. The body is the one Purple-Sigil posed and only the
+movement is generated.
+
+The stick's chain is **revers, retour, assommoir**, and the rig carries the first of the three. The
+other two are that same swing again, stretched to their own windows — a repeat, and it is meant to
+read as one. Playing it backwards was the obvious alternative and it is not honest: the authored
+swing opens and closes on the grip, at nought degrees apart, so reversing travels the same arc and
+only moves where the fast part of it lands. That is a guess about somebody else's timing.
+
+Opening and closing on the grip is also what lets the swing be repeated at all, so `verify_clips`
+holds it: each swing has to start within half a degree of where the one before it ended. A
+re-authored swing that stopped on its follow-through would pass every other check and still snap
+the arm back between hits.
+
+Taking the clip's own keys rather than posing the bones is what keeps the stick in the hand.
+`attack_stick_1` keys `Stick` and `StickTrail` frame by frame; a stand-in built the way the gun's
+are, by turning two joints of a held pose, would swing an empty hand.
 
 The farmer gets **six**, in draw-and-blow pairs: `windup_punch` / `attack_punch`,
 `windup_sweep` / `attack_scythe`, `windup_throw` / `attack_throw`. The pair is the point. A blow
