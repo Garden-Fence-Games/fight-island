@@ -517,6 +517,15 @@ Fifteen waves with no flawless bonus earn about **2 010** plus kills. Maxing a s
 
 Level cap 5, one purchase per wave, bought from the merchant. Leftover money carries over.
 
+**A weapon's track is not for sale until the weapon is in the bag.** The stick is found in wave 2
+and the gun in wave 4, and fifteen per cent more damage on something the player cannot swing yet is
+money spent on nothing — a purchase they would only discover was worthless two waves later, by
+which time the run has moved on. The card **stays on the shelf and says where the weapon turns up**
+rather than disappearing: a player who can see the gun track has a reason to save for the wave it
+arrives in, and one who cannot has no idea there is anything to save for. The gate is on the
+purchase itself, not on the button — greying out a card that `buy()` would still honour is not a
+gate.
+
 | Track | Per level | At level 5 |
 |---|---|---|
 | Health | +20 max HP, heals to full on purchase | 200 HP |

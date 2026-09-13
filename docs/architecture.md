@@ -364,9 +364,12 @@ figures above were taken through the real one.
   a dictionary — which is the version that has to be measured, because the naive one spends more on
   bookkeeping per pair than the arithmetic it is bookkeeping for. Per body, against the scan in the
   same process: 13 µs against 14 at ten, **15 against 27 at thirty**, 8 against 49 at a hundred and
-  twenty. The shape flattens exactly as advertised and the budget case is a wash — at thirty the
-  whole pass moves from 0.35 ms to 0.45 ms, which is under this machine's own noise. Three
-  measurements, one answer: **do not write it again until the budget is past sixty.**
+  twenty. The shape flattens exactly as advertised, and at thirty bodies the isolated pass really is
+  about twice as fast — which is not the reason to skip it. **The reason is where the time goes**:
+  that pass is 0.36 ms of a frame whose other 9.7 ms are the island being drawn (`measure_draw`,
+  #194), so halving it buys about three per cent of a frame that is not short of time anyway. Three
+  measurements, one answer: **do not write it again until the budget is past sixty**, and read
+  [Drawing the island](#drawing-the-island) first.
 
 The run-to-run noise on a busy machine is larger than the gap between no enemies and forty of them,
 which is the most useful single fact here: **nothing on this side is close to the budget**, and the
@@ -998,7 +1001,7 @@ Both are shaders, and both are shaders for the same reason: the thing that has t
 thousands of times from one mesh, so nothing per-instance can drive it.
 
 **The wind** (`assets/shaders/foliage.gdshader`) runs in the vertex stage. Every plant on the
-island is one instance of a `MultiMeshInstance3D` — 380 palms, 24 000 grass tufts — and instances
+island is one instance of a `MultiMeshInstance3D` — 95 palms, 1 600 tufts of grass — and instances
 cannot play separate animations. This did not change when the plants stopped being primitives and
 became modelled: a pack of rigged foliage would buy nothing, because the rig could never reach the
 instances.
