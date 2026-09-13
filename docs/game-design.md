@@ -103,7 +103,9 @@ is three times the price per metre.
 ## Weapons
 
 Fists are always available. The **stick and the gun are both ground pickups from wave 1**, dropped
-where the player can see them. Pickups last the whole run; swapping is free and instant.
+where the player can see them. Pickups last the whole run; swapping is free and instant — no
+animation, no penalty, no cooldown, because the interesting decision is which weapon suits the
+moment and not whether the player can afford to find out.
 
 They used to arrive in waves 2 and 4, and holding them back cost more than it bought. A weapon
 nobody has found is a weapon that does not exist — and behind the gun sat an upgrade track the
@@ -111,6 +113,12 @@ merchant could not sell, so a player saving for it had money with nowhere to go 
 three weapons are a *choice*, not a drip feed: the whole subject of the game is which one suits the
 moment, and that question cannot be asked until all three are in the bag. Ammunition comes off the
 bodies from the first wave for the same reason.
+
+**The bag is on screen**, bottom right: the three weapons in the order the key walks along them, the
+one in hand lit, the ones carried dim, and the ones nobody has picked up yet dimmer still, badged
+with the wave they arrive in instead of a key. A weapon the player owns and cannot see is a weapon
+they do not use, and an empty slot says there is something out there to go and find. An unfound slot
+is shown rather than hidden for the same reason the merchant shows a locked card.
 
 | Weapon | # | Attack | Damage | Stamina | Windup | Active | Recovery | Chain window | Perfect window | Perfect × | Range | Arc | Stagger | Poise |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -650,6 +658,29 @@ Damage numbers exist but are **off by default** — the feedback should be felt.
 
 **Rumble does not exist yet.** When it does it comes through this table like everything else, and it
 is off whenever the screen-shake slider is at zero.
+
+### The floor under the switches
+
+Every accessibility switch takes something away, and each of them was written to remove a *visual*:
+the shake, the freeze, the flash. They are checked one at a time — the slider means nought at
+nought, reduce-flashing damps the flare and leaves the debris — and one at a time is not the
+question a player who needs all of them is asking.
+
+So the rule is stated once, and `verify_access` holds it with every switch at the end of its travel
+at the same time. **A switch may take away emphasis. It may never take away a signal.** Three things
+survive whatever is turned off, and the game cannot be played without any of them:
+
+- **The telegraph**, because it is geometry. A body rears back over its wind-up, and a lean survives
+  greyscale, a colourblind player, a camera twenty metres up and every switch in the menu. That is
+  the argument for the lean over the ring it replaced, and it is why no colourblind option is needed
+  for it.
+- **The difference between a perfect hit and an ordinary one**, in more than one way that is neither
+  colour nor brightness: more debris, thrown faster, lasting longer. Damage numbers are off by
+  default, so the effect is carrying the whole message — and the two things these switches touch are
+  exactly colour and brightness.
+- **A clock nobody left stopped.** Hitstop off means the game never slows, including after a burst
+  of requests: a counter that goes up without coming back down is how a clock ends up stopped for
+  good.
 
 ### The visible half
 
