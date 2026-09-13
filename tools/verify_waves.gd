@@ -21,6 +21,10 @@ const POINTS: int = 200
 ## The rule, written out rather than read off the class being checked. Reading SpawnDirector's own
 ## constant would make this assertion agree with any value someone puts there, which is not a test.
 const NEAREST_SPAWN: float = 12.0
+## And the other end of the ring, written out for the same reason. A body that arrives past this is
+## one the player has to go and fetch: it notices at nine metres, so every extra metre out here is a
+## metre walked before anything happens, once per body, on a four-minute clock.
+const FURTHEST_SPAWN: float = 18.0
 ## What the rule is allowed to have drifted by before this is read as a violation.
 ##
 ## **`SpawnDirector` checks the distance when it places the body; this checks it afterwards**, and
@@ -57,6 +61,18 @@ const HEAD_HEIGHT: float = 1.8
 ## the player. Written out rather than derived from the zoom being checked, which would make it
 ## agree with any camera anybody sets. At the shipped seventeen metres it is a quarter.
 const MOST_OF_THE_RING_IN_SHOT: float = 0.40
+## The longest a body may stand where it arrived before it comes looking. **Fixed, not derived from
+## `EnemyIdle.PATIENCE`** — a window taken from the number being checked passes for every number,
+## including a patience nobody would ever stand through. The constant is held against this first, so
+## raising it fails here rather than quietly turning a wave into a search.
+##
+## The whole point: a wave has to arrive at the player. A body that waits to be walked up to is a
+## body the player spends the wave fetching, and at eighteen metres and nine to notice that is most
+## of a four-minute wave spent walking.
+const COMES_LOOKING_WITHIN: float = 12.0
+## Where the body is parked for it: past its own notice radius, so the only thing that can move it
+## is the patience running out.
+const OUT_OF_ITS_RANGE: float = 20.0
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -107,6 +123,9 @@ func _run() -> void:
 	await _check_an_elite_is_worse_and_obviously_so()
 	_check_elites_keep_away_from_the_first_waves()
 	await _check_a_wave_cleared_mid_throw_leaves_the_throwers_throwing()
+	# Last, because it leaves a body standing for twelve seconds and every check above it leases
+	# from the same pool.
+	await _check_a_wave_comes_to_the_player()
 	_put_the_run_back()
 	_report()
 
@@ -432,6 +451,14 @@ func _passes(camera: Camera3D, world: World3D, where: Vector3) -> bool:
 	if apart.length() < NEAREST_SPAWN:
 		_fail("the search offered a point %.1f m from the player" % apart.length())
 		return false
+	if apart.length() > FURTHEST_SPAWN + MEASURED_LATE:
+		_fail(
+			(
+				"the search offered a point %.1f m out — the player would go and fetch it"
+				% apart.length()
+			)
+		)
+		return false
 	if _in_shot(camera, where):
 		_fail("the search offered a point in shot at %s" % where)
 		return false
@@ -459,6 +486,36 @@ func _check_nothing_spawned_in_shot_or_underfoot() -> void:
 		if not Ground.is_spawnable(world, where, _player.global_position):
 			_fail("something spawned where it cannot walk out of, at %s" % where)
 			return
+
+
+## The wave finds the player rather than the other way round.
+##
+## Parked well past his own notice radius, a farmer cannot see anybody — so the only thing that can
+## set him off is having been ignored long enough, and `rouse()` rather than a bare transition is
+## what brings the men beside him too.
+func _check_a_wave_comes_to_the_player() -> void:
+	if EnemyIdle.PATIENCE >= COMES_LOOKING_WITHIN:
+		_fail(
+			(
+				"a body waits %.1f s before coming looking, and %.1f is what a wave can afford"
+				% [EnemyIdle.PATIENCE, COMES_LOOKING_WITHIN]
+			)
+		)
+		return
+	var where := _player.global_position + Vector3.FORWARD * OUT_OF_ITS_RANGE
+	var farmer := _director.spawner.spawn_at(load(FARMHAND) as EnemyData, where)
+	if farmer == null or farmer.machine == null:
+		_fail("the pool would not lease a farmhand to leave standing")
+		return
+	var waited := 0.0
+	while waited < COMES_LOOKING_WITHIN and farmer.machine.current_name == &"Idle":
+		await get_tree().physics_frame
+		waited += get_physics_process_delta_time()
+	if farmer.machine.current_name == &"Idle":
+		_fail("a farmer stood unnoticed for %.1f s and never came looking" % COMES_LOOKING_WITHIN)
+	elif not farmer.roused:
+		_fail("a farmer came looking without rousing, so nobody beside him came too")
+	farmer.retire()
 
 
 ## A pool that quietly makes a new body per spawn is a pool in name only, and nothing about it is

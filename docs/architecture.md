@@ -539,11 +539,18 @@ would raise every farmer in the game and then save the result.
 
 ## Noticing
 
-A farmer stands where he appeared until the fight reaches him. It is four lines of state and one
-field, and the only interesting parts are the edges.
+A farmer stands where he appeared until the fight reaches him, **or until it has not reached him
+for ten seconds**. `EnemyIdle` counts the time it has been standing and rouses itself past
+`PATIENCE`, divided by the hour's `rouse_scale` so night waits half as long. Through `rouse()`
+rather than a bare transition, so the men beside him come too — a body that came looking alone while
+its neighbours went on staring at the sea is the same bug the spreading rule exists to prevent.
+
+`verify_waves` parks a body past its own notice radius, where nothing but the patience can move it,
+and holds `EnemyIdle.PATIENCE` against a **written-out** twelve seconds first: a watch window
+derived from the number being watched passes for every number.
 
 **The radius has to be smaller than the spawn distance or the feature does not exist.** The spawn
-search keeps bodies 12–26 m from the player; the old aggro radius was 18 m, so more than half of
+search keeps bodies 12–18 m from the player; the old aggro radius was 18 m, so more than half of
 every wave arrived already charging. Nothing would have failed — there would simply have been no
 behaviour. `verify_combat` asserts the inequality directly, against a written-out 12 rather than
 against `SpawnDirector`'s own constant.
