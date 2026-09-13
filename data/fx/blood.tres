@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="BloodData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/blood_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+colour = Color(0.78, 0.02, 0.04, 1)
+droplets = 22
+perfect_droplets = 40
+splash_speed = Vector2(2.5, 7)
+perfect_speed_scale = 1.4
+splash_life = 0.55
+splash_height = 1.2
+stains = 3
+perfect_stains = 5
+pool_size = Vector2(0.8, 1.5)
+fleck_size = Vector2(0.3, 0.8)
+throw_distance = Vector2(0.6, 2.8)
+throw_scatter = 0.35
+land_delay = 0.2
+spread_time = 0.12
+dry_above = -0.95
+decal_count = 48
+decal_life = 8.0
+decal_fade = 2.5
+mask_resolution = 1024
+mask_extent = 180.0
+mask_strength = 0.8
+mask_refresh = 0.2
+wet_roughness = 0.45

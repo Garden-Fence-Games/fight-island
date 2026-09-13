@@ -122,6 +122,13 @@ jobs:
       - name: Verify the effects
         run: tools/run-check.sh res://tools/verify_vfx.tscn
 
+      # Blood is drawn by a decal and a shader, neither of which a headless run can see, so what is
+      # held is everything the drawing rests on: that stains are thrown the way the blow went and
+      # land on ground rather than sea, that the mask the ground reads is painted and stays painted
+      # once the decals are recycled, and that a fight builds no decal and no splash while it bleeds.
+      - name: Verify the blood
+        run: tools/run-check.sh res://tools/verify_blood.tscn
+
       # The sounds are generated, so there is no file to listen to and nothing in a diff to read.
       # What is checked is the property the design rests on: a perfect hit rings longer *and*
       # brighter than a plain one, a perfect parry outlasts a late one, and a swing through air has
