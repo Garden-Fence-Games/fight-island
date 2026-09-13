@@ -8,47 +8,85 @@ extends Node3D
 ## **A corpse is not an enemy.** The bodies are pooled — thirty-two of them, leased and handed back
 ## — and a run of fifteen waves kills several hundred. Keeping each one alive as a `CharacterBody3D`
 ## with a state machine, two areas, a navigation agent and a ragdoll would be several hundred of all
-## of those, and the pool could never reclaim any of them. So what is kept is the **picture**: the
-## visual, duplicated, with the pose it died in baked into it, and nothing else. No script, no
-## collision, no physics, no navigation, no sound.
+## of those, and the pool could never reclaim any of them. So the visual is copied into a `Corpse`,
+## which takes over the tumble and keeps a ragdoll and nothing else: no script of the enemy's, no
+## navigation, no sound.
 ##
-## **There is a ceiling, and it is measured rather than hoped for.** A duplicated rig is a skinned
-## mesh, and a skinned mesh is not free even when nothing moves it. Past the ceiling the oldest
-## corpse goes, which is the right one to lose: the pile near the player is what they just did, and
-## the one at the far end is from a wave they have stopped thinking about.
+## **But it is still a body.** Walked into, it is shoved along; struck, it bleeds and moves. A
+## corpse only costs a skeleton while it is moving — see `Corpse` for how it rests.
+##
+## **There is a ceiling.** Past it the oldest corpse goes, which is the right one to lose: the pile
+## near the player is what they just did, and the one at the far end is from a wave they have
+## stopped thinking about.
 
-## How many bodies may lie on the island at once. Measured with `tools/stress_corpses.tscn` rather
-## than picked: see `docs/architecture.md`. Past this the oldest goes.
+## How many bodies may lie on the island at once. Past this the oldest goes. See
+## `docs/architecture.md`.
 @export var most: int = 48
-## How far a corpse may be pushed up out of the sand if it settled below it. The ragdoll lands on
-## the world layer so it should not sink at all, but a limb that ends the tumble inside a slope is a
-## body half-swallowed, and half-swallowed reads as a bug rather than as a corpse.
-@export var clearance: float = 0.05
+## How big a corpse is to a swing: a sphere about its hips, in metres. Big enough that a body
+## lying at a player's feet is inside the swing aimed at it. The gun's ray passes over it either
+## way, because `Hitscan` looks past corpses.
+@export var body_radius: float = 0.8
+## Walking into a body: how fast the player must be moving before it counts, what share of their
+## speed the body is shoved at, how much of a lift, and how far from their feet a limb is caught.
+@export var trample_speed: float = 1.0
+@export var trample_share: float = 0.9
+@export var trample_lift: float = 0.6
+@export var trample_reach: float = 0.8
+## Striking a body: how hard it is thrown along the blow in metres per second, how much of that goes
+## upward, how far from the hips a limb is caught, and how much further a perfect blow throws it.
+@export var struck_push: float = 3.5
+@export var struck_lift: float = 0.35
+@export var struck_reach: float = 1.6
+@export var perfect_push_scale: float = 1.6
 
-var _laid: Array[Node3D] = []
+var _laid: Array[Corpse] = []
+var _walker: CharacterBody3D = null
 
 
 func _ready() -> void:
 	add_to_group(&"corpses")
 
 
-## Lays a body down where it fell, and returns the corpse. Null when there is nothing to copy, which
-## is what a body with no rig gives — the capsule prototype did, and a check runs against a rig.
+func _physics_process(_delta: float) -> void:
+	if _laid.is_empty():
+		return
+	if _walker == null or not is_instance_valid(_walker):
+		_walker = get_tree().get_first_node_in_group(&"player") as CharacterBody3D
+		if _walker == null:
+			return
+	var feet := _walker.global_position
+	var velocity := _walker.velocity
+	if Vector2(velocity.x, velocity.z).length() < trample_speed:
+		return
+	var near := body_radius + trample_reach
+	for corpse: Corpse in _laid:
+		var apart := corpse.where() - feet
+		if Vector2(apart.x, apart.z).length() < near and absf(apart.y) < near:
+			corpse.trample(feet, velocity)
+
+
+## Lays a body down where it fell and takes its tumble over, and returns the corpse. Null when there
+## is nothing to copy: a body with no rig, or a rig whose ragdoll never resolved.
 ##
-## The pose is read off the skeleton **now**, because the caller is about to hand the body back to
-## the pool and the pool resets it.
-func lay(body: Node3D) -> Node3D:
+## Called while the dying body's ragdoll is **still running** — the corpse starts every one of its
+## bones where that one's is and moving the way it moves, and then the pool can have the body back.
+func lay(body: Node3D) -> Corpse:
 	var visual := body.get_node_or_null(^"Visual") as Node3D
-	if visual == null:
+	var living := body.get_node_or_null(^"Ragdoll") as RagdollComponent
+	if visual == null or living == null or not living.is_ready():
 		return null
-	var corpse := visual.duplicate(DUPLICATE_USE_INSTANTIATION) as Node3D
-	if corpse == null:
+	var copy := visual.duplicate(DUPLICATE_USE_INSTANTIATION) as Node3D
+	if copy == null:
 		return null
+	_strip(copy)
+	var corpse := Corpse.new()
+	corpse.name = "Corpse"
 	add_child(corpse)
 	corpse.global_transform = visual.global_transform
-	_freeze(corpse, _skeleton_in(visual))
-	_settle(corpse)
-	_strip(corpse)
+	corpse.assemble(copy, living, self)
+	if corpse.ragdoll == null or not corpse.ragdoll.is_ready():
+		corpse.queue_free()
+		return null
 	_laid.append(corpse)
 	_make_room()
 	return corpse
@@ -59,124 +97,46 @@ func count() -> int:
 	return _laid.size()
 
 
+## The corpses, oldest first. For the headless check.
+func laid() -> Array[Corpse]:
+	return _laid
+
+
 ## Everything goes. A new run starts on a clean island — the pile is this run's record, and
 ## inheriting the last one's would be the game telling the player about somebody else.
 func clear_field() -> void:
-	for corpse: Node3D in _laid:
+	for corpse: Corpse in _laid:
 		if is_instance_valid(corpse):
 			corpse.queue_free()
 	_laid.clear()
 
 
-## Out of the ground if it ended up in it.
-##
-## **Measured on the mesh, not on the origin.** The origin of a rig is between its feet, and a body
-## baked lying down has its geometry somewhere else entirely — lifting the origin to the sand left
-## the shoulder buried, which is what "he sinks a little" looks like. What has to clear the ground
-## is the lowest vertex there is.
-func _settle(corpse: Node3D) -> void:
-	var box := _box_of(corpse)
-	if box.size == Vector3.ZERO:
-		return
-	var ground := Ground.closest_point(get_world_3d(), box.get_center())
-	if ground == Vector3.INF:
-		return
-	var lift := (ground.y + clearance) - box.position.y
-	if lift > 0.0:
-		corpse.global_position.y += lift
-
-
-## What the corpse actually occupies, in world metres, taken off the baked meshes. A corpse has no
-## collision shape to ask, which is the whole point of it.
-func _box_of(corpse: Node3D) -> AABB:
-	var box := AABB()
-	var found := false
-	for node: Node in _everything_under(corpse):
-		var mesh := node as MeshInstance3D
-		if mesh == null or mesh.mesh == null:
+## Everything that animated the copy. A duplicated subtree brings whatever the original had: the
+## clip player, the head-look modifier and the dying body's own ragdoll, which would fight the
+## corpse's for the same bones. Freed now rather than queued, so the corpse's ragdoll never meets
+## them.
+func _strip(copy: Node) -> void:
+	for node: Node in _everything_under(copy):
+		if not is_instance_valid(node) or node == copy:
 			continue
-		var here := mesh.global_transform * mesh.mesh.get_aabb()
-		box = here if not found else box.merge(here)
-		found = true
-	return box if found else AABB()
-
-
-## The pose baked into the vertices, and the skeleton thrown away.
-##
-## This is the whole reason a corpse is affordable. A `Skeleton3D` updates its bone transforms on an
-## engine notification rather than in `_process`, so a stripped, disabled, physics-free duplicate
-## still cost about 0.4 ms a frame — sixteen bodies came to 15 ms of a 16.7 ms frame. Frozen, a
-## corpse is a static mesh: one draw call and nothing per frame at all.
-func _freeze(corpse: Node3D, posed: Skeleton3D) -> void:
-	var skeleton := _skeleton_in(corpse)
-	if skeleton == null or posed == null:
-		return
-	# The whole corpse, not just the skeleton's children. A duplicated instanced scene does not
-	# always keep the mesh where the original had it, and a bake that searched only under the
-	# skeleton found nothing, baked nothing, and then freed the skeleton anyway — which is a rig
-	# skinned to a bone that no longer exists, and draws standing to attention.
-	var baked_any := false
-	for node: Node in _everything_under(corpse):
-		var skinned := node as MeshInstance3D
-		if skinned == null or skinned.skin == null:
-			continue
-		# Baked against the **living** skeleton, not the copy. A duplicate carries the rest pose: a
-		# `PhysicalBoneSimulator3D` writes global pose overrides into the skeleton it is driving, and
-		# none of that is in the scene data being copied. Reading the copy gave twenty-two farmers
-		# standing to attention around the player.
-		var baked := PosedMesh.freeze(skinned, posed)
-		if baked == null:
-			continue
-		# Out of the skeleton before it is freed, and standing where the skeleton had it.
-		var stood := skinned.global_transform
-		skinned.reparent(corpse, false)
-		skinned.global_transform = stood
-		skinned.mesh = baked
-		skinned.skin = null
-		skinned.skeleton = NodePath()
-		baked_any = true
-	# Only once something is standing on its own. A skeleton freed under a mesh that still needs it
-	# is the standing-to-attention bug, and it is better to pay for a skeleton than to draw that.
-	if baked_any:
-		skeleton.queue_free()
-
-
-## Everything that made it a body rather than a picture. A duplicated subtree brings whatever the
-## original had, and a corpse that still owned a ragdoll would be several hundred rigid bodies the
-## physics step has to look at.
-func _strip(corpse: Node3D) -> void:
-	corpse.process_mode = Node.PROCESS_MODE_DISABLED
-	for node: Node in _everything_under(corpse):
-		if node is PhysicalBoneSimulator3D or node is PhysicalBone3D:
-			node.queue_free()
+		if (
+			node is AnimationMixer
+			or node is SkeletonModifier3D
+			or node is PhysicalBone3D
+			or node is CollisionObject3D
+		):
+			node.get_parent().remove_child(node)
+			node.free()
 			continue
 		node.set_script(null)
-		var visible_part := node as GeometryInstance3D
-		if visible_part != null:
-			# A pile that casts shadows is a pile that costs a second pass over every one of them,
-			# and a body lying flat on sand throws almost nothing worth having.
-			visible_part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		var collider := node as CollisionObject3D
-		if collider != null:
-			collider.process_mode = Node.PROCESS_MODE_DISABLED
+	copy.set_script(null)
 
 
 func _make_room() -> void:
 	while _laid.size() > most:
-		var oldest: Node3D = _laid.pop_front()
+		var oldest: Corpse = _laid.pop_front()
 		if is_instance_valid(oldest):
 			oldest.queue_free()
-
-
-func _skeleton_in(node: Node) -> Skeleton3D:
-	var found := node as Skeleton3D
-	if found != null:
-		return found
-	for child: Node in node.get_children():
-		var deeper := _skeleton_in(child)
-		if deeper != null:
-			return deeper
-	return null
 
 
 func _everything_under(node: Node) -> Array[Node]:
