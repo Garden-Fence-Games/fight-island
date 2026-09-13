@@ -62,9 +62,10 @@ func _run() -> void:
 ## tumble left running when a corpse goes into the pool comes out of it still tumbling, five waves
 ## later, in front of a player who has no idea why the farmer who just spawned is lying down.
 ##
-## Four claims: he is thrown, the body node ends where the hips did rather than where he was
-## standing when the blow landed, he is back on his feet in the time the resource says getting up
-## takes, and a body retired mid-fall does not come back out of the pool still falling.
+## Five claims: he is thrown, the body node ends where the hips did rather than where he was
+## standing when the blow landed, he gets up the way he actually fell, he is back on his feet in the
+## time that get-up takes, and a body retired mid-fall does not come back out of the pool still
+## falling.
 func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> void:
 	var farmer := director.spawner.spawn_at(load(FARMHAND) as EnemyData, SPARRING_SPOT)
 	if farmer == null:
@@ -81,6 +82,14 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 	farmer.passive = true
 	await get_tree().physics_frame
 	var stood := farmer.global_position
+
+	# How he lay the instant he settled, read by a listener connected **before** the state's own: the
+	# state lets go of the skeleton in its handler, and after that the bones say he is standing.
+	var landing := {}
+	var read_the_landing := func() -> void:
+		landing["face_up"] = farmer.ragdoll.lies_face_up()
+		landing["heading"] = farmer.ragdoll.settled_heading()
+	farmer.ragdoll.came_to_rest.connect(read_the_landing)
 
 	# The heaviest thing the fists can throw, from a direction of its own so the push is not a
 	# rounding error on the way he happens to be facing.
@@ -123,11 +132,47 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 			)
 		)
 
-	# Back on his feet, and **in the time `KnockdownData` says it takes**. Two separate claims, and
-	# they fail for different reasons: the state has to honour the figure it is given, and the figure
-	# has to stay inside what a knockdown can be. Without the second, a rise set to half a minute is
-	# honoured perfectly and nothing objects.
+	if farmer.ragdoll.came_to_rest.is_connected(read_the_landing):
+		farmer.ragdoll.came_to_rest.disconnect(read_the_landing)
+	# He gets up **the way he fell**: sitting up off his back, rolling over first off his front. A
+	# stomach clip played on a man lying face up folds him backwards through the ground.
+	var clip := farmer.animation.current_clip() if farmer.animation != null else &""
+	if landing.is_empty():
+		_fail("the tumble ended without the ragdoll ever reporting how he lay")
+	else:
+		var expected := (
+			EnemyStagger.GET_UP_BACK if landing["face_up"] else EnemyStagger.GET_UP_FRONT
+		)
+		if clip != expected:
+			_fail(
+				(
+					"a farmer who landed %s got up with %s, and it had to be %s"
+					% ["on his back" if landing["face_up"] else "on his front", clip, expected]
+				)
+			)
+		# And the clip's head lies where the ragdoll's did, or the first frame of the get-up spins him
+		# on the ground. Both clips put the head along the body's +Z.
+		var heading: Vector3 = landing["heading"]
+		# A lie read off the skeleton instead of the bodies reports a man standing: head straight
+		# over hips, so no direction at all — and "face up" for every fall there has ever been.
+		if heading.is_zero_approx():
+			_fail("the ragdoll gave no direction for his head, so it was read off a standing pose")
+		var head_of_the_clip := farmer.global_basis.z
+		head_of_the_clip.y = 0.0
+		if not heading.is_zero_approx() and heading.dot(head_of_the_clip.normalized()) < 0.95:
+			_fail("the get-up starts with his head somewhere other than where the tumble left it")
+	if farmer.head_look != null and not farmer.head_look.resting:
+		_fail("a farmer getting up off the ground is still turning his head to watch the player")
+
+	# Back on his feet, and **in the time the get-up takes**: the clip's own length, or the stand-in
+	# `KnockdownData` carries for a rig with no clip. Two separate claims, and they fail for different
+	# reasons: the state has to honour the figure it is given, and the figure has to stay inside what a
+	# knockdown can be. Without the second, a rise set to half a minute is honoured perfectly and
+	# nothing objects.
+	var player := farmer.animation.animation_player if farmer.animation != null else null
 	var wanted := Enemy.KNOCKDOWN.rise_time
+	if player != null and clip != &"" and player.has_animation(String(clip)):
+		wanted = player.get_animation(String(clip)).length
 	if wanted > LONGEST_SENSIBLE_RISE:
 		_fail(
 			(
@@ -142,7 +187,9 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 	if farmer.machine.current_name == &"Stagger":
 		_fail("a farmer never got up: %.1f s after the tumble he is still in Stagger" % rising)
 	elif absf(rising - wanted) > RISE_SLACK:
-		_fail("getting up took %.2f s against the %.2f s the resource carries" % [rising, wanted])
+		_fail("getting up took %.2f s against the %.2f s the get-up lasts" % [rising, wanted])
+	if farmer.head_look != null and farmer.head_look.resting:
+		_fail("a farmer back on his feet never took his eyes off the ground")
 
 	farmer.passive = false
 
@@ -177,8 +224,9 @@ func _report() -> void:
 		print(
 			(
 				"knockdown OK — a heavy blow throws a farmer, the tumble ends, the body follows his "
-				+ "hips, he is up again in the time the resource carries, and a body retired "
-				+ "mid-fall comes back out of the pool standing"
+				+ "hips, he gets up the way he fell with the clip lined up on the ragdoll and his "
+				+ "eyes off the player, he is up again in the time the get-up takes, and a body "
+				+ "retired mid-fall comes back out of the pool standing"
 			)
 		)
 		get_tree().quit(0)

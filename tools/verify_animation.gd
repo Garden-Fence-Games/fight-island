@@ -126,6 +126,20 @@ func _check_the_farmer_animates() -> void:
 		_fail("the farmer's component found no AnimationPlayer")
 		farmer.queue_free()
 		return
+	# The farmer's import carried no loop settings for as long as he had a rig, so his walk played
+	# once and froze mid-stride — the same bug the player's cycles had, on the one body nobody checked.
+	for clip: String in ["idle", "walk", "chase"]:
+		var cycle := anim.animation_player.get_animation(clip)
+		if cycle != null and cycle.loop_mode == Animation.LOOP_NONE:
+			_fail("the farmer's %s does not loop — he plays it once and freezes" % clip)
+	for clip: String in ["get_up_back", "get_up_front"]:
+		var once := anim.animation_player.get_animation(clip)
+		if once == null:
+			_fail("the farmer's rig carries no %s" % clip)
+		elif once.loop_mode != Animation.LOOP_NONE:
+			_fail(
+				"the farmer's %s loops, so a man who got up would lie down and do it again" % clip
+			)
 	for state: StringName in [&"Idle", &"Chase"]:
 		farmer.machine.current.transition_to(state)
 		await get_tree().physics_frame
