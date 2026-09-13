@@ -102,17 +102,23 @@ is three times the price per metre.
 
 ## Weapons
 
-Fists are always available. The **stick** is a ground pickup that spawns during wave 2, the **gun**
-during wave 4. Pickups last the whole run; swapping is free and instant — no animation, no penalty,
-no cooldown, because the interesting decision is which weapon suits the moment and not whether the
-player can afford to find out.
+Fists are always available. The **stick and the gun are both ground pickups from wave 1**, dropped
+where the player can see them. Pickups last the whole run; swapping is free and instant — no
+animation, no penalty, no cooldown, because the interesting decision is which weapon suits the
+moment and not whether the player can afford to find out.
+
+They used to arrive in waves 2 and 4, and holding them back cost more than it bought. A weapon
+nobody has found is a weapon that does not exist — and behind the gun sat an upgrade track the
+merchant could not sell, so a player saving for it had money with nowhere to go for four waves. The
+three weapons are a *choice*, not a drip feed: the whole subject of the game is which one suits the
+moment, and that question cannot be asked until all three are in the bag. Ammunition comes off the
+bodies from the first wave for the same reason.
 
 **The bag is on screen**, bottom right: the three weapons in the order the key walks along them, the
-one in hand lit, the ones carried dim, and the ones nobody has found yet dimmer still with the wave
-they arrive in instead of a key. A weapon the player owns and cannot see is a weapon they do not
-use, and the row is also where the progression of a run is legible — the gun is a promise from the
-first wave, not a surprise in the fourth. A locked slot is shown rather than hidden for the same
-reason the merchant shows a locked card.
+one in hand lit, the ones carried dim, and the ones nobody has picked up yet dimmer still, badged
+with the wave they arrive in instead of a key. A weapon the player owns and cannot see is a weapon
+they do not use, and an empty slot says there is something out there to go and find. An unfound slot
+is shown rather than hidden for the same reason the merchant shows a locked card.
 
 | Weapon | # | Attack | Damage | Stamina | Windup | Active | Recovery | Chain window | Perfect window | Perfect × | Range | Arc | Stagger | Poise |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -598,14 +604,14 @@ the whole of the feature and the death is only where it stops.
 
 Level cap 5, one purchase per wave, bought from the merchant. Leftover money carries over.
 
-**A weapon's track is not for sale until the weapon is in the bag.** The stick is found in wave 2
-and the gun in wave 4, and fifteen per cent more damage on something the player cannot swing yet is
-money spent on nothing — a purchase they would only discover was worthless two waves later, by
-which time the run has moved on. The card **stays on the shelf and says where the weapon turns up**
-rather than disappearing: a player who can see the gun track has a reason to save for the wave it
-arrives in, and one who cannot has no idea there is anything to save for. The gate is on the
-purchase itself, not on the button — greying out a card that `buy()` would still honour is not a
-gate.
+**A weapon's track is not for sale until the weapon is in the bag.** Fifteen per cent more damage on
+something the player cannot swing yet is money spent on nothing — a purchase they would only
+discover was worthless later, by which time the run has moved on. Both weapons lie on the island
+from wave 1 now, so the gate is the few minutes between a wave starting and the weapon being walked
+over rather than four waves of a locked card; it stays because *found* is the honest condition and
+a wave number never was. The card **stays on the shelf and says where the weapon turns up** rather
+than disappearing. The gate is on the purchase itself, not on the button — greying out a card that
+`buy()` would still honour is not a gate.
 
 | Track | Per level | At level 5 |
 |---|---|---|

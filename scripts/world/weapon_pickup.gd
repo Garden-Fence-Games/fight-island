@@ -39,6 +39,14 @@ static var _borrowed_scale: Dictionary[StringName, Vector3] = {}
 ## How a borrowed mesh lies. It was modelled standing in a fist, so it is tipped onto its side; the
 ## shipped shape is laid out by the scene and is left alone.
 @export var lying_down: Vector3 = Vector3(-90.0, 0.0, 0.0)
+## How long a borrowed weapon lies on the ground, whatever it is a model of.
+##
+## **A model at its own scale is not a pickup.** The camera is fixed twenty metres up and a revolver
+## is a quarter of a metre of dark metal on pale sand — it landed in shot every time and was walked
+## past anyway, which is how the gun came to be "not on the map". The carved shape it replaced is
+## 0.84 m, so everything borrowed is brought to the same reading and a weapon on the ground looks
+## like a thing to pick up before it looks like a scale model of itself.
+@export var reads_at: float = 0.8
 ## The localisation key of the line above it, with `{0}` for the glyph that takes it.
 @export var prompt_key: String = "PICKUP_TAKE"
 
@@ -100,9 +108,22 @@ func _wear_the_weapons_own_shape() -> void:
 	var turned := Basis.from_euler(
 		Vector3(deg_to_rad(lying_down.x), deg_to_rad(lying_down.y), deg_to_rad(lying_down.z))
 	)
-	var sized := turned.scaled(grown)
+	var sized := _read_at_arms_length(turned.scaled(grown), borrowed)
 	var middle := sized * borrowed.get_aabb().get_center()
 	view.transform = Transform3D(sized, Vector3(0.0, RESTING_HEIGHT, 0.0) - middle)
+
+
+## The same lie-down, grown or shrunk until its longest side is `reads_at`. Measured on the mesh's
+## own bounds after it has been turned, because what has to read is the shape as it will lie, not
+## the shape as it was modelled.
+func _read_at_arms_length(sized: Basis, borrowed: Mesh) -> Basis:
+	if reads_at <= 0.0:
+		return sized
+	var lying := (sized * borrowed.get_aabb().size).abs()
+	var longest := maxf(maxf(lying.x, lying.y), lying.z)
+	if longest <= 0.0:
+		return sized
+	return sized.scaled(Vector3.ONE * (reads_at / longest))
 
 
 ## The mesh a rig node carries, read once and kept. Null when the rig has no such node.
