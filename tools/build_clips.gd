@@ -30,6 +30,21 @@ const CARRY_CLIP: String = "idle_gun"
 const STANDING_CLIP: String = "idle"
 const GUARD_CLIP: StringName = &"parry"
 const OUTPUT: String = "res://assets/models/char_player_stand_ins.tres"
+
+## The farmer, who has no attack clip at all: the telegraph froze him mid-stride and the blow that
+## followed moved nothing. The lean that tells the player a blow is coming is `EnemyWindUp`'s and
+## stays his — this only adds the arm, which is what says *which* farmer is swinging.
+const FARMER_RIG: String = "res://assets/models/char_farmer.glb"
+const FARMER_STANDING_CLIP: String = "idle"
+const FARMER_OUTPUT: String = "res://assets/models/char_farmer_stand_ins.tres"
+## Each archetype's attack, and how far its arm travels relative to the farmhand's straight punch.
+## The reaper swings a scythe through a hundred and sixty degrees and the thrower brings an arm all
+## the way over, so the same draw and the same swing at different depths is most of the difference.
+const BLOWS: Dictionary[String, float] = {
+	"res://data/attacks/farmhand_swing.tres": 1.0,
+	"res://data/attacks/reaper_sweep.tres": 1.5,
+	"res://data/attacks/thrower_stone.tres": 1.25,
+}
 ## The attacks to build a stand-in for, and the weight of the kick each one throws. Relative to the
 ## single shot, which is one: the double tap puts two rounds down the same barrel at the same
 ## instant, and the charged shot is the reason the player rations the magazine.
@@ -93,48 +108,82 @@ const RAISE_SECONDS: float = 0.18
 const KICK_SECONDS: float = 0.05
 const RECOVER_SECONDS: float = 0.14
 
+## The farmer's draw and his swing, in degrees on the shooting-side arm, before the archetype's
+## depth is applied. The draw takes the arm up and back over the whole wind-up; the swing brings it
+## down and through inside the active window, which is a tenth of a second and has to read.
+##
+## **The swing starts exactly where the draw ended.** They are built from the same numbers for that
+## reason, and `verify_clips` asserts it: a blow that began from anywhere else would spend its one
+## tenth of a second blending out of a pose the player had already been shown.
+const DRAW_ARM_LIFT: float = -55.0
+const DRAW_ARM_REACH: float = 28.0
+const DRAW_FOREARM_LIFT: float = -85.0
+const SWING_ARM_LIFT: float = -70.0
+const SWING_ARM_REACH: float = -52.0
+const SWING_FOREARM_LIFT: float = 0.0
+## How much of the wind-up the arm spends still coming back. The rest is a held cock, so the last
+## thing the player reads before the blow is a body that has stopped moving — which is the moment
+## the lean has finished arriving too.
+const DRAW_SHARE: float = 0.7
+
 
 func _ready() -> void:
 	_run()
 
 
 func _run() -> void:
-	var carry := _pose(CARRY_CLIP)
-	if carry == null:
-		get_tree().quit(1)
-		return
+	get_tree().quit(0 if _player_stand_ins() and _farmer_stand_ins() else 1)
+
+
+## What the player's rig is missing: three shots off the gun-carry pose and a guard off the
+## empty-handed idle.
+func _player_stand_ins() -> bool:
+	var carry := _pose(RIG, CARRY_CLIP)
+	var standing := _pose(RIG, STANDING_CLIP)
+	if carry == null or standing == null:
+		return false
 	var library := AnimationLibrary.new()
 	for path: String in SHOTS:
 		var attack := load(path) as AttackData
-		if attack == null:
-			printerr("clips: %s is not an AttackData" % path)
-			get_tree().quit(1)
-			return
-		if attack.animation == &"":
-			printerr("clips: %s names no animation" % path)
-			get_tree().quit(1)
-			return
+		if attack == null or attack.animation == &"":
+			printerr("clips: %s is not an AttackData that names an animation" % path)
+			return false
 		library.add_animation(attack.animation, _shot_clip(carry, attack, SHOTS[path]))
-	var standing := _pose(STANDING_CLIP)
-	if standing == null:
-		get_tree().quit(1)
-		return
 	library.add_animation(GUARD_CLIP, _guard_clip(standing))
-	if ResourceSaver.save(library, OUTPUT) != OK:
-		printerr("clips: could not save " + OUTPUT)
-		get_tree().quit(1)
-		return
-	print("clips baked — %d stand-ins in %s" % [library.get_animation_list().size(), OUTPUT])
-	get_tree().quit(0)
+	return _save(library, OUTPUT)
+
+
+## What the farmer's rig is missing: a draw and a blow for each archetype, both off his idle.
+func _farmer_stand_ins() -> bool:
+	var standing := _pose(FARMER_RIG, FARMER_STANDING_CLIP)
+	if standing == null:
+		return false
+	var library := AnimationLibrary.new()
+	for path: String in BLOWS:
+		var attack := load(path) as AttackData
+		if attack == null or attack.animation == &"" or attack.windup_animation == &"":
+			printerr("clips: %s does not name both a wind-up and a blow" % path)
+			return false
+		library.add_animation(attack.windup_animation, _draw_clip(standing, attack, BLOWS[path]))
+		library.add_animation(attack.animation, _swing_clip(standing, attack, BLOWS[path]))
+	return _save(library, FARMER_OUTPUT)
+
+
+func _save(library: AnimationLibrary, path: String) -> bool:
+	if ResourceSaver.save(library, path) != OK:
+		printerr("clips: could not save " + path)
+		return false
+	print("clips baked — %d stand-ins in %s" % [library.get_animation_list().size(), path])
+	return true
 
 
 ## One of the rig's own clips, which every stand-in is built on top of. Null when the rig cannot be
 ## read or carries no such clip, because a stand-in invented from nothing would put the body in a
 ## pose nobody chose.
-func _pose(named: String) -> Animation:
-	var packed := load(RIG) as PackedScene
+func _pose(rig_path: String, named: String) -> Animation:
+	var packed := load(rig_path) as PackedScene
 	if packed == null:
-		printerr("clips: cannot load " + RIG)
+		printerr("clips: cannot load " + rig_path)
 		return null
 	var rig := packed.instantiate()
 	var found: Animation = null
@@ -145,7 +194,7 @@ func _pose(named: String) -> Animation:
 			break
 	rig.free()
 	if found == null:
-		printerr("clips: the rig carries no %s to build on" % named)
+		printerr("clips: %s carries no %s to build on" % [rig_path, named])
 	return found
 
 
@@ -225,6 +274,74 @@ func _joint_track(clip: Animation, bone: String) -> int:
 	if track < 0:
 		printerr("clips: the pose being built on does not turn %s" % bone)
 	return track
+
+
+## The telegraph: the arm comes up and back over most of the wind-up, then holds cocked.
+##
+## Its length is nominal. The wind-up is not a constant — the waves shorten it and the hour shortens
+## it again — so `EnemyWindUp` hands the real duration to `play_clip`, which stretches this to fit.
+## Building it at the tuned figure only means the stretch is one at the wave it was tuned for.
+func _draw_clip(standing: Animation, attack: AttackData, depth: float) -> Animation:
+	var clip := Animation.new()
+	clip.length = attack.windup
+	clip.loop_mode = Animation.LOOP_NONE
+	for track: int in standing.get_track_count():
+		_copy_pose_track(standing, track, clip)
+	var drawn := clip.length * DRAW_SHARE
+	for pair: Array in _swinging_arm(depth, true):
+		_key_path(clip, pair[0] as String, [0.0, drawn, clip.length], [null, pair[1], pair[1]])
+	return clip
+
+
+## The blow, from the cocked pose straight through. It starts on the last frame of the draw so the
+## two read as one movement, and it lasts exactly the active window.
+func _swing_clip(standing: Animation, attack: AttackData, depth: float) -> Animation:
+	var clip := Animation.new()
+	clip.length = maxf(attack.active, 0.001)
+	clip.loop_mode = Animation.LOOP_NONE
+	for track: int in standing.get_track_count():
+		_copy_pose_track(standing, track, clip)
+	var cocked := _swinging_arm(depth, true)
+	var through := _swinging_arm(depth, false)
+	for index: int in cocked.size():
+		_key_path(
+			clip,
+			cocked[index][0] as String,
+			[0.0, clip.length],
+			[cocked[index][1], through[index][1]]
+		)
+	return clip
+
+
+## The three joints a farmer swings with and how far each turns, either drawn back or followed
+## through. Returned as pairs so the draw and the blow cannot be given different joints, which is
+## the way the two would come apart.
+func _swinging_arm(depth: float, drawn: bool) -> Array:
+	var lift := DRAW_ARM_LIFT if drawn else SWING_ARM_LIFT
+	var reach := DRAW_ARM_REACH if drawn else SWING_ARM_REACH
+	var forearm := DRAW_FOREARM_LIFT if drawn else SWING_FOREARM_LIFT
+	# Depth reaches the upper arm and the shoulder, never the elbow. How far a blow travels is how
+	# far the arm comes round; multiplying the elbow as well would bend it past where an elbow goes
+	# and the reaper would swing on a broken arm.
+	return [
+		["mixamorig_RightArm", _turn(lift * depth, reach * depth)],
+		["mixamorig_RightForeArm", _turn(forearm, 0.0)],
+		["mixamorig_RightShoulder", _turn(lift * depth * 0.2, 0.0)],
+	]
+
+
+## Keys one bone against the pose the clip was built on. A null turn means "the pose itself", which
+## is how a clip starts and ends where the body already was.
+func _key_path(clip: Animation, bone: String, times: Array, turns: Array) -> void:
+	var track := _joint_track(clip, bone)
+	if track < 0:
+		return
+	var standing: Quaternion = clip.rotation_track_interpolate(track, 0.0)
+	clip.track_remove_key(track, 0)
+	for index: int in times.size():
+		var turn: Variant = turns[index]
+		var pose: Quaternion = standing if turn == null else standing * (turn as Quaternion)
+		clip.rotation_track_insert_key(track, times[index] as float, pose)
 
 
 func _copy_pose_track(carry: Animation, track: int, clip: Animation) -> void:

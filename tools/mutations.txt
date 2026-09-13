@@ -88,3 +88,9 @@ scripts/components/animation_component.gd|&"Dodge": &"dodge_roll",|&"Dodge": &"d
 scripts/components/animation_component.gd|if mine.has_animation(clip):|if not mine.has_animation(clip):|verify_clips
 scripts/actors/player/states/player_parry.gd|const LATE_END: float = 0.22|const LATE_END: float = 0.30|verify_clips
 scripts/components/animation_component.gd|&"Parry": &"parry",|&"Parry": &"pary",|verify_clips
+
+# The farmer's telegraph and blow: a clip_name that answers with the wrong field, or a clip_duration
+# that stops asking the body how long its own wind-up is, leaves the clips on disk and the farmer
+# moving like nothing was added.
+scripts/actors/enemy/states/enemy_attack.gd|return attack.animation if attack != null else &""|return attack.impact_sound if attack != null else &""|verify_clips
+scripts/actors/enemy/states/enemy_windup.gd|return enemy.windup()|return 0.0|verify_clips

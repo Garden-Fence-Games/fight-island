@@ -21,5 +21,6 @@ perfect_multiplier = 1.35
 hitstop = 0.08
 reach = 2.8
 arc_degrees = 160.0
+windup_animation = &"windup_sweep"
 animation = &"attack_scythe"
 vfx = ExtResource("2")
