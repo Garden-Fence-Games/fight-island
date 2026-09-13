@@ -114,6 +114,11 @@ The options menu carries a **Show tutorial prompts** toggle, defaulting to off o
 has been completed once. Nobody should have to sit through it twice, and nobody should have to hunt
 for the switch when a friend tries the game on their machine.
 
+Switching it off is also the way out. The parry step holds wave 1 open until a parry lands, so a
+tutorial that carried on unseen would be a wave that never ends and never says why — the director
+hands the island back the moment the toggle goes off, and a run that starts with it off never takes
+the island at all.
+
 ## What this is not
 
 - **Not a separate scene.** No `tutorial.tscn` to keep in sync with the arena.
@@ -144,8 +149,13 @@ is the `windup` multiplier the wave scaling already used.
 
 Two details worth stating, because they are not obvious from the table:
 
-- **A step says how many bodies should be standing, not how many to send.** The director tops up, so
-  a farmhand killed during the chain lesson is replaced and the lesson survives being played well.
+- **A step says what should be standing, not what to send.** The director tops up, so a farmhand
+  killed during the chain lesson is replaced and the lesson survives being played well — and it also
+  makes the bodies already there match the step, because harmlessness is decided at spawn and the
+  man sent for the attack lesson is the same man the dodge lesson needs to be swung at by.
+- **A chained hit is recognised by the attack that landed**, not by the player's chain window. The
+  window belongs to a swing that has *finished*; starting the next one closes it, so it is shut for
+  the whole of every blow that lands and cannot say whether that blow was the first or the second.
 - **The wave director is halted, not replaced.** When the last lesson closes, the tutorial hands the
   island back and the ordinary breather runs — so wave 2 arrives exactly like every other wave.
 

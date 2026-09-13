@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=50 format=3]
+[gd_resource type="Theme" load_steps=54 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/inter_semibold.ttf" id="1"]
 [ext_resource type="FontFile" path="res://assets/fonts/oswald_medium.ttf" id="2"]
@@ -68,6 +68,70 @@ content_margin_top = 4.0
 content_margin_right = 8.0
 content_margin_bottom = 4.0
 bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_music_chip"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.0667, 0.0667, 0.0706, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_music_button"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1412, 0.1412, 0.149, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2824, 0.2824, 0.2902, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_music_button_hot"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.2275, 0.2275, 0.2353, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8275, 0.2275, 0.2275, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_music_button_off"]
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.0941, 0.0941, 0.098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.1804, 0.1804, 0.1882, 1)
 corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
@@ -789,6 +853,24 @@ MenuTitleActive/base_type = &"Label"
 MenuTitleActive/colors/font_color = Color(1, 1, 1, 1)
 MenuTitleActive/font_sizes/font_size = 24
 MenuTitleActive/fonts/font = ExtResource("2")
+MusicButton/base_type = &"Button"
+MusicButton/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
+MusicButton/colors/font_disabled_color = Color(0.4392, 0.4392, 0.451, 1)
+MusicButton/colors/font_focus_color = Color(1, 1, 1, 1)
+MusicButton/colors/font_hover_color = Color(1, 1, 1, 1)
+MusicButton/colors/font_pressed_color = Color(1, 1, 1, 1)
+MusicButton/font_sizes/font_size = 14
+MusicButton/fonts/font = ExtResource("1")
+MusicButton/styles/disabled = SubResource("StyleBoxFlat_music_button_off")
+MusicButton/styles/focus = SubResource("StyleBoxFlat_music_button_hot")
+MusicButton/styles/hover = SubResource("StyleBoxFlat_music_button_hot")
+MusicButton/styles/normal = SubResource("StyleBoxFlat_music_button")
+MusicButton/styles/pressed = SubResource("StyleBoxFlat_music_button_hot")
+MusicChip/base_type = &"PanelContainer"
+MusicChip/styles/panel = SubResource("StyleBoxFlat_music_chip")
+MusicTitle/base_type = &"Label"
+MusicTitle/colors/font_color = Color(0.8471, 0.8471, 0.8235, 1)
+MusicTitle/font_sizes/font_size = 14
 OptionsPanel/base_type = &"PanelContainer"
 OptionsPanel/styles/panel = SubResource("StyleBoxFlat_options_panel")
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_panel")

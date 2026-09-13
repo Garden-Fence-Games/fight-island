@@ -205,6 +205,24 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- **The tutorial could not be finished.** Wave 1 stopped on the chain lesson, on every first run.
+  The director asked for the second blow of a chain and then recognised it by `Player.chain_index` —
+  which is the window a *finished* swing leaves open, and entering the next swing closes it, so it
+  reads -1 for the whole of every blow that lands. A chained hit is named by the attack that landed
+  instead, which is what `attack_landed` was already carrying.
+- **And past that it stopped again at the dodge lesson.** The farmhand sent for the attack lesson is
+  spawned harmless, harmlessness is decided at spawn, and the director only ever tops the island
+  *up* — so the body still standing when the gloves were meant to come off could never swing, and a
+  lesson that ends on being swung at could never end. A step says what should be standing, and what
+  is standing is now made to match it.
+- **Switching *Show tutorial prompts* off no longer leaves a wave that cannot end.** The parry holds
+  wave 1 open until it lands and nothing on screen was left to say so. The tutorial hands the island
+  back instead, and a run started with the toggle already off never takes it in the first place.
+- **Wave 1 counts towards the run clock**, like every other wave. Halting the formula stopped the
+  clock, and nothing started it again until wave 2 arrived.
+- `verify_tutorial` answers the chain lesson with a real attack rather than by writing the player's
+  bookkeeping by hand, watches a standing farmer be allowed to swing, and switches the prompts off
+  mid-lesson — the three things that were true of the checks and not of the game.
 - **The macOS build could not be made at all.** Apple Silicon reads ASTC and nothing else, and
   `import_etc2_astc` was off — so the universal preset refused to export with "Cannot export for
   universal or arm64 if ETC2 ASTC texture format is disabled". Nothing in the project could see it,
