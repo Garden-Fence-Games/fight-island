@@ -1,7 +1,7 @@
 class_name KnockdownData
 extends Resource
 ## What a blow does to a body once it has landed: how hard it throws him, what breaking his poise
-## adds to that, and how long he may stay down.
+## adds to that, how long he may stay down, and how long getting up takes.
 ##
 ## **These are not per-attack figures, and that is the point.** What differs between a jab and an
 ## uppercut is already `AttackData.stagger`; these three turn that one number into a knockdown, and
@@ -23,3 +23,7 @@ extends Resource
 ## moving, which is almost always first; this is the ceiling for the times it does not — wedged
 ## against a rock, caught on a slope. A flat ceiling would put a jab down as long as an uppercut.
 @export var fall_ceiling: float = 4.0
+## How long standing back up takes. A placeholder for the clip: `get_up` is not on the rig yet, and
+## a clip the rig does not carry resolves to the rest pose, so the farmer stands and walks off over
+## this many seconds. The day it is authored, this becomes the clip's own length.
+@export var rise_time: float = 0.7

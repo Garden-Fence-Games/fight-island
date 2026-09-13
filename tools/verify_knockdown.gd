@@ -24,6 +24,13 @@ const SENT_SPRAWLING: float = 0.5
 ## off the uppercut, so a check measuring a knockdown does not quietly stop measuring one the day
 ## somebody retunes the attack.
 const A_HEAVY_BLOW: float = 0.6
+## How far the measured rise may sit from the figure the resource carries. Generous — this is here
+## to prove the state reads that figure at all, not to time it to the frame.
+const RISE_SLACK: float = 0.4
+## The longest a knockdown may keep a man down and still be a knockdown, whatever the resource says.
+## **This one does not scale with the figure**, and that is the point: a bound derived from the
+## number being checked passes for every number, including a rise set to half a minute.
+const LONGEST_SENSIBLE_RISE: float = 2.0
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -55,8 +62,9 @@ func _run() -> void:
 ## tumble left running when a corpse goes into the pool comes out of it still tumbling, five waves
 ## later, in front of a player who has no idea why the farmer who just spawned is lying down.
 ##
-## Three claims: he is thrown, he gets up, and the body node ends where the hips did rather than
-## where he was standing when the blow landed.
+## Four claims: he is thrown, the body node ends where the hips did rather than where he was
+## standing when the blow landed, he is back on his feet in the time the resource says getting up
+## takes, and a body retired mid-fall does not come back out of the pool still falling.
 func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> void:
 	var farmer := director.spawner.spawn_at(load(FARMHAND) as EnemyData, SPARRING_SPOT)
 	if farmer == null:
@@ -115,6 +123,27 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 			)
 		)
 
+	# Back on his feet, and **in the time `KnockdownData` says it takes**. Two separate claims, and
+	# they fail for different reasons: the state has to honour the figure it is given, and the figure
+	# has to stay inside what a knockdown can be. Without the second, a rise set to half a minute is
+	# honoured perfectly and nothing objects.
+	var wanted := Enemy.KNOCKDOWN.rise_time
+	if wanted > LONGEST_SENSIBLE_RISE:
+		_fail(
+			(
+				"getting up is set to %.1f s, and past %.1f s a knockdown stops being a knockdown"
+				% [wanted, LONGEST_SENSIBLE_RISE]
+			)
+		)
+	var rising := 0.0
+	while farmer.machine.current_name == &"Stagger" and rising < LONGEST_SENSIBLE_RISE + RISE_SLACK:
+		await get_tree().physics_frame
+		rising += 1.0 / 60.0
+	if farmer.machine.current_name == &"Stagger":
+		_fail("a farmer never got up: %.1f s after the tumble he is still in Stagger" % rising)
+	elif absf(rising - wanted) > RISE_SLACK:
+		_fail("getting up took %.2f s against the %.2f s the resource carries" % [rising, wanted])
+
 	farmer.passive = false
 
 	# And the whole point, which has to be asked **mid-tumble** or it asks nothing: a body retired
@@ -148,7 +177,8 @@ func _report() -> void:
 		print(
 			(
 				"knockdown OK — a heavy blow throws a farmer, the tumble ends, the body follows his "
-				+ "hips, and a body retired mid-fall comes back out of the pool standing"
+				+ "hips, he is up again in the time the resource carries, and a body retired "
+				+ "mid-fall comes back out of the pool standing"
 			)
 		)
 		get_tree().quit(0)

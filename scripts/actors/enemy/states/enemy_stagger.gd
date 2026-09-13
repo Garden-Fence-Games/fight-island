@@ -15,9 +15,6 @@ extends EnemyState
 
 enum Phase { FALLING, RISING }
 
-## How long standing up takes until `get_up` exists to say so.
-const RISE_TIME: float = 0.7
-
 var _phase: Phase = Phase.RISING
 var _remaining: float = 0.0
 
@@ -72,7 +69,7 @@ func _on_came_to_rest() -> void:
 	enemy.ragdoll.stop()
 	enemy.global_position = Vector3(landed.x, enemy.global_position.y, landed.z)
 	_phase = Phase.RISING
-	_remaining = RISE_TIME
+	_remaining = Enemy.KNOCKDOWN.rise_time
 	# Re-asked rather than assumed: the state is the same, but what it wants played has changed.
 	if enemy.animation != null:
 		enemy.animation.refresh()
