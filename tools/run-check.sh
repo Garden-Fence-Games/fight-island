@@ -3,11 +3,17 @@
 #
 # A GDScript file that fails to parse does not fail the check that uses it. The scene loads without
 # the script, `_ready` never runs, nothing ever calls `quit()`, and the process sits in its idle
-# loop until something else kills it. The same happens when a runtime error aborts `_run()` halfway
-# through, or when an `await` never resolves. All three read as a slow machine rather than as a
-# broken check — which is exactly what they cost the first time.
+# loop until something else kills it. The same happens when an `await` never resolves. Both read as
+# a slow machine rather than as a broken check — which is exactly what they cost the first time.
 #
-# So: a check that has not finished in time fails, and a check that never said it passed fails too.
+# A runtime error is worse than either, because it does not hang. `SCRIPT ERROR` unwinds the
+# function it happened in and the check carries on from the next line: every assertion below the
+# error is skipped, nothing is recorded as failed, and the script reaches its own report and prints
+# the pass it no longer earned. That is not a check that broke — it is a check that lied, and it
+# cost a whole review to notice. So a run that logged one fails, whatever it went on to print.
+#
+# So: a check that has not finished in time fails, a check that never said it passed fails too, and
+# a check that hit a runtime error fails even if it said it passed.
 #
 #   tools/run-check.sh res://tools/verify_waves.tscn      # a scene
 #   tools/run-check.sh tools/verify_project_config.gd     # a script
@@ -37,8 +43,30 @@ godot=$!
 # The log is watched rather than read at the end, because the process this is protecting against is
 # the one that never exits: a script that did not compile says so in the first second and would
 # otherwise sit out the whole wall clock before anyone was told why.
-broken() {
+unloadable() {
 	grep -qE "Parse Error|Compile Error|Failed to load script" "$log"
+}
+
+# Godot's own prefix for a runtime fault — a bad index, a null call, a property that is no longer
+# there. Anchored to the line start so a check may still print the words in a failure message of
+# its own.
+blew_up() {
+	grep -qE "^SCRIPT ERROR" "$log"
+}
+
+broken() {
+	unloadable || blew_up
+}
+
+explain_break() {
+	if unloadable; then
+		echo "::error::$target did not compile."
+		echo "check FAILED — $target did not compile. See the parse errors above."
+	else
+		echo "::error::$target hit a runtime error."
+		echo "check FAILED — $target hit a runtime error. Everything after it was skipped, so any"
+		echo "  pass it printed covers less than it claims. See the SCRIPT ERROR above."
+	fi
 }
 
 waited=0
@@ -47,8 +75,7 @@ while kill -0 "$godot" 2>/dev/null; do
 		kill -9 "$godot" 2>/dev/null
 		wait "$godot" 2>/dev/null
 		cat "$log"
-		echo "::error::$target did not compile."
-		echo "check FAILED — $target did not compile. See the parse errors above."
+		explain_break
 		exit 1
 	fi
 	if [ "$waited" -ge "$CHECK_SECONDS" ]; then
@@ -69,10 +96,10 @@ status=$?
 
 cat "$log"
 
-# Godot exits 0 for a scene whose script never loaded, so the log is the only witness.
+# Godot exits 0 for a scene whose script never loaded and for one that faulted halfway through, so
+# the log is the only witness.
 if broken; then
-	echo "::error::$target did not compile."
-	echo "check FAILED — $target did not compile. See the parse errors above."
+	explain_break
 	exit 1
 fi
 
