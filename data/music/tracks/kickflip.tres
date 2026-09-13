@@ -8,3 +8,4 @@ script = ExtResource("1")
 title = "Kickflip"
 artist = "Dyalla"
 stream = ExtResource("2")
+as_recorded = -5.07

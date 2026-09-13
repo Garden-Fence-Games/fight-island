@@ -348,8 +348,20 @@ func gain_of_voice(kind: StringName) -> float:
 
 ## What a track comes out at, headroom included — the same question `level_of` answers for a sound
 ## with an id, for the one stream that has no id and is not synthesised.
-func peak_of_music() -> float:
-	return _level(MixTable.TRACK_LEVEL + MixTable.of_family(&"track"))
+## What the jukebox plays **this** track at. **Derived rather than declared**, because a track
+## arrives already mastered: the figure on the table is what it should be worth at the ear, and the
+## gain is whatever turns this particular recording into that. The same shape as `gain_of_voice`,
+## for the same reason — and per track, so five masters six decibels apart arrive level.
+##
+## A track with nothing measured falls back to the soundtrack's average rather than to unity: unity
+## would be a gain of zero against a master, which is the loudest thing the game could possibly do.
+func gain_of_music(track: MusicTrack = null) -> float:
+	var recorded := MixTable.TRACK_AS_RECORDED
+	if track != null and track.as_recorded < 0.0:
+		recorded = track.as_recorded
+	return db_to_linear(
+		MixTable.TRACK_LEVEL + MixTable.HEADROOM_DB + MixTable.of_family(&"track") - recorded
+	)
 
 
 ## A menu press, heard. Flat rather than positional: a button is not anywhere on the island.

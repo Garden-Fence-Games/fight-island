@@ -59,7 +59,7 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Re-reads the desk, without restarting the track it is in the middle of.
 func remix() -> void:
 	if playing:
-		volume_db = linear_to_db(AudioManager.peak_of_music())
+		volume_db = linear_to_db(AudioManager.gain_of_music(_track))
 
 
 func now_playing() -> MusicTrack:
@@ -122,7 +122,7 @@ func _begin(track: MusicTrack) -> void:
 	stream = track.stream
 	volume_db = AudioManager.SILENT_DB
 	play()
-	_fade_to(linear_to_db(AudioManager.peak_of_music()))
+	_fade_to(linear_to_db(AudioManager.gain_of_music(track)))
 	track_changed.emit(_track)
 	EventBus.music_track_changed.emit(_track)
 

@@ -161,6 +161,12 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   and a loop. `data/music/playlist.tres` carries five tracks; the jukebox and the player in the
   corner still cope with an empty one, because a playlist is a data change and code that broke when
   somebody emptied it would make it a code change.
+
+  **A track carries its own measured loudness and the gain is derived from it**, the same way a
+  recorded voice does. Everything else in the mix is *baked to* its level; a master arrives already
+  finished, so applying the table to it as a gain lands wherever the mastering happened to put it —
+  which is how the soundtrack shipped at -46.6 dB, under the menu click. Per track rather than one
+  average, because five masters six decibels apart otherwise step every time the track changes.
 - **`EliteRank`** — what being an elite is worth: the health, damage and money multipliers, and the
   mesh scale and emission that make it legible. One instance on `WaveConfig`, shared by every body
   that rolls it, because an elite is the *same scene* — multipliers rather than a second archetype
