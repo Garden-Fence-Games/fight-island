@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://p6yndgpog7lv"
-path="res://.godot/imported/stone_largeD.glb-0ccdc4e61912a633a4655564aa72782f.scn"
+uid="uid://cejkxdxr5badi"
+path="res://.godot/imported/grass_3.glb-b0a860fb56da655cc30ee68355f2635c.scn"
 
 [deps]
 
-source_file="res://assets/models/nature/stone_largeD.glb"
-dest_files=["res://.godot/imported/stone_largeD.glb-0ccdc4e61912a633a4655564aa72782f.scn"]
+source_file="res://assets/models/nature/grass_3.glb"
+dest_files=["res://.godot/imported/grass_3.glb-b0a860fb56da655cc30ee68355f2635c.scn"]
 
 [params]
 

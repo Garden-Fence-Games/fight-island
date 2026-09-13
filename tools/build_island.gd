@@ -39,19 +39,9 @@ const PEBBLE_FADE: float = 70.0
 ## fixed camera frames, so it saves nothing today and catches a wider camera tomorrow. Rocks stay
 ## rangeless; 80 triangles each buys nothing.
 const PALM_FADE: float = 80.0
-## The scattered decoration, each with its origin at its base. **The palm is ours and painted**, so
-## it brings its own colours and the palette steps aside — see `_part_material`. The rest are
-## Kenney's CC0 Nature Kit: untextured, cut into named parts, coloured by the island.
-const PALM_MODEL: String = "res://assets/models/nature/palm_tree.glb"
-const ROCK_MODEL: String = "res://assets/models/nature/stone_largeD.glb"
+## The pebbles: Kenney's CC0 Nature Kit, coloured by the island, and what one measures as it ships.
+## What grows and every rock are painted — see `IslandFoliage`, `IslandRocks`.
 const PEBBLE_MODEL: String = "res://assets/models/nature/stone_smallA.glb"
-## What each model measures as it ships, so the scatter can go on thinking in metres. A palm is
-## scaled by its height and the rest by their width, because that is the dimension each was drawn
-## around.
-const PALM_MODEL_HEIGHT: float = 5.29
-const ROCK_MODEL_WIDTH: float = 1.07
-const ROCK_MODEL_HEIGHT: float = 0.57
-const ROCK_MODEL_DEPTH: float = 1.03
 const PEBBLE_MODEL_WIDTH: float = 0.36
 ## The huts, from Kenney's CC0 Survival Kit — the Nature Kit's companion, drawn by the same hand on
 ## the same half-metre tile, and shipping the same untextured, named parts the palette maps colours
@@ -127,8 +117,6 @@ const MIN_GAP: float = 1.5
 ## The trunk mesh is 0.16 m across. A collider much wider than that is felt as an invisible ring
 ## around every tree, which is exactly what "it blocks far too early" means.
 const PALM_RADIUS: float = 0.2
-## Rocks smaller than this are stepped over, not walked around, so they neither collide nor count.
-const BLOCKING_ROCK: float = 0.9
 const PALM_COUNT: int = 380
 ## Stone is scattered thinly on purpose. A rock the player never has to think about is not scenery,
 ## it is litter in front of the fight — and the island already says "stone" with the six authored
@@ -168,7 +156,12 @@ const HUT_DRY_GROUND: float = 0.6
 # --- Navigation --------------------------------------------------------------------------------
 
 const SAND: Color = Color(0.86, 0.78, 0.58)
-const GRASS_GREEN: Color = Color(0.36, 0.52, 0.27)
+## The ground under grass. **Written as the value the renderer shades, not as a picked colour**: the
+## terrain's vertex colours are read as linear, so a green chosen by eye comes out washed nearly to
+## white — which is what `(0.36, 0.52, 0.27)` did. This one lands as a warm, light yellow-green.
+const GRASS_GREEN: Color = Color(0.3, 0.44, 0.1)
+## How green the ground has to be before it is drawn fully green.
+const GREEN_FROM: float = 0.3
 ## The island's palette, mapped onto the parts the models name.
 ##
 ## The pack's own colours are not used: its leaves ship as turquoise and its stone as a pale blue
@@ -386,7 +379,9 @@ func _colour_at(x: float, z: float, height: float) -> Color:
 	# The whole shoreline is sand, always. Grass only starts once the sea is well behind.
 	if inland < SHORE_BAND * 0.55:
 		return SAND
-	return SAND.lerp(GRASS_GREEN, _greenness(x, z))
+	# Green as soon as grass can grow at all, not in proportion to how much: grass stood on pale sand
+	# wherever the patch noise had thinned it, and read as tufts on a beach rather than as a meadow.
+	return SAND.lerp(GRASS_GREEN, smoothstep(0.0, GREEN_FROM, _greenness(x, z)))
 
 
 func _terrain(heights: PackedFloat32Array) -> MeshInstance3D:
@@ -499,22 +494,12 @@ func _scatter() -> Node3D:
 	# What a bush keeps clear of. Snapshotted before the palms go in, because the palms are the one
 	# thing it is meant to crowd rather than avoid — see `IslandFoliage`.
 	var bush_avoid := taken.duplicate()
-	var trunks: Array[Vector3] = []
-
-	var palms: Array[Transform3D] = []
-	for spot: Vector3 in _spots(
-		PALM_COUNT, CLEAR_RADIUS, PALM_RADIUS, 3.4, Vector2(0.08, 3.0), 0.0, taken
-	):
-		var lean := Basis(Vector3.FORWARD, _rng.randf_range(-0.12, 0.12))
-		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
-		var height := _rng.randf_range(3.4, 5.2)
-		# Uniformly. A palm stretched only upward grows a crown that reads as a squashed umbrella,
-		# and the model already has the proportions of a palm.
-		var grown := Vector3.ONE * (height / PALM_MODEL_HEIGHT)
-		palms.append(Transform3D((lean * turn).scaled(grown), spot))
-		trunks.append(spot)
-		blocking.append([spot, PALM_RADIUS])
-		taken.append([spot, PALM_RADIUS])
+	var trunks := _spots(PALM_COUNT, CLEAR_RADIUS, PALM_RADIUS, 3.4, Vector2(0.08, 3.0), 0.0, taken)
+	var grove := IslandFoliage.palms(trunks, _rng, _land, taken, PALM_RADIUS, MIN_GAP)
+	var palms: Array = grove[0]
+	for collider: Array in grove[1]:
+		blocking.append(collider)
+		taken.append(collider)
 
 	var pebbles: Array[Transform3D] = []
 	for spot: Vector3 in _spots(PEBBLE_COUNT, 0.0, 0.0, 1.6, Vector2(-0.05, SHORE_BAND * 0.7)):
@@ -524,40 +509,29 @@ func _scatter() -> Node3D:
 		var grown := Vector3.ONE * (size / PEBBLE_MODEL_WIDTH)
 		pebbles.append(Transform3D((turn * tilt).scaled(grown), spot))
 
-	var rocks: Array[Transform3D] = []
-	for spot: Vector3 in _spots(
-		ROCK_COUNT, CLEAR_RADIUS, 0.9, 2.2, Vector2(-0.02, 3.0), 0.0, taken
-	):
-		var size := _rng.randf_range(0.4, 1.7)
-		var turn := Basis(Vector3.UP, _rng.randf_range(0.0, TAU))
-		var tilt := Basis(Vector3.RIGHT, _rng.randf_range(-0.12, 0.12))
-		var wide := size * _rng.randf_range(0.8, 1.2)
-		var grown := Vector3(size, size, wide) / ROCK_MODEL_WIDTH
-		rocks.append(Transform3D((turn * tilt).scaled(grown), spot))
-		# The boulder is narrower than its bounding box at the height a body walks through, so a
-		# collider at its full half-width stops the player well short of the stone they can see.
-		if maxf(size, wide) >= BLOCKING_ROCK:
-			var here := maxf(size, wide) * 0.34
-			blocking.append([spot, here])
-			taken.append([spot, here])
-			bush_avoid.append([spot, here])
+	var spaced := IslandRocks.SPACED_FOR
+	var rock_spots := _spots(ROCK_COUNT, CLEAR_RADIUS, spaced, 2.2, Vector2(-0.02, 3.0), 0.0, taken)
+	var stone := IslandRocks.scatter(rock_spots, _rng, _land)
+	var rocks: Array = stone[0]
+	for collider: Array in stone[1]:
+		blocking.append(collider)
+		taken.append(collider)
+		bush_avoid.append(collider)
 
-	var tufts: Array[Transform3D] = []
-	for spot: Vector3 in _spots(
-		IslandFoliage.TUFTS,
-		0.0,
-		0.0,
-		IslandFoliage.CLUMPING,
-		Vector2(SHORE_BAND * 0.4, 3.0),
-		0.0,
-		[],
-		true
-	):
-		var model := Vector2(IslandFoliage.GRASS_MODEL_WIDTH, IslandFoliage.GRASS_MODEL_HEIGHT)
-		tufts.append(IslandFoliage.tuft(spot, _land(spot.x, spot.z), _rng, model))
+	var tufts := IslandFoliage.grass(
+		_rng,
+		_land,
+		_height_at,
+		_grass_cover,
+		_grass_patches,
+		MAX_RADIUS,
+		WATER_LEVEL,
+		Vector2(SHORE_BAND * 0.4, 3.0)
+	)
 
 	# Clumped at the feet of palms and along the band trees do not reach, rather than scattered by
-	# noise like everything else — ninety props are too few for noise to read as anything but spacing.
+	# noise like everything else — a hundred props are too few for noise to read as anything but
+	# spacing.
 	var bushes := IslandFoliage.bushes(
 		trunks,
 		bush_avoid,
@@ -568,24 +542,29 @@ func _scatter() -> Node3D:
 		MAX_RADIUS,
 		WATER_LEVEL,
 		SHORE_BAND,
-		MIN_GAP,
-		IslandFoliage.BUSH_MODEL_HEIGHT
+		MIN_GAP
 	)
 
 	# The models carry their own colours, one material per part, so nothing here tints them. What the
 	# wind material replaces is the shading, not the palette.
 	_placed = {
-		"palms": palms.size(),
-		"rocks": rocks.size(),
+		"palms": IslandFoliage.flattened(palms).size(),
+		"rocks": IslandFoliage.flattened(rocks).size(),
 		"pebbles": pebbles.size(),
-		"tufts": tufts.size(),
-		"bushes": bushes.size(),
+		"tufts": IslandFoliage.flattened(tufts).size(),
+		"bushes": IslandFoliage.flattened(bushes).size(),
 	}
-	props.add_child(_grown("Bushes", IslandFoliage.BUSH_MODEL, bushes, IslandFoliage.BUSH_FADE))
-	props.add_child(_grown("Grass", IslandFoliage.GRASS_MODEL, tufts, IslandFoliage.GRASS_FADE))
+	var grass_wind := IslandFoliage.WIND
+	var bush := IslandFoliage.BUSH_FADE
+	props.add_child(_family("Bushes", IslandFoliage.BUSH_MODELS, bushes, grass_wind, bush, false))
+	var grass := IslandFoliage.GRASS_FADE
+	var tint := IslandFoliage.GRASS_TINT
+	props.add_child(
+		_family("Grass", IslandFoliage.GRASS_MODELS, tufts, grass_wind, grass, false, tint)
+	)
 	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles, {}, PEBBLE_FADE, false))
-	props.add_child(_multi("Palms", _nature(PALM_MODEL), palms, _palm_wind(), PALM_FADE))
-	props.add_child(_multi("Rocks", _nature(ROCK_MODEL), rocks))
+	props.add_child(_family("Palms", IslandFoliage.PALM_MODELS, palms, _palm_wind(), PALM_FADE))
+	props.add_child(_family("Rocks", IslandRocks.MODELS, rocks, {}, 0.0))
 	props.add_child(_colliders(blocking))
 	return props
 
@@ -627,8 +606,7 @@ func _spots(
 	clumping: float,
 	band: Vector2,
 	centre_fade: float = 0.0,
-	avoid: Array = [],
-	follow_green: bool = false
+	avoid: Array = []
 ) -> Array[Vector3]:
 	var kept: Array[Vector3] = []
 	var attempts := 0
@@ -661,11 +639,6 @@ func _spots(
 		if inland < band.x or inland > band.y:
 			continue
 		var density := (_clump.get_noise_2d(x, z) + 1.0) * 0.5
-		if follow_green:
-			# Green says whether the ground is grass at all; lushness says how well it grows there.
-			# Greenness alone finishes its climb a half-band from the water and is flat after that,
-			# so the island had one density everywhere inland and a hard edge near the sand.
-			density = _greenness(x, z) * IslandFoliage.thinning(inland)
 		if centre_fade > 0.0:
 			density *= smoothstep(centre_fade * 0.25, centre_fade, radius)
 		if _rng.randf() > pow(density, clumping):
@@ -788,14 +761,42 @@ func _palm_wind() -> Dictionary:
 	return {"flutter": LEAF_FLUTTER}
 
 
-func _grass_wind() -> Dictionary:
-	return IslandFoliage.WIND
+## One population of several models. What grows is in the wind, and every size wears the smallest
+## one's materials, since the sizes share one painted texture. Stone (no wind) keeps each model's
+## own: the rocks are painted on three different sheets. `tint` multiplies a painted texture.
+func _family(
+	name: String,
+	models: Array[String],
+	by_size: Array,
+	wind: Dictionary,
+	fade: float,
+	shadow := true,
+	tint := Color.WHITE
+) -> Node3D:
+	var meshes: Array[ArrayMesh] = []
+	for model: String in models:
+		meshes.append(_nature(model))
+		if wind.is_empty():
+			_dress(meshes[-1], "", {})
+	if not wind.is_empty():
+		_dress(meshes[0], FOLIAGE_SHADER, wind)
+		for surface: int in meshes[0].get_surface_count():
+			var worn := meshes[0].surface_get_material(surface) as ShaderMaterial
+			if worn != null and tint != Color.WHITE:
+				worn.set_shader_parameter("tint", tint)
+	var shared := not wind.is_empty()
+	return IslandScatter.populate_family(name, meshes, by_size, CHUNK, fade, shadow, shared)
 
 
-## One batch of something that grows: the wind material, and no shadow. Both are true of everything
-## in this family and of nothing else scattered here.
-func _grown(name: String, model: String, at: Array[Transform3D], fade: float) -> Node3D:
-	return _multi(name, _nature(model), at, _grass_wind(), fade, false)
+func _grass_cover(x: float, z: float) -> float:
+	return _greenness(x, z) * IslandFoliage.thinning(_land(x, z))
+
+
+## Clearings in the grass, on two scales: a few metres from the clump noise, tens from the ground's.
+func _grass_patches(x: float, z: float) -> float:
+	var near := _clump.get_noise_2d(x, z) * 0.5 + 0.5
+	var far := _ground.get_noise_2d(x * 1.7, z * 1.7) * 0.5 + 0.5
+	return clampf(0.25 + near * 0.55 + far * 0.45, 0.0, 1.0)
 
 
 func _formations() -> Array:
@@ -818,16 +819,19 @@ func _landmark() -> StaticBody3D:
 	body.collision_layer = PhysicsLayers.BIT_WORLD | PhysicsLayers.BIT_CAMERA_OCCLUDER
 	body.collision_mask = 0
 
-	var placements := _formations()
-	var boulder := _nature(ROCK_MODEL)
-	# The model stands on its origin, where the old sphere was centred on it — so the formations sit
-	# on the ground rather than being lifted by a share of their own height.
-	var shipped := Vector3(ROCK_MODEL_WIDTH, ROCK_MODEL_HEIGHT, ROCK_MODEL_DEPTH)
-	for placement: Array in placements:
+	# Purple-Sigil's big single rock, bare or mossed the way the scattered ones are, grown to the size
+	# each formation asks for. It stands on its origin, so a formation sits on the ground.
+	var pillars: Array[ArrayMesh] = []
+	for model: int in IslandRocks.PILLARS:
+		pillars.append(_nature(IslandRocks.MODELS[model]))
+	for placement: Array in _formations():
 		var where: Vector3 = placement[0]
 		var size: Vector3 = placement[1]
 		var turn: float = placement[2]
 		where.y = _height_at(where.x, where.z)
+		var mossy := IslandFoliage.lushness(_land(where.x, where.z)) >= 0.5
+		var boulder := pillars[1 if mossy else 0]
+		var shipped := IslandRocks.PILLAR_SIZE
 
 		var visual := MeshInstance3D.new()
 		visual.name = "Rock"

@@ -39,11 +39,11 @@ const IMPACT_LEVEL: float = -22.0
 const FARMER_LEVEL: float = -13.5
 ## A reload, a dry trigger, a body going down: moments worth hearing and never worth listening for.
 const INCIDENTAL_LEVEL: float = -35.25
-## What a music track comes out at. Above the bed's own layers, which is what "the bed sits under
-## the music" means in figures — and still **under everything that tells the player something**: a
-## soundtrack is the one sound the player may switch off, so it can never be why a wind-up was
-## missed.
-const TRACK_LEVEL: float = -36.75
+## What a music track comes out at **once it is heard**, which for the soundtrack is not the same
+## thing as the gain it is played at — see `TRACK_AS_RECORDED`. Still **under everything that tells
+## the player something**: a soundtrack is the one sound the player may switch off, so it can never
+## be why a wind-up was missed.
+const TRACK_LEVEL: float = -26.0
 ## A miss is the least interesting thing that happens in a fight. Under a hit by enough to be heard
 ## as the lesser of the two.
 const WHIFF_LEVEL: float = -41.75
@@ -85,6 +85,22 @@ const HEADROOM_DB: float = -2.0
 ## source files and fails when it drifts.
 const FARMER_AS_RECORDED: float = -19.4
 const GULL_AS_RECORDED: float = -18.6
+## And the soundtrack, which is the loudest thing that arrives already finished. Five commercial
+## masters between -5.1 and -11.2, mean -7.8 — where a recorded shout is around -19 and a buffer
+## this game bakes is quieter still.
+##
+## **This figure is why the music was inaudible.** The level was applied as a gain on top of the
+## master, the way a synthesised sound is normalised *to* its level, and the two are not the same
+## operation: -38.75 dB of gain on a master already at -7.8 arrives at -46.6, which is below the
+## menu click. In a menu the button was louder than the soundtrack. The same mistake put the farmers
+## thirteen decibels under where the table said they were, and it is the same fix — say what the
+## recording is worth, and derive the gain from the difference.
+##
+## Unlike the voices this one **cannot be machine-checked against the file**: the streams are MP3
+## and there is nothing to measure at load. Re-measure with the loudness this table is written in —
+## the loudest RMS over any 0.3 s — after decoding, and `verify_mix` guards the consequence instead
+## by asserting the soundtrack is not below the furniture.
+const TRACK_AS_RECORDED: float = -7.8
 ## How far a recorded family may drift from the figure above before the gain built on it is wrong.
 const AS_RECORDED_TOLERANCE: float = 1.5
 ## Every family the desk can move, in the order it shows them: loudest at the top of the table.

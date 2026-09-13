@@ -65,8 +65,10 @@ func _groups(bushes: Array[Transform3D], reach: float) -> int:
 func _bushes(avoid: Array) -> Array[Transform3D]:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20260912
-	return IslandFoliage.bushes(
-		_trunks(), avoid, rng, _land, _height, CORE, REACH, WATERLINE, SHORE, GAP, MODEL_HEIGHT
+	return IslandFoliage.flattened(
+		IslandFoliage.bushes(
+			_trunks(), avoid, rng, _land, _height, CORE, REACH, WATERLINE, SHORE, GAP
+		)
 	)
 
 
@@ -78,7 +80,7 @@ func test_the_bushes_form_a_few_clumps_and_not_ninety_spots() -> void:
 	assert_int(bushes.size()).is_greater(0)
 	var groups := _groups(bushes, IslandFoliage.SPREAD.y * 2.0)
 	assert_int(groups).is_less_equal(IslandFoliage.TRUNK_CLUMPS + IslandFoliage.SHORE_CLUMPS)
-	# And genuinely clumped rather than nominally: ninety bushes in forty-five groups is pairs.
+	# And genuinely clumped rather than nominally: a hundred bushes in fifty groups is pairs.
 	assert_int(groups).is_less(bushes.size() / 2)
 
 
@@ -149,10 +151,71 @@ func test_a_tuft_by_the_water_is_shorter_than_one_inland() -> void:
 	# gradient moves the band: a single pair can come back either way round and prove nothing.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
-	var model := Vector2(0.94, MODEL_HEIGHT)
 	var by_the_water := 0.0
 	var inland := 0.0
 	for _draw: int in 200:
-		by_the_water += IslandFoliage.tuft(Vector3.ZERO, 0.0, rng, model).basis.get_scale().y
-		inland += IslandFoliage.tuft(Vector3.ZERO, 3.0, rng, model).basis.get_scale().y
+		by_the_water += IslandFoliage.tuft(Vector3.ZERO, 0.0, rng, MODEL_HEIGHT).basis.get_scale().y
+		inland += IslandFoliage.tuft(Vector3.ZERO, 3.0, rng, MODEL_HEIGHT).basis.get_scale().y
 	assert_float(by_the_water).is_less(inland)
+
+
+func test_thickets_grow_inland_and_singles_by_the_water() -> void:
+	# The gradient the clusters follow, over many draws: well inland the largest size is drawn far
+	# more often than at the rim, and the smallest far less.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var drawn := {"rim": [0, 0, 0], "inland": [0, 0, 0]}
+	for _draw: int in 2000:
+		(drawn["rim"] as Array)[IslandFoliage.cluster_size(0.0, rng, 3)] += 1
+		(drawn["inland"] as Array)[IslandFoliage.cluster_size(3.0, rng, 3)] += 1
+	assert_int(int(drawn["inland"][2])).is_greater(int(drawn["rim"][2]) * 3)
+	assert_int(int(drawn["rim"][0])).is_greater(int(drawn["inland"][0]) * 2)
+
+
+func test_every_size_still_turns_up_at_both_ends() -> void:
+	# Variety, stated: a gradient that zoned the island — only singles by the sea, only thickets
+	# inland — would pass the test above and read as planting.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 13
+	for inland: float in [0.0, 3.0]:
+		var seen := [false, false, false]
+		for _draw: int in 2000:
+			seen[IslandFoliage.cluster_size(inland, rng, 3)] = true
+		assert_bool(seen[0] and seen[1] and seen[2]).is_true()
+
+
+func test_grass_is_not_laid_on_a_grid() -> void:
+	# The rhythm the grass had: a minimum spacing, saturated, spaces every cluster almost exactly
+	# the same distance from its nearest neighbour. Grown rather than planted, those distances spread.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 17
+	var always := func(_x: float, _z: float) -> float: return 1.0
+	var by_size := IslandFoliage.grass(
+		rng, _land, _height, always, always, REACH, WATERLINE, Vector2(0.0, 3.0)
+	)
+	# Every cluster in one patch of ground, all sizes together: a subset drawn across the island would
+	# be random whatever the scatter did.
+	var spots: Array[Vector2] = []
+	for placed: Transform3D in IslandFoliage.flattened(by_size):
+		if absf(placed.origin.x - 30.0) < 10.0 and absf(placed.origin.z) < 10.0:
+			spots.append(Vector2(placed.origin.x, placed.origin.z))
+	assert_int(spots.size()).is_greater(30)
+	var nearest: Array[float] = []
+	for here: Vector2 in spots:
+		var best := INF
+		for there: Vector2 in spots:
+			if there != here:
+				best = minf(best, here.distance_to(there))
+		nearest.append(best)
+	var mean := 0.0
+	for gap: float in nearest:
+		mean += gap / nearest.size()
+	# A minimum spacing leaves no cluster much closer to its neighbour than the typical distance.
+	# Ground that grew rather than was planted has plenty: clusters leaning into each other.
+	var close := 0
+	for gap: float in nearest:
+		if gap < mean * 0.5:
+			close += 1
+	# Measured: about 9 % as shipped, about 2 % with the overlap raised until clusters keep their
+	# distance, whatever figure it is raised to.
+	assert_float(float(close) / nearest.size()).is_greater(0.05)

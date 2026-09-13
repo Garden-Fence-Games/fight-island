@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bxjwwfxrnbhs"
-path="res://.godot/imported/grass_tuft.glb-ddee3c48a3e95ef6fe69274250f64661.scn"
+uid="uid://drubr85l1v5c3"
+path="res://.godot/imported/rock_2.glb-437a6b954b5231290161911aa788b5af.scn"
 
 [deps]
 
-source_file="res://assets/models/nature/grass_tuft.glb"
-dest_files=["res://.godot/imported/grass_tuft.glb-ddee3c48a3e95ef6fe69274250f64661.scn"]
+source_file="res://assets/models/nature/rock_2.glb"
+dest_files=["res://.godot/imported/rock_2.glb-437a6b954b5231290161911aa788b5af.scn"]
 
 [params]
 

@@ -6,11 +6,31 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+
 ## [0.1.0] - 2026-09-13
 
 The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
 between waves — held by 39 headless checks in CI and 46 mutations that prove those checks can
 still fail.
+=======
+### Changed
+
+- **The gun's recoil is physics rather than a clip.** The arm goes to the ragdoll for a tenth of a
+  second when the round leaves — thrown back and up at `AttackData.recoil` metres per second — and
+  the simulator's influence falls to nought across the window so it eases back onto the animation.
+  A shot never looks the same twice and never disagrees with where the body happened to be standing.
+  - The three generated recoils are gone. There is **one** clip now, `aim_gun`, and all three shots
+    fire from it: what the animation owes a shot is the body underneath it, and that body is the
+    same for a tap, a double tap and a hand cannon.
+  - **`aim_gun` carries no shooting arm**, and that is the whole trick. An AnimationPlayer and a
+    skeleton modifier both write bone poses and the clip wins — measured rather than assumed: with
+    the arm still in the clip the physical body swung five centimetres and the skin moved two
+    millimetres, and the same shot rendered against one with no recoil at all was pixel for pixel
+    the same picture. `mixamorig_RightHand` stays animated, so the revolver stays in the fist while
+    the arm is thrown.
+  - `verify_clips` holds both halves of that — no arm in the clip, the hand still in it — and
+    `verify_knockdown` fires a real shot and asserts the arm is handed over, the hips never are,
+    `is_running` stays false throughout, and the simulation is stopped when it ends.
 
 ### Added
 
@@ -199,6 +219,19 @@ still fail.
 
 ### Changed
 
+- **What grows on the island is Purple-Sigil's clusters, and the grass is no longer planted.**
+  Grass, bushes and palms come in sizes now — one plant, a few, a thicket — drawn from a mix that
+  slides from mostly singles by the water to mostly thickets inland, with every size still turning
+  up everywhere. The grass lost the sixty-centimetre spacing that had laid it out in step: clusters
+  overlap, and two scales of noise cut clearings into it, and there is twice as much of it. The
+  ground under grass is a light yellow-green wherever grass can grow — the old green was read as
+  linear and came out nearly white — and the grass is tinted a shade warmer. The scattered stone is
+  Purple-Sigil's seven rocks, bare on the sand and mossy inland, the pillars held to a farmer's
+  height; the six rock formations are her big single rock grown to size, and Kenney's boulder is
+  gone.
+  The bushes' leaves are cut out along their painted alpha, which the foliage shader had ignored.
+  The old single `bush`, `grass_tuft` and `palm_tree` models are gone. The bushes cost a ninth of
+  what they did; the grass nearly four times.
 - **A wave is four minutes rather than six** — two of daylight and two of dark. Every phase keeps
   its share of the turn, its opening hour and every rule in its column, so the ramp is the one the
   design already describes, walked at a pace that does not ask for ninety minutes to see fifteen

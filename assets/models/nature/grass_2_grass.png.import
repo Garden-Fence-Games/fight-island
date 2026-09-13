@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://478gw6n1r0q4"
-path.s3tc="res://.godot/imported/palm_tree_palm_tree.png-056eaca44515aa7a393c8a947f27779e.s3tc.ctex"
-path.etc2="res://.godot/imported/palm_tree_palm_tree.png-056eaca44515aa7a393c8a947f27779e.etc2.ctex"
+uid="uid://dy31shsgv2f8g"
+path.s3tc="res://.godot/imported/grass_2_grass.png-4c1c28f6b9a95d80ac9b09c065f5ecde.s3tc.ctex"
+path.etc2="res://.godot/imported/grass_2_grass.png-4c1c28f6b9a95d80ac9b09c065f5ecde.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "1f97801b84c0e821e04187ff20e67f1c"
+"md5": "df41171c0160ae4873347c06ec3775ff"
 }
 
 [deps]
 
-source_file="res://assets/models/nature/palm_tree_palm_tree.png"
-dest_files=["res://.godot/imported/palm_tree_palm_tree.png-056eaca44515aa7a393c8a947f27779e.s3tc.ctex", "res://.godot/imported/palm_tree_palm_tree.png-056eaca44515aa7a393c8a947f27779e.etc2.ctex"]
+source_file="res://assets/models/nature/grass_2_grass.png"
+dest_files=["res://.godot/imported/grass_2_grass.png-4c1c28f6b9a95d80ac9b09c065f5ecde.s3tc.ctex", "res://.godot/imported/grass_2_grass.png-4c1c28f6b9a95d80ac9b09c065f5ecde.etc2.ctex"]
 
 [params]
 

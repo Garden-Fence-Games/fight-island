@@ -92,7 +92,28 @@ stays in the same wind as everything else rather than becoming the one motionles
 `build_island.gd` decides per surface: a shipped material with an albedo texture keeps it and gets a
 white tint; one without is looked up in the palette by its part name, as before.
 
-**`palm_tree_palm_tree.png` is committed although it is derived.** Godot's glTF importer lifts an
+**What grows comes in clusters of three sizes.** `grass_1..3`, `bush_1..3` and `palm_tree_1..2`
+are Purple-Sigil's ready-made clusters — one plant, a few, a thicket — each source in
+`art-source/models/` under the same name. `IslandFoliage` draws which size stands at a spot from a
+mix that slides from mostly singles by the water to mostly thickets inland, and every size of a
+family wears the smallest one's material, since they share one painted texture. `palm_tree_2` is a
+pair, and gets one collider spanning both trunks.
+
+**The scattered rocks are `rock_1..7`**, bare (`1`, `2`, `7`) and mossy (`3` to `6`), singles and
+clusters, each painted on its own sheet so they keep their own materials. `IslandRocks` makes moss
+follow the grass's gradient — bare on the sand, mostly mossed inland — and holds the two four-metre
+pillars to a farmer's height: under a camera that never turns, anything taller is a wall. The
+six authored formations are the big single rock too, bare or mossed by the same rule and grown to
+each formation's size, on `fadeable.gdshader`, which now takes a painted texture the way the
+foliage shader does. Only the pebbles are still Kenney's.
+
+**The ground's green is written for the renderer, not picked by eye.** The terrain's vertex colours
+are read as linear, so a green chosen the way a painter would comes out washed almost to white —
+which is how the island had pale ground under its grass. `GRASS_GREEN` in `build_island.gd` is the
+shaded value, and the grass itself is tinted toward yellow by `IslandFoliage.GRASS_TINT`.
+
+**The extracted textures (`palm_tree_1_palm_tree.png` and the like) are committed although they
+are derived.** Godot's glTF importer lifts an
 embedded texture out into a file beside the model, and the baked `island.tscn` then references that
 file by path — so a repository without it is a repository where the island does not load. Its
 sidecar imports it **VRAM Compressed**, which is the reason not to fight the extraction: the same
@@ -157,7 +178,9 @@ Two things it gets right that are easy to get wrong:
   inward and headlands that reach out.
 - **Scatter density comes from noise, not from minimum spacing.** An even minimum-distance spread
   is the most regular arrangement there is, which is exactly why it looks planted. Clumps and bare
-  ground read as nature.
+  ground read as nature. The grass broke this rule for a while — sixty centimetres between tufts,
+  saturated at eight thousand of them — and read as a planted grid; its clusters now only refuse
+  to sit squarely on one another, and `test_island_foliage` fails if they fall back into step.
 
 Palms and rocks big enough to walk around collide; grass, pebbles and fronds never do — getting
 stuck on a bush is worse than any realism it buys. Only the six authored formations are cut out of
@@ -203,6 +226,24 @@ reaches 61.3 m to the farthest corner of the farthest chunk it still frames.
 | Rocks | 432 | 80 | 34,560 | 7,040 |
 | Pebbles | 1,500 | 16 | 24,000 | 2,528 |
 | **Scatter** | | | **867,080** | **262,988** |
+
+**Since the clusters**, held for the whole island (submitted not re-measured):
+
+| Population | Singles · groups · thickets | Held |
+|---|---:|---:|
+| Grass | 2,789 × 35 · 1,920 × 210 · 1,691 × 365 | 1,118,030 |
+| Bushes | 85 × 128 · 28 × 384 · 7 × 896 | 27,904 |
+| Palms | 269 × 692 · 111 pairs × 1,048 | 302,476 |
+| **Scatter**, with rocks and pebbles | | **1,483,610** |
+
+The new bushes cost a ninth of the old one, which settles the paragraph below. The grass costs
+nearly four times what the tufts did — a thicket is ten tufts' triangles, and there are twice as
+many clusters as the first cut, by request. `IslandFoliage.GRASS_COUNT` is the dial, and the first
+one to turn if a frame comes up short.
+
+**A painted leaf is cut out, not blended.** `foliage.gdshader` takes the texture's alpha with a
+scissor at one half, so the bushes' card edges vanish without sorting a MultiMesh against itself.
+An unset texture reads opaque white, so nothing unpainted changes.
 
 Add the actors — the player is 21,888 triangles and a farmer 12,792, so twelve of them is 153,504 —
 and a busy frame is a little over four hundred thousand triangles.
@@ -320,10 +361,13 @@ The importer strips these from the node name and generates the body:
 Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 
 **Player:** `idle`, `walk`, `run`, `sprint`, `dodge_roll`, `parry`, `parry_success`, `hurt`,
-`pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`, plus
-`idle_gun` and `walk_gun` — the gun is held across the whole body, so standing and walking with it
-are their own clips rather than a layer over the unarmed ones. The stick has the same pair,
-`idle_stick` and `walk_stick`, both looping, and a roll of its own, `dodge_roll_stick`.
+`pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, plus `idle_gun` and `walk_gun` — the
+gun is held across the whole body, so standing and walking with it are their own clips rather than a
+layer over the unarmed ones. The stick has the same pair, `idle_stick` and `walk_stick`, both
+looping, and a roll of its own, `dodge_roll_stick`.
+
+**The gun has no attack clips and is not waiting for any.** All three shots play one held pose,
+`aim_gun`, and the kick is the ragdoll — see *The recoil is physics* below.
 
 **The player has no `death` clip and is not waiting for one.** The run ends by handing the body to
 the physics, the same `RagdollComponent` the farmers have used since they stopped sinking into the
@@ -419,12 +463,34 @@ now either exists on a rig or is lent by a stand-in. The heading stays whatever 
 the check reads the section, not the rows, so the next clip the game learns to ask for has a place
 to be written down rather than a section to re-invent.
 
-**The gun's three shots, the stick's second and third swings, the parry, and all three farmer blows
-are lent rather than authored.** They come from `assets/models/char_player_stand_ins.tres` and
-`assets/models/char_farmer_stand_ins.tres`, built by `tools/build_clips.tscn` from each rig's own
-poses — `idle_gun` for the shots, `idle` for the guard and for every farmer clip, and the authored
-`attack_stick_1` for the other two swings. The body is the one Purple-Sigil posed and only the
-movement is generated.
+**The shot's pose, the stick's second and third swings, the parry, and all the enemy blows are lent
+rather than authored.** They come from `assets/models/char_player_stand_ins.tres`,
+`assets/models/char_farmer_stand_ins.tres` and `assets/models/char_pirate_stand_ins.tres`, built by
+`tools/build_clips.tscn` from each rig's own poses — `idle_gun` for the shot, `idle` for the guard
+and for every farmer clip, the authored `attack_stick_1` for the other two swings, and the pirate's
+own `attack` sliced for his pair. The body is the one Purple-Sigil posed and only the movement is
+generated.
+
+### The recoil is physics
+
+`aim_gun` is the pose a shot is fired from, and **it carries no shooting arm**. There is only one of
+it, not one per shot: what the animation owes a shot is the body underneath it, and that body is the
+same for a tap, a double tap and a hand cannon. What differs is the kick, and the kick is
+`RagdollComponent.kick()` — the arm goes to the physics for a tenth of a second, thrown back and up
+at `AttackData.recoil` metres per second, and the simulator's influence falls from one to nought
+across that window so the arm eases back onto the clip instead of snapping onto it.
+
+**Leaving the arm out of the clip is what makes it possible, and it was measured rather than
+assumed.** An AnimationPlayer and a skeleton modifier both write bone poses, and the clip wins: with
+the arm still in `aim_gun` the physical body swung five centimetres and the skin moved two
+millimetres — the same recoil, rendered, was pixel-for-pixel the shot that had no recoil at all. So
+`mixamorig_RightArm` and `mixamorig_RightForeArm` are left out of the clip entirely and for the
+length of a shot they belong to the physics and to nothing else. `mixamorig_RightHand` stays
+animated, because the revolver hangs off it.
+
+A bone nobody animates keeps the pose it was last given, so the arm is where `idle_gun` left it
+until the physics moves it, and where the physics left it until `idle_gun` comes back.
+`verify_clips` holds both halves — no arm in the clip, and the hand still in it.
 
 The stick's chain is **revers, retour, assommoir**, and the rig carries the first of the three. The
 other two are that same swing again, stretched to their own windows — a repeat, and it is meant to
@@ -460,7 +526,7 @@ player can see they are open. `verify_clips` compares each stand-in's length aga
 retune that nobody rebaked fails rather than drifts.
 
 The component lends a stand-in **only** for a name the rig has no clip of, so exporting a
-hand-authored `attack_gun_1` or `parry` retires the generated one on the spot — nothing to delete,
+hand-authored `aim_gun` or `parry` retires the generated one on the spot — nothing to delete,
 no flag to flip. The check asserts that from both ends, so the day the rig grows its own it says so.
 
 ## Textures

@@ -34,14 +34,7 @@ const INVENTORY_HEADING: String = "## Clips the rigs do not carry yet"
 const INVENTORY_CELLS: int = 3
 ## The clips the stand-in library exists to lend. Written out rather than read from the library,
 ## which would make this check agree with whatever the library happens to hold.
-const LENT: Array[String] = [
-	"attack_gun_1",
-	"attack_gun_2",
-	"attack_gun_3",
-	"attack_stick_2",
-	"attack_stick_3",
-	"parry",
-]
+const LENT: Array[String] = ["aim_gun", "attack_stick_2", "attack_stick_3", "parry"]
 const FARMER_LENT: Array[String] = [
 	"windup_punch", "attack_punch", "windup_sweep", "attack_scythe", "windup_throw", "attack_throw"
 ]
@@ -77,9 +70,6 @@ const SAME_SPEED: float = 0.02
 ## somebody retunes the rules and forgets to run `tools/build_clips.tscn` — the clip would go on
 ## playing a shape that belonged to the old windows, and nothing else in the project would notice.
 const TIMED_BY: Dictionary[String, String] = {
-	"attack_gun_1": "res://data/attacks/gun_single.tres",
-	"attack_gun_2": "res://data/attacks/gun_double.tres",
-	"attack_gun_3": "res://data/attacks/gun_charged.tres",
 	"attack_stick_2": "res://data/attacks/stick_return.tres",
 	"attack_stick_3": "res://data/attacks/stick_overhead.tres",
 }
@@ -89,6 +79,15 @@ const TIMED_BY: Dictionary[String, String] = {
 ## else would snap the arm back between hits, and three swings in a row is where that shows.
 const CHAIN: Array[String] = ["attack_stick_1", "attack_stick_2", "attack_stick_3"]
 ## The weapon whose suffix is being read, and the states that have a variant to find behind it.
+## The clip a shot is fired from, and the two joints it must **not** carry. The recoil is a ragdoll
+## kick, and an AnimationPlayer and a skeleton modifier both write bone poses — the clip wins. That
+## was measured rather than assumed: with the arm in the clip, the physical body swung five
+## centimetres and the skin moved two millimetres.
+const AIM_CLIP: String = "aim_gun"
+const LEFT_TO_THE_PHYSICS: Array[String] = ["mixamorig_RightArm", "mixamorig_RightForeArm"]
+## And the joint it must still carry, because the gun hangs off it. An unanimated hand would leave
+## the revolver behind while the arm was thrown out from under it.
+const STILL_ANIMATED: String = "mixamorig_RightHand"
 const STICK: StringName = &"stick"
 const IN_HAND: Dictionary[String, String] = {
 	"Idle": "idle_stick",
@@ -264,6 +263,7 @@ func _check_the_stand_ins_still_fit_the_rules() -> void:
 			anim.animation_player, "parry", PlayerParry.RECOVERY_END, "PlayerParry.RECOVERY_END"
 		)
 		_check_the_guard_is_up_while_the_parry_works(anim.animation_player)
+		_check_the_shooting_arm_is_left_to_the_physics(anim.animation_player)
 	actor.queue_free()
 
 
@@ -500,6 +500,31 @@ func _check_the_stick_is_in_hand() -> void:
 				)
 			)
 	actor.queue_free()
+
+
+## The one property a physical recoil stands on, and the one a rebake could silently undo.
+func _check_the_shooting_arm_is_left_to_the_physics(player: AnimationPlayer) -> void:
+	if not player.has_animation(AIM_CLIP):
+		_fail("the rig has no %s to fire from" % AIM_CLIP)
+		return
+	var clip := player.get_animation(AIM_CLIP)
+	var posed: Array[String] = []
+	var holds_the_gun := false
+	for track: int in clip.get_track_count():
+		var path := String(clip.track_get_path(track))
+		for joint: String in LEFT_TO_THE_PHYSICS:
+			if path.ends_with(joint) and not posed.has(joint):
+				posed.append(joint)
+		holds_the_gun = holds_the_gun or path.ends_with(STILL_ANIMATED)
+	if not posed.is_empty():
+		_fail(
+			(
+				"%s poses %s — the clip beats the ragdoll and the shot moves nothing"
+				% [AIM_CLIP, ", ".join(posed)]
+			)
+		)
+	if not holds_the_gun:
+		_fail("%s does not pose %s, so the revolver is left behind" % [AIM_CLIP, STILL_ANIMATED])
 
 
 ## The stick's three swings read as one movement or as three, and the arm is where that is decided:

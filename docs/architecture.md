@@ -161,6 +161,12 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   and a loop. `data/music/playlist.tres` carries five tracks; the jukebox and the player in the
   corner still cope with an empty one, because a playlist is a data change and code that broke when
   somebody emptied it would make it a code change.
+
+  **A track carries its own measured loudness and the gain is derived from it**, the same way a
+  recorded voice does. Everything else in the mix is *baked to* its level; a master arrives already
+  finished, so applying the table to it as a gain lands wherever the mastering happened to put it —
+  which is how the soundtrack shipped at -46.6 dB, under the menu click. Per track rather than one
+  average, because five masters six decibels apart otherwise step every time the track changes.
 - **`EliteRank`** — what being an elite is worth: the health, damage and money multipliers, and the
   mesh scale and emission that make it legible. One instance on `WaveConfig`, shared by every body
   that rolls it, because an elite is the *same scene* — multipliers rather than a second archetype
@@ -661,6 +667,23 @@ capsules inside it rested on top. `RagdollComponent` now builds it from `Ragdoll
   from the pose the simulation starts in, so a knee knocked mid-stride would have kept its stride as
   its zero. The simulation starts with the skeleton at rest and every body is put straight back
   where the animation had it.
+
+### A recoil is the same component with two bones in it
+
+`RagdollComponent.kick()` hands **only the shooting arm** to the physics, for a tenth of a second,
+and everything else stays kinematic and goes on taking its pose from the AnimationPlayer. So the
+player keeps standing, walking and aiming through a shot; the arm is jointed to a shoulder that is
+still being animated, which is the shape a recoil has. `is_kicking()` is deliberately separate from
+`is_running()` — a recoil is not a knockdown, and everything that stops animating when the body is
+taken over has to go on getting no for the whole of a shot.
+
+The simulator's `influence` falls from one to nought across the window, so the arm eases back onto
+the clip rather than snapping onto it.
+
+**It only works because the clip does not pose those bones.** An AnimationPlayer and a skeleton
+modifier both write bone poses and the clip wins — measured, not assumed: with the arm still in
+`aim_gun`, the physical body swung five centimetres and the skin moved two millimetres. See
+[asset-pipeline.md](asset-pipeline.md) for how the clip is built without it.
 
 ### Nothing walks the tree while the game is running
 

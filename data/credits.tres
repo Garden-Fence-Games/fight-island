@@ -101,46 +101,45 @@ licence = "SIL OFL 1.1"
 
 [sub_resource type="Resource" id="Resource_4lkwu"]
 script = ExtResource("1_2q5yg")
-subject = "assets/models/nature/palm_tree.glb"
+subject = "assets/models/nature/palm_tree_1..2.glb"
 source = "original, modelled and painted in Blender"
 author = "Purple-Sigil"
 licence = "© the project, all rights reserved"
 
 [sub_resource type="Resource" id="Resource_tgv8e"]
 script = ExtResource("1_2q5yg")
-subject = "assets/models/nature/grass_tuft.glb"
+subject = "assets/models/nature/grass_1..3.glb"
 source = "original, modelled and painted in Blender"
 author = "Purple-Sigil"
 licence = "© the project, all rights reserved"
 
 [sub_resource type="Resource" id="Resource_o5woe"]
 script = ExtResource("1_2q5yg")
-subject = "assets/models/nature/bush.glb"
+subject = "assets/models/nature/bush_1..3.glb"
 source = "original, modelled and painted in Blender"
 author = "Purple-Sigil"
 licence = "© the project, all rights reserved"
 
 [sub_resource type="Resource" id="Resource_e6gsf"]
 script = ExtResource("1_2q5yg")
-subject = "assets/models/nature/bird.glb"
+subject = "assets/models/nature/rock_1..7.glb"
 source = "original, modelled and painted in Blender"
 author = "Purple-Sigil"
 licence = "© the project, all rights reserved"
 
 [sub_resource type="Resource" id="Resource_jfifh"]
 script = ExtResource("1_2q5yg")
-subject = "assets/models/nature/bird_fly.glb"
+subject = "assets/models/nature/bird.glb"
 source = "original, modelled and painted in Blender"
 author = "Purple-Sigil"
 licence = "© the project, all rights reserved"
 
 [sub_resource type="Resource" id="Resource_eaha6"]
 script = ExtResource("1_2q5yg")
-subject = "assets/models/nature/stone_largeD.glb"
-source = "Nature Kit 2.1"
-source_url = "https://kenney.nl/assets/nature-kit"
-author = "Kenney"
-licence = "CC0 1.0"
+subject = "assets/models/nature/bird_fly.glb"
+source = "original, modelled and painted in Blender"
+author = "Purple-Sigil"
+licence = "© the project, all rights reserved"
 
 [sub_resource type="Resource" id="Resource_52eap"]
 script = ExtResource("1_2q5yg")
