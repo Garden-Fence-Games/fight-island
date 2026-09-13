@@ -6,6 +6,14 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **The island is drawn as pixel art.** The finished 3D frame is cut into fat pixels — two screen
+  pixels across at 1080p — outlined along silhouettes and lit along creases, on a slightly smaller
+  palette; the interface stays sharp. `PixelLook` runs after the transparent pass, so the sea, the
+  blood and the particles are styled with everything else, and `data/fx/pixel_look.tres` tunes it.
+  *Pixel art* under Video switches it off, live.
+
 ### Changed
 
 - **The gun's recoil is physics rather than a clip.** The arm goes to the ragdoll for a tenth of a
@@ -24,6 +32,19 @@ All notable changes to this project are documented here, following
   - `verify_clips` holds both halves of that — no arm in the clip, the hand still in it — and
     `verify_knockdown` fires a real shot and asserts the arm is handed over, the hips never are,
     `is_running` stays false throughout, and the simulation is stopped when it ends.
+
+- **The wave comes to the player.** Two numbers, and between them most of a wave stopped being spent
+  walking.
+  - Bodies arrive **12–18 m** away rather than 12–26. A farmer notices at nine metres, so one that
+    landed at the far edge was fourteen metres of approach before anything happened — once per
+    farmer, on a four-minute clock.
+  - And **being ignored wakes him**. Ten seconds standing unnoticed and he comes looking, rousing
+    the men beside him on the way; five seconds after dark, on the same `rouse_scale` that already
+    carries a shout further. Standing still was a read with no clock on it, so a body nobody walked
+    up to stood there until daybreak and the player had to go and fetch the rest one at a time.
+  - `verify_waves` parks a body past its own notice radius, where nothing but the patience can move
+    it, and holds both figures against **written-out** bounds — a watch window taken from the number
+    being watched passes for every number, including a patience nobody would stand through.
 
 ### Added
 

@@ -435,6 +435,33 @@ let go. It fades over the hours either side of `noon_hour`, and **reduced flashi
 off**. The two questions it asks — how much of midday it is, how hard a face glints — are static
 and tested in `test_sun_glint`.
 
+### The pixel look
+
+The 3D frame is drawn as pixel art: cut into fat pixels — a fixed number of rows whatever the
+resolution, two screen pixels across at 1080p — outlined dark along silhouettes and lit along creases, on a slightly
+smaller palette. The interface is drawn afterwards and stays sharp. `PixelLook` does it, a
+`CompositorEffect` that `CameraRig` and `VistaCamera` put on their cameras, tuned by
+`data/fx/pixel_look.tres`.
+
+**Why a compositor effect.** A screen-space quad reads the screen before the transparent pass, so
+the sea, the blood and every particle would land on top of the pixel art unstyled. A low-resolution
+`SubViewport` would put the whole world one viewport away from the mouse aim and from every check
+that asks a camera where something is. After the transparent pass the frame is finished and the
+depth and normal buffers are still there, which is what the outlines need.
+
+- **Edges are decided per fat pixel**, from its centre's depth and normal, so a line is exactly one
+  fat pixel wide. The silhouette threshold is a share of distance, not metres, so it reads the same
+  at every zoom and a blade of grass standing in the ground does not draw one.
+- **A fat pixel's colour is the average of four points inside it.** One sample per block turned the
+  grass, which is finer than a block, into a field of specks.
+- **Headless, it does nothing**: there is no rendering device, so every check runs the same game
+  without a look.
+- **The player can switch it off** — *Pixel art* under Video, `video_pixel_look`. The effect stays
+  on the camera and reads the setting every frame, so the switch is live both ways.
+
+The camera is not snapped to the pixel grid, so a slow pan crawls by a pixel at a time. Snapping it
+is the next step if that reads as shimmer.
+
 ### Blood
 
 A landed blow bleeds in **three layers**, each with one job, and every figure that tunes them is in
@@ -551,11 +578,18 @@ would raise every farmer in the game and then save the result.
 
 ## Noticing
 
-A farmer stands where he appeared until the fight reaches him. It is four lines of state and one
-field, and the only interesting parts are the edges.
+A farmer stands where he appeared until the fight reaches him, **or until it has not reached him
+for ten seconds**. `EnemyIdle` counts the time it has been standing and rouses itself past
+`PATIENCE`, divided by the hour's `rouse_scale` so night waits half as long. Through `rouse()`
+rather than a bare transition, so the men beside him come too — a body that came looking alone while
+its neighbours went on staring at the sea is the same bug the spreading rule exists to prevent.
+
+`verify_waves` parks a body past its own notice radius, where nothing but the patience can move it,
+and holds `EnemyIdle.PATIENCE` against a **written-out** twelve seconds first: a watch window
+derived from the number being watched passes for every number.
 
 **The radius has to be smaller than the spawn distance or the feature does not exist.** The spawn
-search keeps bodies 12–26 m from the player; the old aggro radius was 18 m, so more than half of
+search keeps bodies 12–18 m from the player; the old aggro radius was 18 m, so more than half of
 every wave arrived already charging. Nothing would have failed — there would simply have been no
 behaviour. `verify_combat` asserts the inequality directly, against a written-out 12 rather than
 against `SpawnDirector`'s own constant.
