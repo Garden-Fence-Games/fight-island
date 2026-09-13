@@ -565,6 +565,7 @@ func _scatter() -> Node3D:
 	props.add_child(_multi("Pebbles", _nature(PEBBLE_MODEL), pebbles, {}, PEBBLE_FADE, false))
 	props.add_child(_family("Palms", IslandFoliage.PALM_MODELS, palms, _palm_wind(), PALM_FADE))
 	props.add_child(_family("Rocks", IslandRocks.MODELS, rocks, {}, 0.0))
+	props.add_child(IslandBottles.population(_rng, _height_at, Vector3.ZERO, CHUNK))
 	props.add_child(_colliders(blocking))
 	return props
 

@@ -52,6 +52,8 @@ func _ready() -> void:
 	# The formula must not also be sending wave 1. Halting is enough: the hand-over at the end
 	# starts the breather, and wave 2 then arrives exactly as every later wave does.
 	waves.halt()
+	# `halt` stopped the run clock with the formula, and wave 1 is a wave the player is fighting.
+	GameState.fighting = true
 	EventBus.attack_landed.connect(_on_attack_landed)
 	EventBus.dodge_evaded.connect(_on_dodge_evaded)
 	EventBus.parry_perfect.connect(_on_parry_perfect)
@@ -63,6 +65,11 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if not _running:
+		return
+	# Switched off mid-lesson. The parry step holds wave 1 open until it lands, so carrying on
+	# silently would be a wave that never ends with nothing on screen ever saying why.
+	if not _prompts_wanted():
+		_hand_the_island_back()
 		return
 	_advance_travel()
 	_keep_the_island_stocked(delta)
@@ -81,6 +88,7 @@ func is_running() -> bool:
 ## that is never coming.
 func stand_down() -> void:
 	_running = false
+	GameState.fighting = false
 	_protect_the_player(false)
 	if prompt != null:
 		prompt.hide_line()
@@ -98,6 +106,10 @@ func _should_run() -> bool:
 		return false
 	# A resumed run is past wave 1, and one resumed *on* wave 1 was already taught in that sitting.
 	if GameState.wave != 0:
+		return false
+	# Turning the prompts off is asking not to be taught, and a lesson nobody is shown is a lesson
+	# that cannot be answered — see `_process`.
+	if not _prompts_wanted():
 		return false
 	_cleared = _stored_progress()
 	for step: TutorialStep in steps:
@@ -138,11 +150,13 @@ func _reset_step() -> void:
 		prompt.hide_line()
 
 
-## The step states how many bodies should be standing, and this keeps that true.
+## The step states what should be standing — how many, and whether they may swing — and this
+## keeps that true.
 func _keep_the_island_stocked(delta: float) -> void:
 	var step := current_step()
 	if step == null or waves.spawner == null:
 		return
+	_match_the_standing_bodies(step)
 	_spawn_clock -= delta
 	if _spawn_clock > 0.0 or waves.spawner.alive_count() >= step.enemies:
 		return
@@ -151,6 +165,17 @@ func _keep_the_island_stocked(delta: float) -> void:
 	waves.spawner.spawn(
 		enemy, step.health_multiplier, 1.0, 1.0, step.windup_multiplier, null, step.passive
 	)
+
+
+## Harmlessness is the one thing a lesson changes about a body already standing, and the director
+## only ever tops the island up. Without this the farmhand sent for the attack lesson is still the
+## one there for the dodge lesson, still unable to claim a token — so he never swings, and a lesson
+## that ends on being swung at never ends.
+func _match_the_standing_bodies(step: TutorialStep) -> void:
+	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
+		var body := node as Enemy
+		if body != null:
+			body.passive = step.passive
 
 
 ## Movement is the one lesson with no event behind it: nothing else in this game cares that the
@@ -184,8 +209,6 @@ func _tick_prompt(delta: float) -> void:
 	var step := current_step()
 	if step == null or prompt == null:
 		return
-	if not bool(Settings.get_value(&"gameplay_tutorial_prompts")):
-		return
 	_prompt_clock += delta
 	if _prompt_clock >= PROMPT_DELAY:
 		prompt.show_line(step.prompt_key, step.prompt_actions)
@@ -198,7 +221,14 @@ func _finish_if_done() -> void:
 		return
 	if waves.spawner != null and waves.spawner.alive_count() > 0:
 		return
+	_hand_the_island_back()
+
+
+## Wave 1 over, however it ended: the island goes back to the formula and wave 2 arrives on the
+## ordinary breather, exactly as every later wave does.
+func _hand_the_island_back() -> void:
 	_running = false
+	GameState.fighting = false
 	_protect_the_player(false)
 	if prompt != null:
 		prompt.hide_line()
@@ -208,6 +238,18 @@ func _finish_if_done() -> void:
 	var reward := waves.config.reward_for(WAVE, false) if waves.config != null else 0
 	EventBus.wave_cleared.emit(WAVE, reward)
 	waves.hand_over(WAVE)
+
+
+## The second blow of a chain is index 1, and the weapon in hand is what knows.
+func _chain_position(attack: AttackData) -> int:
+	var body := _player() as Player
+	if attack == null or body == null or body.weapon == null:
+		return -1
+	return body.weapon.index_of(attack)
+
+
+func _prompts_wanted() -> bool:
+	return bool(Settings.get_value(&"gameplay_tutorial_prompts"))
 
 
 func _player() -> Node3D:
@@ -242,10 +284,11 @@ func _bodies_expected() -> int:
 	return most
 
 
-func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool, _attack: AttackData) -> void:
-	var body := _player() as Player
-	# The chain index is the player's own bookkeeping, and the second blow of a chain is index 1.
-	if body != null and body.chain_index > 0:
+func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool, attack: AttackData) -> void:
+	# Which blow of the chain this is has to be read off the attack itself: `Player.chain_index` is
+	# the window a finished swing left open, and entering the next swing closes it — so it reads -1
+	# for the whole of the blow that is landing, chained or not.
+	if _chain_position(attack) > 0:
 		_record(&"hit_chained")
 	if perfect:
 		_record(&"hit_perfect")

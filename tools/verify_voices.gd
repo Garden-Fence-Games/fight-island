@@ -15,9 +15,18 @@ const BIRD: String = "res://scenes/world/bird.tscn"
 ## The families there have to be, and the least each may hold. Written out: a directory scan that
 ## found nothing would otherwise report a tidy pass over an empty folder.
 const FAMILIES: Dictionary = {&"farmer": 6, &"gull": 2}
-## The longest a line may run. A farmer who shouts for six seconds is still shouting when he has
-## been dead for four.
-const LONGEST: float = 5.0
+## The longest a line may run: the longest one shipped, plus room for one a little longer.
+##
+## **What this actually guards is smaller than it used to claim.** It read "a farmer who shouts for
+## six seconds is still shouting when he has been dead for four", and that is only half true — a
+## body hushes its voice when it is handed back to the pool, not when it dies, so a line does
+## outlive its speaker, for as long as the corpse lies there. The ceiling never fixed that.
+##
+## What it is good for is stopping a line nobody meant to ship: a recording with a minute of room
+## tone on the end, or a whole take where a shout was wanted. That is a much weaker rule than the
+## comment used to imply, and it is worth saying so rather than leaving a number that looks
+## load-bearing.
+const LONGEST: float = 6.5
 ## Recorded voice is mono on purpose — a positional source is placed by the engine, and a stereo
 ## file hands it a pan that fights the position.
 const CHANNELS: int = 1

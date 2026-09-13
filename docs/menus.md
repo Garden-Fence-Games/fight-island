@@ -271,8 +271,9 @@ because the alternative is this screen keeping its own list of every enemy in th
 
 ## HUD during the fight
 
-The least possible. Health and stamina bottom-left, ammo bottom-right when the gun is held, wave
-number and money top-right — each **96 px in from its own corner**, nothing anywhere else.
+The least possible. Health and stamina bottom-left, ammo bottom-right when the gun is held, the
+soundtrack row, wave number and money top-right — each **96 px in from its own corner**, nothing
+anywhere else.
 
 Every element listens on the `EventBus` and holds no reference to the player, so the HUD survives a
 death, a restart and a player that does not exist yet. The health figure is the one thing allowed
@@ -295,6 +296,22 @@ and the counter is what confirms it. **Spending is silent**: the player pressed 
 watched the price, and being punched at afterwards tells them nothing they did not just do. The
 punch is also the half a player can turn off — it respects *Reduce flashing*, while the number
 itself stays, because suppressing it would remove information rather than motion.
+
+**The soundtrack row sits above the wave chip, and in the same place on the title screen and behind
+the pause menu.** One row the player learns once: what is playing, a button to silence it and a
+button for the next track. It is built out of the chips the rest of the HUD is built out of — the
+same frame, the same border, one size down — because a widget with its own look reads as something
+that arrived from another game.
+
+The two buttons say **Mute** and **Next** rather than carrying a speaker and a skip glyph. A row
+this small has no space for an icon that has to be guessed at, and the mute button names what
+pressing it does rather than the state it is already in. Muting greys out **Next**: with the
+soundtrack off there is nothing to skip. They are **mouse-only** — `FOCUS_NONE`, so a widget in the
+corner never takes the caret off a menu column or off the fight. The music slider in
+Options → Audio is what a pad reaches for.
+
+The row **disappears when there is no soundtrack**. An empty playlist is a data change, and a row
+showing nothing with two dead buttons reads as broken rather than as absent.
 
 The debug overlay from M1 stays behind `F3` in debug builds, starts hidden, and a release build
 never carries it at all.

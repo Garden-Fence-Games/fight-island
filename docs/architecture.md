@@ -423,6 +423,45 @@ Whatever draws it will still owe the rule the ring was built for: **a shape, not
 alone fails a colourblind player, every greyscale screenshot, and any camera far enough away that a
 tint is a few pixels.
 
+### The sun on the bottles
+
+Seventy glass bottles lie within ten metres of the spawn (`IslandBottles`, baked with the island,
+colliding with nothing). `SunGlint` reads where they are out of the scatter's own buffer, the way
+`PalmGrove` reads the palms, and gives each a glinting face pointing somewhere near straight up.
+Every frame, around midday, the bottle whose face best mirrors the sun into the camera flares —
+a burst, a streak and ghosts along the line through the screen's centre, additive gradients built
+at runtime. **One flare, the best-aligned one**, so as the player moves different bottles catch and
+let go. It fades over the hours either side of `noon_hour`, and **reduced flashing switches it
+off**. The two questions it asks — how much of midday it is, how hard a face glints — are static
+and tested in `test_sun_glint`.
+
+### The pixel look
+
+The 3D frame is drawn as pixel art: cut into fat pixels — a fixed number of rows whatever the
+resolution, two screen pixels across at 1080p — outlined dark along silhouettes and lit along creases, on a slightly
+smaller palette. The interface is drawn afterwards and stays sharp. `PixelLook` does it, a
+`CompositorEffect` that `CameraRig` and `VistaCamera` put on their cameras, tuned by
+`data/fx/pixel_look.tres`.
+
+**Why a compositor effect.** A screen-space quad reads the screen before the transparent pass, so
+the sea, the blood and every particle would land on top of the pixel art unstyled. A low-resolution
+`SubViewport` would put the whole world one viewport away from the mouse aim and from every check
+that asks a camera where something is. After the transparent pass the frame is finished and the
+depth and normal buffers are still there, which is what the outlines need.
+
+- **Edges are decided per fat pixel**, from its centre's depth and normal, so a line is exactly one
+  fat pixel wide. The silhouette threshold is a share of distance, not metres, so it reads the same
+  at every zoom and a blade of grass standing in the ground does not draw one.
+- **A fat pixel's colour is the average of four points inside it.** One sample per block turned the
+  grass, which is finer than a block, into a field of specks.
+- **Headless, it does nothing**: there is no rendering device, so every check runs the same game
+  without a look.
+- **The player can switch it off** — *Pixel art* under Video, `video_pixel_look`. The effect stays
+  on the camera and reads the setting every frame, so the switch is live both ways.
+
+The camera is not snapped to the pixel grid, so a slow pan crawls by a pixel at a time. Snapping it
+is the next step if that reads as shimmer.
+
 ### Blood
 
 A landed blow bleeds in **three layers**, each with one job, and every figure that tunes them is in
@@ -580,6 +619,20 @@ Fixing it is a design decision, not a simplification. Every silhouette reads the
 time; the island only has to be composed for one viewpoint; and a telegraph can never end up behind
 geometry because the player happened to have turned the camera. The cost is that the arena must be
 authored so nothing important sits in the one blind direction.
+
+### The one time the camera turns
+
+A run begun from the title opens on the player waking up (`new_run_awakening`) while the camera
+turns once round him, close and low, opening out as it comes round — and **its last point is the
+game camera's own position and rotation**, so it arrives rather than cuts. `RunIntro` does it:
+`GameState.begin_run(true)` from the title sets `intro_owed`, `RunFlow` opens it, and it spends the
+flag. For its length the state machine is stopped, input reaches nothing, the head does not follow
+the aim, the waves and the tutorial wait and the HUD is away; all of it comes back once the camera
+has settled. A retry, a restart and a resumed run skip it, and so does every check that begins a
+run. `verify_run_intro` holds both halves.
+
+This is the exception to the fixed camera, and a deliberate one: the player is not looking around,
+the island is. Nothing during play turns the camera.
 
 ### Height does not help visibility here. It hurts it.
 

@@ -25,6 +25,8 @@ const DEFAULTS: Dictionary = {
 	&"video_resolution": "1920x1080",
 	&"video_vsync": "on",
 	&"video_frame_cap": 0,
+	## The pixel look over the 3D frame. Read by `PixelLook` every frame, so it switches live.
+	&"video_pixel_look": true,
 	&"audio_master": 100,
 	&"audio_music": 100,
 	&"audio_sfx": 100,

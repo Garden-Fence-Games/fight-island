@@ -6,13 +6,39 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
-
 ## [0.1.0] - 2026-09-13
 
 The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
-between waves — held by 39 headless checks in CI and 46 mutations that prove those checks can
+between waves — held by 41 headless checks in CI and 48 mutations that prove those checks can
 still fail.
-=======
+
+### Fixed
+
+- **`verify_corpses` was a coin toss** — four runs in five on `main`, and it blocked every pull
+  request behind it including the release. Three assertions flaked, and none of them was a bug in
+  the game (#207).
+  - The impulse was never being lost. Instrumenting `push_near` showed **sixteen bodies taking it
+    every time**. What varies is how much of it reaches the *hips*, which is what the check reads,
+    and that depends on the pose the tumble happened to leave: splayed on his back the hips travel a
+    third of a metre, folded on his side a tenth. Both are a body reacting; only one was passing. A
+    single blow now has to **disturb** the body — five centimetres, against a picture's nought and
+    the two real modes' nine and thirty-three — and "shoved" is what a sustained walk into one has
+    to do, which is a different claim and keeps its own figure.
+  - The two shove checks **poll for the movement instead of reading at a fixed frame**. A ragdoll
+    woken a frame later than usual had not finished travelling when the reading was taken, and the
+    check reported that the player walks through corpses.
+  - The sand check held the body's lowest point to 35 cm and read 36 on about one run in five. It is
+    45 now: what it was written against was **two metres** of skin under the sand, and a centimetre
+    is two machines' solvers disagreeing, not a body sinking.
+
+### Added
+
+- **The island is drawn as pixel art.** The finished 3D frame is cut into fat pixels — two screen
+  pixels across at 1080p — outlined along silhouettes and lit along creases, on a slightly smaller
+  palette; the interface stays sharp. `PixelLook` runs after the transparent pass, so the sea, the
+  blood and the particles are styled with everything else, and `data/fx/pixel_look.tres` tunes it.
+  *Pixel art* under Video switches it off, live.
+
 ### Changed
 
 - **The gun's recoil is physics rather than a clip.** The arm goes to the ragdoll for a tenth of a
@@ -46,6 +72,19 @@ still fail.
     being watched passes for every number, including a patience nobody would stand through.
 
 ### Added
+
+- **A new run opens on the player waking up.** Purple-Sigil's `new_run_awakening` plays whole while
+  the camera turns once round him, close and low, and opens out onto the game camera exactly — the
+  turn's last point is where the game is played from, so nothing is cut to. For its length there is
+  no body to control, no free head, no waves, no tutorial and no HUD. Only a run begun from the
+  title opens this way; a retry, a restart or a resume goes straight in. `verify_run_intro` holds
+  both.
+- **Bottles in the grass where the player wakes up, and the midday sun catches them.** Seventy of
+  Purple-Sigil's bottles, standing and lying, in glass, within ten metres of the spawn and nowhere
+  else. Around midday the one whose glass best mirrors the sun into the camera throws a lens flare
+  across the screen — a burst, a streak and a line of ghosts through the centre — and as the player
+  moves, different bottles catch and let go. Reduced flashing turns it off. `SunGlint`, tuned by
+  `data/fx/sun_glint.tres`.
 
 - **The pirate comes ashore.** The rig arrived with #192 and nothing used it. He is an archetype
   now, and he is the hardest blow in the game: **22 damage**, nearly three farmhands, a quarter of
@@ -164,6 +203,24 @@ still fail.
 
 ### Fixed
 
+- **The tutorial could not be finished.** Wave 1 stopped on the chain lesson, on every first run.
+  The director asked for the second blow of a chain and then recognised it by `Player.chain_index` —
+  which is the window a *finished* swing leaves open, and entering the next swing closes it, so it
+  reads -1 for the whole of every blow that lands. A chained hit is named by the attack that landed
+  instead, which is what `attack_landed` was already carrying.
+- **And past that it stopped again at the dodge lesson.** The farmhand sent for the attack lesson is
+  spawned harmless, harmlessness is decided at spawn, and the director only ever tops the island
+  *up* — so the body still standing when the gloves were meant to come off could never swing, and a
+  lesson that ends on being swung at could never end. A step says what should be standing, and what
+  is standing is now made to match it.
+- **Switching *Show tutorial prompts* off no longer leaves a wave that cannot end.** The parry holds
+  wave 1 open until it lands and nothing on screen was left to say so. The tutorial hands the island
+  back instead, and a run started with the toggle already off never takes it in the first place.
+- **Wave 1 counts towards the run clock**, like every other wave. Halting the formula stopped the
+  clock, and nothing started it again until wave 2 arrived.
+- `verify_tutorial` answers the chain lesson with a real attack rather than by writing the player's
+  bookkeeping by hand, watches a standing farmer be allowed to swing, and switches the prompts off
+  mid-lesson — the three things that were true of the checks and not of the game.
 - **The macOS build could not be made at all.** Apple Silicon reads ASTC and nothing else, and
   `import_etc2_astc` was off — so the universal preset refused to export with "Cannot export for
   universal or arm64 if ETC2 ASTC texture format is disabled". Nothing in the project could see it,
