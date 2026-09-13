@@ -104,8 +104,13 @@ func _standing_health(config: WaveConfig, wave: int, alive: int) -> float:
 	return mean * float(alive) * config.health_multiplier(wave)
 
 
-## Damage per second with every token spent. The melee pool is the phase's; the ranged pool is one,
-## and it is only worth anything once the mix carries a thrower.
+## Damage per second with every token spent. The melee pool is the phase's, and it is always full:
+## a wave of this size never runs short of bodies willing to commit.
+##
+## **The ranged pool is one token and it is only worth what the odds of a thrower say.** One alive
+## is enough to spend it and a second adds nothing, so what is paid is the chance that at least one
+## of the standing crowd is a thrower — which is what makes a share of six per cent a different
+## thing from a share of eighteen, rather than the same token either way.
 func _incoming(config: WaveConfig, wave: int, phase: DayPhase) -> float:
 	var band := config.band_for(wave)
 	if band == null or phase == null:
@@ -129,7 +134,8 @@ func _incoming(config: WaveConfig, wave: int, phase: DayPhase) -> float:
 	if melee_share > 0.0:
 		out += melee / melee_share * float(tokens)
 	if ranged_share > 0.0:
-		out += ranged / ranged_share
+		var none := pow(1.0 - ranged_share, float(config.max_alive(wave)))
+		out += ranged / ranged_share * (1.0 - none)
 	return out * config.damage_multiplier(wave, phase)
 
 

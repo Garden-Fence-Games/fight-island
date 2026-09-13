@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WaveConfig" load_steps=31 format=3]
+[gd_resource type="Resource" script_class="WaveConfig" load_steps=32 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/wave_config.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/resources/wave_band.gd" id="2"]
@@ -10,7 +10,7 @@
 [ext_resource type="Resource" path="res://data/day/turn.tres" id="7"]
 [ext_resource type="Resource" path="res://data/waves/elite.tres" id="8"]
 
-[sub_resource type="Resource" id="Share_1"]
+[sub_resource type="Resource" id="Farmhand_1"]
 script = ExtResource("3")
 enemy = ExtResource("4")
 share = 1.00
@@ -18,42 +18,57 @@ share = 1.00
 [sub_resource type="Resource" id="Band_1"]
 script = ExtResource("2")
 first_wave = 1
-shares = Array[ExtResource("3")]([SubResource("Share_1")])
+shares = Array[ExtResource("3")]([SubResource("Farmhand_1")])
 
-[sub_resource type="Resource" id="Share_2"]
+[sub_resource type="Resource" id="Farmhand_3"]
 script = ExtResource("3")
 enemy = ExtResource("4")
-share = 0.72
+share = 0.85
 
-[sub_resource type="Resource" id="Share_3"]
+[sub_resource type="Resource" id="Reaper_3"]
 script = ExtResource("3")
 enemy = ExtResource("5")
-share = 0.18
-
-[sub_resource type="Resource" id="Pirate_3"]
-script = ExtResource("3")
-enemy = ExtResource("10")
-share = 0.10
+share = 0.15
 
 [sub_resource type="Resource" id="Band_3"]
 script = ExtResource("2")
 first_wave = 3
-shares = Array[ExtResource("3")]([SubResource("Share_2"), SubResource("Share_3"), SubResource("Pirate_3")])
+shares = Array[ExtResource("3")]([SubResource("Farmhand_3"), SubResource("Reaper_3")])
 
-[sub_resource type="Resource" id="Share_4"]
+[sub_resource type="Resource" id="Farmhand_4"]
 script = ExtResource("3")
 enemy = ExtResource("4")
-share = 0.59
+share = 0.72
 
-[sub_resource type="Resource" id="Share_5"]
+[sub_resource type="Resource" id="Reaper_4"]
 script = ExtResource("3")
 enemy = ExtResource("5")
 share = 0.18
 
-[sub_resource type="Resource" id="Share_6"]
+[sub_resource type="Resource" id="Pirate_4"]
+script = ExtResource("3")
+enemy = ExtResource("10")
+share = 0.10
+
+[sub_resource type="Resource" id="Band_4"]
+script = ExtResource("2")
+first_wave = 4
+shares = Array[ExtResource("3")]([SubResource("Farmhand_4"), SubResource("Reaper_4"), SubResource("Pirate_4")])
+
+[sub_resource type="Resource" id="Farmhand_5"]
+script = ExtResource("3")
+enemy = ExtResource("4")
+share = 0.66
+
+[sub_resource type="Resource" id="Reaper_5"]
+script = ExtResource("3")
+enemy = ExtResource("5")
+share = 0.18
+
+[sub_resource type="Resource" id="Thrower_5"]
 script = ExtResource("3")
 enemy = ExtResource("6")
-share = 0.13
+share = 0.06
 
 [sub_resource type="Resource" id="Pirate_5"]
 script = ExtResource("3")
@@ -63,19 +78,44 @@ share = 0.10
 [sub_resource type="Resource" id="Band_5"]
 script = ExtResource("2")
 first_wave = 5
-shares = Array[ExtResource("3")]([SubResource("Share_4"), SubResource("Share_5"), SubResource("Share_6"), SubResource("Pirate_5")])
+shares = Array[ExtResource("3")]([SubResource("Farmhand_5"), SubResource("Reaper_5"), SubResource("Thrower_5"), SubResource("Pirate_5")])
 
-[sub_resource type="Resource" id="Share_7"]
+[sub_resource type="Resource" id="Farmhand_6"]
+script = ExtResource("3")
+enemy = ExtResource("4")
+share = 0.59
+
+[sub_resource type="Resource" id="Reaper_6"]
+script = ExtResource("3")
+enemy = ExtResource("5")
+share = 0.18
+
+[sub_resource type="Resource" id="Thrower_6"]
+script = ExtResource("3")
+enemy = ExtResource("6")
+share = 0.13
+
+[sub_resource type="Resource" id="Pirate_6"]
+script = ExtResource("3")
+enemy = ExtResource("10")
+share = 0.10
+
+[sub_resource type="Resource" id="Band_6"]
+script = ExtResource("2")
+first_wave = 6
+shares = Array[ExtResource("3")]([SubResource("Farmhand_6"), SubResource("Reaper_6"), SubResource("Thrower_6"), SubResource("Pirate_6")])
+
+[sub_resource type="Resource" id="Farmhand_8"]
 script = ExtResource("3")
 enemy = ExtResource("4")
 share = 0.45
 
-[sub_resource type="Resource" id="Share_8"]
+[sub_resource type="Resource" id="Reaper_8"]
 script = ExtResource("3")
 enemy = ExtResource("5")
 share = 0.27
 
-[sub_resource type="Resource" id="Share_9"]
+[sub_resource type="Resource" id="Thrower_8"]
 script = ExtResource("3")
 enemy = ExtResource("6")
 share = 0.18
@@ -88,19 +128,19 @@ share = 0.10
 [sub_resource type="Resource" id="Band_8"]
 script = ExtResource("2")
 first_wave = 8
-shares = Array[ExtResource("3")]([SubResource("Share_7"), SubResource("Share_8"), SubResource("Share_9"), SubResource("Pirate_8")])
+shares = Array[ExtResource("3")]([SubResource("Farmhand_8"), SubResource("Reaper_8"), SubResource("Thrower_8"), SubResource("Pirate_8")])
 
-[sub_resource type="Resource" id="Share_10"]
+[sub_resource type="Resource" id="Farmhand_12"]
 script = ExtResource("3")
 enemy = ExtResource("4")
 share = 0.36
 
-[sub_resource type="Resource" id="Share_11"]
+[sub_resource type="Resource" id="Reaper_12"]
 script = ExtResource("3")
 enemy = ExtResource("5")
 share = 0.32
 
-[sub_resource type="Resource" id="Share_12"]
+[sub_resource type="Resource" id="Thrower_12"]
 script = ExtResource("3")
 enemy = ExtResource("6")
 share = 0.22
@@ -113,10 +153,10 @@ share = 0.10
 [sub_resource type="Resource" id="Band_12"]
 script = ExtResource("2")
 first_wave = 12
-shares = Array[ExtResource("3")]([SubResource("Share_10"), SubResource("Share_11"), SubResource("Share_12"), SubResource("Pirate_12")])
+shares = Array[ExtResource("3")]([SubResource("Farmhand_12"), SubResource("Reaper_12"), SubResource("Thrower_12"), SubResource("Pirate_12")])
 
 [resource]
 script = ExtResource("1")
-bands = Array[ExtResource("2")]([SubResource("Band_1"), SubResource("Band_3"), SubResource("Band_5"), SubResource("Band_8"), SubResource("Band_12")])
+bands = Array[ExtResource("2")]([SubResource("Band_1"), SubResource("Band_3"), SubResource("Band_4"), SubResource("Band_5"), SubResource("Band_6"), SubResource("Band_8"), SubResource("Band_12")])
 cycle = ExtResource("7")
 elite = ExtResource("8")
