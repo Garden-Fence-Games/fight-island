@@ -78,7 +78,12 @@ const ARCHETYPES: Array[StringName] = [&"reaper", &"thrower"]
 const BED: StringName = &"surf"
 ## How close a baked peak has to be to the peak it declared. Tight: this is arithmetic, not taste,
 ## and the only thing that moves it is a normalisation that did not happen.
-const PEAK_TOLERANCE: float = 0.02
+## How far a baked sound may sit from the level it declared. A decibel: past that the table has
+## stopped describing the mix that plays.
+const LEVEL_TOLERANCE: float = 1.0
+## A floor under the logarithm, so an empty buffer reports as silent rather than as minus
+## infinity.
+const QUIETEST: float = 0.00001
 ## Where a rising sound's peak has to sit, as a share of its length. Past halfway, because the
 ## claim is that it climbs — not that it happens to be loudest a little later than a thud.
 const CLIMBS_PAST: float = 0.5
@@ -513,14 +518,17 @@ func _check_nothing_clips_or_clicks() -> void:
 				clipped += 1
 		if clipped > 1:
 			_fail("the %s sound clips on %d samples" % [id, clipped])
-		# Against the peak the sound asked for, not a floor every sound shares. A footfall is meant
+		# Against the level the sound asked for, not a floor every sound shares. A footfall is meant
 		# to be quieter than a hit, so a blanket minimum would either pass an unnormalised buffer or
 		# forbid the mix having any shape at all.
-		var wanted := AudioManager.peak_of(id)
-		if absf(loudest - wanted) > PEAK_TOLERANCE:
-			_fail(
-				"the %s sound asked for a peak of %.2f and came out at %.2f" % [id, wanted, loudest]
-			)
+		#
+		# **Loudness, not peak.** The peak a sound comes out at is measured rather than asked for
+		# now, so comparing the two would be asking a number whether it equals itself. What is a
+		# decision, and therefore what is worth checking, is how loud the sound is.
+		var wanted := linear_to_db(AudioManager.level_of(id))
+		var heard := linear_to_db(maxf(SoundBank.loudness(samples), QUIETEST))
+		if absf(heard - wanted) > LEVEL_TOLERANCE:
+			_fail("the %s sound asked for %.1f dB and came out at %.1f" % [id, wanted, heard])
 		if absf(samples[0]) > 0.02:
 			_fail("the %s sound starts at %.3f, which is a click" % [id, samples[0]])
 

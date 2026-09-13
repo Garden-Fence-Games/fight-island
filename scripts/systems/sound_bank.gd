@@ -26,6 +26,13 @@ const DECAYED: float = 6.0
 ## How much of the bed's tail is folded back over its head to make the seam. A loop assembled from
 ## noise has no natural join; this is what stops the wrap being an audible tick every few seconds.
 const SURF_SEAM: float = 0.25
+## What a loudness figure is taken over. Three tenths of a second is about what the ear integrates
+## over, and it is the difference between how loud a sound is and how tall it is.
+const LOUDNESS_WINDOW: float = 0.3
+## The tallest sample anything baked here may reach. Sine partials are summed, so a raw buffer can
+## pass one; this is the line normalisation brings it back under, and a loudness target that would
+## need more than this to reach does not get it.
+const PEAK: float = 0.9
 
 
 ## Sized from the slowest decay the sound is about to use, and from how late the last of it starts,
@@ -141,22 +148,22 @@ static func breathe(samples: PackedFloat32Array, swells: int, depth: float) -> v
 		samples[index] *= 1.0 - depth + depth * (0.5 - 0.5 * cos(TAU * turns * through))
 
 
-## Ramped off the zero line, normalised to the peak it was asked for, and packed to 16-bit.
+## Ramped off the zero line, normalised to the level it was asked for, and packed to 16-bit.
 ## Normalising rather than trusting the sum is what keeps a fourth partial from silently clipping
-## the other three; asking for a peak rather than sharing one is what keeps a footfall under a hit.
+## the other three; asking for a level rather than sharing one is what keeps a footfall under a hit.
 ##
-## **The ramp goes on before the peak is measured, not after.** A short sound is loudest within a
+## **The ramp goes on before the level is measured, not after.** A short sound is loudest within a
 ## millisecond or two of starting — a dry click is nothing else — so a ramp applied afterwards eats
-## the very sample the normalisation was aimed at, and the sound comes out well under what it asked
-## for. The dry trigger landed at 0.33 against the 0.55 it declared, which is how a mix that was
-## written down as a table stops being the mix that plays.
-static func bake(samples: PackedFloat32Array, peak: float) -> AudioStreamWAV:
+## the very samples the normalisation was aimed at, and the sound comes out under what it asked for.
+## The dry trigger landed at 0.33 against the 0.55 it declared, which is how a mix that was written
+## down as a table stops being the mix that plays.
+static func bake(samples: PackedFloat32Array, level: float) -> AudioStreamWAV:
 	var ramp := maxi(int(RAMP * float(MIX_RATE)), 1)
 	var last := samples.size() - 1
 	for index: int in mini(ramp, samples.size()):
 		samples[index] *= float(index) / float(ramp)
 		samples[last - index] *= float(index) / float(ramp)
-	return wav(encode(samples, samples.size(), scale_to(samples, peak)), false)
+	return wav(encode(samples, samples.size(), scale_to_loudness(samples, level)), false)
 
 
 ## The same, for the one sound that comes back round.
@@ -164,8 +171,8 @@ static func bake(samples: PackedFloat32Array, peak: float) -> AudioStreamWAV:
 ## **A loop may not be ramped.** The two millisecond fade that stops a one-shot clicking is, on a
 ## loop, a hole punched in the bed every time it wraps — so there is no ramp here at all, and the
 ## join is made by `_join` before anything is shaped.
-static func bake_loop(samples: PackedFloat32Array, peak: float) -> AudioStreamWAV:
-	return wav(encode(samples, samples.size(), scale_to(samples, peak)), true)
+static func bake_loop(samples: PackedFloat32Array, level: float) -> AudioStreamWAV:
+	return wav(encode(samples, samples.size(), scale_to_loudness(samples, level)), true)
 
 
 ## Folds a buffer's tail back over its head and returns it short by exactly that much, so the result
@@ -193,11 +200,67 @@ static func encode(samples: PackedFloat32Array, count: int, scale: float) -> Pac
 	return bytes
 
 
-static func scale_to(samples: PackedFloat32Array, peak: float) -> float:
+## The samples back out of a baked stream, for the checks that ask what the engine is actually
+## holding and for the one place that needs a waveform's height after the fact.
+static func samples(stream: AudioStreamWAV) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	var bytes := stream.data
+	out.resize(bytes.size() / 2)
+	for index: int in out.size():
+		out[index] = float(bytes.decode_s16(index * 2)) / 32768.0
+	return out
+
+
+static func peak_of(samples: PackedFloat32Array) -> float:
 	var loudest := 0.0
 	for value: float in samples:
 		loudest = maxf(loudest, absf(value))
-	return peak / loudest if loudest > 0.0 else 0.0
+	return loudest
+
+
+## **How loud a buffer is, as opposed to how tall it is.** The loudest root-mean-square the buffer
+## reaches over any `LOUDNESS_WINDOW`, which is roughly what the ear integrates over.
+##
+## This exists because peak is a bad yardstick for a mix and the whole table used to be written in
+## it. Two sounds normalised to the same peak are not the same loudness and are not close: a
+## decaying sine spends nearly all its length near silence, while noise that never stops sits at its
+## own average the whole way through. Measured across this game's own sounds the gap reached
+## seventeen decibels at an identical peak.
+##
+## The window is taken as a maximum rather than as an average over the whole buffer, for the reason
+## a tail should not buy a sound quiet: a parry that rings for a second and a half is as loud as its
+## loudest moment, not as loud as its average with the silence afterwards.
+static func loudness(samples: PackedFloat32Array) -> float:
+	var count := samples.size()
+	if count == 0:
+		return 0.0
+	var span := mini(maxi(int(LOUDNESS_WINDOW * float(MIX_RATE)), 1), count)
+	var running := 0.0
+	var loudest := 0.0
+	for index: int in count:
+		running += samples[index] * samples[index]
+		if index >= span:
+			running -= samples[index - span] * samples[index - span]
+		if index >= span - 1:
+			loudest = maxf(loudest, running / float(span))
+	return sqrt(loudest)
+
+
+## The scale that puts a buffer at the loudness it asked for, **and never past the ceiling**.
+##
+## A loudness target says nothing about a buffer's tallest sample, so a sound with a wide crest —
+## the impacts are sixteen decibels from average to peak — can ask for a modest loudness and still
+## want more than full scale to reach it. When that happens the peak wins and the sound comes out
+## quieter than it asked for, which `verify_audio` sees and reports rather than letting it pass as
+## the level on the table.
+static func scale_to_loudness(samples: PackedFloat32Array, level: float) -> float:
+	var heard := loudness(samples)
+	if heard <= 0.0:
+		return 0.0
+	var tallest := peak_of(samples)
+	if tallest * (level / heard) > PEAK:
+		return PEAK / tallest
+	return level / heard
 
 
 static func wav(bytes: PackedByteArray, looping: bool) -> AudioStreamWAV:
