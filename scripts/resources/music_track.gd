@@ -16,6 +16,18 @@ extends Resource
 ## before the track can ship.
 @export var artist: String = ""
 @export var stream: AudioStream = null
+## **How loud this file already is**, in the loudness the mix table is written in — the loudest RMS
+## over any 0.3 s. Measured once, when the track is added, and written down because the streams are
+## MP3 and there is nothing to measure at load.
+##
+## Per track rather than one figure for the soundtrack, and that is not tidiness: these five masters
+## span six decibels, so a single average plays one of them six louder than another and the player
+## hears the level jump every time a track changes. What the table declares is what a track should
+## be worth at the ear; this is what turns each file into that.
+##
+## Re-measure by decoding and taking the loudest 0.3 s window:
+## `ffmpeg -v error -i track.mp3 -ac 1 -ar 44100 -f s16le - | <max short-term RMS>`
+@export var as_recorded: float = 0.0
 
 
 ## Whether this track can actually be played. A row in the playlist with no file yet is a plan, not

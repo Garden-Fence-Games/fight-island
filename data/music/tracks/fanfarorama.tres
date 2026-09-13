@@ -8,3 +8,4 @@ script = ExtResource("1")
 title = "Fanfarorama"
 artist = "Ritchie Everett"
 stream = ExtResource("2")
+as_recorded = -9.75

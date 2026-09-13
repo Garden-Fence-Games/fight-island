@@ -8,6 +8,9 @@ extends Node
 ## Run: godot --headless --path . res://tools/verify_music.tscn
 
 const MAIN: String = "res://scenes/main/main.tscn"
+## The quietest a finished master plausibly is, in the loudness this project measures in. Anything
+## under this is not a quiet recording, it is the wrong unit written into the field.
+const QUIETEST_MASTER: float = -24.0
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
 ## The buses that are allowed to be switched off without losing information, and the one that is
 ## not. Written out rather than read off the layout, so a bus renamed in the editor fails here.
@@ -63,6 +66,7 @@ func _run() -> void:
 		director.halt()
 	await get_tree().physics_frame
 
+	_check_every_track_was_measured()
 	_check_every_layer_is_the_same_length()
 	_check_the_bed_only_ever_rises()
 	await _check_the_breather_is_silent_and_a_crowd_is_not()
@@ -76,6 +80,41 @@ func _run() -> void:
 ## Three loops of different lengths drift apart inside a minute, and what was one piece of music
 ## getting louder becomes three loops arguing. Nothing else keeps them together — they are separate
 ## players, started at separate moments, with no clock between them.
+## **Every shipped track has to say how loud it already is.**
+##
+## The jukebox turns a master into the level the table asks for, and it can only do that if the
+## master's own loudness is written down — the streams are MP3 and there is nothing to measure at
+## load. A track added without that figure falls back to the soundtrack average and arrives up to
+## six decibels off, which is the level jumping every time that track comes round.
+##
+## The band is wide on purpose. This is not asserting a value, which would mean re-measuring five
+## files on every run; it is asserting that somebody measured at all, and that what they wrote down
+## is a loudness rather than a peak, a linear scale, or a zero left by the default.
+func _check_every_track_was_measured() -> void:
+	var playlist := load(AudioManager.PLAYLIST) as MusicPlaylist
+	if playlist == null:
+		_fail("%s did not load — the soundtrack has no list" % AudioManager.PLAYLIST)
+		return
+	for track: MusicTrack in playlist.playable():
+		if track.as_recorded >= 0.0:
+			_fail(
+				(
+					'"%s" ships without a measured loudness (%.2f) — the jukebox cannot level it'
+					% [track.title, track.as_recorded]
+				)
+			)
+		elif track.as_recorded < QUIETEST_MASTER:
+			_fail(
+				(
+					(
+						'"%s" says it was mastered at %.2f dB, which is quieter than any master — that '
+						+ "is a peak or a scale, not a loudness"
+					)
+					% [track.title, track.as_recorded]
+				)
+			)
+
+
 func _check_every_layer_is_the_same_length() -> void:
 	var length := -1
 	for id: StringName in AudioManager.LAYERS:

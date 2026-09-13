@@ -30,6 +30,10 @@ const RANGES: Array[float] = [3.0, 8.0, 15.0]
 ## away from the cue is a shout drowning it, and a shout that falls away from it is the bug this
 ## whole pass started from.
 const BESIDE_A_WIND_UP: float = 3.0
+## How far under a wind-up the soundtrack has to sit. One-sided, unlike the voices: a shout belongs
+## beside the cue it announces, and music never does. Six decibels, and the `MusicDuck` bus takes it
+## further still the moment a body commits.
+const MUSIC_UNDER_A_WIND_UP: float = 6.0
 ## How far over the sea a voice has to sit. Six decibels: about where one sound is heard as being in
 ## front of another rather than inside it.
 const OVER_THE_SEA: float = 6.0
@@ -80,6 +84,7 @@ func _ready() -> void:
 func _run() -> void:
 	await _check_the_ear_is_the_player()
 	_check_the_mix_is_ordered()
+	_check_the_soundtrack_is_not_furniture()
 	_check_the_table_is_what_plays()
 	_check_the_recordings_are_where_the_mix_thinks()
 	_check_a_voice_stays_beside_a_wind_up_at_every_range()
@@ -149,6 +154,43 @@ func _camera_reach(player: Node3D) -> float:
 ## fight, and a telegraph under one is a warning the player will not hear in a crowd. So what is
 ## asserted is the order, and the order is the design — quietest is the body you already control,
 ## loudest is the thing about to hit you.
+## **The soundtrack against the quietest things in the game.**
+##
+## Every other family is baked to its level, so the table and the ear agree by construction. The
+## music is not: it arrives mastered and the table is applied as a gain on top, so the two can drift
+## by as much as the master is loud — and they did. A gain of -38.75 on a master at -7.8 arrived at
+## -46.6, under the menu click and barely over a footstep, and nothing in the ordering check could
+## see it because that check reads baked levels and the jukebox has none.
+##
+## So this asks the only question that was actually wrong: **is the soundtrack louder than the
+## furniture?** A menu whose button beats its own music is the symptom, and it is one comparison.
+func _check_the_soundtrack_is_not_furniture() -> void:
+	# The table's own figure, not the gain plus the declared recording: those two cancel, so a check
+	# written that way cannot see a wrong `TRACK_AS_RECORDED` and a mutant that zeroed it walked
+	# through. What guards the recording is `verify_music`, which reads what each track declares.
+	var music := MixTable.level_of(&"track")
+	for quiet: StringName in [&"ui_click", &"step_sand"]:
+		if music <= _heard(quiet):
+			_fail(
+				(
+					"the soundtrack is heard at %.1f dB and %s at %.1f — the music is furniture"
+					% [music, quiet, _heard(quiet)]
+				)
+			)
+	# And the other side, which is the rule a soundtrack never gets to break.
+	var warning := _heard(&"telegraph")
+	if music > warning - MUSIC_UNDER_A_WIND_UP:
+		_fail(
+			(
+				(
+					"the soundtrack is heard at %.1f dB against a wind-up at %.1f — it is why one gets "
+					+ "missed"
+				)
+				% [music, warning]
+			)
+		)
+
+
 func _check_the_mix_is_ordered() -> void:
 	var rungs: Array[Array] = [
 		[&"ui_click", &"surf"],

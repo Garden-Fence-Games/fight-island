@@ -8,3 +8,4 @@ script = ExtResource("1")
 title = "Del Boca Vista"
 artist = "Ritchie Everett"
 stream = ExtResource("2")
+as_recorded = -11.23
