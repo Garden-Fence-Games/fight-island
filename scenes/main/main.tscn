@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" path="res://scenes/world/arena.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_hud.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/ui/mix_desk.tscn" id="22"]
 [ext_resource type="Script" path="res://scripts/systems/hit_feedback.gd" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="5"]
@@ -27,6 +28,8 @@ config = ExtResource("7")
 [node name="Hud" parent="." instance=ExtResource("4")]
 
 [node name="DebugHud" parent="." instance=ExtResource("2")]
+
+[node name="MixDesk" parent="." instance=ExtResource("22")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("5")]
 
