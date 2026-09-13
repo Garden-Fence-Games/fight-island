@@ -11,8 +11,11 @@ extends RefCounted
 ## the row the player sees comes from somewhere else.
 
 const DOCUMENT: String = "res://docs/credits.md"
-## The headings the two tables live under. A table under any other heading is prose furniture and is
+## The headings the tables live under. A table under any other heading is prose furniture and is
 ## left alone.
+## Whose game it is. First in the document and first on the screen: a player who reads one line of a
+## credits roll reads the top one.
+const STUDIO_HEADING: String = "## The studio"
 ## Who made the game. First in the document and first on the screen, because it is the answer the
 ## player is owed — the asset ledger below it answers a different question, which is where each file
 ## came from and under what licence.
@@ -26,6 +29,8 @@ const TOOL_CELLS: int = 2
 ## A name and what they did, and nothing else. A role that needed a third column would be a job
 ## description rather than a credit.
 const PEOPLE_CELLS: int = 2
+## A name and where to find them.
+const STUDIO_CELLS: int = 2
 
 
 static func parse(path: String = DOCUMENT) -> CreditsRoll:
@@ -45,7 +50,9 @@ static func parse(path: String = DOCUMENT) -> CreditsRoll:
 		var cells := _cells(line)
 		if _is_furniture(cells):
 			continue
-		if heading == PEOPLE_HEADING and cells.size() == PEOPLE_CELLS:
+		if heading == STUDIO_HEADING and cells.size() == STUDIO_CELLS:
+			roll.studio.append(_studio_row(cells))
+		elif heading == PEOPLE_HEADING and cells.size() == PEOPLE_CELLS:
 			roll.people.append(_person_row(cells))
 		elif heading == ASSET_HEADING and cells.size() == ASSET_CELLS:
 			roll.assets.append(_asset_row(cells))
@@ -83,6 +90,17 @@ static func _asset_row(cells: PackedStringArray) -> CreditEntry:
 	entry.source_url = _link(cells[1])
 	entry.author = _plain(cells[2])
 	entry.licence = _plain(cells[3])
+	return entry
+
+
+## The studio, with its address in `source` rather than where a person's role goes. The address is
+## kept as written and also resolved to a URL, so the screen can print something a player can type
+## while anything that wants to open it still has somewhere to go.
+static func _studio_row(cells: PackedStringArray) -> CreditEntry:
+	var entry := CreditEntry.new()
+	entry.subject = _plain(cells[0])
+	entry.source = _plain(cells[1])
+	entry.source_url = _link(cells[1])
 	return entry
 
 

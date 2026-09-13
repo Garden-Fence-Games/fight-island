@@ -16,7 +16,12 @@ func _init() -> void:
 	if roll == null:
 		quit(1)
 		return
-	if roll.people.is_empty() or roll.assets.is_empty() or roll.tools.is_empty():
+	if (
+		roll.studio.is_empty()
+		or roll.people.is_empty()
+		or roll.assets.is_empty()
+		or roll.tools.is_empty()
+	):
 		printerr(
 			(
 				"credits: %s gave no rows — the parser and the document disagree"
@@ -31,8 +36,8 @@ func _init() -> void:
 		return
 	print(
 		(
-			"credits baked — %d people, %d assets, %d tools"
-			% [roll.people.size(), roll.assets.size(), roll.tools.size()]
+			"credits baked — %d studio, %d people, %d assets, %d tools"
+			% [roll.studio.size(), roll.people.size(), roll.assets.size(), roll.tools.size()]
 		)
 	)
 	quit(0)
