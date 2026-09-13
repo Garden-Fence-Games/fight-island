@@ -83,7 +83,9 @@ Free to publish, no entry fee, and it takes exactly the same binaries Steam woul
 **Two things are needed once, and both are yours to do** — they are an account and a credential,
 so nothing in the repository can do them:
 
-1. Create the project page at `pepito2t/fight-island` on itch.io. The channel names `mac` and
+1. Create the project page at `garden-fence/fight-island` on itch.io — <https://garden-fence.itch.io/fight-island>.
+   **The itch.io account is not the GitHub one**, and taking the repository owner for it is what
+   failed the 0.1.0 publish with `invalid target (bad user)`. The channel names `mac` and
    `windows` are set by the workflow and need no configuration on the page.
 2. Generate an API key at <https://itch.io/user/settings/api-keys> and store it as the
    `BUTLER_API_KEY` **repository secret** — `gh secret set BUTLER_API_KEY`, which prompts rather
