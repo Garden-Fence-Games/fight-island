@@ -101,6 +101,7 @@ MERCHANT_PURSE,Money
 MERCHANT_COST,Upgrade cost
 MERCHANT_LEVEL,LV.%d
 MERCHANT_MAXED,Fully upgraded. Nothing left to buy on this one.
+MERCHANT_LOCKED,Found in wave %d
 MERCHANT_HEALTH,"Twenty more hit points, and a full heal the moment you buy it."
 MERCHANT_STAMINA,"Fifteen more stamina, and two more a second coming back."
 MERCHANT_FISTS,"Fifteen per cent more damage, and five per cent less stamina a swing."

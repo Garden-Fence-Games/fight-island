@@ -6,13 +6,36 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+
 ## [0.1.0] - 2026-09-13
 
 The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
 between waves — held by 41 headless checks in CI and 48 mutations that prove those checks can
 still fail.
+=======
+### Changed
+
+- **The merchant sells what you carry.** A weapon's upgrade track is refused until the weapon is in
+  the bag — the stick is found in wave 2 and the gun in wave 4, and fifteen per cent more damage on
+  something the player cannot swing yet is money spent on nothing they would only discover was
+  worthless two waves later.
+  - The card **stays on the shelf and says where the weapon turns up**, rather than disappearing.
+    The screen already held that line — *a card nobody can read is a card nobody can want* — and a
+    player who can see the gun track has a reason to save for the wave it arrives in.
+  - The gate is on `can_buy`, not on the button. A card is one of two ways to reach a purchase and
+    `buy()` is the other, so greying out a button that `buy()` would still honour is not a gate —
+    which `verify_merchant` now proves by calling `buy()` directly with an empty bag.
+
 
 ### Fixed
+
+- **`verify_waves` failed on a distance it measured too late** — "something spawned 11.49 m from
+  the player", on a rule of twelve that nothing had broken (#216). `SpawnDirector` measures the
+  distance against where the player stands when it places the body; the check measured it again
+  afterwards, and in between the arriving wave shoves him. The half-metre of slack the check carried
+  for this — added in #167 for the same symptom — was a number chase: CI produced 0.51 m of drift.
+  The distance is now judged in `_on_enemy_spawned`, at the instant the body arrives, the way the
+  camera half of the same check already was. Same measurement as the rule, and no slack to excuse.
 
 - **`verify_corpses` was a coin toss** — four runs in five on `main`, and it blocked every pull
   request behind it including the release. Three assertions flaked, and none of them was a bug in
@@ -38,6 +61,27 @@ still fail.
   palette; the interface stays sharp. `PixelLook` runs after the transparent pass, so the sea, the
   blood and the particles are styled with everything else, and `data/fx/pixel_look.tres` tunes it.
   *Pixel art* under Video switches it off, live.
+
+### Changed
+
+- **The island is half the size.** `MAX_RADIUS` was 88 m — a hundred and seventy-six metres across
+  for a fight that happens inside eighteen. Forty-four is still two and a half times the ring bodies
+  arrive in: room to give ground and to break a thrower's line, and not room to get lost in.
+  - **Halving a radius quarters an area**, so everything scattered by an absolute count came down
+    with it — palms, rocks, pebbles, grass and bushes are each a quarter of what they were, or the
+    same island would have been four times as dense.
+  - **Five of the six rock formations would have been standing in the sea.** They sat a little past
+    half the old radius, at the edge of the plateau. They and the five huts are *scaled* rather than
+    re-placed, so the composition the fixed camera was chosen for is the one it was. `CORE_RADIUS`
+    did not move: nine metres of flat ground is sized to the player, not to the island.
+  - **The sea was audible in the middle** — 1.7 dB quieter inland than it was ankle-deep, where it
+    is meant to be ten. `SurfBed.CARRIES` is a distance, and the only distance it is about is the
+    one from the middle to the water, so it halved with the island. `FROM_THE_MIDDLE_DB` did not
+    have to move at all.
+  - `verify_navigation` aims at one authored boulder by its coordinates, written out on purpose;
+    `verify_coconut` held the grove against a hundred palms and a forty-metre spread. Both follow
+    the island now, and the coconut bounds sit well under what the island lays down rather than
+    beside it — they are there to catch a `MultiMesh` that was not read, not to re-state a count.
 
 ### Changed
 

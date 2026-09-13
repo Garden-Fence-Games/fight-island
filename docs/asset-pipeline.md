@@ -55,7 +55,7 @@ the test the second one had to pass too:
 - **No textures at all**, only per-material colours, so the island keeps its own palette. This was
   also once true of the shader — see *The palm is the exception* below, which is what changed.
 - **Cheap enough for a `MultiMesh`.** A palm is 186 triangles, a boulder 80, a tuft of grass 36 —
-  times 380, 200 and 11 898 instances, which is a number worth checking before downloading anything.
+  times 95, 50 and 1 600 instances, which is a number worth checking before downloading anything.
   Those are the figures the build line prints, not the constants it was asked for: the counts in
   `build_island.gd` are targets, and `_spots` stops throwing after `count * 120` tries, so anything
   past what the minimum-gap rule can fit on the island is never reached.
@@ -145,6 +145,21 @@ shows. Re-run it after adding a row, or `tools/verify_credits.tscn` will say so.
 godot --headless --path . --script tools/build_credits.gd
 godot --headless --path . res://tools/verify_credits.tscn
 ```
+
+**The island is eighty-eight metres across, and it used to be a hundred and seventy-six.** `MAX_RADIUS`
+was halved because the fight happens inside eighteen metres — that is where bodies arrive and how far
+a farmer sees — and the player was crossing four spawn rings of empty sand to get anywhere. Forty-four
+is still two and a half times the ring: room to give ground and to break a thrower's line, and not
+room to get lost in.
+
+Halving a radius quarters an area, so everything scattered by an absolute count came down with it —
+palms, rocks, pebbles, grass and bushes are all a quarter of what they were, or the same island
+would have been four times as dense. The authored layout was **scaled rather than re-placed**: the
+six rock formations sat a little past half the old radius and five of the six would now stand in the
+sea, and the five huts moved with them, so the composition the fixed camera was chosen for is the
+one it was. `CORE_RADIUS` did not move: nine metres of flat ground is sized to the player, not to
+the island. Nor did `SurfBed.FROM_THE_MIDDLE_DB` — halving `CARRIES` alongside the island kept the
+sea exactly as far away as it sounded before.
 
 **The playfield is authored, the decoration is scattered.** The flat fighting core, the six rock
 formations and the five huts are placed by constants chosen for one fixed camera angle. Palms, rocks

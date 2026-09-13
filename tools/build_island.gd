@@ -73,10 +73,10 @@ const NAV_WADE_LIMIT: float = WATER_LEVEL - 0.5
 ## centre is not something that happens. Clearings now come from the scatter's own noise, so they
 ## fall where they fall.
 const CORE_RADIUS: float = 9.0
-## No land past here, whatever the noise says.
-const MAX_RADIUS: float = 88.0
+## No land past here. Halved from eighty-eight — see asset-pipeline.md for what that dragged along.
+const MAX_RADIUS: float = 44.0
 const BEACH_DEPTH: float = -2.4
-const GRID: int = 221
+const GRID: int = 133
 const SPACING: float = 1.0
 const WATER_LEVEL: float = -1.1
 ## How far below the waterline the sea floor keeps falling, once past the shelf.
@@ -117,7 +117,7 @@ const MIN_GAP: float = 1.5
 ## The trunk mesh is 0.16 m across. A collider much wider than that is felt as an invisible ring
 ## around every tree, which is exactly what "it blocks far too early" means.
 const PALM_RADIUS: float = 0.2
-const PALM_COUNT: int = 380
+const PALM_COUNT: int = 95
 ## Stone is scattered thinly on purpose. A rock the player never has to think about is not scenery,
 ## it is litter in front of the fight — and the island already says "stone" with the six authored
 ## formations, which is where a boulder is supposed to be noticed.
@@ -126,8 +126,8 @@ const PALM_COUNT: int = 380
 ## a figure past what the gap rule can fit on the island is simply never reached. Rocks sat at 950
 ## and placed 424 — which is why the build line reports what was laid down rather than what was
 ## asked for, and why lowering a saturated figure does nothing until it drops below the ceiling.
-const ROCK_COUNT: int = 200
-const PEBBLE_COUNT: int = 1200
+const ROCK_COUNT: int = 50
+const PEBBLE_COUNT: int = 300
 ## Everything that grows — how many, how shaped, how graded, where it clumps — lives in
 ## `IslandFoliage`.
 
@@ -800,14 +800,15 @@ func _grass_patches(x: float, z: float) -> float:
 	return clampf(0.25 + near * 0.55 + far * 0.45, 0.0, 1.0)
 
 
+## Halved with the island: authored at the plateau's edge, five of six would now be in the sea.
 func _formations() -> Array:
 	return [
-		[Vector3(-34.0, 0.0, -26.0), Vector3(5.0, 5.4, 4.4), 0.4],
-		[Vector3(-44.0, 0.0, -14.0), Vector3(3.4, 3.6, 3.4), 1.1],
-		[Vector3(36.0, 0.0, 30.0), Vector3(4.2, 3.2, 3.8), 2.2],
-		[Vector3(46.0, 0.0, 16.0), Vector3(3.0, 2.4, 3.0), 0.8],
-		[Vector3(-12.0, 0.0, 44.0), Vector3(3.8, 2.8, 3.4), 1.7],
-		[Vector3(20.0, 0.0, -42.0), Vector3(4.4, 4.4, 4.0), 0.2],
+		[Vector3(-17.0, 0.0, -13.0), Vector3(5.0, 5.4, 4.4), 0.4],
+		[Vector3(-22.0, 0.0, -7.0), Vector3(3.4, 3.6, 3.4), 1.1],
+		[Vector3(18.0, 0.0, 15.0), Vector3(4.2, 3.2, 3.8), 2.2],
+		[Vector3(23.0, 0.0, 8.0), Vector3(3.0, 2.4, 3.0), 0.8],
+		[Vector3(-6.0, 0.0, 22.0), Vector3(3.8, 2.8, 3.4), 1.7],
+		[Vector3(10.0, 0.0, -21.0), Vector3(4.4, 4.4, 4.0), 0.2],
 	]
 
 
@@ -866,11 +867,11 @@ func _landmark() -> StaticBody3D:
 ## pad, well clear of the boulders, and never close enough to another hut to make a corridor.
 func _hut_sites() -> Array:
 	return [
-		[Vector3(16.0, 0.0, -18.0), 0.6, true],
-		[Vector3(-20.0, 0.0, 14.0), 2.3, false],
-		[Vector3(-6.0, 0.0, 26.0), -1.2, true],
-		[Vector3(26.0, 0.0, 10.0), 1.9, false],
-		[Vector3(-24.0, 0.0, -8.0), 2.9, true],
+		[Vector3(8.0, 0.0, -9.0), 0.6, true],
+		[Vector3(-10.0, 0.0, 7.0), 2.3, false],
+		[Vector3(-3.0, 0.0, 13.0), -1.2, true],
+		[Vector3(13.0, 0.0, 5.0), 1.9, false],
+		[Vector3(-12.0, 0.0, -4.0), 2.9, true],
 	]
 
 
