@@ -105,6 +105,21 @@ still fail.
 
 ### Changed
 
+- **The menus are set in a face you can read.** Badeen Display was chosen for impact and failed the
+  one thing a menu owes the player: its counters close up at every size, so at 40 px `THE STUDIO`
+  rendered as a row of filled blocks. Oswald Medium replaces it through one `ext_resource` that
+  eight theme variations point at. A standing rule goes with it — Badeen drew its Latin digits as
+  the Arabic-Indic forms, so no string carrying a number could be set in it.
+- **A wave is ninety seconds**, forty-five of light and forty-five of dark, down from four minutes.
+  Fifteen waves goes from about an hour to about twenty-five minutes. The turn of the sky moved with
+  it: `turning_share` is now a fact about each phase rather than one global, and **dawn and dusk
+  carry all of it** — they exist to *be* the turn, and holding a dusk before flipping into night in
+  its last few seconds was the abrupt version of the thing dusk was added to smooth.
+- **The credits say whose game it is.** A `The studio` row leads the roll — Garden Fence,
+  gardenfence.ch — through the existing document-to-screen chain rather than around it.
+- **The whole mix was set by ear**, in a fight, at a fader desk built for it, and the figures it was
+  left at are the defaults.
+
 - **Both weapons lie on the island from wave 1.** The stick used to arrive in wave 2 and the gun in
   wave 4, and holding them back cost more than it bought: a weapon nobody has found is a weapon that
   does not exist, and behind the gun sat an upgrade track the merchant refuses until the weapon is
