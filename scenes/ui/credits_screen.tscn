@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/credits_screen.gd" id="1"]
 [ext_resource type="Theme" path="res://assets/themes/ui_theme.tres" id="2"]
+[ext_resource type="Script" path="res://scripts/ui/hint_label.gd" id="3"]
 
 [node name="CreditsScreen" type="Control"]
 process_mode = 3
@@ -71,14 +72,18 @@ theme_override_constants/separation = 16
 layout_mode = 2
 mouse_filter = 2
 theme_type_variation = &"Caption"
-text = "[LS / ARROWS] SCROLL"
+script = ExtResource("3")
+actions = PackedStringArray("ui_up", "ui_down")
+label_key = "HINT_SCROLL"
 auto_translate_mode = 2
 
 [node name="Back" type="Label" parent="Content/Column/Header/TopRow/Hints"]
 layout_mode = 2
 mouse_filter = 2
 theme_type_variation = &"Caption"
-text = "[B / ESC] BACK"
+script = ExtResource("3")
+action = "ui_cancel"
+label_key = "HINT_BACK"
 auto_translate_mode = 2
 
 [node name="Panel" type="PanelContainer" parent="Content/Column"]

@@ -9,6 +9,9 @@ extends Resource
 ## track is a `.tres`, not a script.
 
 @export var id: StringName = &""
+## A **translation key**, not a name. `DayPhase` has always held one here; these three held
+## plain English, which is a screen that reads the same in every language — and the merchant
+## was already printing one of them. `tools/verify_strings.tscn` holds both ends of it.
 @export var display_name: String = ""
 ## What the next level does, in words. Shown as-is on the card — the price is next to it and the
 ## level is above it, so this line only has to say what changes.

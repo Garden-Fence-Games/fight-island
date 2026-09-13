@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/merchant_screen.gd" id="1"]
 [ext_resource type="Theme" path="res://assets/themes/ui_theme.tres" id="2"]
+[ext_resource type="Script" path="res://scripts/ui/hint_label.gd" id="3"]
 
 [node name="MerchantScreen" type="Control"]
 process_mode = 3
@@ -90,6 +91,8 @@ theme_override_constants/separation = 16
 layout_mode = 2
 mouse_filter = 2
 theme_type_variation = &"Caption"
-text = "[B / ESC] SKIP AND FIGHT ON"
+script = ExtResource("3")
+action = "ui_cancel"
+label_key = "HINT_SKIP"
 horizontal_alignment = 1
 auto_translate_mode = 2

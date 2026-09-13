@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1")
 id = &"reaper"
-display_name = "Reaper"
+display_name = "ENEMY_REAPER"
 health = 90.0
 move_speed = 2.4
 poise = 30.0

@@ -6,6 +6,25 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Fixed
+
+- **The hint bar lied after a rebind.** Nine labels across seven screens wrote both the glyph and
+  the word out by hand — `[B / ESC] BACK`, and the same again. A player who rebound *back* still
+  read `[B / ESC]`, and a player reading anything but English read English. `HintLabel` names the
+  action and the key instead, the way `MenuEntry` has since the menus were built.
+- **The merchant printed untranslatable English.** `UpgradeTrack.display_name` held a name rather
+  than a key and reached the screen raw, in the upgrade card and in the run summary. `WeaponData`
+  and `EnemyData` held names too; `DayPhase` had always held a key. All four agree now.
+- Two dead rows found by the same check: `UI_BACK`, which existed for the hint bar that had written
+  its own English out instead, and three `WEAPON_*` rows waiting for a field that held a name.
+
+### Added
+
+- `tools/verify_strings.tscn` — every key-shaped string resolves, and every row is asked for.
+  `tr()` answers an unknown key with the key itself: nothing logged, nothing null, and the player
+  reads `SUMMARY_PERFECT_PARRIES` off the screen.
+- `verify_glyphs` fails on any scene that writes a glyph out by hand.
+
 ### Added
 
 - `tools/verify_lookups.tscn`, which closes the last line of #31 that nobody had ever audited: **no

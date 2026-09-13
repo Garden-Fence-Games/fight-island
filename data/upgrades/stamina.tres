@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"stamina"
-display_name = "Stamina"
+display_name = "UPGRADE_STAMINA"
 next_level_key = "MERCHANT_STAMINA"
 max_stamina = 15.0
 stamina_regen = 2.0

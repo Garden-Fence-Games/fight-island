@@ -7,7 +7,7 @@
 [resource]
 script = ExtResource("1")
 id = &"thrower"
-display_name = "Thrower"
+display_name = "ENEMY_THROWER"
 health = 40.0
 move_speed = 2.8
 poise = 10.0

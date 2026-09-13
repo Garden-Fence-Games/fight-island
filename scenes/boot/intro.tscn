@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/systems/intro.gd" id="1"]
 [ext_resource type="Theme" path="res://assets/themes/ui_theme.tres" id="2"]
 [ext_resource type="VideoStream" path="res://assets/video/garden_fence_intro.ogv" id="3"]
+[ext_resource type="Script" path="res://scripts/ui/hint_label.gd" id="4"]
 
 [node name="Intro" type="Control"]
 layout_mode = 3
@@ -75,7 +76,8 @@ theme_type_variation = &"KeyBadge"
 layout_mode = 2
 mouse_filter = 2
 theme_type_variation = &"KeyLabel"
-text = "[B / ESC]"
+script = ExtResource("4")
+action = "ui_cancel"
 auto_translate_mode = 2
 
 [node name="Fade" type="ColorRect" parent="."]

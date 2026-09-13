@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 id = &"gun"
-display_name = "Gun"
+display_name = "UPGRADE_GUN"
 next_level_key = "MERCHANT_GUN"
 weapon = &"gun"
 damage = 0.15
