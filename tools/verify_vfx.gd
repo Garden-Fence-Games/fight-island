@@ -32,6 +32,21 @@ const UNDER_WAY: int = 30
 ## How much more dust a sprint has to kick up than a walk. The two rates are the feature the player
 ## asked for, and a ratio that drifts towards one is the feature quietly going away.
 const SPRINT_DUST_GAIN: float = 1.5
+## How high the top of a farmer sits above the pivot he leans on. The rig tips at its feet, so this
+## is his height — 2.38 m to the crown of the rest pose, written a little under that so the check
+## errs strict. What the lean swings is the top, so this is what turns an angle into a silhouette.
+const BODY_TOP: float = 2.3
+## How far that top has to swing before the tell carries at twenty metres. Against a body 0.7 m
+## wide, this is the difference between a man standing and a man loaded: it is over half his own
+## width, and at twenty metres it subtends about 1.4 degrees, which is roughly the moon.
+const READS_AT_TWENTY_METRES: float = 0.45
+## A degree of float noise, in radians. A lean read one physics frame apart can wobble by less.
+const LEAN_SLACK: float = 0.02
+## How far through its lean the body has to be on the last frame of a wind-up. Not all of it: the
+## swing is thrown on the frame the wind-up runs out, so the final sample is always one frame short
+## — on a wind-up halved to thirteen frames that is three degrees. What this has to separate is a
+## tell driven by the duration from one running at its own rate, and the second lands near half.
+const COMPLETES_BY: float = 0.9
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -57,7 +72,9 @@ func _run() -> void:
 	_check_a_perfect_hit_is_a_different_effect()
 	await _check_a_fight_never_builds_an_effect()
 	_check_reduce_flashing_damps_the_flare_and_leaves_the_debris()
-	await _check_a_player_who_turned_shake_off_gets_none()
+	await _check_the_telegraph_is_a_shape()
+	await _check_the_telegraph_keeps_the_wind_ups_own_time()
+	await _check_a_farmer_never_stays_leaning()
 	# The dust goes first on purpose: it is the only check here that needs the player standing on the
 	# ground he started on, and the startle check below picks him up and puts him somewhere else.
 	await _check_the_dust_rises_with_the_body()
@@ -331,13 +348,152 @@ func _fail(message: String) -> void:
 	_failures.append(message)
 
 
+## **The telegraph is a shape.** The ring was removed in #122 and this is what replaced it, so the
+## claim it used to carry has to come back with it: what warns the player is geometry, not colour.
+##
+## Asserted three ways, because "it moved" is not the claim. It has to move **enough to read at
+## twenty metres**, it has to move **monotonically** — a body that tips and untips is a flicker, not
+## a fill — and it has to leave the material alone, or a colourblind player is back where they were.
+func _check_the_telegraph_is_a_shape() -> void:
+	var farmer := _a_farmer_winding_up()
+	if farmer == null:
+		return
+	# Every surface the rig is painted with, not one override: the colour lives per surface now.
+	var colours_before: Array[Color] = []
+	for material: StandardMaterial3D in farmer.body_materials.materials():
+		colours_before.append(material.albedo_color)
+		colours_before.append(material.emission)
+
+	var leans := PackedFloat32Array()
+	var windup := farmer.windup()
+	for _frame: int in int(windup * 60.0) + 2:
+		await get_tree().physics_frame
+		if farmer.machine.current is EnemyWindUp:
+			leans.append(farmer.leaning)
+
+	if leans.size() < 4:
+		_fail("the wind-up was over before the lean could be watched")
+		return
+	var most := leans[leans.size() - 1]
+	# What the silhouette actually does, which is the thing that has to carry: the top of the body
+	# sits `BODY_TOP` above the pivot and swings by the sine of the lean.
+	var swing := BODY_TOP * sin(most)
+	if swing < READS_AT_TWENTY_METRES:
+		_fail(
+			(
+				(
+					"the body tips %.1f°, swinging its top %.2f m — under the %.2f m a silhouette needs "
+					+ "to read at twenty metres"
+				)
+				% [rad_to_deg(most), swing, READS_AT_TWENTY_METRES]
+			)
+		)
+	for index: int in range(1, leans.size()):
+		if leans[index] < leans[index - 1] - LEAN_SLACK:
+			_fail(
+				(
+					"the lean went backwards at %d of %d — a body that tips and untips is a flicker"
+					% [index, leans.size()]
+				)
+			)
+			break
+	var colours_after: Array[Color] = []
+	for material: StandardMaterial3D in farmer.body_materials.materials():
+		colours_after.append(material.albedo_color)
+		colours_after.append(material.emission)
+	if colours_after != colours_before:
+		_fail("the wind-up changed the body's colour — the tell has to survive greyscale")
+	_stand_him_down(farmer)
+
+
+## **The picture keeps the wind-up's own time**, which is the whole reason the ring was driven by
+## the duration rather than played as a clip. Waves shorten a wind-up and the hour shortens it
+## again, so a tell at its own rate would finish early and lie about when the swing lands.
+##
+## Checked by halving it: the same farmer, the same tell, a wind-up scaled to half — and the body
+## still has to be fully back at the moment it swings, not half way.
+func _check_the_telegraph_keeps_the_wind_ups_own_time() -> void:
+	var farmer := _a_farmer_winding_up(0.5)
+	if farmer == null:
+		return
+	var windup := farmer.windup()
+	var most := 0.0
+	for _frame: int in int(windup * 60.0) + 2:
+		await get_tree().physics_frame
+		if farmer.machine.current is EnemyWindUp:
+			most = maxf(most, farmer.leaning)
+	var through := most / deg_to_rad(EnemyWindUp.LEAN_DEGREES)
+	if through < COMPLETES_BY:
+		_fail(
+			(
+				(
+					"on a wind-up cut in half the body reached %.0f%% of its lean, and it has to reach "
+					+ "%.0f%% — a picture running on its own clock would land near 50%%"
+				)
+				% [through * 100.0, COMPLETES_BY * 100.0]
+			)
+		)
+	_stand_him_down(farmer)
+
+
+## Every way out of a wind-up stands the body back up. The swing and the stagger go through `exit`;
+## **a wave cleared mid-commit does not** — it retires the body through `sleep()` with no state ever
+## exiting, and the next life would start leaning into a swing nobody threw.
+func _check_a_farmer_never_stays_leaning() -> void:
+	var farmer := _a_farmer_winding_up()
+	if farmer == null:
+		return
+	for _frame: int in 6:
+		await get_tree().physics_frame
+	if is_zero_approx(farmer.leaning):
+		_fail("the farmer never leaned at all, so standing him up proves nothing")
+		_stand_him_down(farmer)
+		return
+	# The path with no `exit` in it.
+	farmer.retire()
+	await get_tree().physics_frame
+	farmer.revive(Vector3(0.0, 0.0, -6.0))
+	await get_tree().physics_frame
+	if not is_zero_approx(farmer.leaning):
+		_fail("a body retired mid-commit came back leaning %.1f°" % rad_to_deg(farmer.leaning))
+	_stand_him_down(farmer)
+
+
+## One farmer, committed, with nothing else able to touch him. `windup` scales his wind-up the way a
+## wave and the hour do.
+func _a_farmer_winding_up(windup: float = 1.0) -> Enemy:
+	var director := _arena.get_node_or_null("WaveDirector") as WaveDirector
+	if director == null:
+		_fail("the arena has no wave director to lease a body from")
+		return null
+	var farmer := director.spawner.spawn_at(
+		load(FARMHAND) as EnemyData, Vector3(0.0, 0.0, -6.0), 1.0, 1.0, 1.0, windup
+	)
+	if farmer == null or farmer.visual == null:
+		_fail("could not lease a farmer to watch")
+		return null
+	# **The pool lives under the director**, so standing the director down to keep waves out of this
+	# check freezes every body it would lend out too — `revive` sets the body back to *inherit*, and
+	# what it inherits is disabled. The first run of this watched a farmer who was never processing
+	# and reported a tell that had simply never been asked to happen.
+	farmer.process_mode = Node.PROCESS_MODE_ALWAYS
+	farmer.machine.current.transition_to(&"WindUp")
+	return farmer
+
+
+func _stand_him_down(farmer: Enemy) -> void:
+	if farmer != null and is_instance_valid(farmer):
+		farmer.retire()
+
+
 func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"vfx OK — every attack names an effect, a perfect hit differs three ways, a fight "
-				+ "builds nothing, the birds stand on sand and leave when walked into, and a "
-				+ "sprint kicks up more dust than a walk"
+				"vfx OK — every attack names an effect, a perfect hit differs three ways, a "
+				+ "fight builds nothing, a farmer rears back in a shape that keeps the wind-up's "
+				+ "own time and never stays leaning, the birds stand on sand and leave when walked "
+				+ "into, and a sprint kicks up more dust than a walk"
 			)
 		)
 		get_tree().quit(0)

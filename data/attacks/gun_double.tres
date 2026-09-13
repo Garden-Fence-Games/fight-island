@@ -19,6 +19,7 @@ chain_window = Vector2(0.10, 0.45)
 perfect_window = Vector2(0.33, 0.45)
 perfect_multiplier = 1.25
 hitstop = 0.07
+impact_sound = &"gun"
 reach = 22.0
 arc_degrees = 3.0
 is_hitscan = true

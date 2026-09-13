@@ -178,10 +178,8 @@ func _refund_ammo() -> void:
 ## `scripts/systems/emphasis.gd` for why that is the difference between weight and noise.
 func _on_landed(target: Node3D, info: HitInfo) -> void:
 	_landed = true
-	EventBus.attack_landed.emit(target, info.damage, info.perfect)
+	EventBus.attack_landed.emit(target, info.damage, info.perfect, _attack)
 	_show_the_impact(target, info.perfect)
-	if info.perfect:
-		EventBus.perfect_timing.emit()
 	var enemy := target as Enemy
 	var killed := enemy != null and not enemy.is_alive()
 	Emphasis.spend(Emphasis.for_hit(info.perfect, _attack.is_finisher(), killed, _attack.hitstop))

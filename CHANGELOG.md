@@ -8,6 +8,78 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- `tools/verify_bus.tscn` — every signal on the bus has to be raised by something **and** heard by
+  something. It is the same shape as a settings row that reaches nothing, one layer down, and it is
+  the worst kind of dead code: declared, documented, emitted at exactly the right moment, and
+  doing nothing. **A headless check counts as a listener** — `enemy_spawned` has no gameplay
+  consumer at all and exists so `verify_waves` and `verify_day_night` can watch bodies arrive
+  instead of polling a group; a rule that only read `scripts/` would have called it dead and
+  deleted what two checks are built on.
+
+
+- **A farmer rears back before he swings.** The ring under a winding-up enemy went in #122 and
+  nothing replaced it — a wind-up read as a body that had planted its feet, which left the sound
+  carrying the whole telegraph and left a player with SFX at zero no warning in any channel. The
+  body now tips 35° backwards over the wind-up and snaps forward on the swing.
+- It is a **shape, not a colour**, so it survives greyscale, a colourblind player and a camera
+  twenty metres up with no accessibility switch of its own; it is the **same tell for every
+  archetype**; and it is **a share of the wind-up's own duration** rather than a clip at its own
+  rate, so the waves and the hour cannot drift the picture away from the timing.
+- `verify_vfx` gained the claim the ring used to carry, and two the ring never did: that the
+  silhouette swings far enough to read at twenty metres (0.49 m, against a body 0.7 m wide), that
+  the lean only ever grows — a body that tips and untips is a flicker, not a fill — and that every
+  way out of a wind-up stands the body back up, including a wave cleared mid-commit.
+- **A bed that lifts with the island.** Three loops on the Music bus, driven by how full the island
+  is rather than by how far through the wave it is — a wave five minutes through is not a tense wave
+  if nobody is left. Measured against what *this* wave allows at once, so a full island sounds full
+  at wave 1 and at wave 15, and the breather between waves is silent.
+- **A telegraph outranks the bed.** The Music bus drops 14 dB while anything is winding up and eases
+  back after, the same rule that already refuses a camera knock over a wind-up.
+- **The merchant, the victory and the death have a sound.** A screen arriving in silence reads as
+  the game having stopped rather than as the fight having paused. Victory and defeat are the same
+  three notes in the same order, and the whole difference is which way they go — one shape, two
+  readings, nothing new to learn.
+- `EventBus.merchant_opened` and `EventBus.run_ended(victory)`.
+- `tools/verify_music.tscn`, which walks the whole mix rather than sampling it: the bed never falls
+  as the island fills, a fight never starts in silence, a wind-up ducks it and it comes back, the
+  three layers are one length, and **nothing the player needs plays on a bus they may mute**.
+
+### Added
+
+- **The thrower test from #39, walked and passed.** `tools/verify_sightlines.tscn` puts a thrower at
+  the ten metres he prefers on 36 bearings from every stance a fight can happen on — sixty thousand
+  lines from sixteen hundred places — and holds the island to a **band**, because the composition
+  has two opposite failures. Too little open ground and a ranged enemy is decoration throwing into
+  rock; no cover at all and his stone is a tax rather than something the player answers by breaking
+  his line while closing. The shipped island measures 79.3% clear and 20.7% blocked.
+- It casts the ray the stone actually flies — the `world` layer, chest to chest — rather than a
+  navigation query or a walkability grid, because what stops a stone is not what stops a body: a
+  wreck a metre high is cover and a walkable dip is not. Proven to answer the world rather than its
+  own arithmetic by flying the same walk at ankle height (39.3% clear, threat floor trips) and above
+  everything (100% clear, cover floor trips).
+- **A weapon you can hear.** Fists, stick and gun each land with their own body — 150 Hz gone in
+  35 ms, 240 Hz for twice as long, 320 Hz over at once. What they do **not** differ in is the
+  partial the perfect window adds: 1320 Hz in all three, because it is the signature of the whole
+  game and a player who learns it on fists has to have learnt it on the gun.
+- **A warning you can place.** The farmhand, the reaper and the thrower wind up from three different
+  pitches. The thrower's is the highest and the only climb crossing an octave: he strikes from
+  fourteen metres and is the one archetype the player may never see coming, so sound is the only
+  warning the design gives them.
+- **The last round says so.** The shot that leaves one in the magazine plays two dry clicks. Running
+  out is a designed moment and the answer is to close on the next farmer — a decision the player has
+  to be able to make before the trigger stops answering.
+- `AttackData.impact_sound` and `EnemyData.telegraph_sound`, so a blow's sound is named by the data
+  that throws it, the way its burst already is.
+
+### Changed
+
+- `EventBus.attack_landed` carries the `AttackData` and `telegraph_began` carries the `EnemyData`.
+  Five of the six listeners ignore them; the one that does not would otherwise have to ask the bag
+  what is in hand at the moment of contact, and a weapon swapped during a swing would make that
+  a lie.
+
+### Added
+
 - `tools/verify_data_surface.tscn` — every field `docs/architecture.md` names on a balance resource
   has to be a field that resource actually has. Asked of a fresh instance's property list rather
   than of the source text, so a name that only appears in a comment cannot satisfy it. Fields the
@@ -24,6 +96,32 @@ All notable changes to this project are documented here, following
   survived the first sweep.
 
 ### Fixed
+
+- **`EnemyData.first_wave` decided nothing, and looked like it decided when an archetype joins the
+  fight.** Every `.first_wave` the code reads belongs to a `WaveBand`; nothing has ever read an
+  enemy's. All three archetypes set it in their `.tres`, so anyone asking "when does the reaper
+  turn up?" would have found the answer sitting on `reaper.tres`, changed it, and watched nothing
+  happen — the real answer is the band shares in `standard.tres`.
+  The two agreed today, which is what made it worth removing rather than fixing: a balance number
+  with two homes is correct right up until somebody retunes one of them.
+
+
+- **`EventBus.perfect_timing` was raised on every perfect hit and heard by nobody.** It had a
+  declaration, a docstring, a line in `docs/architecture.md` and an emitter in `PlayerAttack` — and
+  no connection anywhere in the project, because everything that cares already reads the `perfect`
+  flag on `attack_landed`. Removed, along with its line in the document.
+
+
+- **A distant orientation landmark cannot exist under this camera**, and #39 had been asking for one
+  since before the blockout. Measured against the real frustum rather than argued: at −50° the top
+  edge of the view still points downward, so the taller a thing is the *sooner* it leaves the frame.
+  A 30 m spire is invisible at every distance; a 3 m rock thirty metres away is in shot at full
+  zoom. Nothing at all is in frame past 30 m. Written into `docs/architecture.md` with the table,
+  because it is backwards from every intuition about landmarks and it will be proposed again.
+- It also turns out not to be needed: a camera that never turns means up-screen is always the same
+  world direction, so facing is never in question. What is left is knowing where on the island you
+  are, which the camp, the six formations and the shape of the coast already answer.
+
 
 - **A dodge that granted no invulnerability passed every check in the project.** `IFRAME_LENGTH` set
   to nought: the roll still moved, still went where the keys said, still survived the chain lockout,

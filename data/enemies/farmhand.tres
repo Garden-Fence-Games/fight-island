@@ -18,4 +18,3 @@ attack_range = 1.6
 is_ranged = false
 preferred_range = 1.4
 tint = Color(1, 1, 1, 1)
-first_wave = 1

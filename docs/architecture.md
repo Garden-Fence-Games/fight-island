@@ -83,6 +83,19 @@ machine rather than inheriting the actor.
 - **Enemy:** `Spawn`, `Idle`, `Chase`, `Strafe`, `WindUp`, `Attack`, `Recover`, `Stagger`, `Dead`,
   plus `Retreat` for the thrower.
 
+`WindUp` carries the telegraph, and since #122 took the ring off the ground it carries it **on the
+body**: the farmer tips backwards over the wind-up and snaps forward on the swing. It is geometry
+rather than colour, so it survives greyscale, a colourblind player and a camera twenty metres up
+without needing a switch of its own — and it is the same lean for every archetype, because a signal
+per farmer is one more thing to learn in the half second there is to read it.
+
+**The lean is a share of `enemy.windup()`, not a clip playing at its own rate.** That number is not
+a constant — the waves shorten it and the hour shortens it again — so a tell running on its own
+clock would finish early and lie about when the swing lands. `verify_vfx` holds exactly that by
+halving a wind-up and requiring the body to still arrive: a fixed-rate tell lands near half, and
+was measured at 48% when tried on purpose. When the enemy rig exists, the same share hands straight
+to `AnimationComponent.play_clip(clip, seconds)` and nothing else has to move.
+
 `Attack` is **one** state driven by `AttackData`. The nine player attacks are data, not nine states.
 
 The same applies to the enemies: **one `enemy.tscn`, three `EnemyData` resources.** Farmhand,
@@ -101,7 +114,10 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   centre to centre, which is why `Hitbox` adds half a body on top of it.
 - **`EnemyData`** — `id`, `display_name`, `health`, `move_speed`, `poise`, `money`,
   `attack: AttackData`, `notice_radius`, `rouse_radius`, `attack_range`, `is_ranged`,
-  `preferred_range`, `retreat_range`, `projectile: PackedScene`, `tint`, `first_wave`.
+  `preferred_range`, `retreat_range`, `projectile: PackedScene`, `tint`.
+  **There is no "first_wave" here either.** When an archetype starts appearing is decided by the
+  `WaveBand` it is listed in, and a second copy of that number on the enemy would be a balance
+  figure with two homes — correct until the day somebody retunes the bands and not after it.
   **There is no damage here** — a farmer's damage belongs to the swing he throws, so it lives on
   the `AttackData` and the wave scales it per body.
 - **`WeaponData`** — `id`, `display_name`, `attacks: Array[AttackData]`, `is_ranged`,
@@ -271,7 +287,7 @@ Named as a past-tense fact, never as a command and never `on_*`:
 `enemy_died(enemy, archetype, money)` · `player_damaged(current, max)` · `player_died()` ·
 `stamina_changed(current, max)` · `weapon_equipped(data)` · `ammo_changed(mag, reserve)` ·
 `rounds_scavenged(rounds)` ·
-`attack_landed(target, damage, perfect)` · `perfect_timing()` · `parry_perfect()` ·
+`attack_landed(target, damage, perfect, attack)` · `parry_perfect()` ·
 `money_changed(amount)` ·
 `upgrade_purchased(track_id, level)` · `run_started(seed)` · `run_ended(victory, wave)`
 
@@ -491,6 +507,34 @@ time; the island only has to be composed for one viewpoint; and a telegraph can 
 geometry because the player happened to have turned the camera. The cost is that the arena must be
 authored so nothing important sits in the one blind direction.
 
+### Height does not help visibility here. It hurts it.
+
+Worth writing down because it is backwards from every intuition about landmarks, and because it
+closed a bullet on #39 by making it impossible rather than by satisfying it.
+
+At −50° the frustum's **top** edge still points downward, so the camera sees a bounded patch of
+ground and nothing above it. A point measured against the real frustum, up-screen from the player:
+
+| up-screen | at zoom 17 (default) | at zoom 24 (furthest) |
+|---|---|---|
+| 10 m | 3 m and 6 m high are in frame, 10 m is not | 3, 6 and 10 m in frame |
+| 20 m | nothing at any height | 3 m and 6 m in frame |
+| 30 m | nothing at any height | 3 m in frame |
+| 40 m and beyond | nothing at any height | nothing at any height |
+
+So **the taller a thing is, the sooner it leaves the frame** — a thirty-metre spire is invisible at
+every distance, while a low rock thirty metres away is in shot at full zoom. A distant landmark on
+the horizon, which is how a game normally lets a player take a bearing, cannot exist under this
+camera at all.
+
+It also does not need to. A camera that never turns means **up-screen is always the same world
+direction**, so facing is never in question — the compass is nailed to the screen. What is left is
+knowing *where on the island* you are, and that is answered by scenery you walk past: the camp, the
+six formations, the shape of the coast.
+
+The practical rule for anyone placing props: nothing above about 6 m earns its height in
+legibility, and past 10 m it is scenery for the vista camera and nothing else.
+
 ### The emphasis budget
 
 `scripts/systems/emphasis.gd` is the one table that decides how loud anything in a fight is allowed
@@ -674,6 +718,28 @@ The boundary is **depth, not a radius**. The coastline is not a circle, so a cir
 either shut off half the beach or let the player swim away on the other side. Wade in to the shins
 and the sea pushes back; nothing is ever blocked, so the edge of the world is felt as the shape of
 the place.
+
+### Composed for one viewpoint, and checked for it
+
+The camera never turns, so the island is laid out for a single angle — and every rule that buys is
+a rule a screenshot from the wrong angle cannot confirm. Three checks hold the composition, each
+answering a question the others cannot:
+
+- **`verify_view`** measures where the blind side *is*, by marching 36 bearings outward until the
+  ground leaves the frame, then holds what depends on the answer: a melee swing begins on screen at
+  every zoom the wheel reaches, and a dropped weapon lands where the player can see it.
+- **`verify_playfield`** walks every square metre the fight can reach and fails on a corner where a
+  160° sweep leaves nowhere to dodge — the reaper's question.
+- **`verify_sightlines`** is the thrower's, and it is a **band rather than a floor**, because it has
+  two opposite failures. Too little open ground and a ranged enemy is decoration, throwing into rock
+  from ten metres. No cover at all and he is a tax rather than a threat that can be answered, since
+  there is nothing to break his line behind while closing. The shipped island sits at 79% clear and
+  21% blocked.
+
+`verify_sightlines` casts **the ray the stone actually flies** — the `world` layer, chest to chest,
+flat — rather than a navigation query or the walkability grid `verify_playfield` rasterises. That
+distinction is the whole accuracy of it: a wreck a metre high is cover to a stone and is not a wall
+to a body, and a walkable dip is neither.
 
 ## Wind and water
 

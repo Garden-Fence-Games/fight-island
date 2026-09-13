@@ -78,12 +78,54 @@ const DECAYED: float = 6.0
 ## The thud both hits share. Short, because a jab that rings is a jab that covers the next one — and
 ## because what tells a perfect hit apart has to be the partial on top, not a longer body.
 const BODY_DECAY: float = 0.035
+## The partial the perfect window adds, and how long it rings. **The same in every impact family**:
+## it is the signature, and a player who learns it on fists has learnt it on the gun.
+const PERFECT_PARTIAL: float = 1320.0
+const PERFECT_RING: float = 0.13
+## The body of a blow, per weapon. Pitch, how long it rings, and how much contact grain rides on top
+## — a fist is a dull knock on a body, a stick is wood that cracks and carries, a round is sharp and
+## over at once. The generic row is what an attack that names no family gets.
+##
+## `grain` only seeds the noise. Two families sharing a seed would share their contact exactly,
+## which is the one way two of these could accidentally become the same sound.
+##
+## **The fists are the base**, and they keep the plain ids `hit` and `perfect` rather than getting a
+## fourth waveform of their own. That is not an accident of implementation: the fists are the weapon
+## the player never puts down and never runs out of, so a blow landing in this game sounds like a
+## fist landing unless something else is in hand. An attack naming a family nothing registered falls
+## back here — audibly the fist, and `verify_audio` fails the build before anyone hears it.
+const BASE_IMPACT: StringName = &"fist"
+const IMPACTS: Dictionary = {
+	&"fist": {"hertz": 150.0, "decay": 0.035, "contact": 0.5, "snap": 0.018, "grain": 11},
+	&"stick": {"hertz": 240.0, "decay": 0.075, "contact": 0.72, "snap": 0.010, "grain": 29},
+	&"gun": {"hertz": 320.0, "decay": 0.022, "contact": 0.34, "snap": 0.006, "grain": 47},
+}
+## A wind-up, per archetype. All three climb — a warning that does not rise is a warning the ear
+## reads as a drone — and they differ in **where they climb from and to**, which is the one thing
+## that survives three of them at once in a crowd at night.
+##
+## The thrower is the outlier on purpose: he strikes from fourteen metres and is the one archetype
+## the player may never see coming, so his is the highest and the longest, and the only one that
+## climbs more than an octave.
+##
+## **The farmhand is the base**, keeping the plain `telegraph` id for the same reason the fists keep
+## `hit`: he is the archetype every wave is made of, and a wind-up in this game sounds like a
+## farmhand's unless somebody rarer is committing.
+const BASE_TELEGRAPH: StringName = &"farmhand"
+const TELEGRAPHS: Dictionary = {
+	&"farmhand": {"from": 300.0, "to": 690.0, "seconds": 0.30, "grain": 61},
+	&"reaper": {"from": 150.0, "to": 300.0, "seconds": 0.42, "grain": 67},
+	&"thrower": {"from": 520.0, "to": 1240.0, "seconds": 0.36, "grain": 73},
+}
 ## Small random pitch on repeated sounds, so a chain does not sound like a machine. The perfect hit
 ## and both parries are left alone: a signature that moves is not one.
 const JITTER: float = 0.04
 ## Footfalls get more of it than anything else. Two identical steps in a row is the single most
 ## artificial sound a game can make, and the ear catches it long before it catches a pitch.
 const STEP_JITTER: float = 0.12
+## How many rounds have to be left for the warning to sound. One: the shot that empties the magazine
+## is too late to act on, and two is a warning the player hears most of a wave before it matters.
+const LAST_ROUNDS: int = 1
 ## A swing gets nearly as much. Three misses in a chain is the same trap as three identical steps,
 ## and a whiff carries no timing information that a wandering pitch could damage.
 const SWING_JITTER: float = 0.09
@@ -95,6 +137,35 @@ const SURF_SECONDS: float = 6.0
 ## three and two seconds, which do not divide into each other — so the water never settles into a
 ## rhythm the ear can count, and a wave every three seconds is a metronome.
 const SURF_SWELLS: int = 2
+## What a music layer is normalised to. Well under the bed, which is itself well under the fight: a
+## layer that competes with a wind-up has put atmosphere in front of information.
+## How far apart the three notes of an ending fall, and how long the last one holds. Slower than the
+## wave sting: a run finishing is the one moment in the game nobody is in a hurry.
+const ENDING_STEP: float = 0.22
+const ENDING_RING: float = 0.55
+## The one looping sound that is not music. Named so a check can tell the bed apart from a one-shot
+## without knowing what a surf is.
+const BED_SOUND: StringName = &"surf"
+const MUSIC_PEAK: float = 0.22
+## How long every layer runs before it comes round. **The same for all of them**, or they drift out
+## of phase within a minute and the lift stops being one piece of music getting louder.
+const MUSIC_SECONDS: float = 8.0
+## How far the second voice of each pair is pushed off the first. Three cents: slow enough that the
+## beating reads as movement rather than as tuning, and small enough that it is still one note.
+const DETUNE: float = 1.003
+## The three layers, and what each is for. A **share of the pressure** rather than a threshold:
+## `ground` is the sound of a fight happening at all, `pulse` arrives as the island fills, and
+## `edge` only ever reaches full at the top. `from` and `to` are the pressure either side of the
+## layer's own fade, so the three hand over rather than switching.
+##
+## The root is 55 Hz — A, low enough to sit under every partial in the game. Nothing here shares a
+## frequency with the perfect signature at 1320 Hz or with any wind-up, which is the whole reason a
+## music bed is allowed to exist during a fight.
+const LAYERS: Dictionary = {
+	&"music_ground": {"root": 55.0, "voices": 2, "from": 0.0, "to": 0.15, "swells": 2},
+	&"music_pulse": {"root": 82.5, "voices": 3, "from": 0.2, "to": 0.55, "swells": 5},
+	&"music_edge": {"root": 220.0, "voices": 4, "from": 0.6, "to": 0.95, "swells": 8},
+}
 ## How much of the bed's tail is folded back over its head to make the seam. A loop assembled from
 ## noise has no natural join; this is what stops the wrap being an audible tick every few seconds.
 const SURF_SEAM: float = 0.25
@@ -143,6 +214,8 @@ func _ready() -> void:
 	EventBus.weapon_dry_fired.connect(_on_weapon_dry_fired)
 	EventBus.weapon_fired.connect(_on_weapon_fired)
 	EventBus.wave_cleared.connect(_on_wave_cleared)
+	EventBus.merchant_opened.connect(_on_merchant_opened)
+	EventBus.run_ended.connect(_on_run_ended)
 
 
 ## The bed is the one sound still going when the game is asked to close, and a stream left playing
@@ -220,8 +293,18 @@ func _free_positional_voice() -> AudioStreamPlayer3D:
 
 
 func _build() -> void:
-	_register(&"hit", _hit(false), PEAK)
-	_register(&"perfect", _hit(true), PEAK)
+	_register(&"hit", _hit(BASE_IMPACT, false), PEAK)
+	_register(&"perfect", _hit(BASE_IMPACT, true), PEAK)
+	for family: StringName in IMPACTS:
+		if family == BASE_IMPACT:
+			continue
+		_register(StringName("hit_%s" % family), _hit(family, false), PEAK)
+		_register(StringName("perfect_%s" % family), _hit(family, true), PEAK)
+	for archetype: StringName in TELEGRAPHS:
+		if archetype == BASE_TELEGRAPH:
+			continue
+		_register(StringName("telegraph_%s" % archetype), _telegraph_of(archetype), TELEGRAPH_PEAK)
+	_register(&"low_ammo", _low_ammo(), INCIDENTAL_PEAK)
 	_register(&"whiff", _whiff(), WHIFF_PEAK)
 	_register(&"shot", _shot(false), PEAK)
 	_register(&"shot_heavy", _shot(true), PEAK)
@@ -237,7 +320,12 @@ func _build() -> void:
 	_register(&"pickup", _pickup(), INCIDENTAL_PEAK)
 	_register(&"telegraph", _telegraph(), TELEGRAPH_PEAK)
 	_register(&"wave_cleared", _sting(), STING_PEAK)
+	_register(&"merchant", _merchant(), INCIDENTAL_PEAK)
+	_register(&"victory", _ending(true), STING_PEAK)
+	_register(&"defeat", _ending(false), STING_PEAK)
 	_register(&"surf", _surf(), SURF_PEAK)
+	for layer: StringName in LAYERS:
+		_register(layer, _layer(layer), MUSIC_PEAK)
 
 
 func _register(id: StringName, stream: AudioStreamWAV, peak: float) -> void:
@@ -247,14 +335,26 @@ func _register(id: StringName, stream: AudioStreamWAV, peak: float) -> void:
 
 ## A thud and a snap of contact. The perfect one adds a partial that outlasts both by a quarter of
 ## a second — the tail is what the ear keys on when the eye is elsewhere.
-func _hit(perfect: bool) -> AudioStreamWAV:
-	var ring := 0.13
-	var samples := _silence(ring if perfect else BODY_DECAY)
-	_tone(samples, 150.0, 0.9, BODY_DECAY)
-	_hiss(samples, 0.5, 0.018, 11)
+##
+## **The body is the weapon; the ring is the timing.** A fist, a stick and a round do not land
+## alike, so each family gets its own body — a different pitch, a different amount of contact, a
+## different length. What they must never differ in is the **partial the perfect window adds**: that
+## one is the signature, it is the same 1320 Hz in all of them, and a player who learns it on fists
+## has learnt it on the gun. Three signatures would be three things to learn in the half second
+## there is.
+##
+## Nothing here differs by loudness. All six normalise to the same peak, for the reason the whole
+## family exists: loudness is the first thing a player turns down and the first thing a busy fight
+## buries.
+func _hit(family: StringName, perfect: bool) -> AudioStreamWAV:
+	var voice: Dictionary = IMPACTS.get(family, IMPACTS[BASE_IMPACT])
+	var body := float(voice["decay"])
+	var samples := _silence(maxf(PERFECT_RING if perfect else 0.0, body))
+	_tone(samples, float(voice["hertz"]), 0.9, body)
+	_hiss(samples, float(voice["contact"]), float(voice["snap"]), int(voice["grain"]))
 	if perfect:
-		_tone(samples, 1320.0, 0.38, ring)
-		_tone(samples, 1980.0, 0.16, 0.10)
+		_tone(samples, PERFECT_PARTIAL, 0.38, PERFECT_RING)
+		_tone(samples, PERFECT_PARTIAL * 1.5, 0.16, 0.10)
 	return _bake(samples, PEAK)
 
 
@@ -408,11 +508,32 @@ func _pickup() -> AudioStreamWAV:
 ## It releases at the end rather than swelling into the cut, or the buffer would stop dead at full
 ## amplitude — and a telegraph that ends in a click is a telegraph the player flinches at twice.
 func _telegraph() -> AudioStreamWAV:
-	var samples := _span(0.30)
-	_climb(samples, 300.0, 690.0, 0.75)
-	_hiss(samples, 0.16, 0.02, 61)
+	return _telegraph_of(&"")
+
+
+## The same shape at an archetype's own pitch. One climb rather than three hand-built warnings,
+## because what must be shared is that it *rises* — and what must differ is where from and to.
+func _telegraph_of(archetype: StringName) -> AudioStreamWAV:
+	var voice: Dictionary = TELEGRAPHS.get(archetype, TELEGRAPHS[BASE_TELEGRAPH])
+	var samples := _span(float(voice["seconds"]))
+	_climb(samples, float(voice["from"]), float(voice["to"]), 0.75)
+	_hiss(samples, 0.16, 0.02, int(voice["grain"]))
 	_release(samples, 0.07)
 	return _bake(samples, TELEGRAPH_PEAK)
+
+
+## The last round in the magazine. Two short clicks a semitone apart, dry and quiet: running out is
+## a **designed** moment and the answer to it is to close on the next farmer, which is a decision
+## the player has to be able to make before the trigger stops answering rather than after.
+##
+## Deliberately not a musical interval and deliberately under the shot that carried it — it arrives
+## in the same breath as a gunshot and must not be mistaken for part of one.
+func _low_ammo() -> AudioStreamWAV:
+	var samples := _silence(0.05, 0.07)
+	_tone(samples, 880.0, 0.6, 0.02)
+	_tone(samples, 932.0, 0.6, 0.05, 0.07)
+	_soften(samples, 0.30)
+	return _bake(samples, INCIDENTAL_PEAK)
 
 
 ## A wave passed. Three notes up, and the only sound in the game allowed to be musical: it is the
@@ -422,6 +543,38 @@ func _sting() -> AudioStreamWAV:
 	_tone(samples, 523.0, 0.5, 0.20)
 	_tone(samples, 659.0, 0.5, 0.24, 0.15)
 	_tone(samples, 784.0, 0.5, 0.42, 0.30)
+	return _bake(samples, STING_PEAK)
+
+
+## The counter opening. Two notes a fifth apart and nothing above them — quiet, warm and over
+## quickly, because the merchant is a pause rather than an event and a sting here would tell the
+## player something happened when what happened is that nothing is happening.
+func _merchant() -> AudioStreamWAV:
+	var samples := _silence(0.30, 0.09)
+	_tone(samples, 392.0, 0.6, 0.22)
+	_tone(samples, 587.0, 0.45, 0.30, 0.09)
+	_soften(samples, 0.25)
+	return _bake(samples, INCIDENTAL_PEAK)
+
+
+## The end of a run, either way. **The same three notes in the same order**, and the whole
+## difference is where they go: up for a victory, down for a death. One shape, two readings —
+## a player does not have to learn two sounds to know which one they got, and a summary screen that
+## arrives in silence reads as the game having crashed rather than ended.
+func _ending(victory: bool) -> AudioStreamWAV:
+	var notes: Array[float] = [523.0, 392.0, 262.0]
+	if victory:
+		notes = [392.0, 523.0, 784.0]
+	var samples := _silence(ENDING_RING, ENDING_STEP * 2.0)
+	for index: int in notes.size():
+		var last := index == notes.size() - 1
+		_tone(
+			samples,
+			notes[index],
+			0.5,
+			ENDING_RING if last else ENDING_STEP * 1.6,
+			ENDING_STEP * float(index)
+		)
 	return _bake(samples, STING_PEAK)
 
 
@@ -441,6 +594,32 @@ func _surf() -> AudioStreamWAV:
 	_breathe(samples, SURF_SWELLS, 0.55)
 	_breathe(samples, SURF_SWELLS + 1, 0.30)
 	return _bake_loop(samples, SURF_PEAK)
+
+
+## One layer of the music: a chord that breathes, built on the same seam the surf uses.
+##
+## Detuned rather than in unison. Two sines a few cents apart beat slowly against each other, which
+## is the difference between a drone that is a sound and a drone that is a test tone — and it is
+## free, where a filter sweep would not be.
+##
+## **Nothing here is rhythmic in the sense a fight is.** The swells are slow and their counts do not
+## divide into each other, for the reason the surf's do not: a bed the ear can count against is a
+## metronome, and a metronome is a thing the player starts fighting to instead of reading.
+func _layer(id: StringName) -> AudioStreamWAV:
+	var voice: Dictionary = LAYERS[id]
+	var samples := _span(MUSIC_SECONDS + SURF_SEAM)
+	var root := float(voice["root"])
+	for step: int in int(voice["voices"]):
+		# A fifth above each time, which stacks without ever landing on a third — a bed with a mode
+		# in it is a bed that has an opinion about the scene, and this one has to survive six
+		# minutes of whatever the player is doing.
+		var hertz := root * pow(1.5, float(step))
+		_tone(samples, hertz, 0.7 / float(step + 1), INF)
+		_tone(samples, hertz * DETUNE, 0.7 / float(step + 1), INF)
+	var looped := _join(samples)
+	_breathe(looped, int(voice["swells"]), 0.45)
+	_breathe(looped, int(voice["swells"]) + 1, 0.2)
+	return _bake_loop(looped, MUSIC_PEAK)
 
 
 ## Sized from the slowest decay the sound is about to use, and from how late the last of it starts,
@@ -649,8 +828,14 @@ func _start_the_bed() -> void:
 		_bed.play()
 
 
-func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool) -> void:
-	play(&"perfect" if perfect else &"hit", 0.0 if perfect else JITTER)
+## The family the attack names, or the generic thud when it names none. The perfect one never gets
+## jitter: a signature that moves is not one, and that holds for all three families.
+func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool, attack: AttackData) -> void:
+	var family := attack.impact_sound if attack != null else &""
+	var id := StringName("%s_%s" % ["perfect" if perfect else "hit", family])
+	if not _sounds.has(id):
+		id = &"perfect" if perfect else &"hit"
+	play(id, 0.0 if perfect else JITTER)
 
 
 ## Only a weapon that moves through air makes the sound of moving through air. A shot that found
@@ -662,10 +847,15 @@ func _on_attack_whiffed(attack: AttackData) -> void:
 	play(&"whiff", SWING_JITTER)
 
 
+## The report, and — on the round that leaves one behind — the warning. Running dry is a designed
+## moment, and a player who only learns about it when the trigger stops answering has been told
+## about it one round too late to do anything with it.
 func _on_weapon_fired(attack: AttackData) -> void:
 	if attack == null:
 		return
 	play(&"shot_heavy" if attack.charges else &"shot", JITTER)
+	if GameState.loadout != null and GameState.loadout.magazine == LAST_ROUNDS:
+		play(&"low_ammo")
 
 
 func _on_parry_perfect() -> void:
@@ -683,8 +873,17 @@ func _on_footstep_taken(wading: bool) -> void:
 ## From where he is standing, and pitched a little differently each time. Three farmers committing
 ## together on one waveform would arrive as a single louder farmer, which is the opposite of what
 ## the sound is for.
-func _on_telegraph_began(where: Vector3) -> void:
-	play_at(&"telegraph", where, JITTER)
+func _on_merchant_opened() -> void:
+	play(&"merchant")
+
+
+func _on_run_ended(victory: bool) -> void:
+	play(&"victory" if victory else &"defeat")
+
+
+func _on_telegraph_began(where: Vector3, archetype: EnemyData) -> void:
+	var id := archetype.telegraph_sound if archetype != null else &""
+	play_at(id if _sounds.has(id) else &"telegraph", where, JITTER)
 
 
 func _on_enemy_died(enemy: Node3D, _archetype: StringName, _money: int) -> void:

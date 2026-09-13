@@ -19,6 +19,7 @@ chain_window = Vector2(0.14, 0.50)
 perfect_window = Vector2(0.38, 0.50)
 perfect_multiplier = 1.35
 hitstop = 0.08
+impact_sound = &"stick"
 reach = 2.4
 arc_degrees = 120.0
 animation = &"attack_stick_1"

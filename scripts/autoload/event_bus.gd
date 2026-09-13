@@ -10,8 +10,11 @@ extends Node
 signal player_damaged(current: float, maximum: float)
 signal player_died
 signal stamina_changed(current: float, maximum: float)
-signal attack_landed(target: Node3D, damage: float, perfect: bool)
-signal perfect_timing
+## The attack rides along because a blow's *sound* belongs to the weapon that threw it, the way its
+## burst already belongs to the `AttackData` that names it. Five of the six listeners ignore it; the
+## one that does not would otherwise have to ask the bag what is in hand at the moment of contact,
+## and a swap during a swing would make that a lie.
+signal attack_landed(target: Node3D, damage: float, perfect: bool, attack: AttackData)
 ## A swing whose active window closed without touching anything. It carries the attack because what
 ## a whiff sounds like depends on what was swung, and because nothing else can reconstruct it once
 ## the state has moved on.
@@ -25,7 +28,10 @@ signal footstep_taken(wading: bool)
 ## wind-up the player cannot see is the one they most need to hear, so this is the one sound in the
 ## game that has to arrive from a direction. It carries a point rather than the body, because by the
 ## time a listener acts on it the only thing it needs is where to put the voice.
-signal telegraph_began(where: Vector3)
+## The archetype rides along for the same reason. A reaper's wind-up and a thrower's must not sound
+## alike: the thrower is the one the player cannot see coming, and sound is the only warning the
+## design gives them.
+signal telegraph_began(where: Vector3, archetype: EnemyData)
 signal enemy_spawned(enemy: Node3D)
 ## The archetype travels with the death because the tally outlives the node that carried it.
 signal enemy_died(enemy: Node3D, archetype: StringName, money: int)
@@ -35,6 +41,13 @@ signal hitstop_requested(duration: float)
 ## it, they are asking for none.
 signal shake_requested(strength: float)
 ## A wave has begun, and how many bodies it will send in total.
+## The counter is open. The one moment in a run where nothing is trying to kill the player, and it
+## had no sound at all — a screen arriving in silence reads as the game having stopped rather than
+## as the fight having paused.
+signal merchant_opened
+## The run is over, and which way. Separate from `player_died` because a victory and a death are the
+## same screen and the opposite feeling, and the only thing that can say so is a sound.
+signal run_ended(victory: bool)
 signal wave_started(wave: int, enemies: int)
 ## The last of them is down. The reward travels with it so the economy can stay a listener rather
 ## than something the director has to know about.

@@ -51,6 +51,10 @@ var last_hit_worth: float = 1.0
 ## He comes, he circles, and he never swings. The first two tutorial steps need something to hit
 ## that will not hit back — and a farmer standing still would teach the player that farmers do.
 var passive: bool = false
+## How far the body is tipped back, in radians, away from whatever it faces. Written only by the
+## wind-up, which is the one thing that tips him, and read by anything that has to know how loaded
+## he looks.
+var leaning: float = 0.0
 
 ## The stone this body has in the air, if any. The ranged token is held until it lands rather than
 ## until the throw finishes, because the design says at most one stone is in the air — and a throw
