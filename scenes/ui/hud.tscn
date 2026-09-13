@@ -4,6 +4,7 @@
 [ext_resource type="Theme" path="res://assets/themes/ui_theme.tres" id="2"]
 [ext_resource type="Script" path="res://scripts/ui/pickup_feed.gd" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/ui/music_player.tscn" id="4"]
+[ext_resource type="Script" path="res://scripts/ui/weapon_rack.gd" id="5"]
 
 [node name="Hud" type="CanvasLayer"]
 script = ExtResource("1")
@@ -183,6 +184,14 @@ mouse_filter = 2
 theme_override_constants/separation = 2
 alignment = 2
 script = ExtResource("3")
+
+[node name="WeaponRack" type="HBoxContainer" parent="Root/BottomRight"]
+layout_mode = 2
+size_flags_horizontal = 8
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 2
+script = ExtResource("5")
 
 [node name="Ammo" type="PanelContainer" parent="Root/BottomRight"]
 visible = false

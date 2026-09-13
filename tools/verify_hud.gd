@@ -45,6 +45,7 @@ func _run() -> void:
 	await _check_credit_numbers()
 	await _check_the_round_floats_off_the_body()
 	await _check_the_feed_reports_what_arrived()
+	await _check_the_rack_says_what_is_in_hand()
 	await _check_the_chip_answers_money_arriving()
 	await _check_one_kill_punches_both_chips()
 	await _check_the_banner_announces_the_wave()
@@ -117,6 +118,87 @@ func _check_ammo_follows_the_weapon() -> void:
 		_fail("ammo should appear with a ranged weapon in hand")
 	if _label("Root/BottomRight/Ammo/Rows/Row/Magazine").text != "08":
 		_fail("magazine should read 08")
+
+
+## The row of weapons: what is in hand, what is in the bag, and what is not in it yet. The three
+## states are told apart by what the *player* can see — the active chip, and how lit the slot is —
+## rather than by a flag the rack sets for itself and then reads back.
+func _check_the_rack_says_what_is_in_hand() -> void:
+	var rack := _hud.get_node("Root/BottomRight/WeaponRack") as WeaponRack
+	if rack == null:
+		_fail("the HUD has no weapon rack")
+		return
+	var bag := GameState.loadout
+	bag.found.clear()
+	bag.equipped = Arsenal.STARTING
+	Devices.force(InputBindings.Device.KEYBOARD)
+	rack.refresh()
+	await get_tree().process_frame
+	if rack.get_child_count() != Arsenal.all().size() + 1:
+		_fail(
+			(
+				"the rack shows %d slots for %d weapons and a cycle key"
+				% [rack.get_child_count(), Arsenal.all().size()]
+			)
+		)
+	_check_slot(rack, &"fists", true, true)
+	_check_slot(rack, &"stick", false, false)
+	# A locked slot says the wave the weapon turns up in, read off the weapon rather than written
+	# here — the rack must not be able to promise a wave the pickup director disagrees with.
+	var gun := Arsenal.find(&"gun")
+	var promised := _badge(rack, &"gun")
+	if promised != tr("HUD_WEAPON_WAVE") % gun.found_at_wave:
+		_fail("the locked gun slot reads %s rather than the wave it arrives in" % promised)
+	# Found, then taken in hand: two different states, and the row has to show both.
+	bag.find_weapon(&"stick")
+	await get_tree().process_frame
+	_check_slot(rack, &"stick", true, true)
+	bag.equip(Arsenal.STARTING)
+	await get_tree().process_frame
+	_check_slot(rack, &"stick", true, false)
+	_check_slot(rack, &"fists", true, true)
+	await _check_the_rack_follows_the_hand(rack)
+
+
+## **A player on a pad must never read a key that is not there.** The pad has no direct weapon keys,
+## so the slots lose their badges and the cycle key is the only one left standing.
+func _check_the_rack_follows_the_hand(rack: WeaponRack) -> void:
+	Devices.force(InputBindings.Device.KEYBOARD)
+	rack.refresh()
+	await get_tree().process_frame
+	var typed := _badge(rack, &"fists")
+	if typed.is_empty():
+		_fail("a keyboard player is shown no key for the weapon in hand")
+	Devices.force(InputBindings.Device.GAMEPAD)
+	rack.refresh()
+	await get_tree().process_frame
+	if _badge(rack, &"fists") == typed:
+		_fail("the rack still shows %s after the hand moved to a pad" % typed)
+	if not _badge(rack, &"fists").is_empty():
+		_fail("a pad has no key for a weapon, and the rack printed one anyway")
+	Devices.force(InputBindings.Device.KEYBOARD)
+	rack.refresh()
+
+
+func _check_slot(rack: WeaponRack, id: StringName, owned: bool, in_hand: bool) -> void:
+	var chip := rack.get_node(NodePath(String(id))) as PanelContainer
+	if chip == null:
+		_fail("the rack has no slot for %s" % id)
+		return
+	var wanted: StringName = &"BindChipActive" if in_hand else &"BindChip"
+	if chip.theme_type_variation != wanted:
+		_fail("the %s slot wears %s and should wear %s" % [id, chip.theme_type_variation, wanted])
+	var lit := 1.0 if in_hand else (WeaponRack.CARRIED if owned else WeaponRack.LOCKED)
+	if not is_equal_approx(chip.modulate.a, lit):
+		_fail("the %s slot is lit %.2f and should be %.2f" % [id, chip.modulate.a, lit])
+
+
+func _badge(rack: WeaponRack, id: StringName) -> String:
+	var chip := rack.get_node_or_null(NodePath(String(id))) as PanelContainer
+	if chip == null:
+		return ""
+	var badge := chip.get_child(0).get_child(0) as Label
+	return badge.text if badge != null and badge.visible else ""
 
 
 func _check_damage_numbers() -> void:
@@ -390,7 +472,8 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"hud OK — vitals, wave, money, ammo, damage numbers, a kill paying where the player "
+				"hud OK — vitals, wave, money, the weapons in the bag, ammo, damage numbers, a kill "
+				+ "paying where the player "
 				+ "can see it, and the run tally"
 			)
 		)
