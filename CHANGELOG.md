@@ -77,6 +77,11 @@ All notable changes to this project are documented here, following
   tag, with the release already cut and nothing to attach. Found by dry-running `release.yml`, which
   is now written down as the thing to do before tagging. `verify_project_config` holds the settings
   the presets depend on.
+- **Godot aborted at the end of the macOS export**, after the pack was written — a core dump on
+  shutdown, which `set -e` turns into a failed release. The cause was `addons/gdUnit4`, a test
+  framework that no export filter excluded and that was therefore being packed into the game. Both
+  presets exclude it now: the export finishes cleanly and the shipped binaries no longer carry a
+  test runner. Proven by dry-running the workflow twice — the same run that found the ASTC setting.
 
 - **A dying body took the knock rate whole.** `KnockdownData.knock_speed` is metres per second *per
   point of `AttackData.stagger`*, and `EnemyDead` passed it bare — so a man killed by a jab was
