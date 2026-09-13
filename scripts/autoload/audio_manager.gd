@@ -62,8 +62,9 @@ const VOICE_UNIT: float = 5.0
 const POSITIONAL_UNIT: float = 8.0
 ## What the engine treats as silence, and what a track fades up from rather than starting at.
 const SILENT_DB: float = -80.0
-## The soundtrack itself. Empty until the music is delivered; the jukebox and the player in the
-## corner both cope with that rather than assuming a track exists.
+## The soundtrack itself. Five tracks as of now; the jukebox and the player in the corner still cope
+## with an empty one rather than assuming a track exists, because a playlist is a data change and
+## code that broke when somebody emptied it would make it a code change.
 const PLAYLIST: String = "res://data/music/playlist.tres"
 ## The player's own death. Most of an octave down, over two thirds of a second — long enough to be
 ## a shout and short enough to be over before the summary screen slides in.
