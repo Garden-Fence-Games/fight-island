@@ -54,6 +54,7 @@ func _run() -> void:
 	_check_the_wheel_only_offers_what_was_found()
 	await _check_a_swap_drops_the_chain()
 	await _check_a_pickup_hands_the_weapon_over()
+	await _check_the_gun_on_the_ground_is_the_gun()
 	_put_the_run_back()
 	_report()
 
@@ -300,6 +301,102 @@ func _check_a_pickup_hands_the_weapon_over() -> void:
 		_fail("a weapon already in the bag was dropped again")
 
 
+## A gun lying on the sand has to be the gun. It was a carved brown box the same shape as the stick
+## — one placeholder serving both weapons — while the model itself sat in the player's rig, textured
+## and unused. Nothing failed, because nothing was asking.
+##
+## What is asserted is that the pickup **borrows the rig's mesh** rather than that it looks like any
+## particular thing: the number of triangles and the size are read off the rig at run time, so a
+## regunned player moves the pickup with him and this check goes on holding the pair together.
+func _check_the_gun_on_the_ground_is_the_gun() -> void:
+	var pickups := _arena.get_node_or_null("PickupDirector") as PickupDirector
+	if pickups == null:
+		return
+	var gun := Arsenal.find(&"gun")
+	var dropped := pickups.drop(gun)
+	if dropped == null:
+		_fail("nowhere on the island would take a gun")
+		return
+	await get_tree().physics_frame
+	var view := dropped.get_node_or_null("Mesh") as MeshInstance3D
+	if view == null or view.mesh == null:
+		_fail("the gun pickup has nothing to look at")
+		return
+	var in_the_rig := _the_rigs_gun()
+	if in_the_rig == null:
+		_fail("the player rig no longer carries a mesh called Gun, so a pickup cannot borrow one")
+		return
+	var on_the_ground := view.mesh.get_faces().size()
+	if on_the_ground != in_the_rig.get_faces().size():
+		_fail(
+			(
+				(
+					"the gun on the ground is %d triangles against the rig's %d — it is not the same "
+					+ "model, which means there are two of them"
+				)
+				% [on_the_ground / 3, in_the_rig.get_faces().size() / 3]
+			)
+		)
+	# **And wearing its own paint.** The scene overrides surface 0 with the brown wood that makes the
+	# carved placeholder read as a stick. Borrowing the mesh without clearing that override leaves
+	# the gun lying there the same colour as the stick, which is most of what was wrong to begin
+	# with — and the triangle count above passes happily while it happens.
+	for surface: int in view.get_surface_override_material_count():
+		if view.get_surface_override_material(surface) != null:
+			_fail(
+				(
+					(
+						"the gun on the ground is repainted by the pickup's own override on surface %d, "
+						+ "so it is the gun wearing the stick's colour"
+					)
+					% surface
+				)
+			)
+	var worn := view.get_active_material(0) as StandardMaterial3D
+	if worn == null or worn.albedo_texture == null:
+		_fail("the gun on the ground carries no painted texture, and the rig's gun does")
+
+	# Standing where the director put it rather than buried or hovering. The mesh comes out of the
+	# rig in the space it was modelled in, so a pickup that forgot to recentre it reads as a gun
+	# half underground.
+	var stands := view.transform * view.mesh.get_aabb()
+	if stands.position.y < 0.0 or stands.position.y > WeaponPickup.RESTING_HEIGHT * 2.0:
+		_fail(
+			(
+				(
+					"the gun's lowest point sits at %.2f m, and a weapon on the ground belongs between "
+					+ "0 and %.2f"
+				)
+				% [stands.position.y, WeaponPickup.RESTING_HEIGHT * 2.0]
+			)
+		)
+	if stands.size.y > stands.size.x and stands.size.y > stands.size.z:
+		_fail(
+			(
+				"the gun is standing on end — %.2f m tall against %.2f × %.2f on the floor"
+				% [stands.size.y, stands.size.x, stands.size.z]
+			)
+		)
+	dropped.queue_free()
+
+
+## The mesh the player rig carries, read straight out of the model rather than through the pickup,
+## so the two are compared rather than one being asked about itself.
+func _the_rigs_gun() -> Mesh:
+	var packed := load(WeaponPickup.RIG) as PackedScene
+	if packed == null:
+		return null
+	var rig := packed.instantiate()
+	var found: Mesh = null
+	for node: Node in rig.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if mesh != null and mesh.name == "Gun":
+			found = mesh.mesh
+			break
+	rig.free()
+	return found
+
+
 func _stand_a_farmer_at(offset: Vector3) -> Enemy:
 	if _director == null or _director.spawner == null:
 		return null
@@ -360,7 +457,7 @@ func _report() -> void:
 		print(
 			(
 				"weapons OK — the stick sweeps two, the gun rations against a ceiling the bodies "
-				+ "refill, and nothing carries across a swap"
+				+ "refill, nothing carries across a swap, and the gun on the ground is the gun"
 			)
 		)
 		get_tree().quit(0)
