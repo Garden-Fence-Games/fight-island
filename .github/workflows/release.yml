@@ -11,7 +11,11 @@ permissions:
 env:
   GODOT_VERSION: "4.7.2"
   GAME_NAME: "FightIsland"
-  ITCH_USER: "pepito2t"
+  # **The studio's itch account, not the GitHub one.** They are different names and the release of
+  # 0.1.0 failed on exactly that: butler resolves `user/game` against the account the API key
+  # belongs to, found no `pepito2t` there, and answered `invalid target (bad user)` after both
+  # binaries had already been built and attached to the GitHub release.
+  ITCH_USER: "garden-fence"
   ITCH_GAME: "fight-island"
 
 # Godot's export templates are cross-platform, so macOS and Windows both export from one Linux
