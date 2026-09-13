@@ -49,6 +49,12 @@ still fail.
 
 ### Fixed
 
+- **The pirate wears his own paint.** `char_pirate.glb` shipped with only the eyes' image: the body
+  and club textures in `char_pirate.blend` pointed at a folder on the artist's desktop, never loaded
+  during the export, and the exporter dropped them without a word — so Godot drew both white. They
+  point at `art-source/textures/pirate_texture.png` and `stick.png` now, and the re-exported rig
+  embeds all three images; the clips are unchanged.
+
 - **The mix was written in peaks, and peaks measure the wrong thing.** Two sounds normalised to the
   same peak are not the same loudness and are not close — measured across this game's own sounds the
   gap reached seventeen decibels. The farmers sat at a footstep's loudness because a voice level was
