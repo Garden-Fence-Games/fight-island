@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CoconutData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/coconut_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+heals = 25.0
+per_enemy = 0.15
+at_once_first = 2
+at_once_growth = 0.25
+at_once_most = 6
+lies_for = 20.0
+falls_for = 0.8
+lands_within = 1.6
+every = 6.0
+nearest = 7.0
+furthest = 24.0

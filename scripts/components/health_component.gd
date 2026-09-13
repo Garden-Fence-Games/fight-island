@@ -55,6 +55,21 @@ func apply(info: HitInfo) -> bool:
 	return true
 
 
+## Points back, clamped at the maximum. **No invulnerability window and no signal of its own**:
+## being healed is not being hit, and a coconut that handed out i-frames would be a dodge the player
+## did not earn. Healing the dead does nothing, which is what stops a pickup landing on the frame a
+## run ended and quietly reviving somebody the summary has already been opened for.
+func heal(amount: float) -> float:
+	if not is_alive() or amount <= 0.0:
+		return 0.0
+	var before := current_health
+	current_health = minf(current_health + amount, max_health)
+	if is_equal_approx(current_health, before):
+		return 0.0
+	health_changed.emit(current_health, max_health)
+	return current_health - before
+
+
 func set_max_health(value: float, heal_to_full: bool) -> void:
 	max_health = maxf(value, 1.0)
 	current_health = max_health if heal_to_full else minf(current_health, max_health)
