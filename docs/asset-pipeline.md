@@ -279,7 +279,7 @@ Direct `.blend` import is fine during blockout. Switch before the first CI expor
 
 ## Naming
 
-Files: `char_player.glb`, **`char_farmer.glb`**, `char_merchant.glb`, `weapon_stick.glb`,
+Files: `char_player.glb`, **`char_farmer.glb`**, `char_pirate.glb`, `char_merchant.glb`, `weapon_stick.glb`,
 `weapon_gun.glb`, `weapon_scythe.glb`, `prop_stone.glb`, `env_island.glb`, `env_palm_tree.glb`,
 `prop_crate.glb`.
 
@@ -322,7 +322,8 @@ Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 **Player:** `idle`, `walk`, `run`, `sprint`, `dodge_roll`, `parry`, `parry_success`, `hurt`,
 `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`, plus
 `idle_gun` and `walk_gun` — the gun is held across the whole body, so standing and walking with it
-are their own clips rather than a layer over the unarmed ones.
+are their own clips rather than a layer over the unarmed ones. The stick has the same pair,
+`idle_stick` and `walk_stick`, both looping, and a roll of its own, `dodge_roll_stick`.
 
 **The player has no `death` clip and is not waiting for one.** The run ends by handing the body to
 the physics, the same `RagdollComponent` the farmers have used since they stopped sinking into the
@@ -335,11 +336,28 @@ ends.
 It is hidden rather than detached when the player is unarmed — see `WeaponVisualComponent` in
 [architecture.md](architecture.md).
 
+**The stick is in the rig too, and it is hidden by its clips rather than by code.** Purple-Sigil
+held the stick differently in every stick clip, so `Stick` is not parented once and forgotten: it
+hangs off the right hand and **every stick clip keys it**, frame by frame, where the source file had
+it. Out of those clips it rests at a thousandth of its size — the RESET and every other clip carry
+that — so it shows during `idle_stick`, `walk_stick`, `dodge_roll_stick` and `attack_stick_1` and
+nowhere else, with nothing in `WeaponVisualComponent` to switch. `StickTrail` under it is the swing's
+smear, scaled up and back down inside `attack_stick_1`.
+
+**Re-exporting a rig whose clips move an object takes NLA tracks.** In `char_player.blend` and
+`char_pirate.blend` each clip is one action with a slot for the armature and one for the held
+object. Exported as plain actions, the object's slot is dropped; exported with one NLA track per
+clip, named after the clip, on both the armature and the object (`NLA_TRACKS`, merged by track
+name, *keep object animation* on), each glTF animation carries both. An object under NLA also rests
+at its defaults, so `Stick` and `StickTrail` get their thousandth written back into the exported
+file's rest scale.
+
 **The `_gun` ending is a suffix the code appends, not a separate table.** `WeaponData.clip_suffix`
 carries it — `_gun` on the gun, empty on the fists and, for now, the stick — and
-`AnimationComponent` tries `<clip><suffix>` before falling back to `<clip>`. So authoring
-`walk_stick` and `idle_stick` and setting `clip_suffix = &"_stick"` is the whole job, and a set that
-is only half authored degrades one clip at a time instead of leaving a state with nothing to play.
+`AnimationComponent` tries `<clip><suffix>` before falling back to `<clip>`. `walk_stick`,
+`idle_stick` and `dodge_roll_stick` are authored, so setting `clip_suffix = &"_stick"` is the whole
+job left, and a set that is only half authored degrades one clip at a time instead of leaving a
+state with nothing to play.
 
 **Farmer (shared by all three):** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`,
 `death`, plus one attack set per archetype — `windup_punch` / `attack_punch`,
@@ -352,6 +370,15 @@ with the first frame. `idle`, `walk` and `chase` loop; the get-ups play once.
 `art-source/char_farmer.blend` is in metres and a third taller. A clip appended from a source file
 has every location key scaled by 0.013 on the way in, and loses the stray frame-0 key Mixamo leaves
 behind — which is the idle pose, and stands him up for one frame at the start of a get-up.
+
+**Pirate (`char_pirate.glb`, Ennemi_2):** `idle`, `walk`, `chase`, `attack`, `get_up_back`,
+`get_up_front`, on its own Mixamo rig with the same 33 bone names as the farmer's. `idle`, `walk`
+and `chase` loop. **Nothing in the game uses it yet** — no scene, no archetype — it is there to be
+wired. It was built the farmer's way: metres instead of a hundredth in `delta_scale`, grown by the
+same 1.3 so the two stand the same height, and the stray frame-0 key dropped from both get-ups.
+`chase` is `Pirate_walk_attack`, the name the farmer's aware walk already has. `PirateWeapon` hangs
+off the right hand and every clip keys it where the source had it — it moves in both get-ups — so
+it needs no attaching. Its rest transform is not a grip; only the clips are.
 
 **Bird:** `bird_fly` (wings beating) and `bird_fly_idle` (wings held out, gliding), both looping, on
 the flying rig `assets/models/nature/bird_fly.glb`. A startled bird only beats; a cruising one
@@ -376,8 +403,7 @@ that is never wrong about anything is one nobody reads.
 
 | Clip | Rig | Where it bites |
 |---|---|---|
-| `attack_stick_1` | player | The stick swings and nothing moves. The stick has no mesh on the rig either, so it is invisible in hand — one job, not two. |
-| `attack_stick_2` | player | As above. |
+| `attack_stick_2` | player | The second swing of the chain moves nothing, and the stick stays hidden for it: only a clip that keys `Stick` shows it. |
 | `attack_stick_3` | player | As above. |
 
 **The gun's three shots, the parry, and all three farmer blows are not on this list and are not

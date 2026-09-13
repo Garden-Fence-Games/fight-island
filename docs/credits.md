@@ -29,9 +29,9 @@ answers the second; this one is the answer the player is owed.
 ## Assets
 
 The island's stone and huts come from two CC0 packs by the same author. Everything that grows on
-it — the palms, the grass, the bushes — is ours, and so are the gulls; the player and the farmer are
-both modelled rigs. The weapons and the terrain itself are still Godot primitives — see
-[asset-pipeline.md](asset-pipeline.md).
+it — the palms, the grass, the bushes — is ours, and so are the gulls; the player, the farmer and the
+pirate are modelled rigs, and the gun and the stick ride in the player's. The terrain itself is
+still built from Godot primitives — see [asset-pipeline.md](asset-pipeline.md).
 
 | File | Source | Author | Licence | Added |
 |---|---|---|---|---|
@@ -43,6 +43,8 @@ both modelled rigs. The weapons and the terrain itself are still Godot primitive
 | `assets/models/char_farmer.glb` — mesh, textures and clips | original, Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/char_farmer_stand_ins.tres` — generated draw and blow clips | built by `tools/build_clips.tscn` from the rig's own idle | Purple-Sigil, posed | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/char_farmer.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-13 |
+| `assets/models/char_pirate.glb` — mesh, weapon, textures and clips | original, Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/char_pirate.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-13 |
 | `assets/fonts/oswald_medium.ttf` | [Google Fonts](https://fonts.google.com/specimen/Oswald) | The Oswald Project Authors | SIL OFL 1.1 | 2026-09-13 |
 | `assets/fonts/inter_semibold.ttf` | [Google Fonts](https://fonts.google.com/specimen/Inter) | The Inter Project Authors | SIL OFL 1.1 | 2026-09-12 |
 | `assets/models/nature/palm_tree.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-12 |
@@ -108,9 +110,9 @@ Mixamo animations are convenient for prototyping but their redistribution terms 
 Anything from Mixamo must be replaced or cleared before a public release, and it gets a row here
 flagged `prototype only` in the meantime.
 
-**The animations are original**, authored in Blender, for the player and for the farmer alike.
-What comes from Mixamo is the *skeleton*: both rigs were produced by their auto-rigger, which is why
-all 33 bones of each are named `mixamorig:*` and why every source action arrived called
+**The animations are original**, authored in Blender, for the player, the farmer and the pirate alike.
+What comes from Mixamo is the *skeleton*: all three rigs were produced by their auto-rigger, which is
+why all 33 bones of each are named `mixamorig:*` and why every source action arrived called
 `mixamo.com`. The farmer's ragdoll names sixteen of those bones in `RagdollComponent`, so replacing
 the auto-rig now costs that list as well as every clip authored on it. Adobe's terms do allow a
 Mixamo-rigged character to ship, but the flag stays until someone reads those terms against this
