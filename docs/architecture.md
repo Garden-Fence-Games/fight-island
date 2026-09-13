@@ -241,21 +241,12 @@ throw, release, and assert the pool still shows the token held.
 The stone is parented to the thrower's **parent**, not to the thrower. A projectile owned by a body
 that dies mid-flight would be freed in the air.
 
-## The tutorial, and what it proves about the bus
+## The tutorial
 
-Wave 1 is hand-driven by a `TutorialDirector` reading `TutorialStep` resources — see
-[tutorial.md](tutorial.md). It is worth stating here because it is the **bus paying for itself**:
-the tutorial watches the whole fight without a single combat system knowing it exists, and deleting
-the node cannot break anything. `attack_landed` already carries the perfect flag, `parry_perfect`
-already fires, and two signals were added for lessons nothing else had a reason to announce —
-`dodge_evaded`, a blow arriving while the player rolls through it, and `player_state_changed`.
-
-`dodge_evaded` is not "the player dodged". The lesson is the moment, not the button, and only a hit
-that was actually refused says the moment was right.
-
-Movement is the one lesson with no event behind it, and that is the honest answer rather than a gap:
-nothing else in this game cares that the player walked, so there is nothing to listen to and the
-director measures the distance itself.
+A `TutorialDirector` shows a few `TutorialStep` lines on a clock before wave 1, with the wave
+director halted underneath, then starts wave 1 itself — see [tutorial.md](tutorial.md). It listens
+to nothing: a line gives way when its time is up, so no input the player fails to make can hold the
+run. Deleting the node leaves a run that starts on the formula's first-wave delay instead.
 
 ## The bag
 
@@ -897,7 +888,7 @@ same directory, `telemetry.csv`, and it is **not a save** — see *Telemetry* be
 - `settings.json` — every row of the options screen, written the moment it changes
 - `bindings.json` — **overrides only**, so changing a default binding later does not need a
   migration and does not strand a player on the old one
-- `progress.json` — what outlives a run. Best wave today; the tutorial's cleared steps join it
+- `progress.json` — what outlives a run. Best wave today
 - `run.json` — the between-waves snapshot, and the only file that is deleted when a run ends
 
 Every file carries `"version"`, stamped on write. An **older** file goes through `_migrate`; a

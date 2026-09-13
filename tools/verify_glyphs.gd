@@ -15,9 +15,7 @@ const PROMPT: String = "res://scenes/ui/tutorial_prompt.tscn"
 ## Fewer hints than this means the search stopped finding scenes rather than that the game stopped
 ## having hints.
 const HINTS_AT_LEAST: int = 6
-const TUTORIAL_STEPS: PackedStringArray = [
-	"01_move", "02_attack", "03_chain", "04_perfect", "05_dodge", "06_parry", "07_sprint"
-]
+const TUTORIAL_STEPS: PackedStringArray = ["01_angry", "02_fight", "03_sprint", "04_survive"]
 const SETTLE_FRAMES: int = 4
 ## Words that name hardware the other device does not have. A prompt containing one of these while
 ## the pad is in hand is the exact failure this issue was opened for.
@@ -167,11 +165,10 @@ func _check_a_prompt_never_names_the_other_device() -> void:
 	var prompt := (load(PROMPT) as PackedScene).instantiate() as TutorialPrompt
 	add_child(prompt)
 	await get_tree().process_frame
-	var dodge := load("res://data/tutorial/05_dodge.tres") as TutorialStep
-	var move := load("res://data/tutorial/01_move.tres") as TutorialStep
+	var fight := load("res://data/tutorial/02_fight.tres") as TutorialStep
 
 	Devices.force(InputBindings.Device.GAMEPAD)
-	prompt.show_line(dodge.prompt_key, dodge.prompt_actions)
+	prompt.show_line(fight.prompt_key, fight.prompt_actions)
 	var on_pad := prompt.text().to_upper()
 	for word: String in KEYBOARD_WORDS:
 		if on_pad.contains(word):
@@ -179,30 +176,22 @@ func _check_a_prompt_never_names_the_other_device() -> void:
 	var pad_line := prompt.text()
 	Devices.force(InputBindings.Device.KEYBOARD)
 	prompt.hide_line()
-	prompt.show_line(dodge.prompt_key, dodge.prompt_actions)
+	prompt.show_line(fight.prompt_key, fight.prompt_actions)
 	if prompt.text() == pad_line:
-		_fail("the dodge prompt reads the same on both devices: %s" % pad_line)
-	Devices.force(InputBindings.Device.GAMEPAD)
+		_fail("the fight prompt reads the same on both devices: %s" % pad_line)
 
-	# Four actions, one stick: the player moves with a thumb, not with four axes.
-	prompt.hide_line()
-	prompt.show_line(move.prompt_key, move.prompt_actions)
-	if prompt.text().to_upper().count("L-STICK") != 1:
-		_fail("the movement prompt on a pad is not one stick: %s" % prompt.text())
+	# Two actions, two placeholders: each button lands in its own place in the sentence.
+	for action: String in fight.prompt_actions:
+		if not prompt.text().contains(Devices.glyph(action)):
+			_fail("the fight prompt does not name %s: %s" % [action, prompt.text()])
+	if prompt.text().contains("{"):
+		_fail("the fight prompt kept a placeholder: %s" % prompt.text())
 
-	Devices.force(InputBindings.Device.KEYBOARD)
+	# A line that names no button must not gain an empty glyph.
+	var angry := load("res://data/tutorial/01_angry.tres") as TutorialStep
 	prompt.hide_line()
-	prompt.show_line(move.prompt_key, move.prompt_actions)
-	var keys := prompt.text().to_upper()
-	for letter: String in ["W", "A", "S", "D"]:
-		if not keys.contains(letter):
-			_fail("the movement prompt on a keyboard is missing %s: %s" % [letter, prompt.text()])
-
-	# A lesson about timing names no button, and must not gain an empty glyph.
-	var chain := load("res://data/tutorial/03_chain.tres") as TutorialStep
-	prompt.hide_line()
-	prompt.show_line(chain.prompt_key, chain.prompt_actions)
-	if prompt.text() != tr(chain.prompt_key):
+	prompt.show_line(angry.prompt_key, angry.prompt_actions)
+	if prompt.text() != tr(angry.prompt_key):
 		_fail("a prompt with no button to name was rewritten: %s" % prompt.text())
 	prompt.queue_free()
 	await get_tree().process_frame
