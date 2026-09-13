@@ -378,7 +378,7 @@ Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, plus `idle_gun` and `walk_gun` — the
 gun is held across the whole body, so standing and walking with it are their own clips rather than a
 layer over the unarmed ones. The stick has the same pair, `idle_stick` and `walk_stick`, both
-looping, and a roll of its own, `dodge_roll_stick`. `new_run_awakening` is the player waking up at
+looping, and a roll of its own, `dodge_roll_stick`. `drowning` loops too — see below. `new_run_awakening` is the player waking up at
 the start of a run begun from the title — played whole, once, by `RunIntro`; its stray frame-0 rest
 key was dropped on the way in, like the farmer's get-ups.
 
@@ -391,6 +391,17 @@ sand — so the fall agrees with where the player was standing, which way the bl
 they landed against, which is the part no clip could do. `AnimationComponent` refuses to touch a rig
 the simulator is driving, and `PlayerDead` pins the final pose into the skeleton once the tumble
 ends.
+
+**Except the sea: `drowning`** (`Boy_drowning`), a looping struggle, arms flailing and head thrown
+back, is what a player who dies out of their depth plays until the summary covers them — there is
+nothing to fall against in the water. Out of depth is `TideData`'s own rule, the depth where the bar
+starts coming down. The source keys only the two arms and the head, so every other bone is keyed at
+the pose the source file holds it in; the loop is set in `char_player.glb.import`, like the other
+cycles. On the way in the arms' and head's swing is exaggerated around its average pose, and the
+hips are given a strong up-and-down, twice a loop, so the body reads as going under and fighting
+back up. The sinking itself is not in the clip: `PlayerDead` lowers the model while the loop turns,
+at the speed and to the depth `data/combat/tide.tres` sets, and hides it once it is all the way
+under.
 
 **The gun mesh is part of the rig**, parented to the hand bone, because the gun clips animate it.
 It is hidden rather than detached when the player is unarmed — see `WeaponVisualComponent` in

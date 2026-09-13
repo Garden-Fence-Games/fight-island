@@ -6,33 +6,16 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
-### Fixed
-
-- **The itch.io publish had the wrong account.** `ITCH_USER` was the repository owner, and the page
-  lives at `garden-fence/fight-island`. The 0.1.0 tag exported both platforms and attached them to
-  the GitHub release before failing on `/wharf/builds: invalid target (bad user)` — everything up to
-  the last step was fine, which is why nothing caught it earlier: it is the one part of the chain
-  that cannot be checked without a key.
-
-### Changed
-
-- **Both weapons lie on the island from wave 1.** The stick used to arrive in wave 2 and the gun in
-  wave 4, and holding them back cost more than it bought: a weapon nobody has found is a weapon that
-  does not exist, and behind the gun sat an upgrade track the merchant refuses until the weapon is
-  carried — so a player saving for it had money with nowhere to go for four waves. Ammunition comes
-  off the bodies from the first wave for the same reason: the pocket only fills once the gun is in
-  the bag.
-  - The gun **was** being dropped, and in shot: rolled two hundred times on the real island it landed
-    inside the camera's frustum two hundred times. What it was not, was **visible** — a borrowed rig
-    mesh at its own scale is 0.54 m of dark metal on pale sand under a camera twenty metres up, a
-    third of the carved shape it replaced. Everything borrowed is brought to one length on the
-    ground now, so a weapon reads as a thing to pick up before it reads as a model of itself.
-  - `verify_weapons` gains the assertion the failure needed: **every upgrade track that names a
-    weapon names a weapon that is dropped.** A track for a weapon nobody can find is a locked card
-    for the length of a run, and nothing said so.
-
 ### Added
 
+- **A drowned player struggles and goes under.** Dying out of their depth no longer hands the body
+  to the ragdoll, which had nothing true to do in the water: the player plays `drowning`,
+  Purple-Sigil's looping struggle with a strong bob, and sinks while it loops. The summary waits
+  until the body is all the way under, and the sea stops carrying it back to the sand. A death on
+  land, or in the shallows, still falls the way the blow threw it.
+- **Forcing against the sea is exponential.** Walking out against the push doubles the drain every
+  second it goes on, up to a cap, and resets the moment the player stops heading out — drifting out
+  of depth still costs the ordinary rate. Figures in `data/combat/tide.tres`.
 - **The HUD says what is in hand and what is in the bag.** The three weapons sit bottom right in the
   order the swap key walks along them: the one being swung is lit and wears the active chip, a
   weapon carried but not held is dim, and one nobody has found yet is dimmer still and says **the
@@ -42,6 +25,26 @@ All notable changes to this project are documented here, following
   - The badge on each slot is **the key on the device in hand**, and a pad has no direct weapon
     keys, so there the slots carry no badge and the cycle key at the end of the row is the only one
     shown. `verify_hud` moves the hand from keyboard to pad and asserts the row changes with it.
+
+### Removed
+
+- **The thrower is gone, and nothing stands in for him.** He was never wanted: issue #9 asked for a
+  ranged farmer and #73 built him, and the design he was built into is not the one this game is.
+  Removed rather than switched off — the archetype, his stone, the `Projectile` he flew, the
+  `Retreat` state, the separate ranged token pool, `EnemyData.is_ranged`, `retreat_range` and
+  `projectile`, the rule that no wave may open with a ranged body, his telegraph, his clips, his
+  locale row, and `verify_sightlines`, which existed to answer a question only he asked.
+  - **The composition closes over him.** The pirate stays a flat ten per cent hazard and the reaper
+    takes the escalation the thrower used to carry: by wave 12 a body on the island is as likely to
+    be a reaper as a farmhand. One new archetype per wave still, the reaper at 3 and the pirate at
+    4, and nothing new after that — the mix simply hardens.
+  - **The late game is measurably gentler**, and this is the price rather than a side effect. His
+    token was a free one: he queued on a pool nobody else could use, so being shot at cost nothing
+    the melee pool was already spending. Measured by `tools/measure_waves.tscn`, wave 15 goes from
+    103 to 81 points of incoming damage a second at the night pool, and survival under full contact
+    from 1.2 s to 1.5 s.
+  - **The curve is smoother for it.** The worst wave-to-wave step in the run was his arrival at 32
+    per cent; the worst now is the pirate's at 17, and every other step is under 14.
 
 ### Changed
 

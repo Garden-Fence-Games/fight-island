@@ -14,6 +14,8 @@ const RUN_SCENE: String = "res://scenes/main/main.tscn"
 ## A beat before the screen arrives, so the last body finishes falling and the death reads as a
 ## death rather than as a menu.
 const DELAY: float = 1.2
+## How often a sinking body is asked whether it has gone under yet.
+const SINK_POLL: float = 0.1
 
 @export var config: WaveConfig = null
 
@@ -64,6 +66,10 @@ func _open_merchant() -> void:
 
 func _open_summary(victory: bool) -> void:
 	await _wait(DELAY)
+	# A drowned player goes under while still struggling, and that takes longer than a fall. Pausing
+	# the tree now would freeze him with his head above the water behind the screen.
+	while not victory and _player_is_sinking():
+		await _wait(SINK_POLL)
 	if _screen != null:
 		return
 	GameState.end_run()
@@ -79,6 +85,16 @@ func _open(scene: String) -> Control:
 	_screen = (load(scene) as PackedScene).instantiate() as Control
 	add_child(_screen)
 	return _screen
+
+
+## Asked of the player's state rather than told on the bus: only the dead state knows it is sinking,
+## and the answer changes every frame until it is not.
+func _player_is_sinking() -> bool:
+	var body := get_tree().get_first_node_in_group(&"player") as Player
+	if body == null or body.machine == null:
+		return false
+	var dead := body.machine.current as PlayerDead
+	return dead != null and dead.is_sinking()
 
 
 ## Unscaled and running while paused, because a hitstop or a pause must not stretch this beat.
