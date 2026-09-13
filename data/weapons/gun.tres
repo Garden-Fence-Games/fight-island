@@ -19,4 +19,4 @@ magazine = 6
 reload_time = 1.6
 reserve_start = 24
 ammo_cap = 30
-scavenge_chance = 0.125
+scavenge_chance = 0.333

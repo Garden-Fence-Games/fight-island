@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=32 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -28,6 +28,8 @@
 [ext_resource type="Script" path="res://scripts/systems/coconut_director.gd" id="30"]
 [ext_resource type="Resource" path="res://data/pickups/coconut.tres" id="31"]
 [ext_resource type="Script" path="res://scripts/world/sun_glint.gd" id="32"]
+[ext_resource type="Script" path="res://scripts/systems/loot_director.gd" id="33"]
+[ext_resource type="Resource" path="res://data/pickups/loot.tres" id="34"]
 
 [node name="Arena" type="Node3D"]
 
@@ -91,6 +93,10 @@ script = ExtResource("22")
 [node name="CoconutDirector" type="Node" parent="."]
 script = ExtResource("30")
 data = ExtResource("31")
+
+[node name="LootDirector" type="Node" parent="."]
+script = ExtResource("33")
+data = ExtResource("34")
 
 [node name="SunGlint" type="CanvasLayer" parent="."]
 script = ExtResource("32")

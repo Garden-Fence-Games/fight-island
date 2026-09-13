@@ -81,6 +81,9 @@ signal ammo_changed(magazine: int, reserve: int)
 ## `body` is what dropped them, so the number can be shown over the thing that paid it. It is null
 ## when the rounds came from the merchant, which is a counter and not a place on the island.
 signal rounds_scavenged(rounds: int, body: Node3D)
+## A coin thrown out of a body was walked over. `piece` is where it was taken, so the amount can be
+## shown over it; the purse itself hears about it through `GameState.money_changed`.
+signal coins_collected(amount: int, piece: Node3D)
 ## The trigger was pulled on an empty magazine. It exists so the moment is **audible**: a press that
 ## does nothing at all reads as a dropped input, and the player blames the game rather than their
 ## own ammunition.
