@@ -15,8 +15,11 @@ extends Node
 ## The player needs time to see them coming. Closer than this and a wave is an ambush the camera
 ## never showed.
 const MIN_PLAYER_DISTANCE: float = 12.0
-## Past this they take so long to arrive that the wave reads as empty.
-const MAX_PLAYER_DISTANCE: float = 26.0
+## Past this they take so long to arrive that the wave reads as empty — and the player stops
+## fighting a wave and starts looking for one. Twenty-six metres was that: a body notices at nine,
+## so a farmer at the far edge was fourteen metres of walking before anything happened, once per
+## farmer, on a four-minute clock. Eighteen keeps the ring out of shot and halves the walk.
+const MAX_PLAYER_DISTANCE: float = 18.0
 ## Clear space between two fresh bodies, so a drip-feed never stacks two in the same spot.
 const SEPARATION: float = 2.0
 ## A body is taller than the point it stands on, and the camera looks down: checking the feet alone
