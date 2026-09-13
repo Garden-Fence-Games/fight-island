@@ -44,6 +44,10 @@ const BARE: Array[int] = [0, 1, 6]
 const BARE_WEIGHTS: Array[float] = [0.2, 0.55, 0.25]
 const MOSSY: Array[int] = [2, 4, 3, 5]
 const MOSSY_WEIGHTS: Array[float] = [0.15, 0.4, 0.2, 0.25]
+## The big single rocks, bare then mossy, and what they measure as they ship across, up and deep.
+## The six authored formations are these, grown to size.
+const PILLARS: Array[int] = [0, 2]
+const PILLAR_SIZE: Vector3 = Vector3(2.947, 4.329, 2.514)
 ## The chance a rock is mossy, by the water and well inland.
 const MOSS_BY_THE_SEA: float = 0.12
 const MOSS_INLAND: float = 0.8

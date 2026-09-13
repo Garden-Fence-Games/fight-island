@@ -201,7 +201,8 @@ All notable changes to this project are documented here, following
   ground under grass is a light yellow-green wherever grass can grow — the old green was read as
   linear and came out nearly white — and the grass is tinted a shade warmer. The scattered stone is
   Purple-Sigil's seven rocks, bare on the sand and mossy inland, the pillars held to a farmer's
-  height.
+  height; the six rock formations are her big single rock grown to size, and Kenney's boulder is
+  gone.
   The bushes' leaves are cut out along their painted alpha, which the foliage shader had ignored.
   The old single `bush`, `grass_tuft` and `palm_tree` models are gone. The bushes cost a ninth of
   what they did; the grass nearly four times.

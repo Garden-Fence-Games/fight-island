@@ -103,7 +103,9 @@ pair, and gets one collider spanning both trunks.
 clusters, each painted on its own sheet so they keep their own materials. `IslandRocks` makes moss
 follow the grass's gradient — bare on the sand, mostly mossed inland — and holds the two four-metre
 pillars to a farmer's height: under a camera that never turns, anything taller is a wall. The
-authored formations and the pebbles are still Kenney's.
+six authored formations are the big single rock too, bare or mossed by the same rule and grown to
+each formation's size, on `fadeable.gdshader`, which now takes a painted texture the way the
+foliage shader does. Only the pebbles are still Kenney's.
 
 **The ground's green is written for the renderer, not picked by eye.** The terrain's vertex colours
 are read as linear, so a green chosen the way a painter would comes out washed almost to white —

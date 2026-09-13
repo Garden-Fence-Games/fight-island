@@ -39,14 +39,9 @@ const PEBBLE_FADE: float = 70.0
 ## fixed camera frames, so it saves nothing today and catches a wider camera tomorrow. Rocks stay
 ## rangeless; 80 triangles each buys nothing.
 const PALM_FADE: float = 80.0
-## The formations' boulder and the pebbles: Kenney's CC0 Nature Kit, coloured by the island. What
-## grows and the scattered rocks are painted — see `IslandFoliage`, `IslandRocks`.
-const ROCK_MODEL: String = "res://assets/models/nature/stone_largeD.glb"
+## The pebbles: Kenney's CC0 Nature Kit, coloured by the island, and what one measures as it ships.
+## What grows and every rock are painted — see `IslandFoliage`, `IslandRocks`.
 const PEBBLE_MODEL: String = "res://assets/models/nature/stone_smallA.glb"
-## What each model measures as it ships, so the scatter can go on thinking in metres.
-const ROCK_MODEL_WIDTH: float = 1.07
-const ROCK_MODEL_HEIGHT: float = 0.57
-const ROCK_MODEL_DEPTH: float = 1.03
 const PEBBLE_MODEL_WIDTH: float = 0.36
 ## The huts, from Kenney's CC0 Survival Kit — the Nature Kit's companion, drawn by the same hand on
 ## the same half-metre tile, and shipping the same untextured, named parts the palette maps colours
@@ -824,16 +819,19 @@ func _landmark() -> StaticBody3D:
 	body.collision_layer = PhysicsLayers.BIT_WORLD | PhysicsLayers.BIT_CAMERA_OCCLUDER
 	body.collision_mask = 0
 
-	var placements := _formations()
-	var boulder := _nature(ROCK_MODEL)
-	# The model stands on its origin, where the old sphere was centred on it — so the formations sit
-	# on the ground rather than being lifted by a share of their own height.
-	var shipped := Vector3(ROCK_MODEL_WIDTH, ROCK_MODEL_HEIGHT, ROCK_MODEL_DEPTH)
-	for placement: Array in placements:
+	# Purple-Sigil's big single rock, bare or mossed the way the scattered ones are, grown to the size
+	# each formation asks for. It stands on its origin, so a formation sits on the ground.
+	var pillars: Array[ArrayMesh] = []
+	for model: int in IslandRocks.PILLARS:
+		pillars.append(_nature(IslandRocks.MODELS[model]))
+	for placement: Array in _formations():
 		var where: Vector3 = placement[0]
 		var size: Vector3 = placement[1]
 		var turn: float = placement[2]
 		where.y = _height_at(where.x, where.z)
+		var mossy := IslandFoliage.lushness(_land(where.x, where.z)) >= 0.5
+		var boulder := pillars[1 if mossy else 0]
+		var shipped := IslandRocks.PILLAR_SIZE
 
 		var visual := MeshInstance3D.new()
 		visual.name = "Rock"

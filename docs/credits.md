@@ -28,10 +28,10 @@ answers the second; this one is the answer the player is owed.
 
 ## Assets
 
-The island's pebbles, its six rock formations and its huts come from two CC0 packs by the same
-author. Everything that grows on it — the palms, the grass, the bushes — is ours, and so are the
-scattered rocks and the gulls; the player, the farmer and the pirate are modelled rigs, and the gun
-and the stick ride in the player's. The terrain itself is still built from Godot primitives — see
+The island's pebbles and its huts come from two CC0 packs by the same author. Everything that grows
+on it — the palms, the grass, the bushes — is ours, and so is every rock, the six formations
+included, and the gulls; the player, the farmer and the pirate are modelled rigs, and the gun and
+the stick ride in the player's. The terrain itself is still built from Godot primitives — see
 [asset-pipeline.md](asset-pipeline.md).
 
 | File | Source | Author | Licence | Added |
@@ -55,7 +55,6 @@ and the stick ride in the player's. The terrain itself is still built from Godot
 | `assets/models/nature/rock_1..7.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/bird.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/bird_fly.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
-| `assets/models/nature/stone_largeD.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/nature/stone_smallA.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/camp/structure.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/camp/structure_base.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
