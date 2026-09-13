@@ -2,6 +2,9 @@ class_name FootstepDustComponent
 extends Node
 ## The puff a foot leaves in dry sand, and more of it the faster the body is going.
 ##
+## Owned by nobody in particular: it reads a `CharacterBody3D`'s velocity, and is told the two
+## speeds that body travels at. It does not know it is usually a player.
+##
 ## **Built in code rather than saved in the scene**, like the head-look's modifier and the ragdoll's
 ## bones: it is one emitter with no decisions in it that an inspector would help with, and building
 ## it here keeps `player.tscn` about the player.
@@ -14,8 +17,18 @@ extends Node
 ## Emission is tied to speed, not to a step: there is no footfall event on the rig yet, and a rate
 ## that rises with the body is what "more when sprinting" actually looks like.
 
+## The two speeds the owner travels at. **Set by the owner**, because they are its figures and have
+## one home there — a component that looked them up would have to know whose dust it is kicking up,
+## and a component that carried its own copy would be that home a second time. Nothing is emitted
+## until they are set.
+##
+## The rates below have to land on a walk and on a sprint rather than on a walk and on standing
+## still: a walk is already two thirds of a sprint, so interpolating up from zero would put a walk
+## at nearly the sprinting rate and leave the sprint with nothing left to say.
+@export var walking_speed: float = 0.0
+@export var sprinting_speed: float = 0.0
 ## Puffs a second at a walk, and at a sprint. Between the two it is interpolated by speed, so the
-## trail thickens as the player opens up rather than switching over.
+## trail thickens as the owner opens up rather than switching over.
 @export var walking_rate: float = 14.0
 @export var sprinting_rate: float = 34.0
 ## Under this the body counts as standing still and nothing is emitted — otherwise a player turning
@@ -39,12 +52,6 @@ func _ready() -> void:
 	if _body == null:
 		set_process(false)
 		return
-	# The two speeds the body actually travels at, read off the player rather than repeated here, so
-	# the rates land on a walk and on a sprint instead of on a walk and on standing still. A walk is
-	# already two thirds of a sprint, so interpolating up from zero would have put a walk at nearly
-	# the sprinting rate and left the sprint with nothing left to say.
-	_walk_speed = maxf(Player.MOVE_SPEED, 0.001)
-	_top_speed = maxf(Player.SPRINT_SPEED, _walk_speed + 0.001)
 	# Deferred, like the head-look's modifier: a component's `_ready` runs while its parent is still
 	# setting up its own children, and an `add_child` there is dropped. The emitter then never enters
 	# the tree, emits nothing, and is reported as a leak at exit — which is how this was found.
@@ -64,6 +71,16 @@ func _process(_delta: float) -> void:
 
 
 func _build() -> void:
+	# Read here rather than in `_ready`: a child is made ready before its parent, so an owner that
+	# sets these in its own `_ready` has not done it yet when this component's runs. A body that
+	# never said how fast it walks gets no dust rather than a guess — two speeds invented here would
+	# be somebody else's figures written down a second place.
+	if walking_speed <= 0.0 or sprinting_speed <= 0.0:
+		set_process(false)
+		return
+	_walk_speed = maxf(walking_speed, 0.001)
+	_top_speed = maxf(sprinting_speed, _walk_speed + 0.001)
+
 	var mesh := SphereMesh.new()
 	mesh.radius = puff_size * 0.5
 	mesh.height = puff_size
@@ -75,7 +92,6 @@ func _build() -> void:
 	look.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	look.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	look.vertex_color_use_as_albedo = true
-	# Dust does not cast anything, and thirty puffs that did would cost more than the dust is worth.
 	mesh.material = look
 
 	var how := ParticleProcessMaterial.new()
@@ -109,6 +125,7 @@ func _build() -> void:
 	_particles.lifetime = puff_life
 	_particles.emitting = false
 	_particles.local_coords = false
+	# Dust does not cast anything, and thirty puffs that did would cost more than the dust is worth.
 	_particles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# Behind the body and at the ground: the puff belongs where the foot left, not where the hips are.
 	_particles.position = Vector3(0.0, 0.05, 0.15)
