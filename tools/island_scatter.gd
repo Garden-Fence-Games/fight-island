@@ -52,6 +52,37 @@ static func populate(
 	return population
 
 
+## One population of several models — the sizes of one cluster — as a single parent holding every
+## size's batches, so the island still has one `Grass`, one `Bushes`, one `Palms`. `by_size` holds
+## one transform list per mesh. With `share_materials`, every mesh after the first wears the first
+## one's materials.
+static func populate_family(
+	name: String,
+	meshes: Array[ArrayMesh],
+	by_size: Array,
+	chunk: float,
+	fades_at: float = 0.0,
+	casts_shadow: bool = true,
+	share_materials: bool = true
+) -> Node3D:
+	var family := Node3D.new()
+	family.name = name
+	var worn := meshes[0]
+	for size: int in meshes.size():
+		var mesh := meshes[size]
+		if size > 0 and share_materials:
+			for surface: int in mesh.get_surface_count():
+				var own := mini(surface, worn.get_surface_count() - 1)
+				mesh.surface_set_material(surface, worn.surface_get_material(own))
+		var label := "%s%d" % [name, size + 1]
+		var population := populate(label, mesh, by_size[size], chunk, fades_at, casts_shadow)
+		for batch: Node in population.get_children():
+			population.remove_child(batch)
+			family.add_child(batch)
+		population.free()
+	return family
+
+
 ## The transforms bucketed by the grid cell they stand in.
 static func by_cell(transforms: Array[Transform3D], chunk: float) -> Dictionary:
 	var cells: Dictionary = {}

@@ -385,12 +385,14 @@ func _check_the_palms_are_the_size_of_palms(island: Node) -> void:
 	if batches.is_empty():
 		_failures.append("the island has no palms")
 		return
-	var model := batches[0].multimesh.mesh.get_aabb().size.y
 	var shortest := INF
 	var tallest := 0.0
 	# Every chunk, not the first: the scatter is split across a grid, and one cell is a corner of
 	# the island. A palm three times the size of the fight standing anywhere else would pass.
 	for instance: MultiMeshInstance3D in batches:
+		# Each batch's own model, measured to its crown: a pair of palms is a different mesh from a
+		# single one, and its smaller tree does not make the cluster taller.
+		var model := instance.multimesh.mesh.get_aabb().end.y
 		var buffer := instance.multimesh.buffer
 		var stride := _stride(instance.multimesh)
 		for index: int in instance.multimesh.instance_count:

@@ -92,7 +92,26 @@ stays in the same wind as everything else rather than becoming the one motionles
 `build_island.gd` decides per surface: a shipped material with an albedo texture keeps it and gets a
 white tint; one without is looked up in the palette by its part name, as before.
 
-**`palm_tree_palm_tree.png` is committed although it is derived.** Godot's glTF importer lifts an
+**What grows comes in clusters of three sizes.** `grass_1..3`, `bush_1..3` and `palm_tree_1..2`
+are Purple-Sigil's ready-made clusters — one plant, a few, a thicket — each source in
+`art-source/models/` under the same name. `IslandFoliage` draws which size stands at a spot from a
+mix that slides from mostly singles by the water to mostly thickets inland, and every size of a
+family wears the smallest one's material, since they share one painted texture. `palm_tree_2` is a
+pair, and gets one collider spanning both trunks.
+
+**The scattered rocks are `rock_1..7`**, bare (`1`, `2`, `7`) and mossy (`3` to `6`), singles and
+clusters, each painted on its own sheet so they keep their own materials. `IslandRocks` makes moss
+follow the grass's gradient — bare on the sand, mostly mossed inland — and holds the two four-metre
+pillars to a farmer's height: under a camera that never turns, anything taller is a wall. The
+authored formations and the pebbles are still Kenney's.
+
+**The ground's green is written for the renderer, not picked by eye.** The terrain's vertex colours
+are read as linear, so a green chosen the way a painter would comes out washed almost to white —
+which is how the island had pale ground under its grass. `GRASS_GREEN` in `build_island.gd` is the
+shaded value, and the grass itself is tinted toward yellow by `IslandFoliage.GRASS_TINT`.
+
+**The extracted textures (`palm_tree_1_palm_tree.png` and the like) are committed although they
+are derived.** Godot's glTF importer lifts an
 embedded texture out into a file beside the model, and the baked `island.tscn` then references that
 file by path — so a repository without it is a repository where the island does not load. Its
 sidecar imports it **VRAM Compressed**, which is the reason not to fight the extraction: the same
@@ -157,7 +176,9 @@ Two things it gets right that are easy to get wrong:
   inward and headlands that reach out.
 - **Scatter density comes from noise, not from minimum spacing.** An even minimum-distance spread
   is the most regular arrangement there is, which is exactly why it looks planted. Clumps and bare
-  ground read as nature.
+  ground read as nature. The grass broke this rule for a while — sixty centimetres between tufts,
+  saturated at eight thousand of them — and read as a planted grid; its clusters now only refuse
+  to sit squarely on one another, and `test_island_foliage` fails if they fall back into step.
 
 Palms and rocks big enough to walk around collide; grass, pebbles and fronds never do — getting
 stuck on a bush is worse than any realism it buys. Only the six authored formations are cut out of
@@ -203,6 +224,24 @@ reaches 61.3 m to the farthest corner of the farthest chunk it still frames.
 | Rocks | 432 | 80 | 34,560 | 7,040 |
 | Pebbles | 1,500 | 16 | 24,000 | 2,528 |
 | **Scatter** | | | **867,080** | **262,988** |
+
+**Since the clusters**, held for the whole island (submitted not re-measured):
+
+| Population | Singles · groups · thickets | Held |
+|---|---:|---:|
+| Grass | 2,789 × 35 · 1,920 × 210 · 1,691 × 365 | 1,118,030 |
+| Bushes | 85 × 128 · 28 × 384 · 7 × 896 | 27,904 |
+| Palms | 269 × 692 · 111 pairs × 1,048 | 302,476 |
+| **Scatter**, with rocks and pebbles | | **1,483,610** |
+
+The new bushes cost a ninth of the old one, which settles the paragraph below. The grass costs
+nearly four times what the tufts did — a thicket is ten tufts' triangles, and there are twice as
+many clusters as the first cut, by request. `IslandFoliage.GRASS_COUNT` is the dial, and the first
+one to turn if a frame comes up short.
+
+**A painted leaf is cut out, not blended.** `foliage.gdshader` takes the texture's alpha with a
+scissor at one half, so the bushes' card edges vanish without sorting a MultiMesh against itself.
+An unset texture reads opaque white, so nothing unpainted changes.
 
 Add the actors — the player is 21,888 triangles and a farmer 12,792, so twelve of them is 153,504 —
 and a busy frame is a little over four hundred thousand triangles.

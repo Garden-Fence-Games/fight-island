@@ -63,7 +63,13 @@ void vertex() {
 }
 
 void fragment() {
-	ALBEDO = tint * texture(albedo_texture, UV).rgb;
+	// Cut out rather than blended: a painted leaf's alpha is where the leaf ends, and a MultiMesh of
+	// blended cards would have to be sorted against itself every frame. An unset texture reads white
+	// and fully opaque, so nothing without a cut-out changes.
+	vec4 painted = texture(albedo_texture, UV);
+	ALBEDO = tint * painted.rgb;
+	ALPHA = painted.a;
+	ALPHA_SCISSOR_THRESHOLD = 0.5;
 	ROUGHNESS = surface_roughness;
 	SPECULAR = 0.15;
 }

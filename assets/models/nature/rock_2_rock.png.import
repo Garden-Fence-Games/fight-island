@@ -2,21 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bkvdmhvk3yprx"
-path.s3tc="res://.godot/imported/bush_bush.png-67257c0b23d616ca7bb2a16934889ae6.s3tc.ctex"
-path.etc2="res://.godot/imported/bush_bush.png-67257c0b23d616ca7bb2a16934889ae6.etc2.ctex"
+uid="uid://da5lmo3moe5i7"
+path.s3tc="res://.godot/imported/rock_2_rock.png-290855e004fa4bbb8fcc578c41bca5e7.s3tc.ctex"
+path.etc2="res://.godot/imported/rock_2_rock.png-290855e004fa4bbb8fcc578c41bca5e7.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "66247c1f90ae00424fc08ec2de1ce4cc"
+"md5": "e1608cb4cb5b527e2eaa416cef6892a9"
 }
 
 [deps]
 
-source_file="res://assets/models/nature/bush_bush.png"
-dest_files=["res://.godot/imported/bush_bush.png-67257c0b23d616ca7bb2a16934889ae6.s3tc.ctex", "res://.godot/imported/bush_bush.png-67257c0b23d616ca7bb2a16934889ae6.etc2.ctex"]
+source_file="res://assets/models/nature/rock_2_rock.png"
+dest_files=["res://.godot/imported/rock_2_rock.png-290855e004fa4bbb8fcc578c41bca5e7.s3tc.ctex", "res://.godot/imported/rock_2_rock.png-290855e004fa4bbb8fcc578c41bca5e7.etc2.ctex"]
 
 [params]
 

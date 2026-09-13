@@ -28,10 +28,11 @@ answers the second; this one is the answer the player is owed.
 
 ## Assets
 
-The island's stone and huts come from two CC0 packs by the same author. Everything that grows on
-it — the palms, the grass, the bushes — is ours, and so are the gulls; the player, the farmer and the
-pirate are modelled rigs, and the gun and the stick ride in the player's. The terrain itself is
-still built from Godot primitives — see [asset-pipeline.md](asset-pipeline.md).
+The island's pebbles, its six rock formations and its huts come from two CC0 packs by the same
+author. Everything that grows on it — the palms, the grass, the bushes — is ours, and so are the
+scattered rocks and the gulls; the player, the farmer and the pirate are modelled rigs, and the gun
+and the stick ride in the player's. The terrain itself is still built from Godot primitives — see
+[asset-pipeline.md](asset-pipeline.md).
 
 | File | Source | Author | Licence | Added |
 |---|---|---|---|---|
@@ -48,9 +49,10 @@ still built from Godot primitives — see [asset-pipeline.md](asset-pipeline.md)
 | `assets/models/char_pirate.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-13 |
 | `assets/fonts/oswald_medium.ttf` | [Google Fonts](https://fonts.google.com/specimen/Oswald) | The Oswald Project Authors | SIL OFL 1.1 | 2026-09-13 |
 | `assets/fonts/inter_semibold.ttf` | [Google Fonts](https://fonts.google.com/specimen/Inter) | The Inter Project Authors | SIL OFL 1.1 | 2026-09-12 |
-| `assets/models/nature/palm_tree.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-12 |
-| `assets/models/nature/grass_tuft.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
-| `assets/models/nature/bush.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/nature/palm_tree_1..2.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-12 |
+| `assets/models/nature/grass_1..3.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/nature/bush_1..3.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/nature/rock_1..7.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/bird.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/bird_fly.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/stone_largeD.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |

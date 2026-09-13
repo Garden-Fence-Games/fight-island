@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://bttiieqrsuay3"
-path="res://.godot/imported/palm_tree.glb-d2841f20d58f8db79edf5f886b755123.scn"
+uid="uid://cejkxdxr5badi"
+path="res://.godot/imported/grass_3.glb-b0a860fb56da655cc30ee68355f2635c.scn"
 
 [deps]
 
-source_file="res://assets/models/nature/palm_tree.glb"
-dest_files=["res://.godot/imported/palm_tree.glb-d2841f20d58f8db79edf5f886b755123.scn"]
+source_file="res://assets/models/nature/grass_3.glb"
+dest_files=["res://.godot/imported/grass_3.glb-b0a860fb56da655cc30ee68355f2635c.scn"]
 
 [params]
 
