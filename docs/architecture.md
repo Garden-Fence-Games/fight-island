@@ -97,10 +97,9 @@ to `AnimationComponent.play_clip(clip, seconds)` and nothing else has to move.
 
 `Attack` is **one** state driven by `AttackData`. The nine player attacks are data, not nine states.
 
-The same applies to the enemies: **one `enemy.tscn`, two `EnemyData` resources on it.** The
-farmhand and the reaper differ by their stats, their attack and their material — not by two scenes
-to keep in sync. A third archetype on the same rig would be a `.tres`, not a branch; the pirate has
-a scene of his own only because he wears a different model.
+The same applies to the enemies: **one `enemy.tscn` and one `EnemyData` on it** — The
+the farmhand is the only archetype on it. A second one on the same rig would be a `.tres` and a
+material, not a branch; the pirate has a scene of his own only because he wears a different model.
 
 ## Data-driven balance
 
@@ -810,8 +809,8 @@ on 36 bearings and asks the frustum where the ground leaves the frame:
 
 The blind side is **bearing 130°**, down-screen — the strip of ground between the player and the
 camera, which falls off the bottom of the frame. It is very nearly half the arm, whatever the arm
-is, which is what fixes the lower end of the zoom range: a reaper strikes from 2.8 m and covers
-1.8 m more while he winds up, so under **4.6 m** of visible ground his swing begins off-screen.
+is, which is what fixes the lower end of the zoom range: a pirate strikes from 2.0 m and covers
+2.4 m more while he winds up, so under **4.4 m** of visible ground his swing begins off-screen.
 Eleven metres is the first step of the wheel clear of that. The floor was six until this was
 measured, and six shows 2.75 m.
 
@@ -954,8 +953,6 @@ answering a question the others cannot:
 - **`verify_view`** measures where the blind side *is*, by marching 36 bearings outward until the
   ground leaves the frame, then holds what depends on the answer: a melee swing begins on screen at
   every zoom the wheel reaches, and a dropped weapon lands where the player can see it.
-- **`verify_playfield`** walks every square metre the fight can reach and fails on a corner where a
-  160° sweep leaves nowhere to dodge — the reaper's question.
 ## Wind and water
 
 Both are shaders, and both are shaders for the same reason: the thing that has to move is drawn

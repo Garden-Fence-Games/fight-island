@@ -7,11 +7,7 @@ extends Node
 
 const ARENA: String = "res://scenes/world/arena.tscn"
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
-const REAPER: String = "res://data/enemies/reaper.tres"
-## The least the two archetypes may differ in brightness. Hue is not enough: the camera is high, the
-## bodies are small, and a player who cannot tell a bruiser from a swarm body has no way to choose
-## what to do about either. Measured the way an eye weighs the channels.
-const GREYSCALE_GAP: float = 0.15
+const PIRATE: String = "res://data/enemies/pirate.tres"
 const SETTLE_FRAMES: int = 8
 ## The closest the spawn search will ever put a body to the player. Written out rather than read off
 ## SpawnDirector, because a check that agrees with whatever that class says is not a check — and
@@ -94,9 +90,6 @@ func _run() -> void:
 	await _check_walking_up_to_him_starts_the_chase()
 	await _check_a_hit_wakes_him_from_any_distance()
 	await _check_noticing_spreads_to_the_men_beside_him()
-	_check_the_reaper_matches_the_table()
-	_check_the_two_farmers_differ_in_greyscale()
-	await _check_the_sweep_covers_the_sides_and_nothing_else()
 	await _check_a_sidestep_still_beats_a_farmhand()
 	await _check_one_swing_never_shrinks_another()
 	# Last of the checks, because it is the one that kills the sparring partner on purpose — and
@@ -508,7 +501,7 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"combat OK — hit, perfect, chain, lockout, parry, the reaper's arc through a second "
+				"combat OK — hit, perfect, chain, lockout, parry, one swing through a second "
 				+ "man's swing, a combo finished for double money, and a "
 				+ "farmer who waits until he notices you"
 			)
@@ -635,86 +628,9 @@ func _spawn_extra(where: Vector3) -> Enemy:
 	return director.spawner.spawn_at(load(FARMHAND) as EnemyData, where)
 
 
-## The reaper's row of docs/game-design.md, asserted against the resource that drives him.
-func _check_the_reaper_matches_the_table() -> void:
-	var data := load(REAPER) as EnemyData
-	if data == null or data.attack == null:
-		_fail("there is no reaper to check")
-		return
-	var wanted := {
-		"health": 90.0,
-		"move_speed": 2.4,
-		"poise": 30.0,
-		"attack_range": 2.8,
-	}
-	for field: String in wanted:
-		if not is_equal_approx(data.get(field), wanted[field]):
-			_fail("the reaper's %s should be %s, is %s" % [field, wanted[field], data.get(field)])
-	if data.money != 5:
-		_fail("a reaper should be worth 5, is worth %d" % data.money)
-	var swing := data.attack
-	var timing := {"damage": 16.0, "windup": 0.75, "active": 0.18, "recovery": 0.95}
-	for field: String in timing:
-		if not is_equal_approx(swing.get(field), timing[field]):
-			_fail("the sweep's %s should be %s, is %s" % [field, timing[field], swing.get(field)])
-	if not is_equal_approx(swing.reach, 2.8) or not is_equal_approx(swing.arc_degrees, 160.0):
-		_fail(
-			(
-				"the sweep should be 2.8 m across 160°, is %.1f m across %.0f°"
-				% [swing.reach, swing.arc_degrees]
-			)
-		)
-
-
-## Told apart at a glance from a high camera, which means told apart with the colour taken out.
-func _check_the_two_farmers_differ_in_greyscale() -> void:
-	var archetypes := [FARMHAND, REAPER]
-	for first: int in archetypes.size():
-		for second: int in range(first + 1, archetypes.size()):
-			var one := load(archetypes[first]) as EnemyData
-			var other := load(archetypes[second]) as EnemyData
-			if one == null or other == null:
-				continue
-			var gap := absf(_brightness(one.tint) - _brightness(other.tint))
-			if gap < GREYSCALE_GAP:
-				_fail(
-					(
-						"%s and %s are %.2f apart in greyscale, they need %.2f"
-						% [one.display_name, other.display_name, gap, GREYSCALE_GAP]
-					)
-				)
-
-
-func _brightness(colour: Color) -> float:
-	return colour.r * 0.2126 + colour.g * 0.7152 + colour.b * 0.0722
-
-
-## The character, in three positions.
-##
-## A body that steps to the side stays inside the sweep where the same step would take it clear of a
-## farmhand — that is the whole reason the reaper exists, and it is the reason the parry has to have
-## been taught by wave 3. The second is the edge the box got wrong: its corner is not the weapon's
-## reach.
-##
-## The third is the far side: a body behind him is not swept, because a sweep is not a spin.
-func _check_the_sweep_covers_the_sides_and_nothing_else() -> void:
-	var reaper := _lease(REAPER)
-	if reaper == null:
-		_fail("could not lease a reaper")
-		return
-	_hold_still(reaper, true)
-	if not await _swing_reaches(reaper, 70.0, 2.0):
-		_fail("stepping to the side should not take the player out of a 160° sweep")
-	if await _swing_reaches(reaper, 170.0, 2.0):
-		_fail("the sweep reached behind the reaper — it is a sweep, not a spin")
-	if await _swing_reaches(reaper, 45.0, 3.4):
-		_fail("the sweep reached 3.4 m on a 2.8 m weapon — the corner of the box, not the scythe")
-	_hold_still(reaper, false)
-	reaper.retire()
-
-
-## And the contrast that gives the reaper its meaning: against 60° of farmhand, the same sidestep
-## works. Without this the check above would pass on any arc wide enough, including every arc.
+## A sidestep beats the farmhand, and it has to keep beating him. His arc is 60° and it is the
+## narrowest in the game — widen it by accident and the one answer the tutorial teaches stops
+## working, which is the kind of change nobody notices until a player is cornered by a swarm.
 func _check_a_sidestep_still_beats_a_farmhand() -> void:
 	_hold_still(_enemy, true)
 	if await _swing_reaches(_enemy, 70.0, 1.2):
@@ -722,28 +638,28 @@ func _check_a_sidestep_still_beats_a_farmhand() -> void:
 	_hold_still(_enemy, false)
 
 
-## **Two bodies swinging at once, and neither one's reach is the other's.** The melee pool is two by
-## day and three at night, so from wave 3 — where the reaper joins the band beside the farmhand —
-## this is an ordinary fight rather than a corner of one.
+## **Two bodies swinging at once, and neither one's reach is the other's.** The pool is two by day
+## and three at night, so from wave 4 — where the pirate joins the band beside the farmhand — this
+## is an ordinary fight rather than a corner of one.
 ##
 ## It is the one case a check that arms a single hitbox cannot see, and it is the case that was
 ## broken: the box `_fit_to` resizes came out of the enemy scene as a sub-resource, and a scene
 ## sub-resource is handed to every instance rather than copied, so all thirty-two pooled bodies
-## shared one. A farmhand arming during the reaper's active frames pulled that box in to its own
-## 1.6 m, and a player stepping inside the scythe's 2.8 m after that was never reported to it.
+## shared one. A farmhand arming during a longer body's active frames pulled that box in to its own
+## 1.6 m, and a player stepping inside the longer reach after that was never reported to it.
 func _check_one_swing_never_shrinks_another() -> void:
-	var reaper := _lease(REAPER)
-	if reaper == null:
-		_fail("could not lease a reaper")
+	var pirate := _lease(PIRATE)
+	if pirate == null:
+		_fail("could not lease a pirate")
 		return
-	_hold_still(reaper, true)
+	_hold_still(pirate, true)
 	_hold_still(_enemy, true)
-	var caught := await _swing_catches_a_player_who_steps_in(reaper, 2.6, _enemy)
+	var caught := await _swing_catches_a_player_who_steps_in(pirate, 1.9, _enemy)
 	_hold_still(_enemy, false)
-	_hold_still(reaper, false)
-	reaper.retire()
+	_hold_still(pirate, false)
+	pirate.retire()
 	if not caught:
-		_fail("a farmhand arming mid-sweep took the reaper's reach down to its own")
+		_fail("a farmhand arming mid-swing took the pirate's reach down to its own")
 
 
 ## Stops a body thinking for the length of a measurement, and it has to cover **all** of it rather
