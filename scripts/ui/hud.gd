@@ -27,7 +27,7 @@ const MINUTES_IN_AN_HOUR: float = 60.0
 const BANNER_LIFE: float = 2.2
 const BANNER_FADE: float = 0.4
 
-var _pulsing: Tween = null
+var _pulsing: Dictionary[Control, Tween] = {}
 
 @onready var wave_chip: PanelContainer = $Root/TopRight/WaveChip
 @onready var wave: Label = $Root/TopRight/WaveChip/Wave
@@ -113,15 +113,20 @@ func _on_rounds_scavenged(_rounds: int) -> void:
 func _pulse(chip: Control) -> void:
 	if bool(Settings.get_value(&"access_reduce_flashing")):
 		return
-	if _pulsing != null and _pulsing.is_valid():
-		_pulsing.kill()
+	# Per chip, not per HUD. The money and the ammo both answer to the same kill — the payout and the
+	# round come off one body — so a single handle meant the second pulse killed the first one's
+	# tween and left that chip stretched for the rest of the run.
+	var running: Tween = _pulsing.get(chip)
+	if running != null and running.is_valid():
+		running.kill()
 	# Read every time rather than cached in _ready: a chip is laid out after the first frame, and it
 	# resizes when the balance gains a digit or a translation lengthens the string.
 	chip.pivot_offset = chip.size * 0.5
 	chip.scale = Vector2.ONE
-	_pulsing = create_tween()
-	_pulsing.tween_property(chip, "scale", Vector2.ONE * PULSE_SCALE, PULSE_UP)
-	_pulsing.tween_property(chip, "scale", Vector2.ONE, PULSE_DOWN)
+	var tween := create_tween()
+	tween.tween_property(chip, "scale", Vector2.ONE * PULSE_SCALE, PULSE_UP)
+	tween.tween_property(chip, "scale", Vector2.ONE, PULSE_DOWN)
+	_pulsing[chip] = tween
 
 
 ## Nothing before the first wave: a chip reading zero is furniture, and the director takes a

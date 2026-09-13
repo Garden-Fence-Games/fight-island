@@ -44,6 +44,7 @@ func _run() -> void:
 	await _check_damage_numbers()
 	await _check_credit_numbers()
 	await _check_the_chip_answers_money_arriving()
+	await _check_one_kill_punches_both_chips()
 	await _check_the_banner_announces_the_wave()
 	_check_stats_are_tallied()
 	_put_the_run_back()
@@ -196,6 +197,34 @@ func _check_the_chip_answers_money_arriving() -> void:
 		_fail("the chip punched with reduced flashing asked for")
 	Settings.set_value(&"access_reduce_flashing", restore)
 	await _settle(chip)
+
+
+## The payout and the scavenged round come off one body, so both chips answer the same kill. A HUD
+## that kept one tween handle for the two of them left the money chip stretched wherever its tween
+## had got to when the round arrived, and nothing put it back.
+func _check_one_kill_punches_both_chips() -> void:
+	var chip := _hud.get_node("Root/TopRight/MoneyChip") as PanelContainer
+	var ammo := _hud.get_node("Root/BottomRight/Ammo") as PanelContainer
+	var restore: Variant = Settings.get_value(&"access_reduce_flashing")
+	Settings.set_value(&"access_reduce_flashing", false)
+	await _settle(chip)
+	await _settle(ammo)
+
+	GameState.earn(25)
+	EventBus.rounds_scavenged.emit(2)
+	await _sample()
+	if chip.scale.x <= 1.0 or ammo.scale.x <= 1.0:
+		_fail("a kill that paid and dropped a round did not punch both chips")
+
+	await get_tree().create_timer(PULSE_SETTLE, true, false, true).timeout
+	if not is_equal_approx(chip.scale.x, 1.0) or not is_equal_approx(ammo.scale.x, 1.0):
+		_fail(
+			(
+				"a chip was left stretched after both pulsed — money %.3f, ammo %.3f"
+				% [chip.scale.x, ammo.scale.x]
+			)
+		)
+	Settings.set_value(&"access_reduce_flashing", restore)
 
 
 ## Waits out a pulse and puts the chip back, so one case's tween can never be read as the next
