@@ -63,10 +63,10 @@ licence = "prototype only — not CC0, see below"
 
 [sub_resource type="Resource" id="Resource_j4xby"]
 script = ExtResource("1_2q5yg")
-subject = "assets/fonts/badeen_display.ttf"
+subject = "assets/fonts/oswald_medium.ttf"
 source = "Google Fonts"
-source_url = "https://fonts.google.com/specimen/Badeen+Display"
-author = "The Badeen Project Authors"
+source_url = "https://fonts.google.com/specimen/Oswald"
+author = "The Oswald Project Authors"
 licence = "SIL OFL 1.1"
 
 [sub_resource type="Resource" id="Resource_t6bex"]
