@@ -18,6 +18,7 @@ extends Node
 
 const ARENA: String = "res://scenes/world/arena.tscn"
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
+const THROWER: String = "res://data/enemies/thrower.tres"
 const SETTLE_FRAMES: int = 8
 ## Where the sparring partners stand: inside the stick's 2.4 m, either side of straight ahead, far
 ## enough apart that only a wide arc reaches both.
@@ -55,6 +56,8 @@ func _run() -> void:
 	await _check_a_swap_drops_the_chain()
 	await _check_a_pickup_hands_the_weapon_over()
 	await _check_the_gun_on_the_ground_is_the_gun()
+	await _check_a_thrower_retired_mid_throw_hands_its_token_back()
+	_check_a_weapon_is_owed_from_its_wave_rather_than_offered_on_it()
 	_put_the_run_back()
 	_report()
 
@@ -378,6 +381,109 @@ func _check_the_gun_on_the_ground_is_the_gun() -> void:
 			)
 		)
 	dropped.queue_free()
+
+
+## The ranged pool is one token wide, so a token nobody hands back is every later thrower standing
+## in the field politely waiting its turn — for the rest of the run, with nothing saying so.
+##
+## `Enemy.release_token` refuses to let go while this body still has a stone in the air, which is
+## right for a living thrower and wrong for one leaving the fight: `sleep()` went through the same
+## call, so a body retired by `spawner.clear()` at the end of a wave only managed to *owe* the
+## token, and `revive()` then cleared the debt on the way out of the pool.
+##
+## The commonest way in is the ordinary one — a wave ending while a stone is still travelling — so
+## that is what this stages.
+func _check_a_thrower_retired_mid_throw_hands_its_token_back() -> void:
+	var tokens := get_tree().get_first_node_in_group(&"attack_tokens") as AttackTokens
+	if tokens == null or _director == null or _director.spawner == null:
+		_fail("the arena has no attack tokens or no spawner")
+		return
+	var data := load(THROWER) as EnemyData
+	var thrower := _director.spawner.spawn_at(
+		data, _player.global_position + Vector3(0.0, 0.0, 12.0)
+	)
+	if thrower == null:
+		_fail("no thrower could be stood up")
+		return
+	await get_tree().physics_frame
+	if not thrower.claim_token():
+		_fail("a lone thrower could not claim the one ranged token")
+		return
+	# Aimed far enough away that the stone is unquestionably still in the air on the next line.
+	thrower.throw_at(_player.global_position)
+	if not tokens.holds(thrower, true):
+		_fail("a thrower with a stone in the air is not holding the ranged token")
+		return
+	thrower.retire()
+	if tokens.holds(thrower, true):
+		_fail(
+			(
+				"a thrower retired with a stone in the air kept the ranged token — every later "
+				+ "thrower will close, circle, and never commit"
+			)
+		)
+		return
+	# And the body that comes out of the pool next can actually use it. Checked separately, because
+	# `claim` answers yes to an id the pool already holds: a stale entry is invisible to the body
+	# that left it and only ever bites the next one.
+	var second := _director.spawner.spawn_at(
+		data, _player.global_position + Vector3(0.0, 0.0, 13.0)
+	)
+	if second == null:
+		_fail("no second thrower could be stood up")
+		return
+	await get_tree().physics_frame
+	if not second.claim_token():
+		_fail("the next thrower out of the pool could not claim the ranged token")
+	second.retire()
+
+
+## A pickup is a node in the arena and nothing saves it, so a weapon offered on exactly one wave is
+## a weapon a resumed run never sees. The stick is due on wave 2; a run that comes back on wave 3
+## with an empty bag still has to be given one.
+func _check_a_weapon_is_owed_from_its_wave_rather_than_offered_on_it() -> void:
+	var pickups := _arena.get_node_or_null("PickupDirector") as PickupDirector
+	if pickups == null:
+		_fail("the arena has no pickup director")
+		return
+	var stick := Arsenal.find(&"stick")
+	if stick == null or stick.found_at_wave <= 0:
+		_fail("the stick has no wave to turn up on")
+		return
+	# A clean bag, which is what a resumed run that never found the stick has.
+	GameState.begin_run()
+	EventBus.wave_started.emit(stick.found_at_wave + 1, 0)
+	if _stick_on_the_island(pickups) != 1:
+		_fail(
+			(
+				(
+					"the stick is due on wave %d and a run resumed on wave %d was given %d of them — "
+					+ "a weapon nobody picked up is lost for the whole run"
+				)
+				% [stick.found_at_wave, stick.found_at_wave + 1, _stick_on_the_island(pickups)]
+			)
+		)
+	# And exactly one. Owed-from-here without a memory of what has been dropped is a stick a wave.
+	EventBus.wave_started.emit(stick.found_at_wave + 2, 0)
+	if _stick_on_the_island(pickups) != 1:
+		_fail(
+			(
+				(
+					"the island carries %d sticks after two waves — a weapon already lying there must "
+					+ "not be dropped again"
+				)
+				% _stick_on_the_island(pickups)
+			)
+		)
+
+
+func _stick_on_the_island(pickups: PickupDirector) -> int:
+	var found := 0
+	for child: Node in pickups.get_children():
+		var pickup := child as WeaponPickup
+		if pickup != null and pickup.weapon_id == &"stick":
+			found += 1
+	return found
 
 
 ## The mesh the player rig carries, read straight out of the model rather than through the pickup,

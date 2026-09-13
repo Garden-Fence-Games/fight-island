@@ -145,8 +145,9 @@ func revive(
 	# that only shows up five waves in. Cheap to call when nothing is running, so it is called always.
 	if ragdoll != null:
 		ragdoll.stop()
-	_stone = null
-	_token_owed = false
+	# The stone and the token it was owed are let go by `sleep()`, which every body passes through on
+	# its way into the pool. Clearing them here as well is what used to swallow the debt: the token
+	# was never released and the ranged pool kept a retired body's id for the rest of the run.
 	if data != null:
 		poise_left = data.poise
 		if health != null:
@@ -169,6 +170,9 @@ func revive(
 ## Out of the fight and out of the way, without announcing anything. Used for the pool's own
 ## pre-warm, where thirty-two spawn notifications would be thirty-two lies.
 func sleep() -> void:
+	# **Before the token, not after.** `release_token` refuses to let go while this body still has a
+	# stone in the air, and a body being handed back to the pool has no second throw left to protect.
+	_forget_the_stone()
 	release_token()
 	remove_from_group(&"enemies")
 	if hurtbox != null:
@@ -401,6 +405,25 @@ func _on_stone_spent() -> void:
 	if _token_owed:
 		_token_owed = false
 		release_token()
+
+
+## Lets go of a stone still travelling, and of the debt it was holding the ranged token for.
+##
+## **A body leaving the fight owes nothing.** `release_token` defers while a stone is in the air so
+## that a throw whose recovery is shorter than its own stone's flight cannot put a second one up —
+## but `sleep()` goes through the same call, so a thrower retired by `spawner.clear()` at the end of
+## a wave, or killed mid-throw, only managed to set `_token_owed`. `revive()` then cleared the debt
+## on the way out of the pool and the ranged pool of 1 kept that body's id for the rest of the run:
+## every later thrower closed, circled, and never committed.
+##
+## The stone is disconnected as well as forgotten. It outlives the life that threw it — it is
+## parented to the arena, not to the thrower — so left connected it would report `spent` into
+## whatever life this body is leased for next and release a token that life's own stone was holding.
+func _forget_the_stone() -> void:
+	if _stone != null and is_instance_valid(_stone) and _stone.spent.is_connected(_on_stone_spent):
+		_stone.spent.disconnect(_on_stone_spent)
+	_stone = null
+	_token_owed = false
 
 
 ## The push is the attack's own stagger figure and the direction is the way the blow travelled.
