@@ -116,6 +116,9 @@ jobs:
       # only form that survives greyscale and twenty metres — and that a fight never builds one.
       # The two accessibility settings are checked as consumers, because both were stored and read
       # by nothing until this.
+      - name: Verify the knockdown
+        run: tools/run-check.sh res://tools/verify_knockdown.tscn
+
       - name: Verify the effects
         run: tools/run-check.sh res://tools/verify_vfx.tscn
 
