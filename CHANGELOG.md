@@ -6,6 +6,28 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **The accessibility switches are held together, not one at a time.** Each already had a check of
+  its own — the shake slider means nought at nought, reduce-flashing damps the flare and leaves the
+  debris, no switch is dead — and one at a time is not the question a player who needs all of them
+  is asking. `verify_access` puts every switch at the end of its travel at the same time and holds
+  the floor under them: **a switch may take away emphasis, it may never take away a signal.**
+  - What survives, whatever is turned off: the **telegraph**, because it is geometry and a lean
+    outlives greyscale and every switch in the menu; the **difference between a perfect hit and an
+    ordinary one**, in more than one way that is neither colour nor brightness — more debris, thrown
+    faster, lasting longer, with damage numbers off by default so the effect carries the whole
+    message; and a **clock nobody left stopped**, after a burst of requests and not merely after
+    one.
+  - Written down once in `docs/game-design.md` under *The floor under the switches*, so the next
+    effect has a rule to be written against rather than a precedent to be guessed at.
+  - The check found nothing broken in the game, and one thing broken in itself: the first version
+    loaded the arena rather than `main.tscn`, so it emitted hitstop requests into a bus where
+    `HitFeedback` was not listening and passed without testing anything. The mutation caught it.
+    `verify_feel` warns about that exact trap in its own docstring, and this is the second time the
+    project has paid for it.
+
+
 ### Fixed
 
 - **The itch.io publish had the wrong account.** `ITCH_USER` was the repository owner, and the page

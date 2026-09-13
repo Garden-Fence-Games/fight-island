@@ -103,3 +103,8 @@ scripts/actors/enemy/states/enemy_idle.gd|const PATIENCE: float = 10.0|const PAT
 scripts/systems/spawn_director.gd|const MAX_PLAYER_DISTANCE: float = 18.0|const MAX_PLAYER_DISTANCE: float = 60.0|verify_waves
 scripts/resources/tide_data.gd|@export var drains: float = 20.0|@export var drains: float = 0.0|verify_drowning
 scripts/resources/tide_data.gd|@export var drains_from: float = 1.1|@export var drains_from: float = 0.2|verify_drowning
+# The accessibility floor: a switch may take away emphasis and never a signal. A perfect hit is not
+# in this table on purpose — it differs in three ways and `verify_access` asks for two, so no single
+# line can take the difference away. That redundancy is the design, and a mutation that survives it
+# would be reporting the redundancy as a hole.
+scripts/systems/hit_feedback.gd|if duration <= 0.0 or not bool(Settings.get_value(&"access_hitstop")):|if duration <= 0.0:|verify_access
