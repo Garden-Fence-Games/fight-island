@@ -70,6 +70,33 @@ func heal(amount: float) -> float:
 	return current_health - before
 
 
+## Points away, with no invulnerability window and no `damaged` signal. **The sea is not a blow**:
+## i-frames would make drowning a thing the player could out-wait, and the flash, the numbers and
+## the shake all belong to something that struck them. `died` still fires — a death is a death
+## whatever took the last point of it.
+##
+## `minimum_health` is honoured for the reason it exists: the wave that teaches the parry cannot
+## kill, and a player who walks into the sea during it is owed the same promise.
+func drain(amount: float) -> float:
+	if not is_alive() or amount <= 0.0:
+		return 0.0
+	var before := current_health
+	current_health = maxf(current_health - amount, minimum_health)
+	# **A bar cannot hold a billionth of a point.** A drain lands on the floor by subtraction rather
+	# than by a blow that overshoots it, and `0.333333 - 0.333333` is not exactly zero in a float:
+	# the last frame left a denormal, `current_health <= 0.0` was false, nobody died — and the frame
+	# after that was swallowed by the no-change guard below, because a billionth is inside
+	# `is_equal_approx`. The player sat at zero health, alive, for ever.
+	if is_zero_approx(current_health):
+		current_health = minimum_health
+	if is_equal_approx(current_health, before):
+		return 0.0
+	health_changed.emit(current_health, max_health)
+	if current_health <= 0.0:
+		died.emit()
+	return before - current_health
+
+
 func set_max_health(value: float, heal_to_full: bool) -> void:
 	max_health = maxf(value, 1.0)
 	current_health = max_health if heal_to_full else minf(current_health, max_health)
