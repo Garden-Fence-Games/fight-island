@@ -29,8 +29,8 @@ bindings.
 | `dodge` | `Space` | A | 0.2 |
 | `sprint` | `Shift` | L3 | 0.2 |
 | `reload` | `R` | X | 0.2 |
-| `interact` | `E` | Y | 0.2 |
-| `weapon_next` | `Tab` | RB, D-pad right | 0.2 |
+| `interact` | `F` | Y | 0.2 |
+| `weapon_next` | `E` | RB, D-pad right | 0.2 |
 | `weapon_prev` | — | LB, D-pad left | 0.2 |
 | `weapon_fists` / `_stick` / `_gun` | `1` `2` `3` | — (cycle instead) | 0.2 |
 | `pause` | `Esc` | Start | 0.2 |
@@ -43,8 +43,15 @@ bindings.
 | `menu_next_tab` | `E` | RB | 0.2 |
 
 `menu_prev_tab` and `menu_next_tab` reuse the shoulder buttons `weapon_prev` and `weapon_next`
-already hold, and `E` already means `interact`. Nothing collides: the options screen is only ever
-open with the game paused or from the title, so no weapon swap and no interaction is listening.
+already hold, and `E` is `weapon_next` itself. Nothing collides: the options screen is only ever
+open with the game paused or from the title, so no weapon swap is listening.
+
+**`E` swaps the weapon and `F` picks one up**, and it is worth saying which way round that is,
+because the obvious assignment is the other one. Swapping is something the player does *in* a fight,
+several times a wave, under pressure; picking up is something they do once, standing still, with a
+prompt on the ground telling them which key it is. The hand belongs to the thing done often, and the
+thing done once can afford to be read. The prompt renders whatever `interact` is bound to, so
+rebinding moves the letter on the ground with it.
 
 `music_mute` takes **R3**, the one pad button the fight had left. The right stick aims rather than
 looks, so clicking it is the only face or stick button not already spoken for — and muting the
@@ -104,9 +111,6 @@ legacy and only survives through a special case in the engine.
 **The cursor stays visible.** Nothing captures it, because nothing needs relative mouse motion. That
 also settles how the gun will aim: at the cursor's position on the ground plane, which is what a
 mouse player expects from this camera.
-
-**`weapon_next` shares `Tab` with `ui_focus_next`.** Harmless: weapon switching is polled in the
-gameplay state, focus traversal only matters when a `Control` has focus.
 
 ## Rebinding
 
