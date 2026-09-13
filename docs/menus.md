@@ -279,8 +279,9 @@ Every element listens on the `EventBus` and holds no reference to the player, so
 death, a restart and a player that does not exist yet. The health figure is the one thing allowed
 to raise its voice: under a third of maximum it turns red.
 
-**The ammo panel only exists with a ranged weapon in hand.** A melee player never sees a magazine
-of zero — the panel is absent, not empty.
+**The ammo panel only exists with a ranged weapon in hand.** A melee player never sees a count of
+zero — the panel is absent, not empty. It reads the rounds the gun has against its ceiling, `12 / 30`:
+there is no magazine to show.
 
 Damage numbers float off the enemy that was hit and are **off by default**. The design says the hit
 should be felt; the numbers are a debugging comfort, and they live in Options → Gameplay.

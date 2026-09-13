@@ -112,12 +112,15 @@ func _check_ammo_follows_the_weapon() -> void:
 	var gun := WeaponData.new()
 	gun.is_ranged = true
 	EventBus.weapon_equipped.emit(gun)
-	EventBus.ammo_changed.emit(8, 24)
+	EventBus.ammo_changed.emit(8)
 	await get_tree().process_frame
 	if not ammo.visible:
 		_fail("ammo should appear with a ranged weapon in hand")
-	if _label("Root/BottomRight/Ammo/Rows/Row/Magazine").text != "08":
-		_fail("magazine should read 08")
+	if _label("Root/BottomRight/Ammo/Rows/Row/Rounds").text != "08":
+		_fail("the round count should read 08")
+	var cap := str(Arsenal.find(&"gun").ammo_cap)
+	if _label("Root/BottomRight/Ammo/Rows/Row/Cap").text != cap:
+		_fail("the ceiling should read %s" % cap)
 
 
 ## The row of weapons: what is in hand, what is in the bag, and what is not in it yet. The three
@@ -436,10 +439,10 @@ func _check_a_late_hud_reads_the_bag() -> void:
 	var ammo := late.get_node("Root/BottomRight/Ammo") as PanelContainer
 	if not ammo.visible:
 		_fail("a HUD built with the gun already in the bag never showed the ammo panel")
-	var magazine := (late.get_node("Root/BottomRight/Ammo/Rows/Row/Magazine") as Label).text
-	var reserve := (late.get_node("Root/BottomRight/Ammo/Rows/Row/Reserve") as Label).text
-	if magazine != "04" or reserve != "24":
-		_fail("a late HUD reads %s/%s, expected 04/24" % [magazine, reserve])
+	var rounds := (late.get_node("Root/BottomRight/Ammo/Rows/Row/Rounds") as Label).text
+	var cap := (late.get_node("Root/BottomRight/Ammo/Rows/Row/Cap") as Label).text
+	if rounds != "28" or cap != "30":
+		_fail("a late HUD reads %s/%s, expected 28/30" % [rounds, cap])
 	late.queue_free()
 	await get_tree().process_frame
 	GameState.end_run()

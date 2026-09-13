@@ -366,7 +366,7 @@ The importer strips these from the node name and generates the body:
 Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 
 **Player:** `idle`, `walk`, `run`, `sprint`, `dodge_roll`, `parry`, `parry_success`, `hurt`,
-`pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, plus `idle_gun` and `walk_gun` — the
+`pickup`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, plus `idle_gun` and `walk_gun` — the
 gun is held across the whole body, so standing and walking with it are their own clips rather than a
 layer over the unarmed ones. The stick has the same pair, `idle_stick` and `walk_stick`, both
 looping, and a roll of its own, `dodge_roll_stick`. `drowning` loops too — see below. `new_run_awakening` is the player waking up at

@@ -36,7 +36,7 @@ func enter(message: Dictionary) -> void:
 	if _attack == null:
 		transition_to(&"Idle")
 		return
-	# Rounds before stamina: a trigger pulled on an empty magazine must not also cost breath.
+	# Rounds before stamina: a trigger pulled on an empty gun must not also cost breath.
 	if not _take_ammo():
 		transition_to(&"Idle")
 		return
@@ -175,7 +175,7 @@ func _begin_recovery() -> void:
 	player.open_chain(_attack, _index)
 
 
-## Whether there was anything to fire. An empty magazine says so on the bus rather than silently
+## Whether there was anything to fire. An empty gun says so on the bus rather than silently
 ## refusing, because a press that produces nothing at all is a press the player thinks was lost.
 func _take_ammo() -> bool:
 	if _attack.ammo_cost <= 0:

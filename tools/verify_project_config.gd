@@ -17,7 +17,6 @@ const REQUIRED_ACTIONS: PackedStringArray = [
 	"parry",
 	"dodge",
 	"sprint",
-	"reload",
 	"interact",
 	"weapon_next",
 	"weapon_prev",

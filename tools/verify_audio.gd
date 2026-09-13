@@ -50,7 +50,6 @@ const EXPECTED: Array[StringName] = [
 	&"step_sand",
 	&"step_water",
 	&"roll",
-	&"reload",
 	&"dry_fire",
 	&"hurt",
 	&"enemy_down",
@@ -537,7 +536,6 @@ func _check_the_right_sound_answers_each_signal() -> void:
 		[&"step_sand", func() -> void: EventBus.footstep_taken.emit(false)],
 		[&"step_water", func() -> void: EventBus.footstep_taken.emit(true)],
 		[&"roll", func() -> void: EventBus.player_state_changed.emit(&"Dodge")],
-		[&"reload", func() -> void: EventBus.weapon_reloaded.emit()],
 		[&"dry_fire", func() -> void: EventBus.weapon_dry_fired.emit()],
 		[&"pickup", func() -> void: EventBus.weapon_found.emit(&"gun")],
 		[&"wave_cleared", func() -> void: EventBus.wave_cleared.emit(3, 40)],
@@ -574,9 +572,9 @@ func _check_the_right_sound_answers_each_signal() -> void:
 ## Both halves: the round that leaves one behind speaks, and the ones before it do not. Without the
 ## second, a warning on every shot would pass — and a warning on every shot is no warning.
 func _check_the_last_round_announces_itself() -> void:
-	var kept := GameState.loadout.magazine
+	var kept := GameState.loadout.rounds
 	for rounds: int in [4, 2, 1]:
-		GameState.loadout.magazine = rounds
+		GameState.loadout.rounds = rounds
 		EventBus.weapon_fired.emit(_an_attack(false))
 		for _frame: int in DRAINS_WITHIN:
 			if _anything_playing():
@@ -588,7 +586,7 @@ func _check_the_last_round_announces_itself() -> void:
 		elif rounds != 1 and warned:
 			_fail("the gun warned about running dry with %d rounds still in it" % rounds)
 		await _silence_everything()
-	GameState.loadout.magazine = kept
+	GameState.loadout.rounds = kept
 
 
 ## The voice carrying one particular sound, or null. `_now_playing` answers with whatever it finds
