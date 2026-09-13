@@ -7,7 +7,7 @@ extends Resource
 ## the two cannot drift apart while nobody is looking.
 
 @export_group("Size")
-## The roster is a budget the island draws on to stay populated for a whole six-minute wave, not a
+## The roster is a budget the island draws on to stay populated for a whole four-minute wave, not a
 ## queue to be emptied — `max_alive` is what the player actually faces at once. It is generous on
 ## purpose: a wave that runs out of farmers halfway through its night is a wave that stops.
 @export var base_count: int = 12
