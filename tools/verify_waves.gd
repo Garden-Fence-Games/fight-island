@@ -12,7 +12,7 @@ const ARENA: String = "res://scenes/world/arena.tscn"
 const CONFIG: String = "res://data/waves/standard.tres"
 ## Long enough for a shortened wave to run its day and its night, with room for refused points.
 const WAVE_PATIENCE: float = 12.0
-## A wave is six minutes of real time, which is not a thing a headless check can sit through. The
+## A wave is four minutes of real time, which is not a thing a headless check can sit through. The
 ## cycle is shrunk to this and the proportions of its phases are kept, so what is checked is the
 ## rule — the wave ends when its night does — and not the number.
 const A_QUICK_WAVE: float = 2.4
