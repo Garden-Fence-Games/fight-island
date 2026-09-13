@@ -374,12 +374,21 @@ behind — which is the idle pose, and stands him up for one frame at the start 
 
 **Pirate (`char_pirate.glb`, Ennemi_2):** `idle`, `walk`, `chase`, `attack`, `get_up_back`,
 `get_up_front`, on its own Mixamo rig with the same 33 bone names as the farmer's. `idle`, `walk`
-and `chase` loop. **Nothing in the game uses it yet** — no scene, no archetype — it is there to be
-wired. It was built the farmer's way: metres instead of a hundredth in `delta_scale`, grown by the
+and `chase` loop. It was built the farmer's way: metres instead of a hundredth in `delta_scale`, grown by the
 same 1.3 so the two stand the same height, and the stray frame-0 key dropped from both get-ups.
 `chase` is `Pirate_walk_attack`, the name the farmer's aware walk already has. `PirateWeapon` hangs
 off the right hand and every clip keys it where the source had it — it moves in both get-ups — so
 it needs no attaching. Its rest transform is not a grip; only the clips are.
+
+**His telegraph and his blow are slices of his `attack`.** He is the farmer's problem the other way
+round: the farmer had archetypes with no swing, the pirate has a swing and nothing that announces
+it. The clip is one movement across three states — the club goes up, holds, comes down, holds, and
+is lowered — so `char_pirate_stand_ins.tres` cuts `windup_club` and `attack_club` out of it rather
+than inventing either. Where to cut was **measured**: the shoulder's turn per twenty-fifth of the
+clip runs 3 15 28 42 56 53 45 32 11 4 0 0 0 2 10 23 44 53 55 51 36 27 18 10 1 0 0, which is a lift,
+a still, a strike and a still, and the two floors between them are the cuts. Both ends of a slice
+are sampled rather than snapped to the nearest key, so the telegraph hands the blow a body it is
+already standing in — a two-tenths strike has no time to spend on a crossfade.
 
 **Bird:** `bird_fly` (wings beating) and `bird_fly_idle` (wings held out, gliding), both looping, on
 the flying rig `assets/models/nature/bird_fly.glb`. A startled bird only beats; a cruising one

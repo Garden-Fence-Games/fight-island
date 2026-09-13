@@ -463,6 +463,15 @@ rather than staying on the screen as a switch that moves nothing.
 where bodies come from, which owns the bodies. They are children rather than exported node
 references, because node exports do not resolve in a hand-written `.tscn` (ADR 0006).
 
+**The pool has one shelf per body.** A leased enemy keeps the rig it was made with — the ragdoll
+fitted its capsules to those vertices, the animation found that skeleton, the head-look built its
+modifier on it — so swapping a pirate into a farmer at revive would mean rebuilding every component
+that ever looked at the rig. `EnemyPool.bodies` maps an `EnemyData.id` to a scene of its own and
+`lease(id)` picks the shelf; everything absent from that map is made from `enemy_scene`, which is
+how the three farmers go on sharing one rig. The shared shelf holds thirty-two and each extra holds
+sixteen — `max_alive` tops out at twelve, so sixteen covers a wave that rolled nothing else and
+still has bodies going into the ground.
+
 `WaveDirector.start_wave(n)` reads `WaveConfig`, emits `wave_started`, then **drip-feeds**: the
 count is how many arrive in total, `max_alive(n)` is how many the player faces at once, and the gap
 between those two is what makes a late wave pressure rather than a wall. `enemy_died` brings the

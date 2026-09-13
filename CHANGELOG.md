@@ -8,6 +8,27 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The pirate comes ashore.** The rig arrived with #192 and nothing used it. He is an archetype
+  now, and he is the hardest blow in the game: **22 damage**, nearly three farmhands, a quarter of
+  the player's health off one mistake.
+  - Two things keep that fair. He telegraphs for **0.80 s**, the longest wind-up there is, with the
+    lowest and longest warning of the four — a pirate committing carries under a crowd at night,
+    which is when he turns up. And he is **rare**: a twentieth of a wave, a twelfth in the last
+    band, rolled per spawn rather than scheduled. His share comes out of the farmhand's, so the
+    triangle the other three form is exactly the one it was.
+  - **His telegraph and his blow are cut out of the swing he already had.** The clip is one movement
+    across three states, so `char_pirate_stand_ins.tres` slices it rather than inventing either
+    half. Where to cut was measured off the shoulder's turn per twenty-fifth of the clip — a lift, a
+    still, a strike, a still — and both ends of a slice are sampled rather than snapped to the
+    nearest key, so the wind-up hands the blow a body it is already standing in.
+  - **A body is pooled with the rig it was made with.** The ragdoll fitted its capsules to those
+    vertices and the animation found that skeleton, so a pirate revived into a farmer's body would
+    mean rebuilding every component that ever looked at a rig. `EnemyPool` keeps a shelf per body
+    and `EnemyData.id` picks it; the three farmers go on sharing one.
+  - `Enemy.body` is a `PackedScene` put on in `_enter_tree` rather than an instance saved into the
+    scene — an inherited scene cannot swap a child that is already one, and `enemy_pirate.tscn`
+    overrides the rig, the data and the stand-ins and nothing else.
+
 - **The stick is in hand.** The clips arrived last; this is them reaching the game.
   - `idle_stick`, `walk_stick` and `dodge_roll_stick` play, off one line in
     `data/weapons/stick.tres` — `clip_suffix = &"_stick"` — and no code at all. That is what the

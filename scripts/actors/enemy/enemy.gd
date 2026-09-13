@@ -1,7 +1,8 @@
 class_name Enemy
 extends CharacterBody3D
-## A farmer. Which of the three he is comes from EnemyData and a material - not from a second
-## scene to keep in sync.
+## A farmer, or a pirate. Which archetype he is comes from EnemyData and a material; the three
+## farmers share one rig and one scene, and only a body wearing a different model needs a scene of
+## its own — an inherited one that overrides the rig, the data and nothing else.
 ##
 ## A body is leased and returned rather than created and freed: at thirty on screen, allocating and
 ## collecting shows up in the frame. Everything that differs between one life and the next lives in
@@ -30,8 +31,18 @@ const KNOCKDOWN: KnockdownData = preload("res://data/combat/knockdown.tres")
 ## these, so a rig that ships at another height fails rather than throwing from the hip.
 const THROW_HEIGHT: float = 1.44
 const CHEST_HEIGHT: float = 1.0
+## The rigs are modelled facing the camera and a body's forward is -Z, so every one of them is
+## turned about. One figure rather than a transform per scene: a rig that disagrees is a pipeline
+## fault to fix at the export, not a number to override here.
+const FACING: float = PI
 
 @export var data: EnemyData = null
+## The rig this body wears. Instanced here rather than saved into the scene, because a scene that
+## inherits another cannot swap a child that is already an instance — and a second archetype with a
+## model of its own is exactly what inheritance is for. Everything under it is found at runtime
+## anyway: the ragdoll builds its bones, the head-look builds its modifier, the animation component
+## looks up the player. The rig was already replaceable; this is what makes it choosable.
+@export var body: PackedScene = null
 
 ## Set by the pool before the body enters the tree. A hand-placed enemy wakes up fighting; a pooled
 ## one waits to be leased.
@@ -90,6 +101,22 @@ var _repath_clock: float = 0.0
 @onready var animation: AnimationComponent = get_node_or_null("Animation") as AnimationComponent
 @onready var ragdoll: RagdollComponent = get_node_or_null("Ragdoll") as RagdollComponent
 @onready var agent: NavigationAgent3D = $Agent
+
+
+## The rig goes on before any component wakes up: children are readied before their parent, and
+## every one of them looks for a skeleton the moment it is. Guarded because a pooled body enters
+## the tree twice — once into the pool, once onto the island — and the second one would dress it
+## again.
+func _enter_tree() -> void:
+	if body == null or has_node(^"Visual"):
+		return
+	var rig := body.instantiate() as Node3D
+	if rig == null:
+		push_error("%s was given a body that is not a Node3D." % name)
+		return
+	rig.name = "Visual"
+	rig.rotate_y(FACING)
+	add_child(rig)
 
 
 func _ready() -> void:

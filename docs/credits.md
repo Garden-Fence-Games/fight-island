@@ -44,6 +44,7 @@ still built from Godot primitives — see [asset-pipeline.md](asset-pipeline.md)
 | `assets/models/char_farmer_stand_ins.tres` — generated draw and blow clips | built by `tools/build_clips.tscn` from the rig's own idle | Purple-Sigil, posed | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/char_farmer.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-13 |
 | `assets/models/char_pirate.glb` — mesh, weapon, textures and clips | original, Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/char_pirate_stand_ins.tres` — generated telegraph and blow | built by `tools/build_clips.tscn` out of the rig's own swing | Purple-Sigil, posed | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/char_pirate.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-13 |
 | `assets/fonts/oswald_medium.ttf` | [Google Fonts](https://fonts.google.com/specimen/Oswald) | The Oswald Project Authors | SIL OFL 1.1 | 2026-09-13 |
 | `assets/fonts/inter_semibold.ttf` | [Google Fonts](https://fonts.google.com/specimen/Inter) | The Inter Project Authors | SIL OFL 1.1 | 2026-09-12 |

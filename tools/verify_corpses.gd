@@ -261,7 +261,9 @@ func _check_a_dead_farmer_is_laid_down_and_the_body_comes_back() -> void:
 				% [_leased_while_alive, spare - 1]
 			)
 		)
-	if pool.made_count() > EnemyPool.SIZE:
+	# The shared shelf plus one reserve for every archetype that brought a rig of its own.
+	var shelves := EnemyPool.SIZE + EnemyPool.RESERVE * pool.bodies.size()
+	if pool.made_count() > shelves:
 		_fail(
 			"the pool grew to %d bodies, which means it could not reclaim one" % pool.made_count()
 		)

@@ -73,7 +73,7 @@ const MUSIC: Array[StringName] = [&"music_ground", &"music_pulse", &"music_edge"
 ## they are already two rows above it.
 const FAMILIES: Array[StringName] = [&"stick", &"gun"]
 ## The farmhand is the base and keeps the plain `telegraph` id, so he is not in this list either.
-const ARCHETYPES: Array[StringName] = [&"reaper", &"thrower"]
+const ARCHETYPES: Array[StringName] = [&"reaper", &"thrower", &"pirate"]
 ## The one looping sound, checked on its own terms.
 const BED: StringName = &"surf"
 ## How close a baked peak has to be to the peak it declared. Tight: this is arithmetic, not taste,
@@ -901,8 +901,8 @@ func _report() -> void:
 		print(
 			(
 				"audio OK — every sound is its own waveform, three "
-				+ "weapons land with three bodies and one signature, three archetypes wind up "
-				+ "from three pitches and the thrower's stands highest, the last round says so, "
+				+ "weapons land with three bodies and one signature, four archetypes wind up "
+				+ "from four pitches and the thrower's stands highest, the last round says so, "
 				+ "a swing through air passes rather than snapping, and the surf comes back "
 				+ "round without a tick"
 			)

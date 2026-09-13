@@ -17,6 +17,14 @@ extends Node
 
 const PLAYER: String = "res://scenes/actors/player.tscn"
 const ENEMY: String = "res://scenes/actors/enemy.tscn"
+const PIRATE_BODY: String = "res://scenes/actors/enemy_pirate.tscn"
+## Which archetypes wear which body. Written out rather than read off `EnemyPool.bodies`, for the
+## reason every list in this file is: a check that takes its list from the thing it is checking
+## passes on a mapping that lost a row.
+const WORN_BY: Dictionary[String, Array] = {
+	ENEMY: ["farmhand", "reaper", "thrower"],
+	PIRATE_BODY: ["pirate"],
+}
 const PIPELINE: String = "res://docs/asset-pipeline.md"
 const ENEMY_DATA: String = "res://data/enemies"
 const RIG: String = "res://assets/models/char_player.glb"
@@ -37,15 +45,23 @@ const LENT: Array[String] = [
 const FARMER_LENT: Array[String] = [
 	"windup_punch", "attack_punch", "windup_sweep", "attack_scythe", "windup_throw", "attack_throw"
 ]
+const PIRATE_RIG: String = "res://assets/models/char_pirate.glb"
+const PIRATE_LENT: Array[String] = ["windup_club", "attack_club"]
 ## The farmer's attacks, and the joint a blow is read off. A draw and the blow that follows it are
 ## one movement split across two states, so the blow has to begin on the pose the draw ended on —
 ## and a blow is shorter than the crossfade into it, which is what makes that a requirement rather
 ## than a nicety.
-const BLOWS: Array[String] = [
-	"res://data/attacks/farmhand_swing.tres",
-	"res://data/attacks/reaper_sweep.tres",
-	"res://data/attacks/thrower_stone.tres",
-]
+## Kept per body, because which rig is asked about is the whole question: a pirate's club is not a
+## clip the farmer's rig has any business carrying.
+const BLOWS: Dictionary[String, Array] = {
+	ENEMY:
+	[
+		"res://data/attacks/farmhand_swing.tres",
+		"res://data/attacks/reaper_sweep.tres",
+		"res://data/attacks/thrower_stone.tres",
+	],
+	PIRATE_BODY: ["res://data/attacks/pirate_club.tres"],
+}
 const SWINGING_JOINT: String = "Armature/Skeleton3D:mixamorig_RightArm"
 ## How far apart the draw's last pose and the blow's first may be, in degrees. A tenth is a rounding
 ## difference; a degree is somebody having edited one of the two.
@@ -104,8 +120,9 @@ func _run() -> void:
 	var documented := _documented_gaps()
 	var asked: Array[String] = []
 	var missing: Array[String] = []
-	for pair: Array in [[PLAYER, _player_attacks()], [ENEMY, _enemy_attacks()]]:
-		await _ask_one_actor(pair[0] as String, pair[1] as Array, asked, missing)
+	await _ask_one_actor(PLAYER, _player_attacks(), asked, missing)
+	for body: String in WORN_BY:
+		await _ask_one_actor(body, _enemy_attacks(WORN_BY[body]), asked, missing)
 
 	if asked.size() < ASKED_AT_LEAST:
 		_fail(
@@ -167,7 +184,10 @@ func _player_attacks() -> Array:
 	return named
 
 
-func _enemy_attacks() -> Array:
+## What the archetypes wearing one body name. Asked per body rather than all at once: a pirate's
+## club is not a clip the farmer's rig has any business carrying, and asking every rig for every
+## archetype's blow would report gaps that are not gaps.
+func _enemy_attacks(wearing: Array) -> Array:
 	var named: Array = []
 	var directory := DirAccess.open(ENEMY_DATA)
 	if directory == null:
@@ -175,8 +195,11 @@ func _enemy_attacks() -> Array:
 		return named
 	for name: String in directory.get_files():
 		var data := load("%s/%s" % [ENEMY_DATA, name.trim_suffix(".remap")]) as EnemyData
-		if data != null and data.attack != null:
-			named.append(data.attack.animation)
+		if data == null or data.attack == null or not wearing.has(String(data.id)):
+			continue
+		named.append(data.attack.animation)
+		if data.attack.windup_animation != &"":
+			named.append(data.attack.windup_animation)
 	return named
 
 
@@ -186,6 +209,7 @@ func _enemy_attacks() -> Array:
 func _check_the_stand_ins_are_lent_and_not_the_rigs() -> void:
 	_check_one_rig_lends_nothing_of_its_own(RIG, LENT)
 	_check_one_rig_lends_nothing_of_its_own(FARMER_RIG, FARMER_LENT)
+	_check_one_rig_lends_nothing_of_its_own(PIRATE_RIG, PIRATE_LENT)
 
 
 ## Read off the file rather than out of the cache, and that is not fussiness. `AnimationComponent`
@@ -311,7 +335,12 @@ func _same_length(player: AnimationPlayer, clip: String, wanted: float, source: 
 ## tuned length that promise is invisible, because the right answer and no answer are both speed
 ## one.
 func _check_the_farmer_actually_plays_them() -> void:
-	var enemy := (load(ENEMY) as PackedScene).instantiate() as Enemy
+	for body: String in BLOWS:
+		await _check_one_body_plays_them(body, BLOWS[body])
+
+
+func _check_one_body_plays_them(body: String, blows: Array) -> void:
+	var enemy := (load(body) as PackedScene).instantiate() as Enemy
 	add_child(enemy)
 	await get_tree().physics_frame
 	var anim := enemy.get_node_or_null("Animation") as AnimationComponent
@@ -319,7 +348,7 @@ func _check_the_farmer_actually_plays_them() -> void:
 		_fail("the enemy carries no AnimationComponent and no StateMachine")
 		enemy.queue_free()
 		return
-	for path: String in BLOWS:
+	for path: String in blows:
 		var attack := load(path) as AttackData
 		var data := _archetype_using(attack)
 		if data == null:
@@ -379,12 +408,17 @@ func _archetype_using(attack: AttackData) -> EnemyData:
 ## handover is a crossfade the blow is shorter than — so if the two poses are not the same pose, the
 ## strike is spent getting to its own first frame and the player sees nothing land.
 func _check_every_blow_starts_where_its_draw_ended() -> void:
-	var actor := (load(ENEMY) as PackedScene).instantiate()
+	for body: String in BLOWS:
+		await _check_one_body_joins_up(body, BLOWS[body])
+
+
+func _check_one_body_joins_up(body: String, blows: Array) -> void:
+	var actor := (load(body) as PackedScene).instantiate()
 	add_child(actor)
 	await get_tree().physics_frame
 	var anim := actor.get_node_or_null("Animation") as AnimationComponent
 	if anim != null and anim.animation_player != null:
-		for path: String in BLOWS:
+		for path: String in blows:
 			var attack := load(path) as AttackData
 			if attack == null:
 				_fail("%s is not an AttackData" % path)

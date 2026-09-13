@@ -82,6 +82,25 @@ const SWINGS: Array[String] = [
 ## The swing the other two are made of.
 const SWING_CLIP: String = "attack_stick_1"
 
+## The pirate, who is the other way round from the farmer: his rig carries a swing and nothing
+## announces it. The clip is one movement across three states — he raises the club, holds it, brings
+## it down, holds again, and lowers it — so the telegraph and the blow are **slices of it** rather
+## than anything invented. `EnemyWindUp` stretches the first to the wind-up actually being fought
+## and `EnemyAttack` plays the second over exactly the active window, which is what those two states
+## do for every archetype.
+const PIRATE_RIG: String = "res://assets/models/char_pirate.glb"
+const PIRATE_OUTPUT: String = "res://assets/models/char_pirate_stand_ins.tres"
+const PIRATE_BLOW: String = "res://data/attacks/pirate_club.tres"
+const PIRATE_CLIP: String = "attack"
+## Where the club stops going up and where it finishes coming down, as shares of that clip.
+##
+## **Measured, not guessed.** The shoulder's turn per twenty-fifth of the clip runs 3 15 28 42 56 53
+## 45 32 11 4 0 0 0 2 10 23 44 53 55 51 36 27 18 10 1 0 0 — a lift, a still, a strike, a still — and
+## these are the two floors between them. Splitting anywhere else puts the impact inside the
+## telegraph or the telegraph inside the blow.
+const PIRATE_DRAWN: float = 0.389
+const PIRATE_LANDED: float = 0.694
+
 ## The bone the skinned gun hangs off, and the two joints above it. Named rather than discovered,
 ## because a rig that renamed them has changed enough that a stand-in built from guesses would be
 ## worse than none.
@@ -154,7 +173,8 @@ func _ready() -> void:
 
 
 func _run() -> void:
-	get_tree().quit(0 if _player_stand_ins() and _farmer_stand_ins() else 1)
+	var built := _player_stand_ins() and _farmer_stand_ins() and _pirate_stand_ins()
+	get_tree().quit(0 if built else 1)
 
 
 ## What the player's rig is missing: three shots off the gun-carry pose and a guard off the
@@ -198,6 +218,26 @@ func _farmer_stand_ins() -> bool:
 		library.add_animation(attack.windup_animation, _draw_clip(standing, attack, BLOWS[path]))
 		library.add_animation(attack.animation, _swing_clip(standing, attack, BLOWS[path]))
 	return _save(library, FARMER_OUTPUT)
+
+
+## What the pirate's rig is missing: the two names his `AttackData` calls for, cut out of the swing
+## he already has.
+func _pirate_stand_ins() -> bool:
+	var swinging := _pose(PIRATE_RIG, PIRATE_CLIP)
+	var attack := load(PIRATE_BLOW) as AttackData
+	if swinging == null:
+		return false
+	if attack == null or attack.animation == &"" or attack.windup_animation == &"":
+		printerr("clips: %s does not name both a wind-up and a blow" % PIRATE_BLOW)
+		return false
+	var library := AnimationLibrary.new()
+	library.add_animation(
+		attack.windup_animation, _sliced(swinging, 0.0, PIRATE_DRAWN, attack.windup)
+	)
+	library.add_animation(
+		attack.animation, _sliced(swinging, PIRATE_DRAWN, PIRATE_LANDED, attack.active)
+	)
+	return _save(library, PIRATE_OUTPUT)
 
 
 func _save(library: AnimationLibrary, path: String) -> bool:
@@ -393,6 +433,44 @@ func _retimed(source: Animation, seconds: float) -> Animation:
 			var share := clampf(source.track_get_key_time(track, key) / span, 0.0, 1.0)
 			_insert(clip, made, kind, share * seconds, source.track_get_key_value(track, key))
 	return clip
+
+
+## A stretch of one of the rig's own clips, over a window of its own.
+##
+## Both ends are sampled rather than snapped to the nearest key, so the slice opens and closes
+## exactly on the pose the source held at that instant — which is what makes the telegraph hand the
+## blow a body it is already standing in, with no crossfade to spend a two-tenths strike on.
+func _sliced(source: Animation, opens: float, closes: float, seconds: float) -> Animation:
+	var clip := Animation.new()
+	clip.length = seconds
+	clip.loop_mode = Animation.LOOP_NONE
+	var span := maxf(source.length, 0.001)
+	var from := opens * span
+	var to := closes * span
+	var width := maxf(to - from, 0.001)
+	for track: int in source.get_track_count():
+		var kind := source.track_get_type(track)
+		var made := clip.add_track(kind)
+		clip.track_set_path(made, source.track_get_path(track))
+		_insert(clip, made, kind, 0.0, _sampled(source, track, kind, from))
+		for key: int in source.track_get_key_count(track):
+			var when := source.track_get_key_time(track, key)
+			if when <= from or when >= to:
+				continue
+			var value: Variant = source.track_get_key_value(track, key)
+			_insert(clip, made, kind, (when - from) / width * seconds, value)
+		_insert(clip, made, kind, seconds, _sampled(source, track, kind, to))
+	return clip
+
+
+func _sampled(source: Animation, track: int, kind: int, when: float) -> Variant:
+	if kind == Animation.TYPE_POSITION_3D:
+		return source.position_track_interpolate(track, when)
+	if kind == Animation.TYPE_ROTATION_3D:
+		return source.rotation_track_interpolate(track, when)
+	if kind == Animation.TYPE_SCALE_3D:
+		return source.scale_track_interpolate(track, when)
+	return null
 
 
 func _insert(clip: Animation, track: int, kind: int, when: float, value: Variant) -> void:
