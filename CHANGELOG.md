@@ -6,6 +6,25 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **The gun's recoil is physics rather than a clip.** The arm goes to the ragdoll for a tenth of a
+  second when the round leaves — thrown back and up at `AttackData.recoil` metres per second — and
+  the simulator's influence falls to nought across the window so it eases back onto the animation.
+  A shot never looks the same twice and never disagrees with where the body happened to be standing.
+  - The three generated recoils are gone. There is **one** clip now, `aim_gun`, and all three shots
+    fire from it: what the animation owes a shot is the body underneath it, and that body is the
+    same for a tap, a double tap and a hand cannon.
+  - **`aim_gun` carries no shooting arm**, and that is the whole trick. An AnimationPlayer and a
+    skeleton modifier both write bone poses and the clip wins — measured rather than assumed: with
+    the arm still in the clip the physical body swung five centimetres and the skin moved two
+    millimetres, and the same shot rendered against one with no recoil at all was pixel for pixel
+    the same picture. `mixamorig_RightHand` stays animated, so the revolver stays in the fist while
+    the arm is thrown.
+  - `verify_clips` holds both halves of that — no arm in the clip, the hand still in it — and
+    `verify_knockdown` fires a real shot and asserts the arm is handed over, the hips never are,
+    `is_running` stays false throughout, and the simulation is stopped when it ends.
+
 ### Added
 
 - **The pirate comes ashore.** The rig arrived with #192 and nothing used it. He is an archetype

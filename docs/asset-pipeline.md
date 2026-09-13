@@ -361,10 +361,13 @@ The importer strips these from the node name and generates the body:
 Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 
 **Player:** `idle`, `walk`, `run`, `sprint`, `dodge_roll`, `parry`, `parry_success`, `hurt`,
-`pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, `attack_gun_1/2/3`, plus
-`idle_gun` and `walk_gun` — the gun is held across the whole body, so standing and walking with it
-are their own clips rather than a layer over the unarmed ones. The stick has the same pair,
-`idle_stick` and `walk_stick`, both looping, and a roll of its own, `dodge_roll_stick`.
+`pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, plus `idle_gun` and `walk_gun` — the
+gun is held across the whole body, so standing and walking with it are their own clips rather than a
+layer over the unarmed ones. The stick has the same pair, `idle_stick` and `walk_stick`, both
+looping, and a roll of its own, `dodge_roll_stick`.
+
+**The gun has no attack clips and is not waiting for any.** All three shots play one held pose,
+`aim_gun`, and the kick is the ragdoll — see *The recoil is physics* below.
 
 **The player has no `death` clip and is not waiting for one.** The run ends by handing the body to
 the physics, the same `RagdollComponent` the farmers have used since they stopped sinking into the
@@ -460,12 +463,34 @@ now either exists on a rig or is lent by a stand-in. The heading stays whatever 
 the check reads the section, not the rows, so the next clip the game learns to ask for has a place
 to be written down rather than a section to re-invent.
 
-**The gun's three shots, the stick's second and third swings, the parry, and all three farmer blows
-are lent rather than authored.** They come from `assets/models/char_player_stand_ins.tres` and
-`assets/models/char_farmer_stand_ins.tres`, built by `tools/build_clips.tscn` from each rig's own
-poses — `idle_gun` for the shots, `idle` for the guard and for every farmer clip, and the authored
-`attack_stick_1` for the other two swings. The body is the one Purple-Sigil posed and only the
-movement is generated.
+**The shot's pose, the stick's second and third swings, the parry, and all the enemy blows are lent
+rather than authored.** They come from `assets/models/char_player_stand_ins.tres`,
+`assets/models/char_farmer_stand_ins.tres` and `assets/models/char_pirate_stand_ins.tres`, built by
+`tools/build_clips.tscn` from each rig's own poses — `idle_gun` for the shot, `idle` for the guard
+and for every farmer clip, the authored `attack_stick_1` for the other two swings, and the pirate's
+own `attack` sliced for his pair. The body is the one Purple-Sigil posed and only the movement is
+generated.
+
+### The recoil is physics
+
+`aim_gun` is the pose a shot is fired from, and **it carries no shooting arm**. There is only one of
+it, not one per shot: what the animation owes a shot is the body underneath it, and that body is the
+same for a tap, a double tap and a hand cannon. What differs is the kick, and the kick is
+`RagdollComponent.kick()` — the arm goes to the physics for a tenth of a second, thrown back and up
+at `AttackData.recoil` metres per second, and the simulator's influence falls from one to nought
+across that window so the arm eases back onto the clip instead of snapping onto it.
+
+**Leaving the arm out of the clip is what makes it possible, and it was measured rather than
+assumed.** An AnimationPlayer and a skeleton modifier both write bone poses, and the clip wins: with
+the arm still in `aim_gun` the physical body swung five centimetres and the skin moved two
+millimetres — the same recoil, rendered, was pixel-for-pixel the shot that had no recoil at all. So
+`mixamorig_RightArm` and `mixamorig_RightForeArm` are left out of the clip entirely and for the
+length of a shot they belong to the physics and to nothing else. `mixamorig_RightHand` stays
+animated, because the revolver hangs off it.
+
+A bone nobody animates keeps the pose it was last given, so the arm is where `idle_gun` left it
+until the physics moves it, and where the physics left it until `idle_gun` comes back.
+`verify_clips` holds both halves — no arm in the clip, and the hand still in it.
 
 The stick's chain is **revers, retour, assommoir**, and the rig carries the first of the three. The
 other two are that same swing again, stretched to their own windows — a repeat, and it is meant to
@@ -501,7 +526,7 @@ player can see they are open. `verify_clips` compares each stand-in's length aga
 retune that nobody rebaked fails rather than drifts.
 
 The component lends a stand-in **only** for a name the rig has no clip of, so exporting a
-hand-authored `attack_gun_1` or `parry` retires the generated one on the spot — nothing to delete,
+hand-authored `aim_gun` or `parry` retires the generated one on the spot — nothing to delete,
 no flag to flip. The check asserts that from both ends, so the day the rig grows its own it says so.
 
 ## Textures

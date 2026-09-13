@@ -45,20 +45,21 @@ const BLOWS: Dictionary[String, float] = {
 	"res://data/attacks/reaper_sweep.tres": 1.5,
 	"res://data/attacks/thrower_stone.tres": 1.25,
 }
-## The attacks to build a stand-in for, and the weight of the kick each one throws. Relative to the
-## single shot, which is one: the double tap puts two rounds down the same barrel at the same
-## instant, and the charged shot is the reason the player rations the magazine.
+## The clip a shot poses the body in. One, not three, and **it has no shooting arm in it.**
 ##
-## The spread is narrower than the damage is, and the rig is the reason rather than the fiction.
-## This head is nearly as wide as the body: past about thirty degrees the revolver swings across
-## the face instead of above it, and a charged shot scaled honestly off fifty-five damage did
-## exactly that. Measured by rendering the peak frame of all three, which is the only way to find
-## a ceiling that belongs to a mesh.
-const SHOTS: Dictionary[String, float] = {
-	"res://data/attacks/gun_single.tres": 1.0,
-	"res://data/attacks/gun_double.tres": 1.3,
-	"res://data/attacks/gun_charged.tres": 1.55,
-}
+## The kick is physics now: `PlayerAttack` throws the arm at the ragdoll when the round leaves and
+## the simulator eases it back. That only works if nothing else is writing those bones — an
+## AnimationPlayer and a skeleton modifier both write bone poses and the clip wins, which was
+## measured: the physical body swung five centimetres and the skin moved two millimetres. So the
+## two joints the recoil runs through are **left out of the clip entirely**, and for the length of a
+## shot the arm belongs to the physics and to nothing else.
+##
+## What the clip still owes is the pose underneath that — braced, gun out, legs where the artist put
+## them — and that pose is the same for a tap, a double tap and a hand cannon.
+const AIM_CLIP: StringName = &"aim_gun"
+## How long the held pose is. Any length would do — every track has one key, so stretching it to a
+## shot's duration is a no-op — and a second is what reads as a length in the inspector.
+const HELD: float = 1.0
 
 ## The stick's other two swings. The rig carries the backhand and only the backhand, so the return
 ## and the finisher are that same swing again over their own windows — stretched, not re-posed.
@@ -108,24 +109,6 @@ const SHOOTING_ARM: String = "mixamorig_RightArm"
 const SHOOTING_FOREARM: String = "mixamorig_RightForeArm"
 const BONE_PREFIX: String = "Armature/Skeleton3D:"
 
-## Local rotations away from the carry pose, in degrees, added to whatever the artist posed rather
-## than replacing it. Measured on this rig and not reasoned about: `idle_gun` already holds the gun
-## out level, so a shot is not an arm coming up — it is a braced arm whose muzzle jumps. On
-## `mixamorig_RightArm`, a positive turn about local X throws the muzzle upward and a positive turn
-## about local Z pushes the whole arm forward.
-##
-## The brace is small on purpose. The wind-up on a tap shot is a tenth of a second, and anything
-## larger than this reads as a second animation rather than as the arm stiffening.
-const AIM_ARM_LIFT: float = -5.0
-const AIM_ARM_REACH: float = 10.0
-const AIM_FOREARM_LIFT: float = -3.0
-## The kick, before the shot's weight is applied. Up and slightly back — a muzzle rising, not an arm
-## thrown over a shoulder. At the charged shot's weight this is forty degrees, which is as far as a
-## hand cannon should ever take an arm that has to be back on target within the recovery.
-const KICK_ARM_LIFT: float = 20.0
-const KICK_ARM_REACH: float = -7.0
-const KICK_FOREARM_LIFT: float = 11.0
-
 ## The guard, on both arms at once: hands up and in, forearms across. Larger than the shot's
 ## numbers because this is a whole-body read at eleven metres rather than a flick of one wrist.
 ##
@@ -139,15 +122,6 @@ const GUARD_FOREARM_REACH: float = 28.0
 ## How fast the hands come up. A guard that eases into place is a guard that is not up yet when the
 ## window it belongs to has already opened.
 const GUARD_SNAP: float = 0.06
-
-## How long the arm takes to come up. The wind-up is shorter than this for both tap shots, and then
-## the raise simply takes the whole wind-up; the charged shot is the one that has time to aim and
-## hold, which is what makes the hold read as a charge.
-const RAISE_SECONDS: float = 0.18
-## How long the muzzle is at the top of its kick, and how long it takes to come back down onto the
-## target. Short and then slower, because a recoil snaps and a recovery does not.
-const KICK_SECONDS: float = 0.05
-const RECOVER_SECONDS: float = 0.14
 
 ## The farmer's draw and his swing, in degrees on the shooting-side arm, before the archetype's
 ## depth is applied. The draw takes the arm up and back over the whole wind-up; the swing brings it
@@ -188,12 +162,7 @@ func _player_stand_ins() -> bool:
 	if swinging == null:
 		return false
 	var library := AnimationLibrary.new()
-	for path: String in SHOTS:
-		var attack := load(path) as AttackData
-		if attack == null or attack.animation == &"":
-			printerr("clips: %s is not an AttackData that names an animation" % path)
-			return false
-		library.add_animation(attack.animation, _shot_clip(carry, attack, SHOTS[path]))
+	library.add_animation(AIM_CLIP, _aim_clip(carry))
 	for path: String in SWINGS:
 		var attack := load(path) as AttackData
 		if attack == null or attack.animation == &"":
@@ -269,31 +238,31 @@ func _pose(rig_path: String, named: String) -> Animation:
 	return found
 
 
-## One shot, as long as the attack itself.
+## The pose a shot is fired from: the carry pose **minus the arm that fires it**.
 ##
 ## Every track the carry pose holds is copied across at a single key, so the clip poses the whole
-## body rather than leaving the legs wherever the last animation stopped them. Then the two joints
-## that fire the gun get the keys that make it a shot.
-func _shot_clip(carry: Animation, attack: AttackData, weight: float) -> Animation:
+## body rather than leaving the legs wherever the last animation stopped them — every track except
+## the shooting arm's and the shooting forearm's, which are the two the ragdoll is about to take.
+## A bone nobody animates keeps the pose it was last given, so the arm is where `idle_gun` left it
+## until the physics moves it, and where the physics left it until `idle_gun` comes back.
+func _aim_clip(carry: Animation) -> Animation:
 	var clip := Animation.new()
-	clip.length = attack.total_duration()
+	clip.length = HELD
 	clip.loop_mode = Animation.LOOP_NONE
 	for track: int in carry.get_track_count():
+		if _is_the_shooting_arm(carry.track_get_path(track)):
+			continue
 		_copy_pose_track(carry, track, clip)
-	_key_joint(
-		clip,
-		SHOOTING_ARM,
-		attack,
-		weight,
-		AIM_ARM_LIFT,
-		AIM_ARM_REACH,
-		KICK_ARM_LIFT,
-		KICK_ARM_REACH
-	)
-	_key_joint(
-		clip, SHOOTING_FOREARM, attack, weight, AIM_FOREARM_LIFT, 0.0, KICK_FOREARM_LIFT, 0.0
-	)
 	return clip
+
+
+## Whether a track drives one of the two joints the recoil runs through. Matched on the tail of the
+## path so a joint's position, rotation and scale are all caught — and only those two: the hand
+## below them is not simulated and the gun hangs off it, so leaving the hand animated is what keeps
+## the revolver in the fist while the arm is thrown.
+func _is_the_shooting_arm(path: NodePath) -> bool:
+	var named := String(path)
+	return named.ends_with(SHOOTING_ARM) or named.ends_with(SHOOTING_FOREARM)
 
 
 ## The guard, and the reason it is worth building rather than waiting for.
@@ -494,37 +463,6 @@ func _copy_pose_track(carry: Animation, track: int, clip: Animation) -> void:
 			clip.rotation_track_insert_key(made, 0.0, carry.rotation_track_interpolate(track, 0.0))
 		Animation.TYPE_SCALE_3D:
 			clip.scale_track_insert_key(made, 0.0, carry.scale_track_interpolate(track, 0.0))
-
-
-## Replaces one bone's single carry key with the five that make a shot: still at carry, up on aim,
-## held there until the ray is cast, kicked, and back down again before the recovery ends.
-func _key_joint(
-	clip: Animation,
-	bone: String,
-	attack: AttackData,
-	weight: float,
-	aim_lift: float,
-	aim_reach: float,
-	kick_lift: float,
-	kick_reach: float
-) -> void:
-	var track := _joint_track(clip, bone)
-	if track < 0:
-		return
-	var carry: Quaternion = clip.rotation_track_interpolate(track, 0.0)
-	var aim := carry * _turn(aim_lift, aim_reach)
-	var kick := carry * _turn(aim_lift + kick_lift * weight, aim_reach + kick_reach * weight)
-	clip.track_remove_key(track, 0)
-
-	var fired := attack.windup
-	var raised := minf(RAISE_SECONDS, fired)
-	clip.rotation_track_insert_key(track, 0.0, carry)
-	clip.rotation_track_insert_key(track, raised, aim)
-	if fired > raised:
-		clip.rotation_track_insert_key(track, fired, aim)
-	clip.rotation_track_insert_key(track, fired + KICK_SECONDS, kick)
-	clip.rotation_track_insert_key(track, fired + KICK_SECONDS + RECOVER_SECONDS, aim)
-	clip.rotation_track_insert_key(track, clip.length, carry)
 
 
 ## A turn away from the carry pose, composed from the two axes it was measured on rather than from
