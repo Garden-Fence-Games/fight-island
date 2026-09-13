@@ -6,6 +6,40 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **Everything is 6 dB quieter, and the figure is derived rather than tasted.** Four loud sounds
+  arrive together in a night wave and each was normalised as though it were alone; uncorrelated
+  sources sum as the root of the sum of squares, so four at 0.9 reached 1.8 and the master clipped.
+  One `HEADROOM` moves the whole mix down together — the table of declared peaks is the **shape** of
+  the mix and is untouched.
+- **The whole game is in A minor, and now it says so.** It was already mostly true — the bed, the
+  perfect parry and the perfect signature — and three sounds were in C and G: the wave sting, the
+  merchant and the two endings, which are the three most musical moments there are. The bed had the
+  same fault one level down: a stack of fifths leaves the key on the third step, and two layers were
+  reaching F sharp.
+- `SoundBank` — the signal work split out of `AudioManager`, which had reached the thousand-line
+  ceiling. The line is a real one: a decaying sine and sixteen-bit packing know nothing about what a
+  telegraph is or how loud a footfall should be.
+
+### Added
+
+- `tools/verify_mix.tscn` — the order, the ceiling and the key. It caught its own blindness twice:
+  once when the retuned sounds stopped being numeric literals, once when the split renamed the
+  function it was scanning for.
+
+### Fixed
+
+- **A sound still in flight when the engine tears down leaked an object** (#145). `AudioManager` is
+  now quiet headless — there is nobody to hear it — and a headless *check* says so explicitly,
+  because "nobody is listening" is exactly false when a check is about to ask which voice is
+  carrying which waveform. Measured: three boots of `main.tscn` in five warned before, none in five
+  after.
+- The first attempt at this released every voice in `_exit_tree` instead, and **did not work** —
+  stopping at teardown is too late, because the audio server releases a playback on its own
+  iteration and at quit there is no next one. The release is kept as `AudioManager.silence()`,
+  which is a real thing to want, but it is not what fixes the leak.
+
 ### Fixed
 
 - **The hint bar lied after a rebind.** Nine labels across seven screens wrote both the glyph and

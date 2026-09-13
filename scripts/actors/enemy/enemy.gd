@@ -16,9 +16,11 @@ const TURN_SPEED_DEGREES: float = 360.0
 ## farmers is most of a frame spent on a query whose answer barely moves, and the player cannot get
 ## far in a quarter of a second.
 const REPATH_INTERVAL: float = 0.25
-## What breaking a farmer's poise is worth, as a multiple of the blow's own throw. Every hit already
-## rocks him; this is the difference between rocked and sprawling.
-const BROKEN_POISE_PUSH: float = 1.8
+## What a blow does to this body once it has landed — the push per point of `AttackData.stagger`,
+## what breaking poise adds, and how long he may stay down. Preloaded rather than exported: these
+## are the same figures for every attack and every archetype in the game, so there is nothing for a
+## scene to choose and nothing for a pooled body to carry a stale copy of.
+const KNOCKDOWN: KnockdownData = preload("res://data/combat/knockdown.tres")
 ## Where a stone leaves the hand and where it is aimed. Both at chest height, so a throw travels
 ## flat: an arc would be prettier and would also make the thing impossible to read at a glance.
 ##
@@ -425,7 +427,7 @@ func _on_hurt(info: HitInfo) -> void:
 	# combo a combo rather than three swings at a man who is already walking away. Poise no longer
 	# decides *whether* he reacts, only how hard: a blow that breaks it sends him sprawling, one
 	# that does not rocks him where he stands and leaves him open all the same.
-	var push := info.stagger * (BROKEN_POISE_PUSH if broke else 1.0)
+	var push := info.stagger * (KNOCKDOWN.broken_poise_push if broke else 1.0)
 	stagger(maxf(info.stagger, 0.4), info.direction, push)
 
 

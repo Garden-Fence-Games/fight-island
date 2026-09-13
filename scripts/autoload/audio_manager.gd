@@ -32,12 +32,16 @@ extends Node
 ## one-shot does not want a live synthesiser it can starve, and a waveform built once is a waveform
 ## that sounds the same every time — which is the whole point of a signature.
 
-## Enough for a thud and a ring; the highest partial here is under 3 kHz. Halving the rate halves
-## the bytes and changes nothing anybody can hear.
-const MIX_RATE: int = 22050
 ## How many flat sounds may overlap. A chain into a parry into a hit is three, and locomotion now
 ## shares this pool — a sprint puts a footfall in it every fifth of a second. Raised so that a
 ## running player can never be the reason a perfect parry finds no voice.
+## The rate, the ramp and the seam live with the signal work now. Named here as well because the
+## checks ask this class what the game sounds like, and a check that had to know which file a
+## sample rate moved to would be a check that breaks when it moves again.
+const MIX_RATE: int = SoundBank.MIX_RATE
+const RAMP: float = SoundBank.RAMP
+const SURF_SEAM: float = SoundBank.SURF_SEAM
+
 const VOICES: int = 12
 ## How many sounds may come from somewhere. Three farmers may commit at once at night, and a body
 ## can go down while they do.
@@ -67,19 +71,34 @@ const TELEGRAPH_PEAK: float = 0.95
 const STING_PEAK: float = 0.7
 ## The bed sits under the whole game without ever being the reason something was missed.
 const SURF_PEAK: float = 0.3
-## A waveform that starts or ends at full amplitude clicks. Two milliseconds is inaudible and
-## enough to stop it.
-const RAMP: float = 0.002
-## How many time constants a buffer runs for. Six puts the slowest partial at a four-hundredth of
-## itself, which is inaudible — and a buffer that ends while the sound is still going does not fade
-## out, it stops dead. The length is derived from the decays rather than typed next to them, because
-## a decay tuned by ear and a length left behind is a click nobody hears in a diff.
-const DECAYED: float = 6.0
+## How much of full scale the loudest sound in the game is allowed to reach, before its own declared
+## peak scales it further.
+##
+## **Derived, not tasted.** Several arrive at once — three farmers commit at night while a chain
+## lands — and each was normalised as though it were alone. Uncorrelated sources sum as the root of
+## the sum of squares, so four at 0.9 reach 1.8 and the master clips. Half puts those four at 0.9.
+##
+## The table of peaks is untouched by this: it is the **shape** of the mix, and one figure moves the
+## whole thing down together rather than nine figures moving apart.
+const HEADROOM: float = 0.5
+
 ## The thud both hits share. Short, because a jab that rings is a jab that covers the next one — and
 ## because what tells a perfect hit apart has to be the partial on top, not a longer body.
 const BODY_DECAY: float = 0.035
 ## The partial the perfect window adds, and how long it rings. **The same in every impact family**:
 ## it is the signature, and a player who learns it on fists has learnt it on the gun.
+## **The whole game is in A minor**, and that is not decoration — it is what stops two sounds that
+## arrive together from grinding. It was already mostly true and nobody had written it down: the bed
+## is stacked fifths on A, the perfect parry is a bell on A and E, the perfect signature is E, and
+## the pickup is E and B. Three sounds were in C and G — the wave sting, the merchant and the two
+## endings — and those are the three most *musical* moments in the game, so they were the three that
+## rang against everything else.
+##
+## `verify_audio` holds it: every named partial has to sit on a note of this scale. The one sound
+## deliberately outside it is the dry-fire warning, which has to be heard as *not* music.
+const A: float = 440.0
+const C: float = 523.25
+const E: float = 659.25
 const PERFECT_PARTIAL: float = 1320.0
 const PERFECT_RING: float = 0.13
 ## The body of a blow, per weapon. Pitch, how long it rings, and how much contact grain rides on top
@@ -163,12 +182,21 @@ const DETUNE: float = 1.003
 ## music bed is allowed to exist during a fight.
 const LAYERS: Dictionary = {
 	&"music_ground": {"root": 55.0, "voices": 2, "from": 0.0, "to": 0.15, "swells": 2},
-	&"music_pulse": {"root": 82.5, "voices": 3, "from": 0.2, "to": 0.55, "swells": 5},
-	&"music_edge": {"root": 220.0, "voices": 4, "from": 0.6, "to": 0.95, "swells": 8},
+	&"music_pulse": {"root": 82.5, "voices": 2, "from": 0.2, "to": 0.55, "swells": 5},
+	&"music_edge": {"root": 220.0, "voices": 3, "from": 0.6, "to": 0.95, "swells": 8},
 }
-## How much of the bed's tail is folded back over its head to make the seam. A loop assembled from
-## noise has no natural join; this is what stops the wrap being an audible tick every few seconds.
-const SURF_SEAM: float = 0.25
+
+## Whether anything should actually be played. False headless, because there is nobody to hear it —
+## and a one-shot still in flight when the engine tears down is an object it reports as leaked, for
+## the reason the bed has always known: the audio server releases a playback on its own iteration,
+## and at quit there is no next iteration. That is issue #145, and it was intermittent because it
+## depended on what happened to be sounding when the window closed.
+##
+## **A headless check is the exception, and it is not a special case — it is the literal reading of
+## the rule.** "There is nobody to hear it" is false when a check is listening on purpose, which is
+## what `verify_audio` does: it asks which voice is carrying which waveform. So it says so, and
+## everything else stays quiet.
+var audible: bool = DisplayServer.get_name() != "headless"
 
 var _sounds: Dictionary = {}
 var _peaks: Dictionary = {}
@@ -218,21 +246,46 @@ func _ready() -> void:
 	EventBus.run_ended.connect(_on_run_ended)
 
 
-## The bed is the one sound still going when the game is asked to close, and a stream left playing
-## at teardown is two objects the engine reports as leaked on the way out. Nothing about it is
-## visible in the game; it is visible in CI, which fails the boot on any warning at all — which is
-## exactly what a leak check is for.
+## A stream left playing at teardown is an object the engine reports as leaked on the way out: the
+## audio server releases a playback on its own iteration, and at quit there is no next iteration.
+##
+## The bed knew this and the pooled voices did not, which is issue #145 — `main.tscn` leaked a
+## waveform for as long as anything happened to be sounding when the window closed. **And CI could
+## not see it**: the boot gate greps every boot for a warning, and the Linux runner does not
+## reproduce this one. The gate was green while a developer on the same commit was not.
+##
+## So the invariant is held where a platform cannot hide it — `verify_audio` calls `silence()` and
+## asks the voices — rather than by watching for the warning.
 func _exit_tree() -> void:
-	if _bed == null:
-		return
-	_bed.stop()
-	_bed.stream = null
+	silence()
+
+
+## Every voice stopped and every waveform let go of. Public because it is a real thing to want — the
+## end of a run could ask for it — and because it is the only way a check can hold the invariant on
+## a machine where the symptom never appears.
+##
+## **Stopping is not enough; the stream has to be released.** A player freed with a stream still
+## assigned is an object the engine reports as leaked, and the bed knew that while the twelve pooled
+## voices did not — so `main.tscn` leaked one waveform at exit for as long as anything was still
+## sounding when the window closed.
+func silence() -> void:
+	for voice: AudioStreamPlayer in _voices:
+		voice.stop()
+		voice.stream = null
+	for voice: AudioStreamPlayer3D in _placed:
+		voice.stop()
+		voice.stream = null
+	if _bed != null:
+		_bed.stop()
+		_bed.stream = null
 
 
 ## Plays a sound flat, in front of the player. Unknown ids are ignored rather than pushed as an
 ## error: a caller asking for a sound that does not exist yet should go quiet, not spam the log for
 ## the rest of the run.
 func play(id: StringName, jitter: float = 0.0) -> void:
+	if not audible:
+		return
 	var stream: AudioStreamWAV = _sounds.get(id)
 	if stream == null:
 		return
@@ -248,6 +301,8 @@ func play(id: StringName, jitter: float = 0.0) -> void:
 ## crowd answerable: a player who cannot see the farmer winding up behind them can still hear which
 ## side he is on.
 func play_at(id: StringName, where: Vector3, jitter: float = 0.0) -> void:
+	if not audible:
+		return
 	var stream: AudioStreamWAV = _sounds.get(id)
 	if stream == null:
 		return
@@ -265,10 +320,21 @@ func sound(id: StringName) -> AudioStreamWAV:
 	return _sounds.get(id)
 
 
-## What peak a sound was normalised to. The mix is a decision, so it is readable rather than
-## implied: a check can assert that a footfall sits under a hit without anybody having to listen.
+## Every id there is. The mix is a property of the whole set, so the set has to be askable: a check
+## that listed them itself would be short of exactly the loud one that clips.
+func every_sound() -> Array[StringName]:
+	var all: Array[StringName] = []
+	all.assign(_sounds.keys())
+	return all
+
+
+## What a sound actually comes out at. The mix is a decision, so it is readable rather than implied:
+## a check can assert that a footfall sits under a hit without anybody having to listen.
+##
+## `HEADROOM` is in it, because this answers *how loud is this really* — the table of declared peaks
+## is the **shape** of the mix and this is the mix.
 func peak_of(id: StringName) -> float:
-	return float(_peaks.get(id, 0.0))
+	return float(_peaks.get(id, 0.0)) * HEADROOM
 
 
 ## The looping bed, for a check that wants to know it is running rather than hear it.
@@ -349,13 +415,13 @@ func _register(id: StringName, stream: AudioStreamWAV, peak: float) -> void:
 func _hit(family: StringName, perfect: bool) -> AudioStreamWAV:
 	var voice: Dictionary = IMPACTS.get(family, IMPACTS[BASE_IMPACT])
 	var body := float(voice["decay"])
-	var samples := _silence(maxf(PERFECT_RING if perfect else 0.0, body))
-	_tone(samples, float(voice["hertz"]), 0.9, body)
-	_hiss(samples, float(voice["contact"]), float(voice["snap"]), int(voice["grain"]))
+	var samples := SoundBank.long_enough(maxf(PERFECT_RING if perfect else 0.0, body))
+	SoundBank.tone(samples, float(voice["hertz"]), 0.9, body)
+	SoundBank.hiss(samples, float(voice["contact"]), float(voice["snap"]), int(voice["grain"]))
 	if perfect:
-		_tone(samples, PERFECT_PARTIAL, 0.38, PERFECT_RING)
-		_tone(samples, PERFECT_PARTIAL * 1.5, 0.16, 0.10)
-	return _bake(samples, PEAK)
+		SoundBank.tone(samples, PERFECT_PARTIAL, 0.38, PERFECT_RING)
+		SoundBank.tone(samples, PERFECT_PARTIAL * 1.5, 0.16, 0.10)
+	return SoundBank.bake(samples, PEAK * HEADROOM)
 
 
 ## A swing through air: something **passing**, not something failing to arrive.
@@ -371,15 +437,15 @@ func _hit(family: StringName, perfect: bool) -> AudioStreamWAV:
 ## constants deep, so every missed jab washed for 540 ms over the top of whatever came next. Air
 ## moves past in a sixth of a second.
 func _whiff() -> AudioStreamWAV:
-	var samples := _span(0.17)
-	_hiss(samples, 0.9, INF, 23)
+	var samples := SoundBank.span(0.17)
+	SoundBank.hiss(samples, 0.9, INF, 23)
 	# Twice, at different weights. One pass leaves white noise sounding like escaping steam; the
 	# second takes the top off it, and what is left reads as air rather than as a hiss.
-	_soften(samples, 0.14)
-	_soften(samples, 0.40)
-	_swell(samples, 0.055)
-	_release(samples, 0.09)
-	return _bake(samples, WHIFF_PEAK)
+	SoundBank.soften(samples, 0.14)
+	SoundBank.soften(samples, 0.40)
+	SoundBank.swell(samples, 0.055)
+	SoundBank.release(samples, 0.09)
+	return SoundBank.bake(samples, WHIFF_PEAK * HEADROOM)
 
 
 ## The report. A crack and a body, both very short, and nothing that rings: what makes a gunshot a
@@ -388,25 +454,25 @@ func _whiff() -> AudioStreamWAV:
 ## The charged shot is the same report an octave lower and longer — one report scaled rather than
 ## two waveforms, because what differs between the gun's three attacks is weight, not identity.
 func _shot(heavy: bool) -> AudioStreamWAV:
-	var samples := _silence(0.09 if heavy else 0.05)
-	_hiss(samples, 0.9, 0.012 if heavy else 0.006, 71)
-	_tone(samples, 70.0 if heavy else 120.0, 0.8, 0.09 if heavy else 0.05)
-	_soften(samples, 0.45 if heavy else 0.65)
-	return _bake(samples, PEAK)
+	var samples := SoundBank.long_enough(0.09 if heavy else 0.05)
+	SoundBank.hiss(samples, 0.9, 0.012 if heavy else 0.006, 71)
+	SoundBank.tone(samples, 70.0 if heavy else 120.0, 0.8, 0.09 if heavy else 0.05)
+	SoundBank.soften(samples, 0.45 if heavy else 0.65)
+	return SoundBank.bake(samples, PEAK * HEADROOM)
 
 
 ## A bell. The perfect one rings for half a second on three partials; the late one is the same bell
 ## damped — one partial, a fifth of the length. Same voice, and the difference is all in the tail.
 func _parry(perfect: bool) -> AudioStreamWAV:
-	var samples := _silence(0.30 if perfect else 0.055)
-	_hiss(samples, 0.8 if perfect else 0.4, 0.008, 37)
+	var samples := SoundBank.long_enough(0.30 if perfect else 0.055)
+	SoundBank.hiss(samples, 0.8 if perfect else 0.4, 0.008, 37)
 	if perfect:
-		_tone(samples, 880.0, 0.40, 0.30)
-		_tone(samples, 1318.0, 0.25, 0.24)
-		_tone(samples, 2640.0, 0.12, 0.14)
-		return _bake(samples, PEAK)
-	_tone(samples, 440.0, 0.25, 0.055)
-	return _bake(samples, PEAK)
+		SoundBank.tone(samples, 880.0, 0.40, 0.30)
+		SoundBank.tone(samples, 1318.0, 0.25, 0.24)
+		SoundBank.tone(samples, 2640.0, 0.12, 0.14)
+		return SoundBank.bake(samples, PEAK * HEADROOM)
+	SoundBank.tone(samples, 440.0, 0.25, 0.055)
+	return SoundBank.bake(samples, PEAK * HEADROOM)
 
 
 ## A foot in sand, and a foot in the surf. Both are noise and neither has a pitch: sand is a scuff
@@ -417,15 +483,15 @@ func _parry(perfect: bool) -> AudioStreamWAV:
 ## footfall that competes with the fight is a footfall that hides it.
 func _step(wading: bool) -> AudioStreamWAV:
 	if not wading:
-		var sand := _silence(0.014)
-		_hiss(sand, 0.7, 0.014, 5)
-		_soften(sand, 0.30)
-		return _bake(sand, FOOTFALL_PEAK)
-	var water := _silence(0.045)
-	_hiss(water, 0.7, 0.045, 7)
-	_soften(water, 0.55)
-	_swell(water, 0.012)
-	return _bake(water, FOOTFALL_PEAK)
+		var sand := SoundBank.long_enough(0.014)
+		SoundBank.hiss(sand, 0.7, 0.014, 5)
+		SoundBank.soften(sand, 0.30)
+		return SoundBank.bake(sand, FOOTFALL_PEAK * HEADROOM)
+	var water := SoundBank.long_enough(0.045)
+	SoundBank.hiss(water, 0.7, 0.045, 7)
+	SoundBank.soften(water, 0.55)
+	SoundBank.swell(water, 0.012)
+	return SoundBank.bake(water, FOOTFALL_PEAK * HEADROOM)
 
 
 ## A roll: air, and then a body arriving. The swish alone would be a slower whiff, so the shoulder
@@ -436,65 +502,65 @@ func _step(wading: bool) -> AudioStreamWAV:
 ## which is twice the roll itself and long enough to still be sounding when the player is back on
 ## their feet and swinging.
 func _roll() -> AudioStreamWAV:
-	var samples := _span(0.34)
-	_hiss(samples, 0.9, INF, 29)
-	_soften(samples, 0.10)
-	_swell(samples, 0.10)
-	_tone(samples, 110.0, 0.55, 0.05, 0.20)
-	_release(samples, 0.08)
-	return _bake(samples, FOOTFALL_PEAK)
+	var samples := SoundBank.span(0.34)
+	SoundBank.hiss(samples, 0.9, INF, 29)
+	SoundBank.soften(samples, 0.10)
+	SoundBank.swell(samples, 0.10)
+	SoundBank.tone(samples, 110.0, 0.55, 0.05, 0.20)
+	SoundBank.release(samples, 0.08)
+	return SoundBank.bake(samples, FOOTFALL_PEAK * HEADROOM)
 
 
 ## Two dry clacks, a magazine out and a magazine in. Nothing rings: it is the one sound in the game
 ## that is purely mechanical, and that is what separates it from everything that hits.
 func _reload() -> AudioStreamWAV:
-	var samples := _silence(0.008, 0.10)
-	_hiss(samples, 0.8, 0.006, 41)
-	_hiss(samples, 0.6, 0.008, 43, 0.10)
-	_soften(samples, 0.75)
-	return _bake(samples, INCIDENTAL_PEAK)
+	var samples := SoundBank.long_enough(0.008, 0.10)
+	SoundBank.hiss(samples, 0.8, 0.006, 41)
+	SoundBank.hiss(samples, 0.6, 0.008, 43, 0.10)
+	SoundBank.soften(samples, 0.75)
+	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
 
 
 ## The trigger on an empty magazine. One dead click and a stub of low body — the sound of a thing
 ## not happening, which is exactly what the player needs told: a press that produces nothing at all
 ## reads as a dropped input, and they blame the game rather than their own ammunition.
 func _dry_fire() -> AudioStreamWAV:
-	var samples := _silence(0.012)
-	_hiss(samples, 0.7, 0.005, 47)
-	_tone(samples, 210.0, 0.25, 0.012)
-	_soften(samples, 0.8)
-	return _bake(samples, INCIDENTAL_PEAK)
+	var samples := SoundBank.long_enough(0.012)
+	SoundBank.hiss(samples, 0.7, 0.005, 47)
+	SoundBank.tone(samples, 210.0, 0.25, 0.012)
+	SoundBank.soften(samples, 0.8)
+	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
 
 
 ## Taking a hit. Lower and duller than landing one, and with the top rolled off: the player has to
 ## be able to tell, with the screen off, whether that thud was theirs or the farmer's.
 func _hurt() -> AudioStreamWAV:
-	var samples := _silence(0.055)
-	_tone(samples, 88.0, 0.9, 0.055)
-	_hiss(samples, 0.4, 0.022, 53)
-	_soften(samples, 0.18)
-	return _bake(samples, INCIDENTAL_PEAK)
+	var samples := SoundBank.long_enough(0.055)
+	SoundBank.tone(samples, 88.0, 0.9, 0.055)
+	SoundBank.hiss(samples, 0.4, 0.022, 53)
+	SoundBank.soften(samples, 0.18)
+	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
 
 
 ## A body going down: a fall rather than an impact. The pitch drops away instead of ringing, which
 ## is the one shape in this whole set that nothing else uses — and it arrives from where the body
 ## was standing, so a kill behind the player still reads as a kill.
 func _enemy_down() -> AudioStreamWAV:
-	var samples := _span(0.34)
-	_fall(samples, 340.0, 120.0, 0.7)
-	_hiss(samples, 0.35, 0.05, 59)
-	_soften(samples, 0.22)
-	_release(samples, 0.14)
-	return _bake(samples, INCIDENTAL_PEAK)
+	var samples := SoundBank.span(0.34)
+	SoundBank.fall(samples, 340.0, 120.0, 0.7)
+	SoundBank.hiss(samples, 0.35, 0.05, 59)
+	SoundBank.soften(samples, 0.22)
+	SoundBank.release(samples, 0.14)
+	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
 
 
 ## Finding a weapon. Two notes going up, which is the shortest way a game has ever said *that one
 ## is yours now*.
 func _pickup() -> AudioStreamWAV:
-	var samples := _silence(0.10, 0.07)
-	_tone(samples, 660.0, 0.5, 0.09)
-	_tone(samples, 990.0, 0.45, 0.10, 0.07)
-	return _bake(samples, INCIDENTAL_PEAK)
+	var samples := SoundBank.long_enough(0.10, 0.07)
+	SoundBank.tone(samples, 660.0, 0.5, 0.09)
+	SoundBank.tone(samples, 990.0, 0.45, 0.10, 0.07)
+	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
 
 
 ## **The most important sound in the game, and the only one that rises.**
@@ -515,11 +581,11 @@ func _telegraph() -> AudioStreamWAV:
 ## because what must be shared is that it *rises* — and what must differ is where from and to.
 func _telegraph_of(archetype: StringName) -> AudioStreamWAV:
 	var voice: Dictionary = TELEGRAPHS.get(archetype, TELEGRAPHS[BASE_TELEGRAPH])
-	var samples := _span(float(voice["seconds"]))
-	_climb(samples, float(voice["from"]), float(voice["to"]), 0.75)
-	_hiss(samples, 0.16, 0.02, int(voice["grain"]))
-	_release(samples, 0.07)
-	return _bake(samples, TELEGRAPH_PEAK)
+	var samples := SoundBank.span(float(voice["seconds"]))
+	SoundBank.climb(samples, float(voice["from"]), float(voice["to"]), 0.75)
+	SoundBank.hiss(samples, 0.16, 0.02, int(voice["grain"]))
+	SoundBank.release(samples, 0.07)
+	return SoundBank.bake(samples, TELEGRAPH_PEAK * HEADROOM)
 
 
 ## The last round in the magazine. Two short clicks a semitone apart, dry and quiet: running out is
@@ -529,32 +595,32 @@ func _telegraph_of(archetype: StringName) -> AudioStreamWAV:
 ## Deliberately not a musical interval and deliberately under the shot that carried it — it arrives
 ## in the same breath as a gunshot and must not be mistaken for part of one.
 func _low_ammo() -> AudioStreamWAV:
-	var samples := _silence(0.05, 0.07)
-	_tone(samples, 880.0, 0.6, 0.02)
-	_tone(samples, 932.0, 0.6, 0.05, 0.07)
-	_soften(samples, 0.30)
-	return _bake(samples, INCIDENTAL_PEAK)
+	var samples := SoundBank.long_enough(0.05, 0.07)
+	SoundBank.tone(samples, 880.0, 0.6, 0.02)
+	SoundBank.tone(samples, 932.0, 0.6, 0.05, 0.07)
+	SoundBank.soften(samples, 0.30)
+	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
 
 
 ## A wave passed. Three notes up, and the only sound in the game allowed to be musical: it is the
 ## one moment nothing is trying to kill the player, so it is the one moment a chord costs nothing.
 func _sting() -> AudioStreamWAV:
-	var samples := _silence(0.42, 0.30)
-	_tone(samples, 523.0, 0.5, 0.20)
-	_tone(samples, 659.0, 0.5, 0.24, 0.15)
-	_tone(samples, 784.0, 0.5, 0.42, 0.30)
-	return _bake(samples, STING_PEAK)
+	var samples := SoundBank.long_enough(0.42, 0.30)
+	SoundBank.tone(samples, A, 0.5, 0.20)
+	SoundBank.tone(samples, C, 0.5, 0.24, 0.15)
+	SoundBank.tone(samples, E, 0.5, 0.42, 0.30)
+	return SoundBank.bake(samples, STING_PEAK * HEADROOM)
 
 
 ## The counter opening. Two notes a fifth apart and nothing above them — quiet, warm and over
 ## quickly, because the merchant is a pause rather than an event and a sting here would tell the
 ## player something happened when what happened is that nothing is happening.
 func _merchant() -> AudioStreamWAV:
-	var samples := _silence(0.30, 0.09)
-	_tone(samples, 392.0, 0.6, 0.22)
-	_tone(samples, 587.0, 0.45, 0.30, 0.09)
-	_soften(samples, 0.25)
-	return _bake(samples, INCIDENTAL_PEAK)
+	var samples := SoundBank.long_enough(0.30, 0.09)
+	SoundBank.tone(samples, A, 0.6, 0.22)
+	SoundBank.tone(samples, E, 0.45, 0.30, 0.09)
+	SoundBank.soften(samples, 0.25)
+	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
 
 
 ## The end of a run, either way. **The same three notes in the same order**, and the whole
@@ -562,20 +628,20 @@ func _merchant() -> AudioStreamWAV:
 ## a player does not have to learn two sounds to know which one they got, and a summary screen that
 ## arrives in silence reads as the game having crashed rather than ended.
 func _ending(victory: bool) -> AudioStreamWAV:
-	var notes: Array[float] = [523.0, 392.0, 262.0]
+	var notes: Array[float] = [A * 2.0, E, A]
 	if victory:
-		notes = [392.0, 523.0, 784.0]
-	var samples := _silence(ENDING_RING, ENDING_STEP * 2.0)
+		notes = [A, E, A * 2.0]
+	var samples := SoundBank.long_enough(ENDING_RING, ENDING_STEP * 2.0)
 	for index: int in notes.size():
 		var last := index == notes.size() - 1
-		_tone(
+		SoundBank.tone(
 			samples,
 			notes[index],
 			0.5,
 			ENDING_RING if last else ENDING_STEP * 1.6,
 			ENDING_STEP * float(index)
 		)
-	return _bake(samples, STING_PEAK)
+	return SoundBank.bake(samples, STING_PEAK * HEADROOM)
 
 
 ## The surf, and nothing else. It is the only sound here with no event behind it, and the only one
@@ -585,15 +651,15 @@ func _ending(victory: bool) -> AudioStreamWAV:
 ## a rhythm the ear can count — a wave every three seconds is a metronome, and a metronome under a
 ## fight is worse than silence.
 func _surf() -> AudioStreamWAV:
-	var noise := _span(SURF_SECONDS + SURF_SEAM)
-	_hiss(noise, 0.9, INF, 67)
-	_soften(noise, 0.08)
+	var noise := SoundBank.span(SURF_SECONDS + SURF_SEAM)
+	SoundBank.hiss(noise, 0.9, INF, 67)
+	SoundBank.soften(noise, 0.08)
 	# Joined first, then breathed over what is left: the swells have to be whole across the buffer
 	# that actually loops, not across the longer one the seam was cut out of.
-	var samples := _join(noise)
-	_breathe(samples, SURF_SWELLS, 0.55)
-	_breathe(samples, SURF_SWELLS + 1, 0.30)
-	return _bake_loop(samples, SURF_PEAK)
+	var samples := SoundBank.join(noise)
+	SoundBank.breathe(samples, SURF_SWELLS, 0.55)
+	SoundBank.breathe(samples, SURF_SWELLS + 1, 0.30)
+	return SoundBank.bake_loop(samples, SURF_PEAK * HEADROOM)
 
 
 ## One layer of the music: a chord that breathes, built on the same seam the surf uses.
@@ -607,204 +673,24 @@ func _surf() -> AudioStreamWAV:
 ## metronome, and a metronome is a thing the player starts fighting to instead of reading.
 func _layer(id: StringName) -> AudioStreamWAV:
 	var voice: Dictionary = LAYERS[id]
-	var samples := _span(MUSIC_SECONDS + SURF_SEAM)
+	var samples := SoundBank.span(MUSIC_SECONDS + SURF_SEAM)
 	var root := float(voice["root"])
 	for step: int in int(voice["voices"]):
 		# A fifth above each time, which stacks without ever landing on a third — a bed with a mode
 		# in it is a bed that has an opinion about the scene, and this one has to survive six
 		# minutes of whatever the player is doing.
+		#
+		# **Three steps is the ceiling**, and it is not a taste: A, E, B are all in the home key and
+		# the fourth is F sharp, which A minor does not contain. Two layers were reaching it, so the
+		# one sound playing under every other sound in the game disagreed with the sting, the
+		# merchant and both endings. `verify_mix` walks the table and holds it.
 		var hertz := root * pow(1.5, float(step))
-		_tone(samples, hertz, 0.7 / float(step + 1), INF)
-		_tone(samples, hertz * DETUNE, 0.7 / float(step + 1), INF)
-	var looped := _join(samples)
-	_breathe(looped, int(voice["swells"]), 0.45)
-	_breathe(looped, int(voice["swells"]) + 1, 0.2)
-	return _bake_loop(looped, MUSIC_PEAK)
-
-
-## Sized from the slowest decay the sound is about to use, and from how late the last of it starts,
-## so nothing is ever cut off mid-ring.
-func _silence(slowest_decay: float, last_starts_at: float = 0.0) -> PackedFloat32Array:
-	return _span(last_starts_at + slowest_decay * DECAYED)
-
-
-## A buffer of exactly this many seconds, for the sounds whose length is designed rather than
-## derived from a decay — a telegraph is as long as the warning needs to be.
-func _span(seconds: float) -> PackedFloat32Array:
-	var samples := PackedFloat32Array()
-	samples.resize(maxi(int(seconds * float(MIX_RATE)), 2))
-	return samples
-
-
-## A decaying sine, added in. `decay` is the time constant, so the partial is down to a thirtieth of
-## itself after three of them. `at` is when it starts, for the sounds that are two notes rather than
-## a chord.
-func _tone(
-	samples: PackedFloat32Array, hertz: float, amplitude: float, decay: float, at: float = 0.0
-) -> void:
-	var step := TAU * hertz / float(MIX_RATE)
-	var from := mini(int(at * float(MIX_RATE)), samples.size())
-	for index: int in range(from, samples.size()):
-		var seconds := float(index - from) / float(MIX_RATE)
-		samples[index] += sin(step * float(index - from)) * amplitude * exp(-seconds / decay)
-
-
-## Decaying noise, from a seeded source so the waveform is the same on every machine and every run.
-## A signature that is regenerated differently each launch is not a signature. An infinite decay is
-## noise that never falls away, which is what a bed is made of.
-func _hiss(
-	samples: PackedFloat32Array, amplitude: float, decay: float, seed_value: int, at: float = 0.0
-) -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = seed_value
-	var from := mini(int(at * float(MIX_RATE)), samples.size())
-	for index: int in range(from, samples.size()):
-		var seconds := float(index - from) / float(MIX_RATE)
-		samples[index] += rng.randf_range(-1.0, 1.0) * amplitude * exp(-seconds / decay)
-
-
-## A sine whose pitch climbs across the whole buffer while its level climbs with it. The phase is
-## carried rather than recomputed from the index: a frequency that changes means the angle has to be
-## integrated, and `sin(t × f(t))` is a different and much worse sound than a sweep.
-func _climb(
-	samples: PackedFloat32Array, from_hertz: float, to_hertz: float, amplitude: float
-) -> void:
-	var phase := 0.0
-	var last := float(maxi(samples.size() - 1, 1))
-	for index: int in samples.size():
-		var through := float(index) / last
-		phase += TAU * lerpf(from_hertz, to_hertz, through) / float(MIX_RATE)
-		samples[index] += sin(phase) * amplitude * through
-
-
-## The same, going down and fading out — a fall rather than an arrival.
-func _fall(
-	samples: PackedFloat32Array, from_hertz: float, to_hertz: float, amplitude: float
-) -> void:
-	var phase := 0.0
-	var last := float(maxi(samples.size() - 1, 1))
-	for index: int in samples.size():
-		var through := float(index) / last
-		phase += TAU * lerpf(from_hertz, to_hertz, through) / float(MIX_RATE)
-		samples[index] += sin(phase) * amplitude * (1.0 - through)
-
-
-## A one-pole low pass, run once over the buffer. Enough to turn white noise into air.
-func _soften(samples: PackedFloat32Array, weight: float) -> void:
-	var carried := 0.0
-	for index: int in samples.size():
-		carried += (samples[index] - carried) * weight
-		samples[index] = carried
-
-
-## Fades a sound in over its first stretch, which is what makes noise read as a swing passing rather
-## than as something being hit.
-func _swell(samples: PackedFloat32Array, seconds: float) -> void:
-	var over := maxi(int(seconds * float(MIX_RATE)), 1)
-	for index: int in mini(over, samples.size()):
-		samples[index] *= float(index) / float(over)
-
-
-## Fades a sound out over its last stretch. The mirror of `_swell`, and what a sound that rises has
-## to end with: a buffer that stops at full amplitude does not finish, it is interrupted.
-##
-## **Squared, where the swell is linear.** A linear fade is still at a fiftieth of full a couple of
-## milliseconds from the end, which is audible as a stop — and it is exactly what the cut-off check
-## measures, because a tail that is still there when the buffer runs out is a tail that was cut. The
-## square drops the last two milliseconds to well under a thousandth while leaving the shape of the
-## fade, which the ear reads, untouched.
-func _release(samples: PackedFloat32Array, seconds: float) -> void:
-	var over := maxi(int(seconds * float(MIX_RATE)), 1)
-	var last := samples.size() - 1
-	for index: int in mini(over, samples.size()):
-		var through := float(index) / float(over)
-		samples[last - index] *= through * through
-
-
-## A slow rise and fall across the whole buffer, counted in whole swells rather than in hertz. This
-## is what turns a flat hiss into water: the noise does not change, the amount of it does.
-##
-## **Whole cycles, which is why the count is an integer.** A fractional swell would leave the bed at
-## a different level from the one it started at, and the seam would then have to hide a step in
-## volume as well as a step in the noise — which is the one thing a cross-fade cannot do.
-func _breathe(samples: PackedFloat32Array, swells: int, depth: float) -> void:
-	var last := float(maxi(samples.size() - 1, 1))
-	var turns := float(maxi(swells, 1))
-	for index: int in samples.size():
-		var through := float(index) / last
-		samples[index] *= 1.0 - depth + depth * (0.5 - 0.5 * cos(TAU * turns * through))
-
-
-## Ramped off the zero line, normalised to the peak it was asked for, and packed to 16-bit.
-## Normalising rather than trusting the sum is what keeps a fourth partial from silently clipping
-## the other three; asking for a peak rather than sharing one is what keeps a footfall under a hit.
-##
-## **The ramp goes on before the peak is measured, not after.** A short sound is loudest within a
-## millisecond or two of starting — a dry click is nothing else — so a ramp applied afterwards eats
-## the very sample the normalisation was aimed at, and the sound comes out well under what it asked
-## for. The dry trigger landed at 0.33 against the 0.55 it declared, which is how a mix that was
-## written down as a table stops being the mix that plays.
-func _bake(samples: PackedFloat32Array, peak: float) -> AudioStreamWAV:
-	var ramp := maxi(int(RAMP * float(MIX_RATE)), 1)
-	var last := samples.size() - 1
-	for index: int in mini(ramp, samples.size()):
-		samples[index] *= float(index) / float(ramp)
-		samples[last - index] *= float(index) / float(ramp)
-	return _wav(_encode(samples, samples.size(), _scale_to(samples, peak)), false)
-
-
-## The same, for the one sound that comes back round.
-##
-## **A loop may not be ramped.** The two millisecond fade that stops a one-shot clicking is, on a
-## loop, a hole punched in the bed every time it wraps — so there is no ramp here at all, and the
-## join is made by `_join` before anything is shaped.
-func _bake_loop(samples: PackedFloat32Array, peak: float) -> AudioStreamWAV:
-	return _wav(_encode(samples, samples.size(), _scale_to(samples, peak)), true)
-
-
-## Folds a buffer's tail back over its head and returns it short by exactly that much, so the result
-## meets itself where it wraps. Noise has no natural join; this makes one.
-##
-## **It has to run before the envelope, not after.** Shaping first and cutting second was the first
-## version and it left a seam 33% apart in level: whole swells across the *whole* buffer are not
-## whole swells across what is kept, so the bed came back round to a different point in its own
-## breathing. Join the noise, then breathe over what survived.
-func _join(samples: PackedFloat32Array) -> PackedFloat32Array:
-	var seam := mini(maxi(int(SURF_SEAM * float(MIX_RATE)), 1), samples.size() / 2)
-	var kept := samples.size() - seam
-	for index: int in seam:
-		var through := float(index) / float(seam)
-		samples[index] = samples[index] * through + samples[kept + index] * (1.0 - through)
-	samples.resize(kept)
-	return samples
-
-
-func _encode(samples: PackedFloat32Array, count: int, scale: float) -> PackedByteArray:
-	var bytes := PackedByteArray()
-	bytes.resize(count * 2)
-	for index: int in count:
-		bytes.encode_s16(index * 2, int(clampf(samples[index] * scale, -1.0, 1.0) * 32767.0))
-	return bytes
-
-
-func _scale_to(samples: PackedFloat32Array, peak: float) -> float:
-	var loudest := 0.0
-	for value: float in samples:
-		loudest = maxf(loudest, absf(value))
-	return peak / loudest if loudest > 0.0 else 0.0
-
-
-func _wav(bytes: PackedByteArray, looping: bool) -> AudioStreamWAV:
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = MIX_RATE
-	stream.stereo = false
-	stream.data = bytes
-	if looping:
-		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		stream.loop_begin = 0
-		stream.loop_end = bytes.size() / 2 - 1
-	return stream
+		SoundBank.tone(samples, hertz, 0.7 / float(step + 1), INF)
+		SoundBank.tone(samples, hertz * DETUNE, 0.7 / float(step + 1), INF)
+	var looped := SoundBank.join(samples)
+	SoundBank.breathe(looped, int(voice["swells"]), 0.45)
+	SoundBank.breathe(looped, int(voice["swells"]) + 1, 0.2)
+	return SoundBank.bake_loop(looped, MUSIC_PEAK * HEADROOM)
 
 
 ## The bed starts with the game and never stops. On its own bus, so a player who wants the island
@@ -824,7 +710,7 @@ func _start_the_bed() -> void:
 	_bed.bus = &"Ambience"
 	_bed.stream = sound(&"surf")
 	add_child(_bed)
-	if DisplayServer.get_name() != "headless":
+	if audible:
 		_bed.play()
 
 

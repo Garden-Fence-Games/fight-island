@@ -67,3 +67,13 @@ tools/verify_lookups.gd|bodies[name] = [] as Array[String]|bodies[name] = Packed
 
 # The hint bar. A glyph typed into a scene stops being true the moment a player rebinds.
 scripts/ui/hint_label.gd|	var glyph := _glyph()|	var glyph := ""|verify_glyphs
+
+# The #145 guard. A headless game that starts audible leaks a one-shot at teardown, and no runner
+# this project uses would report it — the boot gate is green on Linux while a Mac is not.
+scripts/autoload/audio_manager.gd|var audible: bool = DisplayServer.get_name() != "headless"|var audible: bool = true|verify_audio
+
+# The mix: a ceiling that lets a night wave clip, and a bed that wanders out of the home key.
+scripts/autoload/audio_manager.gd|const HEADROOM: float = 0.5|const HEADROOM: float = 1.0|verify_mix
+scripts/autoload/audio_manager.gd|&"music_edge": {"root": 220.0, "voices": 3|&"music_edge": {"root": 220.0, "voices": 4|verify_mix
+# B flat, not B natural — B is in A minor and the first version of this line claimed otherwise.
+scripts/autoload/audio_manager.gd|const C: float = 523.25|const C: float = 466.16|verify_mix

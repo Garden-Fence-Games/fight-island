@@ -15,21 +15,6 @@ extends EnemyState
 
 enum Phase { FALLING, RISING }
 
-## Metres per second per second of `AttackData.stagger`. A jab that breaks poise nudges him over; an
-## uppercut at 0.6 sends him seven metres a second. Here rather than in the `.tres` because it is
-## the same figure for every attack in the game — what differs is already `stagger` itself.
-const KNOCK_SPEED: float = 12.0
-## How long standing up takes until `get_up` exists to say so.
-const RISE_TIME: float = 0.7
-## How much longer than the attack's own stagger figure a man may stay down before he is taken back
-## whether the physics has settled him or not.
-##
-## **The attack still decides how long a knockdown lasts.** The tumble ends when the body stops
-## moving, which is almost always first; this is the ceiling for the times it does not — wedged
-## against a rock, caught on a slope. Without it the ceiling was a flat three seconds for every blow
-## in the game, and a jab put a farmer down for as long as an uppercut did.
-const FALL_CEILING: float = 4.0
-
 var _phase: Phase = Phase.RISING
 var _remaining: float = 0.0
 
@@ -38,7 +23,7 @@ func enter(message: Dictionary) -> void:
 	if enemy.hitbox != null:
 		enemy.hitbox.disarm()
 	_remaining = float(message.get("duration", 0.5))
-	var push: float = float(message.get("push", 0.0)) * KNOCK_SPEED
+	var push: float = float(message.get("push", 0.0)) * Enemy.KNOCKDOWN.knock_speed
 	var from: Vector3 = message.get("from", Vector3.ZERO)
 	if push <= 0.0 or enemy.ragdoll == null or not enemy.ragdoll.is_ready():
 		_phase = Phase.RISING
@@ -46,7 +31,7 @@ func enter(message: Dictionary) -> void:
 	_phase = Phase.FALLING
 	if not enemy.ragdoll.came_to_rest.is_connected(_on_came_to_rest):
 		enemy.ragdoll.came_to_rest.connect(_on_came_to_rest)
-	enemy.ragdoll.knock(from, push, _remaining * FALL_CEILING)
+	enemy.ragdoll.knock(from, push, _remaining * Enemy.KNOCKDOWN.fall_ceiling)
 
 
 ## Whatever takes him out of here — a killing blow, a wave cleared, a body returned to the pool —
@@ -84,7 +69,7 @@ func _on_came_to_rest() -> void:
 	enemy.ragdoll.stop()
 	enemy.global_position = Vector3(landed.x, enemy.global_position.y, landed.z)
 	_phase = Phase.RISING
-	_remaining = RISE_TIME
+	_remaining = Enemy.KNOCKDOWN.rise_time
 	# Re-asked rather than assumed: the state is the same, but what it wants played has changed.
 	if enemy.animation != null:
 		enemy.animation.refresh()

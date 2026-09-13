@@ -275,6 +275,13 @@ jobs:
       - name: Verify nothing walks the tree per frame
         run: tools/run-check.sh res://tools/verify_lookups.tscn
 
+      # The waveforms are verify_audio's; this is their relationship, which is the only thing that
+      # can go wrong once each is individually fine — a footfall at a hit's level walks over the
+      # fight, four loud things at once sum past full scale, and two sounds that disagree about the
+      # key grind when they arrive together.
+      - name: Verify the mix
+        run: tools/run-check.sh res://tools/verify_mix.tscn
+
       # The bed is the only pacing tool the game has between waves, and the one sound a player is
       # free to switch off. Both are promises: it has to do something, and muting it has to cost
       # atmosphere rather than information.

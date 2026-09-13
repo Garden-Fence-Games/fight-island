@@ -35,7 +35,6 @@ const HOLD: float = 0.55
 ## Off, rather than very quiet. A layer below its own range contributes nothing, and -80 dB is what
 ## the engine treats as silence.
 const SILENT: float = -80.0
-const HEADLESS: String = "headless"
 
 ## The wave figures, for the one thing the bed needs from them: how many bodies this wave is allowed
 ## to have on the island at once. A Resource export, which does resolve in a hand-written scene
@@ -58,7 +57,7 @@ func _ready() -> void:
 		player.volume_db = SILENT
 		add_child(player)
 		_players[id] = player
-		if DisplayServer.get_name() != HEADLESS:
+		if AudioManager.audible:
 			player.play()
 	EventBus.telegraph_began.connect(_on_telegraph_began)
 
