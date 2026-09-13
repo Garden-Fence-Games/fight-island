@@ -403,6 +403,14 @@ sheet per material family over per-object textures.
 
 Targets: under 200 MB of texture VRAM, under 2 GB installed, under 120 k triangles on screen.
 
+**Blood stains are generated, not painted — for now.** `tools/build_blood_textures.gd` writes
+`assets/textures/fx/blood_stain_0..5.png` from a seed: 256², **white with the stain in alpha**, pool
+left of centre and spray fanning towards **+X**. Both rules are load-bearing. The red is applied by
+the decal and the ground shader from `data/fx/blood.tres`, so a stain drawn red would come out
+double-tinted; and `BloodField` turns +X to face the blow, so a stain drawn spraying another way
+throws blood back at whoever landed the punch. A painted set that keeps both rules and the same file
+names replaces the generated one with nothing else to change.
+
 **`*.import` sidecar files are committed** — they carry the resource UID and the import settings.
 Without them the whole team reimports differently.
 
