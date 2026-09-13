@@ -5,6 +5,17 @@ made it, its licence, and when it was added.
 
 **A file with no row does not ship.**
 
+## The people
+
+Who made the game, which is a different question from where each file came from. The table below
+answers the second; this one is the answer the player is owed.
+
+| | |
+|---|---|
+| Pepito2t | Developer |
+| BurningSun | 3D and VFX |
+| DabitheSheep | Audio |
+
 ## Assets
 
 The island's stone and huts come from two CC0 packs by the same author. Everything that grows on

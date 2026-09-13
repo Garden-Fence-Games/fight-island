@@ -6,6 +6,24 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **The people are in the credits.** Pepito2t on development, BurningSun on 3D and VFX,
+  DabitheSheep on audio — first in the document and first on the screen, because who made the game
+  is the credit a player is actually owed and the asset ledger answers a different question.
+
+### Fixed
+
+- **The arrow keys had no name.** `InputBindings` read only `physical_keycode`, and Godot's own
+  `ui_*` defaults are bound by logical keycode — so they described to an **empty string**, which is
+  not `UNBOUND` and which nothing therefore noticed. The credits screen shipped a hint reading
+  `SCROLL` with no key in front of it.
+- `verify_glyphs` checked the hints of the options screen alone and passed while that shipped. It
+  finds every scene carrying a hint now, and holds a floor on how many it expects to find.
+- `verify_strings` asked the CSV whether a key existed. **The CSV is not what the game reads** —
+  Godot compiles it, and a row added without a re-import is a row `tr()` has never heard of. It
+  asks `tr()` now, which is the question the screen asks.
+
 ### Changed
 
 - **A new intro video** with the VFX pass — impact shake, bloom, chromatic aberration, grain and a

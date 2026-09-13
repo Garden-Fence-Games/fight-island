@@ -16,7 +16,7 @@ func _init() -> void:
 	if roll == null:
 		quit(1)
 		return
-	if roll.assets.is_empty() or roll.tools.is_empty():
+	if roll.people.is_empty() or roll.assets.is_empty() or roll.tools.is_empty():
 		printerr(
 			(
 				"credits: %s gave no rows — the parser and the document disagree"
@@ -29,5 +29,10 @@ func _init() -> void:
 		printerr("credits: could not save " + OUTPUT)
 		quit(1)
 		return
-	print("credits baked — %d assets, %d tools" % [roll.assets.size(), roll.tools.size()])
+	print(
+		(
+			"credits baked — %d people, %d assets, %d tools"
+			% [roll.people.size(), roll.assets.size(), roll.tools.size()]
+		)
+	)
 	quit(0)
