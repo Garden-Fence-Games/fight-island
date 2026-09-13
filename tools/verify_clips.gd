@@ -26,7 +26,14 @@ const INVENTORY_HEADING: String = "## Clips the rigs do not carry yet"
 const INVENTORY_CELLS: int = 3
 ## The clips the stand-in library exists to lend. Written out rather than read from the library,
 ## which would make this check agree with whatever the library happens to hold.
-const LENT: Array[String] = ["attack_gun_1", "attack_gun_2", "attack_gun_3", "parry"]
+const LENT: Array[String] = [
+	"attack_gun_1",
+	"attack_gun_2",
+	"attack_gun_3",
+	"attack_stick_2",
+	"attack_stick_3",
+	"parry",
+]
 const FARMER_LENT: Array[String] = [
 	"windup_punch", "attack_punch", "windup_sweep", "attack_scythe", "windup_throw", "attack_throw"
 ]
@@ -57,6 +64,20 @@ const TIMED_BY: Dictionary[String, String] = {
 	"attack_gun_1": "res://data/attacks/gun_single.tres",
 	"attack_gun_2": "res://data/attacks/gun_double.tres",
 	"attack_gun_3": "res://data/attacks/gun_charged.tres",
+	"attack_stick_2": "res://data/attacks/stick_return.tres",
+	"attack_stick_3": "res://data/attacks/stick_overhead.tres",
+}
+## The stick's chain, in the order it is thrown. Each swing has to begin on the pose the one before
+## it ended on, and what makes that possible is that the authored backhand opens and closes on the
+## grip — which is also the only reason the other two can be it again. A swing that ended somewhere
+## else would snap the arm back between hits, and three swings in a row is where that shows.
+const CHAIN: Array[String] = ["attack_stick_1", "attack_stick_2", "attack_stick_3"]
+## The weapon whose suffix is being read, and the states that have a variant to find behind it.
+const STICK: StringName = &"stick"
+const IN_HAND: Dictionary[String, String] = {
+	"Idle": "idle_stick",
+	"Move": "walk_stick",
+	"Dodge": "dodge_roll_stick",
 }
 ## A frame at sixty, which is finer than any window in the game is tuned to.
 const SAME_LENGTH: float = 0.016
@@ -95,6 +116,8 @@ func _run() -> void:
 		)
 	_check_the_stand_ins_are_lent_and_not_the_rigs()
 	await _check_every_blow_starts_where_its_draw_ended()
+	await _check_the_stick_chain_joins_up()
+	await _check_the_stick_is_in_hand()
 	await _check_the_farmer_actually_plays_them()
 	await _check_the_stand_ins_still_fit_the_rules()
 	_check_the_gaps_are_written_down(missing, documented)
@@ -409,6 +432,83 @@ func _check_one_pair(player: AnimationPlayer, attack: AttackData, path: String) 
 	_same_length(player, String(attack.animation), attack.active, path + " active window")
 
 
+## The suffix, which is the whole of how the stick's idle, walk and roll reach the game: the rig
+## carries them, `data/weapons/stick.tres` names the ending, and no line of code knows a stick
+## exists. That is the arrangement worth holding — a `clip_suffix` cleared in a tuning pass would
+## leave the player walking empty-handed with a stick in his hand and nothing anywhere would say so.
+##
+## Read off the component rather than off the resource, because the question is which clip ends up
+## playing.
+func _check_the_stick_is_in_hand() -> void:
+	var stick := Arsenal.find(STICK)
+	if stick == null:
+		_fail("the arsenal has no weapon called %s" % STICK)
+		return
+	var actor := (load(PLAYER) as PackedScene).instantiate()
+	add_child(actor)
+	await get_tree().physics_frame
+	var anim := actor.get_node_or_null("Animation") as AnimationComponent
+	if anim == null:
+		_fail("the player carries no AnimationComponent")
+		actor.queue_free()
+		return
+	EventBus.weapon_equipped.emit(stick)
+	await get_tree().physics_frame
+	for state: String in IN_HAND:
+		anim.play_state(StringName(state))
+		await get_tree().physics_frame
+		var wanted := StringName(IN_HAND[state])
+		if anim.current_clip() != wanted:
+			_fail(
+				(
+					"with the stick in hand %s plays %s, expected %s"
+					% [state, anim.current_clip(), wanted]
+				)
+			)
+	actor.queue_free()
+
+
+## The stick's three swings read as one movement or as three, and the arm is where that is decided:
+## each swing has to leave it where the next one picks it up. Only the backhand is authored and the
+## other two are it again, so this holds the property that lets them be — a re-authored swing that
+## ended on its follow-through would pass every other check here and still snap between hits.
+func _check_the_stick_chain_joins_up() -> void:
+	var actor := (load(PLAYER) as PackedScene).instantiate()
+	add_child(actor)
+	await get_tree().physics_frame
+	var anim := actor.get_node_or_null("Animation") as AnimationComponent
+	if anim != null and anim.animation_player != null:
+		for index: int in CHAIN.size() - 1:
+			_check_one_join(anim.animation_player, CHAIN[index], CHAIN[index + 1])
+	actor.queue_free()
+
+
+func _check_one_join(player: AnimationPlayer, ends: String, opens: String) -> void:
+	if not player.has_animation(ends) or not player.has_animation(opens):
+		return
+	var before := player.get_animation(ends)
+	var after := player.get_animation(opens)
+	var left := before.find_track(NodePath(SWINGING_JOINT), Animation.TYPE_ROTATION_3D)
+	var picked := after.find_track(NodePath(SWINGING_JOINT), Animation.TYPE_ROTATION_3D)
+	if left < 0 or picked < 0:
+		_fail("%s or %s does not turn %s" % [ends, opens, SWINGING_JOINT])
+		return
+	var apart := _apart(
+		before.rotation_track_interpolate(left, before.length),
+		after.rotation_track_interpolate(picked, 0.0)
+	)
+	if apart > SAME_POSE_DEGREES:
+		_fail(
+			(
+				(
+					"%s ends %.1f degrees from where %s starts — the chain snaps the arm back "
+					% [ends, apart, opens]
+				)
+				+ "between hits. Rebake with tools/build_clips.tscn"
+			)
+		)
+
+
 func _check_the_gaps_are_written_down(missing: Array[String], documented: Array[String]) -> void:
 	for clip: String in missing:
 		if not documented.has(clip):
@@ -441,10 +541,12 @@ func _documented_gaps() -> Array[String]:
 		return []
 	var listed: Array[String] = []
 	var inside := false
+	var found := false
 	while not file.eof_reached():
 		var line := file.get_line().strip_edges()
 		if line.begins_with("#"):
 			inside = line == INVENTORY_HEADING
+			found = found or inside
 			continue
 		if not inside or not line.begins_with("|"):
 			continue
@@ -455,10 +557,10 @@ func _documented_gaps() -> Array[String]:
 		if clip == "" or clip == "Clip" or clip.begins_with("---"):
 			continue
 		listed.append(clip)
-	if listed.is_empty():
+	if not found:
 		_fail(
 			(
-				"the inventory under '%s' has no rows — the parser and the document disagree"
+				"docs/asset-pipeline.md has no '%s' section — the parser and the document disagree"
 				% INVENTORY_HEADING
 			)
 		)

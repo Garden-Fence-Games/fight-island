@@ -12,6 +12,7 @@ display_name = "WEAPON_STICK"
 attacks = [ExtResource("2"), ExtResource("3"), ExtResource("4")]
 is_ranged = false
 found_at_wave = 2
+clip_suffix = &"_stick"
 chain_lockout = 0.50
 perfect_lockout = 0.22
 magazine = 0

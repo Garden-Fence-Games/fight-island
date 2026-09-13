@@ -26,8 +26,8 @@ licence = "© the project, all rights reserved"
 
 [sub_resource type="Resource" id="Resource_q8wms"]
 script = ExtResource("1_2q5yg")
-subject = "assets/models/char_player_stand_ins.tres — generated recoil and guard clips"
-source = "built by tools/build_clips.tscn from the rig's own poses"
+subject = "assets/models/char_player_stand_ins.tres — generated recoil, swing and guard clips"
+source = "built by tools/build_clips.tscn from the rig's own poses and its authored backhand"
 author = "Purple-Sigil, posed"
 licence = "© the project, all rights reserved"
 
