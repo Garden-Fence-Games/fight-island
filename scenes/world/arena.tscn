@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3]
+[gd_scene load_steps=33 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -29,6 +29,8 @@
 [ext_resource type="Script" path="res://scripts/systems/blood_field.gd" id="27"]
 [ext_resource type="PackedScene" path="res://scenes/fx/blood_splash.tscn" id="28"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy_pirate.tscn" id="29"]
+[ext_resource type="Script" path="res://scripts/systems/coconut_director.gd" id="30"]
+[ext_resource type="Resource" path="res://data/pickups/coconut.tres" id="31"]
 
 [node name="Arena" type="Node3D"]
 
@@ -88,6 +90,10 @@ bird_scene = ExtResource("25")
 
 [node name="PickupDirector" type="Node" parent="."]
 script = ExtResource("22")
+
+[node name="CoconutDirector" type="Node" parent="."]
+script = ExtResource("30")
+data = ExtResource("31")
 
 [node name="TutorialDirector" type="Node" parent="."]
 script = ExtResource("11")

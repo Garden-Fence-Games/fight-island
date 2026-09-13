@@ -23,17 +23,17 @@ shares = Array[ExtResource("3")]([SubResource("Share_1")])
 [sub_resource type="Resource" id="Share_2"]
 script = ExtResource("3")
 enemy = ExtResource("4")
-share = 0.75
+share = 0.72
 
 [sub_resource type="Resource" id="Share_3"]
 script = ExtResource("3")
 enemy = ExtResource("5")
-share = 0.20
+share = 0.18
 
 [sub_resource type="Resource" id="Pirate_3"]
 script = ExtResource("3")
 enemy = ExtResource("10")
-share = 0.05
+share = 0.10
 
 [sub_resource type="Resource" id="Band_3"]
 script = ExtResource("2")
@@ -43,22 +43,22 @@ shares = Array[ExtResource("3")]([SubResource("Share_2"), SubResource("Share_3")
 [sub_resource type="Resource" id="Share_4"]
 script = ExtResource("3")
 enemy = ExtResource("4")
-share = 0.60
+share = 0.59
 
 [sub_resource type="Resource" id="Share_5"]
 script = ExtResource("3")
 enemy = ExtResource("5")
-share = 0.20
+share = 0.18
 
 [sub_resource type="Resource" id="Share_6"]
 script = ExtResource("3")
 enemy = ExtResource("6")
-share = 0.15
+share = 0.13
 
 [sub_resource type="Resource" id="Pirate_5"]
 script = ExtResource("3")
 enemy = ExtResource("10")
-share = 0.05
+share = 0.10
 
 [sub_resource type="Resource" id="Band_5"]
 script = ExtResource("2")
@@ -73,17 +73,17 @@ share = 0.45
 [sub_resource type="Resource" id="Share_8"]
 script = ExtResource("3")
 enemy = ExtResource("5")
-share = 0.30
+share = 0.27
 
 [sub_resource type="Resource" id="Share_9"]
 script = ExtResource("3")
 enemy = ExtResource("6")
-share = 0.20
+share = 0.18
 
 [sub_resource type="Resource" id="Pirate_8"]
 script = ExtResource("3")
 enemy = ExtResource("10")
-share = 0.05
+share = 0.10
 
 [sub_resource type="Resource" id="Band_8"]
 script = ExtResource("2")
@@ -93,22 +93,22 @@ shares = Array[ExtResource("3")]([SubResource("Share_7"), SubResource("Share_8")
 [sub_resource type="Resource" id="Share_10"]
 script = ExtResource("3")
 enemy = ExtResource("4")
-share = 0.32
+share = 0.36
 
 [sub_resource type="Resource" id="Share_11"]
 script = ExtResource("3")
 enemy = ExtResource("5")
-share = 0.35
+share = 0.32
 
 [sub_resource type="Resource" id="Share_12"]
 script = ExtResource("3")
 enemy = ExtResource("6")
-share = 0.25
+share = 0.22
 
 [sub_resource type="Resource" id="Pirate_12"]
 script = ExtResource("3")
 enemy = ExtResource("10")
-share = 0.08
+share = 0.10
 
 [sub_resource type="Resource" id="Band_12"]
 script = ExtResource("2")
