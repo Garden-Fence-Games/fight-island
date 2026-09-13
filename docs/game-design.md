@@ -103,7 +103,16 @@ is three times the price per metre.
 ## Weapons
 
 Fists are always available. The **stick** is a ground pickup that spawns during wave 2, the **gun**
-during wave 4. Pickups last the whole run; swapping is free and instant.
+during wave 4. Pickups last the whole run; swapping is free and instant — no animation, no penalty,
+no cooldown, because the interesting decision is which weapon suits the moment and not whether the
+player can afford to find out.
+
+**The bag is on screen**, bottom right: the three weapons in the order the key walks along them, the
+one in hand lit, the ones carried dim, and the ones nobody has found yet dimmer still with the wave
+they arrive in instead of a key. A weapon the player owns and cannot see is a weapon they do not
+use, and the row is also where the progression of a run is legible — the gun is a promise from the
+first wave, not a surprise in the fourth. A locked slot is shown rather than hidden for the same
+reason the merchant shows a locked card.
 
 | Weapon | # | Attack | Damage | Stamina | Windup | Active | Recovery | Chain window | Perfect window | Perfect × | Range | Arc | Stagger | Poise |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
