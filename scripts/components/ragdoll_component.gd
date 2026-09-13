@@ -88,6 +88,10 @@ static var _fitted: Dictionary[String, Dictionary] = {}
 ## agree, which is why they are exported rather than written into the reading.
 @export var belly_axis: Vector3 = Vector3(0.0, 0.0, 1.0)
 @export var head_bone: StringName = &"mixamorig_Head"
+## The bones a recoil runs through. The shooting arm and nothing above it: a kick that reached the
+## spine would rock a body the player is still steering. The hand is left out on purpose: the gun
+## hangs off it, and an animated hand is what keeps the revolver in the fist while the arm goes.
+@export var kick_bones: Array[StringName] = [&"mixamorig_RightArm", &"mixamorig_RightForeArm"]
 
 var _skeleton: Skeleton3D = null
 var _simulator: PhysicalBoneSimulator3D = null
@@ -96,6 +100,8 @@ var _running: bool = false
 var _still_for: float = 0.0
 var _elapsed: float = 0.0
 var _ceiling: float = 0.0
+var _kick_left: float = 0.0
+var _kick_lasts: float = 0.0
 
 
 func _ready() -> void:
@@ -110,6 +116,41 @@ func is_ready() -> bool:
 
 func is_running() -> bool:
 	return _running
+
+
+## The physics has an arm. Deliberately not `is_running`: a recoil is not a knockdown, the clip
+## underneath it keeps playing, and whatever asks whether the body has been taken over has to go on
+## getting no for the whole of a shot.
+func is_kicking() -> bool:
+	return _kick_left > 0.0
+
+
+## A recoil. The shooting arm goes to the physics for `seconds`, thrown along `direction` at `push`
+## metres per second, and the simulator's influence falls from one to nought across that window so
+## the arm eases back onto the clip rather than snapping onto it.
+##
+## **Only the named bones simulate.** Everything else stays kinematic and goes on taking its pose
+## from the AnimationPlayer, so the player keeps standing, walking and aiming through the shot — the
+## arm is jointed to a shoulder that is still being animated, which is the shape a recoil has.
+##
+## **And the clip must not pose those bones.** An AnimationPlayer and a skeleton modifier both write
+## bone poses and the clip wins: with the arm still in `aim_gun`, the physical body swung five
+## centimetres and the skin moved two millimetres. `tools/build_clips.gd` leaves the two joints out
+## of the clip entirely and `verify_clips` holds it there.
+func kick(direction: Vector3, push: float, seconds: float) -> void:
+	if not is_ready() or _running or is_kicking() or seconds <= 0.0:
+		return
+	_start_from_rest(kick_bones)
+	var impulse := direction.normalized() * push
+	for named: StringName in kick_bones:
+		var body := body_of(named)
+		if body == null:
+			continue
+		body.linear_velocity = impulse
+		body.angular_velocity = Vector3.ZERO
+	_kick_lasts = seconds
+	_kick_left = seconds
+	_simulator.influence = 1.0
 
 
 ## Knocks the body down. `push` is in metres per second, applied along `direction` and shared by
@@ -258,13 +299,18 @@ func stop() -> void:
 	_running = false
 	_still_for = 0.0
 	_elapsed = 0.0
+	_kick_left = 0.0
 	if _simulator != null:
+		_simulator.influence = 1.0
 		_simulator.physical_bones_stop_simulation()
 	if _skeleton != null:
 		_skeleton.reset_bone_poses()
 
 
 func _physics_process(delta: float) -> void:
+	if _kick_left > 0.0:
+		_carry_the_kick(delta)
+		return
 	if not _running:
 		return
 	_elapsed += delta
@@ -278,6 +324,20 @@ func _physics_process(delta: float) -> void:
 	came_to_rest.emit()
 
 
+## The recoil running out. The influence is what the arm comes back on: at nought the modifier
+## writes nothing and the bone is the clip's again, so the last frame of the kick and the first
+## frame after it are the same pose.
+func _carry_the_kick(delta: float) -> void:
+	_kick_left = maxf(_kick_left - delta, 0.0)
+	if _simulator == null:
+		return
+	_simulator.influence = _kick_left / maxf(_kick_lasts, 0.001)
+	if _kick_left > 0.0:
+		return
+	_simulator.physical_bones_stop_simulation()
+	_simulator.influence = 1.0
+
+
 func _begin(ceiling: float) -> void:
 	_running = true
 	_still_for = 0.0
@@ -287,13 +347,15 @@ func _begin(ceiling: float) -> void:
 
 ## The simulation started with the skeleton at rest, then every body put back where the animation
 ## had it. See the class notes for why the joints need the rest pose to be their zero.
-func _start_from_rest() -> void:
+## **Every** body is put back where the animation had it, whatever subset is being simulated: the
+## ones left kinematic are what the simulated ones are jointed to.
+func _start_from_rest(which: Array[StringName] = bones) -> void:
 	var into_world := _skeleton.global_transform
 	var posed: Array[Transform3D] = []
 	for body: PhysicalBone3D in _bodies:
 		posed.append(into_world * _skeleton.get_bone_global_pose(body.get_bone_id()))
 	_skeleton.reset_bone_poses()
-	_simulator.physical_bones_start_simulation(bones)
+	_simulator.physical_bones_start_simulation(which)
 	for index: int in _bodies.size():
 		_bodies[index].global_transform = posed[index]
 

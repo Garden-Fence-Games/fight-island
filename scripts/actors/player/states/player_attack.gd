@@ -17,6 +17,9 @@ enum Phase { WINDUP, ACTIVE, RECOVERY }
 ## Where on a body the burst is drawn: the chest, which is where a swing lands and where the camera
 ## is already looking. The feet are under the ground and the head is off the top of most bodies.
 const IMPACT_HEIGHT: float = 1.1
+## How much of a shot's kick goes up rather than straight back. A revolver climbs; a recoil that
+## only travelled backwards would read as the arm being tugged rather than as the gun going off.
+const KICK_RISE: float = 0.8
 
 var _attack: AttackData = null
 var _index: int = 0
@@ -135,6 +138,20 @@ func _shoot() -> void:
 		# Announced whether or not the ray found anybody: the report is the round leaving, and a
 		# gun that is only audible when it connects is a gun the player cannot tell they fired.
 		EventBus.weapon_fired.emit(_attack)
+	_recoil()
+
+
+## The kick, and it is physics rather than a clip.
+##
+## A keyed recoil is the same recoil every time and it is authored against a body that may not be
+## standing where the clip assumed. Throwing the arm instead means the shot argues with wherever the
+## player actually is — walking, turning, mid-blend — and comes back onto the animation by itself.
+## Back and up along the body's own facing, because that is where a revolver goes.
+func _recoil() -> void:
+	if player.ragdoll == null or _attack.recoil <= 0.0:
+		return
+	var behind := player.global_basis.z.normalized()
+	player.ragdoll.kick(behind + Vector3.UP * KICK_RISE, _attack.recoil, _attack.recoil_lasts)
 
 
 func _begin_recovery() -> void:
