@@ -308,7 +308,7 @@ Named as a past-tense fact, never as a command and never `on_*`:
 `wave_started(index)` · `wave_cleared(index, reward)` · `enemy_spawned(enemy)` ·
 `enemy_died(enemy, archetype, money)` · `player_damaged(current, max)` · `player_died()` ·
 `stamina_changed(current, max)` · `weapon_equipped(data)` · `ammo_changed(mag, reserve)` ·
-`rounds_scavenged(rounds)` ·
+`rounds_scavenged(rounds, body)` ·
 `attack_landed(target, damage, perfect, attack)` · `corpse_struck(where, direction, perfect)` ·
 `parry_perfect()` ·
 `money_changed(amount)` ·
