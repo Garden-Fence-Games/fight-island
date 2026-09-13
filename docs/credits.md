@@ -13,7 +13,7 @@ answers the second; this one is the answer the player is owed.
 | | |
 |---|---|
 | Pepito2t | Developer |
-| BurningSun | 3D and VFX |
+| Purple-Sigil | 3D and VFX |
 | DabitheSheep | Audio |
 
 ## Assets
