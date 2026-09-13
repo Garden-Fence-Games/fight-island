@@ -82,6 +82,15 @@ All notable changes to this project are documented here, following
   `WaveDirector.progress` and `PlayerAttack.charge`. No behaviour changed, and every headless check
   still passes — which is the point: nothing was reading any of it.
 
+- **Five constants nothing read, and the comments that vouched for them.** `Enemy.CHEST_HEIGHT`
+  named `verify_sightlines` as its keeper, and that check went out with the thrower.
+  `WeaponPickup.LABEL_HEIGHT` was a second home for a height the scene already sets — the same 1.3,
+  written twice. `AudioManager.BODY_DECAY` said it was "the thud both hits share" long after each
+  impact family got a decay of its own. `PosedMesh.PER_VERTEX` was a hard-coded four under a
+  docstring saying the figure is read rather than assumed — which the code does, from the arrays,
+  three lines further down. `Emphasis.NOTHING` was never returned; the decision it was written to
+  record, that an ordinary hit gets no mark at all, moves onto `for_hit`, which is what makes it.
+
 - **The reaper is gone too. The island is the farmhand and the pirate.** Removed rather than left
   at a share of zero — the archetype, his sweep, his telegraph, his draw and blow, his locale row,
   and `verify_playfield`, the check that walked nineteen thousand square metres asking whether any

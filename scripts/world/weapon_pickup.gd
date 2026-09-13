@@ -10,9 +10,6 @@ extends Area3D
 ## Two reasons: it points at what it is talking about, and a world-space label cannot collide with
 ## the tutorial's own prompt, which is the one part of the screen already spoken for.
 
-## Where the prompt sits above the weapon, and how close the player has to be for it to appear. The
-## radius is the collision shape's; this is only how far the label reads from.
-const LABEL_HEIGHT: float = 1.3
 ## How high off the ground the weapon itself sits. What has to be in shot is the thing that reads
 ## as a weapon, not the air above it — `PickupDirector` asks the camera about this height, and
 ## `tools/verify_view.tscn` judges it at the same one.

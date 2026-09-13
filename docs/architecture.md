@@ -388,8 +388,7 @@ components and listeners alike and none of them should hold a path to it. Each s
 **one batch the first time it is wanted**; every instance after that has already been used. Thirty
 enemies on screen is the budget and an effect instanced per hit is the easiest way to lose it —
 a `PackedScene` unpacked and a particle system configured inside the frame the player is meant to be
-feeling. An effect hands itself back with a `spent` signal, the same shape as `Projectile` and the
-enemy pool.
+feeling. An effect hands itself back with a `spent` signal, the same shape the enemy pool uses.
 
 **`AttackData.vfx` names the effect a landed hit plays**, and it is played from
 `PlayerAttack._on_landed` — the one place that knows the attack, the body and whether the timing was

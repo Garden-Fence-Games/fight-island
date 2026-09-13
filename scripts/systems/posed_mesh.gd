@@ -17,10 +17,6 @@ extends RefCounted
 ## one. Normals go through the same transforms without the translation, which is close enough for a
 ## body lying on sand and far cheaper than an inverse transpose per bone.
 
-## How many bones a vertex may be weighted to. Four is the format's normal; eight exists and the
-## arrays say so, which is why this is read rather than assumed.
-const PER_VERTEX: int = 4
-
 
 ## The frozen mesh, or null when there is nothing to freeze — an unskinned mesh is already static
 ## and its caller should keep what it has.

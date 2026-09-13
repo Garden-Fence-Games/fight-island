@@ -72,9 +72,6 @@ const CRY_SECONDS: float = 0.66
 const CRY_FROM: float = 430.0
 const CRY_TO: float = 150.0
 
-## The thud both hits share. Short, because a jab that rings is a jab that covers the next one — and
-## because what tells a perfect hit apart has to be the partial on top, not a longer body.
-const BODY_DECAY: float = 0.035
 ## The partial the perfect window adds, and how long it rings. **The same in every impact family**:
 ## it is the signature, and a player who learns it on fists has learnt it on the gun.
 ## **The whole game is in A minor**, and that is not decoration — it is what stops two sounds that
