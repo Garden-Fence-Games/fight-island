@@ -57,6 +57,7 @@ prints those glyphs, and a printed glyph that does nothing is worse than no glyp
 | Action | Keyboard / mouse | Gamepad (Xbox) | Deadzone |
 |---|---|---|---|
 | `debug_overlay` | `F3` | — | 0.2 |
+| `debug_mix_desk` | `F4` | — | 0.2 |
 | `debug_skip_wave` | `F5` | — | 0.2 |
 | `debug_give_money` | `F6` | — | 0.2 |
 
@@ -125,7 +126,7 @@ InputEventJoypadMotion Object(InputEventJoypadMotion,…,"axis":<JoyAxis>,"axis_
 
 `Key`: W 87 · A 65 · S 83 · D 68 · C 67 · R 82 · E 69 · `1`–`3` 49–51 · Space 32 ·
 Shift 4194325 · Escape 4194305 · Tab 4194306 · Enter 4194309 · numpad Enter 4194310 ·
-F3 4194334 · F5 4194336 · F6 4194337
+F3 4194334 · F4 4194335 · F5 4194336 · F6 4194337
 
 `MouseButton`: left 1 · right 2 · middle 3 · wheel up 4 · wheel down 5
 

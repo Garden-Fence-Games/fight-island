@@ -29,12 +29,19 @@ func _ready() -> void:
 	attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 	max_distance = AudioManager.REACH
 	unit_size = AudioManager.VOICE_UNIT
-	volume_db = linear_to_db(AudioManager.gain_of_voice(kind))
+	add_to_group(&"remixable")
+	remix()
 	# What makes a body read as *coming towards you*. The pitch rises as it closes and falls as it
 	# leaves, which is the one cue that needs no learning at all.
 	doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP
 	_rng.seed = GameState.run_seed + int(get_instance_id())
 	_waits = _rng.randf_range(quiet_for.x, quiet_for.y)
+
+
+## Re-reads the mix. A body sets its gain once and lives for a whole wave, so a fader moved during a
+## fight would otherwise reach every farmer except the ones already on the island.
+func remix() -> void:
+	volume_db = linear_to_db(AudioManager.gain_of_voice(kind))
 
 
 ## Says something, unless it said something too recently. Returns whether it spoke, so a caller that

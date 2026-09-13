@@ -37,6 +37,7 @@ func _ready() -> void:
 	# A stream still playing when the engine tears down is reported as a leak, and CI fails a boot on
 	# any warning at all. The bed already sits this out for the same reason; the jukebox joins it.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group(&"remixable")
 	finished.connect(_on_finished)
 	if AudioManager.audible:
 		_begin(_drawn())
@@ -53,6 +54,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 ## What is playing, or null. The player in the corner asks; nothing else has any business knowing.
+## Re-reads the desk, without restarting the track it is in the middle of.
+func remix() -> void:
+	if playing:
+		volume_db = linear_to_db(AudioManager.peak_of_music())
+
+
 func now_playing() -> MusicTrack:
 	return _track
 

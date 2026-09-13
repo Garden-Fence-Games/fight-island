@@ -221,6 +221,11 @@ func _check_nothing_the_player_needs_is_on_a_bus_they_may_mute() -> void:
 			)
 		)
 	for child: Node in AudioManager.get_children():
+		# The sea is a subtree now rather than one player, so it is audited as one: every source in
+		# it belongs on Ambience, and the player may switch the whole thing off together.
+		if child == AudioManager.bed():
+			_check_the_sea_is_all_on_one_bus(child)
+			continue
 		var flat := child as AudioStreamPlayer
 		var placed := child as AudioStreamPlayer3D
 		var bus: StringName = flat.bus if flat != null else (placed.bus if placed != null else &"")
@@ -242,6 +247,18 @@ func _check_nothing_the_player_needs_is_on_a_bus_they_may_mute() -> void:
 			):
 				_fail("the %s layer plays on %s rather than Music" % [id, player.bus])
 				return
+
+
+## One source of the sea left on `SFX` would be a stretch of coast the player cannot mute, and it
+## would be the one they notice — the sea is the loudest thing on the beach.
+func _check_the_sea_is_all_on_one_bus(sea: Node) -> void:
+	for child: Node in sea.get_children():
+		var flat := child as AudioStreamPlayer
+		var placed := child as AudioStreamPlayer3D
+		var bus: StringName = flat.bus if flat != null else (placed.bus if placed != null else &"")
+		if not bus.is_empty() and bus != &"Ambience":
+			_fail("a stretch of the sea plays on %s rather than Ambience" % bus)
+			return
 
 
 func _sound_on(flat: AudioStreamPlayer, placed: AudioStreamPlayer3D) -> StringName:

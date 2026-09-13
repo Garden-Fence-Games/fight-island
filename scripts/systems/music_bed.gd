@@ -88,7 +88,11 @@ func _process(delta: float) -> void:
 	_pressure = lerpf(_pressure, _trouble(), clampf(FOLLOWS * delta, 0.0, 1.0))
 	for id: StringName in _players:
 		var player: AudioStreamPlayer = _players[id]
-		player.volume_db = _volume_of(id, _pressure) + (UNDER_A_TRACK_DB if _track_on else 0.0)
+		player.volume_db = (
+			_volume_of(id, _pressure)
+			+ (UNDER_A_TRACK_DB if _track_on else 0.0)
+			+ MixTable.of_family(&"layer")
+		)
 	_ducked_for = maxf(_ducked_for - delta, 0.0)
 	if _bus < 0:
 		return
