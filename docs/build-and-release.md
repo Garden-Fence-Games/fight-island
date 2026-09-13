@@ -94,6 +94,11 @@ so nothing in the repository can do them:
 Everything else is already wired: until the secret exists the publish step skips with a warning, so
 a tag still produces a draft GitHub Release with both archives attached.
 
+**A failed publish cannot be fixed by re-running the job.** A rerun replays the workflow file *as it
+was at the tag*, so a wrong `ITCH_USER` is still wrong the second time — and `workflow_dispatch` does
+not help either, because the itch step is gated on `refs/tags/v`. Fix it on `main`, then move the
+tag. That is what the 0.1.0 publish cost, after both binaries had already been built and attached.
+
 ## Steam — manual, and not for now
 
 **The decision as of 2026-09-13 is that Steam is not happening for this release.** The procedure

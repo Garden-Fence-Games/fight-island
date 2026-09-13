@@ -26,33 +26,6 @@ All notable changes to this project are documented here, following
     `HitFeedback` was not listening and passed without testing anything. The mutation caught it.
     `verify_feel` warns about that exact trap in its own docstring, and this is the second time the
     project has paid for it.
-
-
-### Fixed
-
-- **The itch.io publish had the wrong account.** `ITCH_USER` was the repository owner, and the page
-  lives at `garden-fence/fight-island`. The 0.1.0 tag exported both platforms and attached them to
-  the GitHub release before failing on `/wharf/builds: invalid target (bad user)` — everything up to
-  the last step was fine, which is why nothing caught it earlier: it is the one part of the chain
-  that cannot be checked without a key.
-
-### Changed
-
-- **Both weapons lie on the island from wave 1.** The stick used to arrive in wave 2 and the gun in
-  wave 4, and holding them back cost more than it bought: a weapon nobody has found is a weapon that
-  does not exist, and behind the gun sat an upgrade track the merchant refuses until the weapon is
-  carried — so a player saving for it had money with nowhere to go for four waves. Ammunition comes
-  off the bodies from the first wave for the same reason: the pocket only fills once the gun is in
-  the bag.
-  - The gun **was** being dropped, and in shot: rolled two hundred times on the real island it landed
-    inside the camera's frustum two hundred times. What it was not, was **visible** — a borrowed rig
-    mesh at its own scale is 0.54 m of dark metal on pale sand under a camera twenty metres up, a
-    third of the carved shape it replaced. Everything borrowed is brought to one length on the
-    ground now, so a weapon reads as a thing to pick up before it reads as a model of itself.
-  - `verify_weapons` gains the assertion the failure needed: **every upgrade track that names a
-    weapon names a weapon that is dropped.** A track for a weapon nobody can find is a locked card
-    for the length of a run, and nothing said so.
-
 ## [0.1.0] - 2026-09-13
 
 The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
@@ -96,6 +69,21 @@ still fail.
 
 ### Fixed
 
+- **Nobody could find a coconut.** Reported as the feature not working at all; it worked perfectly —
+  ten drops out of ten, two in a live wave, exactly the wave-1 ceiling. It was simply impossible to
+  know any of it had happened. Three reasons, each measured: they were judged in frame at the palm
+  rather than at the landing spot, so half of them fell out of shot; fourteen centimetres of brown on
+  sand under brown trunks through a pixel filter is not a pickup, so it carries its own light now;
+  and walking over one is the only pickup with no prompt, so the feed says `Coconut +25 health`. A
+  real bug turned up on the way — `drop_from` wrote `global_position` **before the node entered the
+  tree**, which Godot discards, so a coconut sat at the origin until its first fall step.
+
+- **The itch.io publish had the wrong account.** `ITCH_USER` was the repository owner, and the page
+  lives at `garden-fence/fight-island`. The 0.1.0 tag exported both platforms and attached them to
+  the GitHub release before failing on `/wharf/builds: invalid target (bad user)` — everything up to
+  the last step was fine, which is why nothing caught it earlier: it is the one part of the chain
+  that cannot be checked without a key.
+
 - **The mix was written in peaks, and peaks measure the wrong thing.** Two sounds normalised to the
   same peak are not the same loudness and are not close — measured across this game's own sounds the
   gap reached seventeen decibels. The farmers sat at a footstep's loudness because a voice level was
@@ -116,6 +104,21 @@ still fail.
   the game to take health away a fraction at a time rather than in whole blows.
 
 ### Changed
+
+- **Both weapons lie on the island from wave 1.** The stick used to arrive in wave 2 and the gun in
+  wave 4, and holding them back cost more than it bought: a weapon nobody has found is a weapon that
+  does not exist, and behind the gun sat an upgrade track the merchant refuses until the weapon is
+  carried — so a player saving for it had money with nowhere to go for four waves. Ammunition comes
+  off the bodies from the first wave for the same reason: the pocket only fills once the gun is in
+  the bag.
+  - The gun **was** being dropped, and in shot: rolled two hundred times on the real island it landed
+    inside the camera's frustum two hundred times. What it was not, was **visible** — a borrowed rig
+    mesh at its own scale is 0.54 m of dark metal on pale sand under a camera twenty metres up, a
+    third of the carved shape it replaced. Everything borrowed is brought to one length on the
+    ground now, so a weapon reads as a thing to pick up before it reads as a model of itself.
+  - `verify_weapons` gains the assertion the failure needed: **every upgrade track that names a
+    weapon names a weapon that is dropped.** A track for a weapon nobody can find is a locked card
+    for the length of a run, and nothing said so.
 
 - **The tutorial runs on a clock, before wave 1.** It was wave 1 itself, seven lessons each waiting
   for the player to perform them, and the parry lesson could hold the wave open for ever. After the
