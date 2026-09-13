@@ -29,7 +29,7 @@ func _ready() -> void:
 	attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 	max_distance = AudioManager.REACH
 	unit_size = AudioManager.VOICE_UNIT
-	volume_db = linear_to_db(AudioManager.peak_of_voice())
+	volume_db = linear_to_db(AudioManager.gain_of_voice(kind))
 	# What makes a body read as *coming towards you*. The pitch rises as it closes and falls as it
 	# leaves, which is the one cue that needs no learning at all.
 	doppler_tracking = AudioStreamPlayer3D.DOPPLER_TRACKING_PHYSICS_STEP

@@ -17,6 +17,23 @@ const EAR_ON_THE_BODY: float = 2.0
 ## from `VOICES`: twelve voices can all be busy, but holding the mix to twelve simultaneous
 ## telegraphs would make the game inaudible to protect against something that never happens.
 const AT_ONCE: int = 4
+## How far a baked sound may sit from the level it declared before the table has stopped describing
+## the mix that plays.
+const OFF_THE_TABLE: float = 1.0
+## A floor under the logarithm, so an empty buffer reports as silent rather than as minus infinity.
+const QUIETEST: float = 0.00001
+## Where a voice is judged. A farmer shouts on his way in, so the middle figure is the range he is
+## usually at and the other two are either side of it.
+const RANGES: Array[float] = [3.0, 8.0, 15.0]
+## How far under a wind-up a voice has to stay, and how far over the sea it has to sit. Six decibels
+## either way: about where one sound is heard as being behind another rather than beside it.
+const UNDER_A_WIND_UP: float = 6.0
+const OVER_THE_SEA: float = 6.0
+## What the engine will not amplify a close source past, which is `max_db`'s default.
+const CLOSE_CEILING: float = 3.0
+## Where a RIFF file's first chunk starts, and how much of each chunk is its own header.
+const RIFF_HEADER: int = 12
+const CHUNK_HEADER: int = 8
 ## A minor, as semitones above the root. The game is in it because the bed, the perfect parry and
 ## the perfect signature always were, and the three that were not have been moved.
 const A_MINOR: Array[int] = [0, 2, 3, 5, 7, 8, 10]
@@ -52,6 +69,9 @@ func _ready() -> void:
 func _run() -> void:
 	await _check_the_ear_is_the_player()
 	_check_the_mix_is_ordered()
+	_check_the_table_is_what_plays()
+	_check_the_recordings_are_where_the_mix_thinks()
+	_check_a_voice_stays_under_a_wind_up_at_every_range()
 	_check_a_busy_fight_does_not_clip()
 	_check_everything_tonal_is_in_the_same_key()
 	_report()
@@ -119,25 +139,143 @@ func _camera_reach(player: Node3D) -> float:
 ## loudest is the thing about to hit you.
 func _check_the_mix_is_ordered() -> void:
 	var rungs: Array[Array] = [
+		[&"ui_click", &"surf"],
+		[&"surf", &"step_sand"],
 		[&"step_sand", &"whiff"],
 		[&"step_water", &"whiff"],
 		[&"roll", &"whiff"],
 		[&"whiff", &"hit"],
 		[&"hurt", &"telegraph"],
 		[&"hit", &"telegraph"],
+		[&"music_ground", &"hit"],
 	]
 	for rung: Array in rungs:
 		var under: StringName = rung[0]
 		var over: StringName = rung[1]
-		var quiet := AudioManager.peak_of(under)
-		var loud := AudioManager.peak_of(over)
+		var quiet := linear_to_db(AudioManager.level_of(under))
+		var loud := linear_to_db(AudioManager.level_of(over))
 		if quiet >= loud:
 			_fail(
 				(
-					"%s peaks at %.2f and %s at %.2f — the quieter one is not quieter"
+					"%s is %.1f dB and %s is %.1f — the quieter one is not quieter"
 					% [under, quiet, over, loud]
 				)
 			)
+
+
+## **What the sounds actually came out at, not what the table says they were asked for.**
+##
+## The rung check above reads the table, so it would pass on a table that never reached the
+## waveforms — which is exactly the failure the whole loudness pass exists to end. This one measures
+## the buffers the engine is holding and holds each to the figure it declared.
+func _check_the_table_is_what_plays() -> void:
+	for id: StringName in AudioManager.every_sound():
+		var wav := AudioManager.sound(id)
+		if wav == null:
+			continue
+		var wanted := linear_to_db(AudioManager.level_of(id))
+		var heard := linear_to_db(maxf(SoundBank.loudness(SoundBank.samples(wav)), QUIETEST))
+		if absf(heard - wanted) > OFF_THE_TABLE:
+			_fail("%s declares %.1f dB and plays at %.1f" % [id, wanted, heard])
+
+
+## **The one family that cannot be normalised, held to the figure the mix is built on.**
+##
+## Every synthesised sound is scaled to the level it asks for, so it cannot drift. A recording
+## arrives at whatever loudness somebody recorded it at, and the gain it is played at is the
+## difference between that and where the mix wants it — so the moment a clip is replaced by a louder
+## or quieter take, the figure underneath the gain is wrong and nothing else in the project would
+## say so. This is what says so.
+##
+## Read from the source `.wav` rather than from the imported stream, because the import compresses
+## and there is nothing left to measure at runtime.
+func _check_the_recordings_are_where_the_mix_thinks() -> void:
+	for kind: StringName in [&"farmer", &"gull"]:
+		var levels: Array[float] = []
+		for file: String in DirAccess.get_files_at(AudioManager.VOICES_AT):
+			if not file.ends_with(".wav") or not file.begins_with(String(kind)):
+				continue
+			var samples := _read_wav("%s/%s" % [AudioManager.VOICES_AT, file])
+			if samples.is_empty():
+				_fail("%s could not be read, so the mix cannot be checked against it" % file)
+				continue
+			levels.append(SoundBank.loudness(samples))
+		if levels.is_empty():
+			_fail("no %s recording could be measured" % kind)
+			continue
+		var total := 0.0
+		for level: float in levels:
+			total += level
+		var heard := linear_to_db(maxf(total / float(levels.size()), QUIETEST))
+		var written: float = (
+			AudioManager.GULL_AS_RECORDED if kind == &"gull" else AudioManager.FARMER_AS_RECORDED
+		)
+		if absf(heard - written) > AudioManager.AS_RECORDED_TOLERANCE:
+			_fail(
+				(
+					"the %s clips average %.1f dB and the mix is built on %.1f — the gain over them is wrong"
+					% [kind, heard, written]
+				)
+			)
+
+
+## **Where the player actually hears them from.** A level at the source says nothing on its own: two
+## sounds an octave apart in the table can arrive level if one of them carries further, and the two
+## that matter most here — a farmer shouting and the wind-up that must never be buried — are exactly
+## that pair.
+func _check_a_voice_stays_under_a_wind_up_at_every_range() -> void:
+	var warning := linear_to_db(AudioManager.level_of(&"telegraph"))
+	var shout := (
+		linear_to_db(AudioManager.gain_of_voice(&"farmer")) + AudioManager.FARMER_AS_RECORDED
+	)
+	var floor_level := linear_to_db(AudioManager.level_of(&"surf"))
+	for metres: float in RANGES:
+		var heard := shout + _carries(AudioManager.VOICE_UNIT, metres)
+		var over := warning + _carries(AudioManager.POSITIONAL_UNIT, metres)
+		if heard > over - UNDER_A_WIND_UP:
+			_fail("at %.0f m a farmer is %.1f dB against a wind-up at %.1f" % [metres, heard, over])
+		# And the other side of it: a voice under the sea is a voice nobody hears, which is the
+		# complaint this whole pass started from.
+		if heard < floor_level + OVER_THE_SEA:
+			_fail(
+				(
+					"at %.0f m a farmer is %.1f dB against a sea at %.1f — he is in the bed"
+					% [metres, heard, floor_level]
+				)
+			)
+
+
+func _carries(unit: float, metres: float) -> float:
+	return minf(linear_to_db(unit / maxf(metres, 0.01)), CLOSE_CEILING)
+
+
+## Enough of a RIFF reader to find the samples. The engine cannot hand these back — it holds them
+## compressed — and the point of the check is the file rather than what the importer made of it.
+func _read_wav(path: String) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return out
+	var bytes := file.get_buffer(file.get_length())
+	file.close()
+	if bytes.size() < RIFF_HEADER or bytes.slice(0, 4).get_string_from_ascii() != "RIFF":
+		return out
+	var at := RIFF_HEADER
+	var channels := 1
+	while at + CHUNK_HEADER <= bytes.size():
+		var name := bytes.slice(at, at + 4).get_string_from_ascii()
+		var size := bytes.decode_u32(at + 4)
+		var body := at + CHUNK_HEADER
+		if name == "fmt ":
+			channels = maxi(bytes.decode_u16(body + 2), 1)
+		elif name == "data":
+			var count := mini(int(size), bytes.size() - body) / 2
+			out.resize(count / channels)
+			for index: int in out.size():
+				out[index] = float(bytes.decode_s16(body + index * channels * 2)) / 32768.0
+			return out
+		at = body + int(size) + (int(size) & 1)
+	return out
 
 
 ## Several of these arrive at once — three farmers commit at night while a chain lands — and each
