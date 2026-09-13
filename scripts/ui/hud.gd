@@ -61,12 +61,17 @@ func _ready() -> void:
 	EventBus.rounds_scavenged.connect(_on_rounds_scavenged)
 	EventBus.attack_landed.connect(_on_attack_landed)
 	EventBus.enemy_died.connect(_on_enemy_died)
-	ammo.visible = false
 	# Captions are capitals in the design system and a Godot theme carries no text transform.
 	for caption: Label in captions:
 		caption.text = tr(caption.text).to_upper()
 	_on_money_changed(GameState.money, 0)
 	_on_wave_started(GameState.wave, 0)
+	# The bag is read rather than waited for, because every ammunition signal has already gone out
+	# by the time this scene exists: a resumed run announces at boot and a fresh one equips before
+	# the arena is swapped in. Listening alone left a gun the player was carrying with no counter
+	# at all for the rest of the run.
+	_on_weapon_equipped(GameState.loadout.weapon())
+	_on_ammo_changed(GameState.loadout.magazine, GameState.loadout.reserve)
 
 
 ## Polled rather than signalled: the hour moves every frame that a farmer is falling over, and a

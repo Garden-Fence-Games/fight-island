@@ -46,6 +46,7 @@ func _run() -> void:
 	await _check_the_chip_answers_money_arriving()
 	await _check_one_kill_punches_both_chips()
 	await _check_the_banner_announces_the_wave()
+	await _check_a_late_hud_reads_the_bag()
 	_check_stats_are_tallied()
 	_put_the_run_back()
 	_report()
@@ -263,6 +264,29 @@ func _check_the_banner_announces_the_wave() -> void:
 		_fail("the banner reads %s, expected WAVE 03 PASSED" % banner.text)
 	if banner.modulate.a <= 0.0:
 		_fail("the banner should be on screen when a wave is passed")
+
+
+## A HUD is always built after the bag. A resumed run announces its ammunition while `GameState`
+## is still booting, and a fresh one equips before the arena scene is swapped in — both emissions
+## land where no HUD is listening, so the panel has to read the bag on the way up. It did not, and
+## a player who continued a run carrying the gun had no counter for the rest of it.
+func _check_a_late_hud_reads_the_bag() -> void:
+	GameState.begin_run()
+	GameState.loadout.find_weapon(&"gun")
+	GameState.loadout.spend(2)
+	var late := (load(HUD) as PackedScene).instantiate() as CanvasLayer
+	add_child(late)
+	await get_tree().process_frame
+	var ammo := late.get_node("Root/BottomRight/Ammo") as PanelContainer
+	if not ammo.visible:
+		_fail("a HUD built with the gun already in the bag never showed the ammo panel")
+	var magazine := (late.get_node("Root/BottomRight/Ammo/Rows/Row/Magazine") as Label).text
+	var reserve := (late.get_node("Root/BottomRight/Ammo/Rows/Row/Reserve") as Label).text
+	if magazine != "04" or reserve != "24":
+		_fail("a late HUD reads %s/%s, expected 04/24" % [magazine, reserve])
+	late.queue_free()
+	await get_tree().process_frame
+	GameState.end_run()
 
 
 func _check_stats_are_tallied() -> void:
