@@ -21,6 +21,14 @@ const LONGEST: float = 5.0
 ## Recorded voice is mono on purpose — a positional source is placed by the engine, and a stereo
 ## file hands it a pan that fights the position.
 const CHANNELS: int = 1
+## Where a voice is judged against a wind-up. A farmer shouts on his way in, so the middle figure is
+## the range he is usually at and the other two are either side of it.
+const RANGES: Array[float] = [3.0, 8.0, 15.0]
+## How far under a wind-up a voice has to stay, in decibels. Six is about where one sound is heard
+## as being behind another rather than beside it.
+const UNDER_A_WIND_UP: float = 6.0
+## What the engine will not amplify a close source past, which is `max_db`'s default.
+const CLOSE_CEILING: float = 3.0
 
 var _failures: PackedStringArray = []
 
@@ -75,19 +83,35 @@ func _check_a_line_is_short_and_mono() -> void:
 ## The line the whole mix rests on. Checked against the wind-up rather than against a number,
 ## because what must never happen is a voice drawing level with the one sound the player has to
 ## hear — and the wind-up's own figure is where that is decided.
+##
+## **At a distance, and at several of them.** The previous version compared the gain a voice is
+## played at against the peak a wind-up is baked to: two numbers in different units, neither of them
+## a loudness. It passed contentedly while the farmers sat thirteen decibels under where the table
+## said they were, because there was nothing in it that could have noticed.
+##
+## The two do not carry alike either — a wind-up has the wider unit size precisely so it reaches
+## further — so the comparison is made where the player stands rather than at the source.
 func _check_a_voice_stays_under_a_wind_up() -> void:
-	var voice := AudioManager.peak_of_voice()
-	var telegraph := AudioManager.peak_of(&"telegraph")
-	if voice >= telegraph:
-		_fail(
-			(
+	var warning := linear_to_db(AudioManager.level_of(&"telegraph"))
+	var shout := (
+		linear_to_db(AudioManager.gain_of_voice(&"farmer")) + AudioManager.FARMER_AS_RECORDED
+	)
+	for metres: float in RANGES:
+		var heard := shout + _carries(AudioManager.VOICE_UNIT, metres)
+		var over := warning + _carries(AudioManager.POSITIONAL_UNIT, metres)
+		if heard > over - UNDER_A_WIND_UP:
+			_fail(
 				(
-					"a voice peaks at %.2f and a wind-up at %.2f — flavour is drowning the one sound "
-					+ "the game is built around"
+					"at %.0f m a voice is %.1f dB against a wind-up at %.1f — flavour is drowning it"
+					% [metres, heard, over]
 				)
-				% [voice, telegraph]
 			)
-		)
+
+
+## What the engine does to a positional sound between the body and the ear: inverse distance, and a
+## ceiling close in that `max_db` puts there whatever the arithmetic says.
+func _carries(unit: float, metres: float) -> float:
+	return minf(linear_to_db(unit / maxf(metres, 0.01)), CLOSE_CEILING)
 
 
 ## Its own player, moving with the body. A pooled voice is put at a point and played, so it is

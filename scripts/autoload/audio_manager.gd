@@ -25,7 +25,7 @@ extends Node
 ##
 ## Loudness is declared per sound rather than normalised to one peak for all of them. It has to be:
 ## a footfall at a hit's level buries the fight it is walking through, and the telegraph has to cut
-## through three of them. `peak_of` reports what each one asked for, so the mix is a table a check
+## through three of them. `level_of` reports what each one asked for, so the mix is a table a check
 ## can read rather than a set of numbers tuned until it sounded fine once.
 ##
 ## Baked into `AudioStreamWAV` once, not pushed through an `AudioStreamGenerator` frame by frame: a
@@ -50,66 +50,91 @@ const POSITIONAL_VOICES: int = 6
 ## twenty metres at the default zoom and twenty-four at the furthest — because a telegraph that is
 ## only audible once its owner is on screen is a telegraph the ring already gave you.
 const REACH: float = 34.0
-## Sine partials are summed, so a raw buffer can pass one. Everything is scaled to the peak it
-## declares afterwards rather than hoping.
-const PEAK: float = 0.9
-## What the player's own body is worth in the mix. A footfall is confirmation, not information, and
-## it happens twice a second for the whole run.
-const FOOTFALL_PEAK: float = 0.28
-## A roll, a reload, a dry trigger, a body going down: moments worth hearing and never worth
-## listening for.
-const INCIDENTAL_PEAK: float = 0.55
-## A miss is the least interesting thing that happens in a fight, and it used to be as loud as a
-## landed blow. Under a hit by enough to be heard as the lesser of the two.
-const WHIFF_PEAK: float = 0.45
+# The mix is written in loudness, not in peaks, and that is the whole of it.
+#
+# Every figure below is a decibel target for how loud a sound actually *is* — the loudest
+# root-mean-square it reaches over a third of a second, which is roughly what the ear adds up.
+# `SoundBank.loudness` is what measures it and `verify_mix` is what holds the table to it.
+#
+# It used to be written in peaks, and peaks measure the wrong thing. A decaying sine spends nearly
+# all its length near silence and noise that never stops sits at its own average throughout, so two
+# sounds at the same peak can be seventeen decibels apart to listen to. One declared figure held the
+# reload, the merchant chime and a body going down, and the three came out ten decibels apart; and a
+# farmer's recorded shout — the one family here not normalised at all, being a recording rather than
+# a buffer — sat at a footstep's loudness before the distance to him was even applied. A mix nobody
+# could hear was not a mix tuned badly. It was a table measured in the wrong unit.
+#
+# The order is the design: quietest is the body the player already controls, loudest is the thing
+# about to hit him.
 ## The one sound that has to be heard over everything else, so it is the loudest thing in the game —
-## above a landed blow, which is the loudest thing the player causes. The margin is small because
-## peak is not really how a wind-up cuts through: it arrives from a direction and it climbs, and
-## both of those beat a decibel. It is still not allowed to be the quieter of the two.
-const TELEGRAPH_PEAK: float = 0.95
+## above a landed blow, which is the loudest thing the player causes.
+const TELEGRAPH_LEVEL: float = -15.0
 ## A wave passing is the only sound in the game the player is allowed to sit and enjoy.
-const STING_PEAK: float = 0.7
-## The bed sits under the whole game without ever being the reason something was missed.
+const STING_LEVEL: float = -17.0
+## A landed blow, a shot, a parry. The loudest thing the player himself causes, and under the one
+## thing he has to hear coming.
+const IMPACT_LEVEL: float = -22.0
+## What a body's own voice is worth. **Under a wind-up, and well under it.** A farmer shouting is
+## flavour; a farmer committing is the one sound the whole game is built around being able to hear,
+## and a voice that competed with it would be taking away the thing it is decorating.
+const FARMER_LEVEL: float = -23.0
+## A reload, a dry trigger, a body going down: moments worth hearing and never worth listening for.
+const INCIDENTAL_LEVEL: float = -25.0
+## What a music track comes out at. Above the bed's own layers, which is what "the bed sits under
+## the music" means in figures — and still **under everything that tells the player something**: a
+## soundtrack is the one sound the player may switch off, so it can never be why a wind-up was
+## missed.
+const TRACK_LEVEL: float = -26.0
+## A miss is the least interesting thing that happens in a fight. Under a hit by enough to be heard
+## as the lesser of the two.
+const WHIFF_LEVEL: float = -27.0
+## A gull is weather. It is the only voice in the game that says nothing, so it sits six decibels
+## under the one that does.
+const GULL_LEVEL: float = -29.0
+## The bed's own layers, under a track by the margin that makes "the bed sits under the music" a
+## figure rather than a hope.
+const LAYER_LEVEL: float = -29.0
+## What the player's own body is worth. A footfall is confirmation, not information, and it happens
+## twice a second for the whole run — so it is graded against the sea it is walking beside rather
+## than against the blows it is landing.
+const FOOTFALL_LEVEL: float = -36.0
+## The bed sits under the whole game without ever being the reason something was missed. **It is
+## continuous, and that is why it is this far down**: everything else in this table is something
+## that happens, and this is something that is always there.
+const SURF_LEVEL: float = -40.0
+## **The quietest thing in the game**, under even a footfall: it confirms that the machine heard you
+## and carries nothing else. A menu has no other sound in it, so a click anywhere near a hit would
+## be the loudest thing a player ever hears — and they hear it forty times before the island.
+const CLICK_LEVEL: float = -42.0
+## How far the whole table sits below where it is written, and the only figure that moves the mix as
+## a whole rather than changing its shape.
 ##
-## **It is continuous, and that is why it is this far down.** At 0.30 it came out at −16.5 dB — the
-## same level as a farmer's voice and three decibels under a hit, which for a transient is fine and
-## for a sound that never stops is the sea shouting over the fight. Everything else in this table is
-## something that happens; this is something that is always there, and it is graded against the
-## footfalls rather than against the blows.
-const SURF_PEAK: float = 0.12
-## How much of full scale the loudest sound in the game is allowed to reach, before its own declared
-## peak scales it further.
-##
-## **Derived, not tasted.** Several arrive at once — three farmers commit at night while a chain
-## lands — and each was normalised as though it were alone. Uncorrelated sources sum as the root of
-## the sum of squares, so four at 0.9 reach 1.8 and the master clips. Half puts those four at 0.9.
-##
-## The table of peaks is untouched by this: it is the **shape** of the mix, and one figure moves the
-## whole thing down together rather than nine figures moving apart.
-const HEADROOM: float = 0.5
+## **Derived, not tasted.** Several sounds arrive at once — three farmers commit at night while a
+## chain lands — and each is normalised as though it were alone. Uncorrelated sources sum as the
+## root of the sum of squares, so four at full scale reach twice it and the master clips. This is
+## what keeps the four loudest inside full scale together, and `verify_mix` is what proves it does.
+const HEADROOM_DB: float = -2.0
 ## Where the project's own recordings live, and how a family is spelled. The only sounds in the game
 ## that are **not** synthesised: a voice is the one thing a sine cannot do, and these are recordings
 ## made for this project rather than anything with a licence to clear.
 const VOICES_AT: String = "res://assets/audio/voice"
-## What a body's own voice is worth in the mix. **Under a wind-up, and well under it.** A farmer
-## shouting is flavour; a farmer committing is the one sound the whole game is built around being
-## able to hear, and a voice that competed with it would be taking away the thing it is decorating.
-const VOICE_PEAK: float = 0.30
+## How loud the recordings already are, per family, before the game does anything to them.
+##
+## **A recording cannot be normalised the way a buffer can**: the engine holds these compressed and
+## there is nothing to measure at load. So the figure is written down, and `verify_mix` reads the
+## source files and fails when it drifts.
+const FARMER_AS_RECORDED: float = -19.4
+const GULL_AS_RECORDED: float = -18.6
+## How far a recorded family may drift from the figure above before the gain built on it is wrong.
+const AS_RECORDED_TOLERANCE: float = 1.5
 ## How loudly a moving source carries. Lower than the pooled positional voices: those announce a
 ## wind-up and have to cut through, this one is a man muttering on his way over.
 const VOICE_UNIT: float = 5.0
-## What a music track comes out at. Above the bed's own layers, which is what "the bed sits under
-## the music" means in figures — and still **under everything that tells the player something**: a
-## soundtrack is the one sound the player is invited to switch off, so it can never be the reason a
-## wind-up went unheard.
-const TRACK_PEAK: float = 0.34
+## How loudly a pooled positional sound carries — a wind-up, a body going down. Wider than a body's
+## own voice on purpose: this is the family that has to reach the player before its owner does.
+const POSITIONAL_UNIT: float = 8.0
 ## What the engine treats as silence, and what a track fades up from rather than starting at.
 const SILENT_DB: float = -80.0
-## What a menu press is worth. **The quietest thing in the game**, under even a footfall: it
-## confirms that the machine heard you and carries nothing else. A menu is a place with no other
-## sound in it, so a click that sat anywhere near a hit would be the loudest thing a player ever
-## hears — and they hear it forty times before they reach the island.
-const CLICK_PEAK: float = 0.10
 ## The soundtrack itself. Empty until the music is delivered; the jukebox and the player in the
 ## corner both cope with that rather than assuming a track exists.
 const PLAYLIST: String = "res://data/music/playlist.tres"
@@ -193,8 +218,6 @@ const SURF_SECONDS: float = 6.0
 ## three and two seconds, which do not divide into each other — so the water never settles into a
 ## rhythm the ear can count, and a wave every three seconds is a metronome.
 const SURF_SWELLS: int = 2
-## What a music layer is normalised to. Well under the bed, which is itself well under the fight: a
-## layer that competes with a wind-up has put atmosphere in front of information.
 ## How far apart the three notes of an ending fall, and how long the last one holds. Slower than the
 ## wave sting: a run finishing is the one moment in the game nobody is in a hurry.
 const ENDING_STEP: float = 0.22
@@ -202,7 +225,6 @@ const ENDING_RING: float = 0.55
 ## The one looping sound that is not music. Named so a check can tell the bed apart from a one-shot
 ## without knowing what a surf is.
 const BED_SOUND: StringName = &"surf"
-const MUSIC_PEAK: float = 0.22
 ## How long every layer runs before it comes round. **The same for all of them**, or they drift out
 ## of phase within a minute and the lift stops being one piece of music getting louder.
 const MUSIC_SECONDS: float = 8.0
@@ -237,6 +259,7 @@ var audible: bool = DisplayServer.get_name() != "headless"
 
 var _sounds: Dictionary = {}
 var _recordings: Dictionary = {}
+var _levels: Dictionary = {}
 var _peaks: Dictionary = {}
 var _voices: Array[AudioStreamPlayer] = []
 var _placed: Array[AudioStreamPlayer3D] = []
@@ -263,7 +286,7 @@ func _ready() -> void:
 		# behind the player, and ten metres behind the player is exactly where he matters.
 		voice.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 		voice.max_distance = REACH
-		voice.unit_size = 8.0
+		voice.unit_size = POSITIONAL_UNIT
 		add_child(voice)
 		_placed.append(voice)
 	_load_the_recordings()
@@ -372,17 +395,21 @@ func voices_of(kind: StringName) -> Array[AudioStream]:
 	return found
 
 
-## What a voice comes out at. Separate from `peak_of` because a recording is not registered as one
-## of the synthesised sounds — it has no id, there are nine of it, and what the mix cares about is
-## the family.
-func peak_of_voice() -> float:
-	return VOICE_PEAK * HEADROOM
+## The gain a family of recordings is played at, which is the one place in the mix where the figure
+## has to be **derived rather than declared**: a buffer is normalised to the level it asked for, and
+## a recording arrives at whatever loudness it was recorded at. So the gain is the difference
+## between the two, and getting it wrong is exactly how the farmers ended up at a footstep's
+## loudness while the table said they were four decibels under a landed blow.
+func gain_of_voice(kind: StringName) -> float:
+	var wanted := GULL_LEVEL if kind == &"gull" else FARMER_LEVEL
+	var recorded := GULL_AS_RECORDED if kind == &"gull" else FARMER_AS_RECORDED
+	return db_to_linear(wanted + HEADROOM_DB - recorded)
 
 
-## What a track comes out at, headroom included — the same question `peak_of` answers for a sound
+## What a track comes out at, headroom included — the same question `level_of` answers for a sound
 ## with an id, for the one stream that has no id and is not synthesised.
 func peak_of_music() -> float:
-	return TRACK_PEAK * HEADROOM
+	return _level(TRACK_LEVEL)
 
 
 ## A menu press, heard. Flat rather than positional: a button is not anywhere on the island.
@@ -402,13 +429,19 @@ func every_sound() -> Array[StringName]:
 	return all
 
 
-## What a sound actually comes out at. The mix is a decision, so it is readable rather than implied:
-## a check can assert that a footfall sits under a hit without anybody having to listen.
+## How loud a sound is meant to be. The mix is a decision, so it is readable rather than implied: a
+## check can assert that a footfall sits under a hit without anybody having to listen.
 ##
-## `HEADROOM` is in it, because this answers *how loud is this really* — the table of declared peaks
-## is the **shape** of the mix and this is the mix.
+## `HEADROOM_DB` is in it, because this answers *how loud is this really* — the table of levels is
+## the **shape** of the mix and this is the mix.
+func level_of(id: StringName) -> float:
+	return float(_levels.get(id, 0.0))
+
+
+## How tall a sound came out, which is a different question and only one thing asks it: four loud
+## sounds arriving together have to fit inside full scale, and what sums there is amplitude.
 func peak_of(id: StringName) -> float:
-	return float(_peaks.get(id, 0.0)) * HEADROOM
+	return float(_peaks.get(id, 0.0))
 
 
 ## The looping bed, for a check that wants to know it is running rather than hear it.
@@ -433,41 +466,41 @@ func _free_positional_voice() -> AudioStreamPlayer3D:
 
 
 func _build() -> void:
-	_register(&"hit", _hit(BASE_IMPACT, false), PEAK)
-	_register(&"perfect", _hit(BASE_IMPACT, true), PEAK)
+	_register(&"hit", _hit(BASE_IMPACT, false), IMPACT_LEVEL)
+	_register(&"perfect", _hit(BASE_IMPACT, true), IMPACT_LEVEL)
 	for family: StringName in IMPACTS:
 		if family == BASE_IMPACT:
 			continue
-		_register(StringName("hit_%s" % family), _hit(family, false), PEAK)
-		_register(StringName("perfect_%s" % family), _hit(family, true), PEAK)
+		_register(StringName("hit_%s" % family), _hit(family, false), IMPACT_LEVEL)
+		_register(StringName("perfect_%s" % family), _hit(family, true), IMPACT_LEVEL)
 	for archetype: StringName in TELEGRAPHS:
 		if archetype == BASE_TELEGRAPH:
 			continue
-		_register(StringName("telegraph_%s" % archetype), _telegraph_of(archetype), TELEGRAPH_PEAK)
-	_register(&"low_ammo", _low_ammo(), INCIDENTAL_PEAK)
-	_register(&"whiff", _whiff(), WHIFF_PEAK)
-	_register(&"shot", _shot(false), PEAK)
-	_register(&"shot_heavy", _shot(true), PEAK)
-	_register(&"parry_perfect", _parry(true), PEAK)
-	_register(&"parry_late", _parry(false), PEAK)
-	_register(&"step_sand", _step(false), FOOTFALL_PEAK)
-	_register(&"step_water", _step(true), FOOTFALL_PEAK)
-	_register(&"roll", _roll(), FOOTFALL_PEAK)
-	_register(&"reload", _reload(), INCIDENTAL_PEAK)
-	_register(&"dry_fire", _dry_fire(), INCIDENTAL_PEAK)
-	_register(&"hurt", _hurt(), INCIDENTAL_PEAK)
-	_register(&"enemy_down", _enemy_down(), INCIDENTAL_PEAK)
-	_register(&"pickup", _pickup(), INCIDENTAL_PEAK)
-	_register(&"telegraph", _telegraph(), TELEGRAPH_PEAK)
-	_register(&"wave_cleared", _sting(), STING_PEAK)
-	_register(&"merchant", _merchant(), INCIDENTAL_PEAK)
-	_register(&"victory", _ending(true), STING_PEAK)
-	_register(&"defeat", _ending(false), STING_PEAK)
-	_register(&"death_cry", _death_cry(), STING_PEAK)
-	_register(&"surf", _surf(), SURF_PEAK)
-	_register(&"ui_click", _click(), CLICK_PEAK)
+		_register(StringName("telegraph_%s" % archetype), _telegraph_of(archetype), TELEGRAPH_LEVEL)
+	_register(&"low_ammo", _low_ammo(), INCIDENTAL_LEVEL)
+	_register(&"whiff", _whiff(), WHIFF_LEVEL)
+	_register(&"shot", _shot(false), IMPACT_LEVEL)
+	_register(&"shot_heavy", _shot(true), IMPACT_LEVEL)
+	_register(&"parry_perfect", _parry(true), IMPACT_LEVEL)
+	_register(&"parry_late", _parry(false), IMPACT_LEVEL)
+	_register(&"step_sand", _step(false), FOOTFALL_LEVEL)
+	_register(&"step_water", _step(true), FOOTFALL_LEVEL)
+	_register(&"roll", _roll(), FOOTFALL_LEVEL)
+	_register(&"reload", _reload(), INCIDENTAL_LEVEL)
+	_register(&"dry_fire", _dry_fire(), INCIDENTAL_LEVEL)
+	_register(&"hurt", _hurt(), INCIDENTAL_LEVEL)
+	_register(&"enemy_down", _enemy_down(), INCIDENTAL_LEVEL)
+	_register(&"pickup", _pickup(), INCIDENTAL_LEVEL)
+	_register(&"telegraph", _telegraph(), TELEGRAPH_LEVEL)
+	_register(&"wave_cleared", _sting(), STING_LEVEL)
+	_register(&"merchant", _merchant(), INCIDENTAL_LEVEL)
+	_register(&"victory", _ending(true), STING_LEVEL)
+	_register(&"defeat", _ending(false), STING_LEVEL)
+	_register(&"death_cry", _death_cry(), STING_LEVEL)
+	_register(&"surf", _surf(), SURF_LEVEL)
+	_register(&"ui_click", _click(), CLICK_LEVEL)
 	for layer: StringName in LAYERS:
-		_register(layer, _layer(layer), MUSIC_PEAK)
+		_register(layer, _layer(layer), LAYER_LEVEL)
 
 
 ## The recordings, by family, taken from the file names. A directory rather than a list in code: a
@@ -496,9 +529,17 @@ func _load_the_recordings() -> void:
 		(_recordings[kind] as Array[AudioStream]).append(stream)
 
 
-func _register(id: StringName, stream: AudioStreamWAV, peak: float) -> void:
+## The level asked for and the peak that came back. Both, because they answer different questions
+## and only one of them is a decision: the level is the mix, and the peak is what the sum of four of
+## them has to fit inside.
+func _register(id: StringName, stream: AudioStreamWAV, level: float) -> void:
 	_sounds[id] = stream
-	_peaks[id] = peak
+	_levels[id] = _level(level)
+	_peaks[id] = SoundBank.peak_of(SoundBank.samples(stream))
+
+
+static func _level(decibels: float) -> float:
+	return db_to_linear(decibels + HEADROOM_DB)
 
 
 ## A thud and a snap of contact. The perfect one adds a partial that outlasts both by a quarter of
@@ -523,7 +564,7 @@ func _hit(family: StringName, perfect: bool) -> AudioStreamWAV:
 	if perfect:
 		SoundBank.tone(samples, PERFECT_PARTIAL, 0.38, PERFECT_RING)
 		SoundBank.tone(samples, PERFECT_PARTIAL * 1.5, 0.16, 0.10)
-	return SoundBank.bake(samples, PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(IMPACT_LEVEL))
 
 
 ## A swing through air: something **passing**, not something failing to arrive.
@@ -547,7 +588,7 @@ func _whiff() -> AudioStreamWAV:
 	SoundBank.soften(samples, 0.40)
 	SoundBank.swell(samples, 0.055)
 	SoundBank.release(samples, 0.09)
-	return SoundBank.bake(samples, WHIFF_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(WHIFF_LEVEL))
 
 
 ## The report. A crack and a body, both very short, and nothing that rings: what makes a gunshot a
@@ -560,7 +601,7 @@ func _shot(heavy: bool) -> AudioStreamWAV:
 	SoundBank.hiss(samples, 0.9, 0.012 if heavy else 0.006, 71)
 	SoundBank.tone(samples, 70.0 if heavy else 120.0, 0.8, 0.09 if heavy else 0.05)
 	SoundBank.soften(samples, 0.45 if heavy else 0.65)
-	return SoundBank.bake(samples, PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(IMPACT_LEVEL))
 
 
 ## A bell. The perfect one rings for half a second on three partials; the late one is the same bell
@@ -572,9 +613,9 @@ func _parry(perfect: bool) -> AudioStreamWAV:
 		SoundBank.tone(samples, 880.0, 0.40, 0.30)
 		SoundBank.tone(samples, 1318.0, 0.25, 0.24)
 		SoundBank.tone(samples, 2640.0, 0.12, 0.14)
-		return SoundBank.bake(samples, PEAK * HEADROOM)
+		return SoundBank.bake(samples, _level(IMPACT_LEVEL))
 	SoundBank.tone(samples, 440.0, 0.25, 0.055)
-	return SoundBank.bake(samples, PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(IMPACT_LEVEL))
 
 
 ## A foot in sand, and a foot in the surf. Both are noise and neither has a pitch: sand is a scuff
@@ -588,12 +629,12 @@ func _step(wading: bool) -> AudioStreamWAV:
 		var sand := SoundBank.long_enough(0.014)
 		SoundBank.hiss(sand, 0.7, 0.014, 5)
 		SoundBank.soften(sand, 0.30)
-		return SoundBank.bake(sand, FOOTFALL_PEAK * HEADROOM)
+		return SoundBank.bake(sand, _level(FOOTFALL_LEVEL))
 	var water := SoundBank.long_enough(0.045)
 	SoundBank.hiss(water, 0.7, 0.045, 7)
 	SoundBank.soften(water, 0.55)
 	SoundBank.swell(water, 0.012)
-	return SoundBank.bake(water, FOOTFALL_PEAK * HEADROOM)
+	return SoundBank.bake(water, _level(FOOTFALL_LEVEL))
 
 
 ## A roll: air, and then a body arriving. The swish alone would be a slower whiff, so the shoulder
@@ -610,7 +651,7 @@ func _roll() -> AudioStreamWAV:
 	SoundBank.swell(samples, 0.10)
 	SoundBank.tone(samples, 110.0, 0.55, 0.05, 0.20)
 	SoundBank.release(samples, 0.08)
-	return SoundBank.bake(samples, FOOTFALL_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(FOOTFALL_LEVEL))
 
 
 ## Two dry clacks, a magazine out and a magazine in. Nothing rings: it is the one sound in the game
@@ -620,7 +661,7 @@ func _reload() -> AudioStreamWAV:
 	SoundBank.hiss(samples, 0.8, 0.006, 41)
 	SoundBank.hiss(samples, 0.6, 0.008, 43, 0.10)
 	SoundBank.soften(samples, 0.75)
-	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(INCIDENTAL_LEVEL))
 
 
 ## The trigger on an empty magazine. One dead click and a stub of low body — the sound of a thing
@@ -631,7 +672,7 @@ func _dry_fire() -> AudioStreamWAV:
 	SoundBank.hiss(samples, 0.7, 0.005, 47)
 	SoundBank.tone(samples, 210.0, 0.25, 0.012)
 	SoundBank.soften(samples, 0.8)
-	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(INCIDENTAL_LEVEL))
 
 
 ## Taking a hit. Lower and duller than landing one, and with the top rolled off: the player has to
@@ -641,7 +682,7 @@ func _hurt() -> AudioStreamWAV:
 	SoundBank.tone(samples, 88.0, 0.9, 0.055)
 	SoundBank.hiss(samples, 0.4, 0.022, 53)
 	SoundBank.soften(samples, 0.18)
-	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(INCIDENTAL_LEVEL))
 
 
 ## A body going down: a fall rather than an impact. The pitch drops away instead of ringing, which
@@ -653,7 +694,7 @@ func _enemy_down() -> AudioStreamWAV:
 	SoundBank.hiss(samples, 0.35, 0.05, 59)
 	SoundBank.soften(samples, 0.22)
 	SoundBank.release(samples, 0.14)
-	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(INCIDENTAL_LEVEL))
 
 
 ## Finding a weapon. Two notes going up, which is the shortest way a game has ever said *that one
@@ -662,7 +703,7 @@ func _pickup() -> AudioStreamWAV:
 	var samples := SoundBank.long_enough(0.10, 0.07)
 	SoundBank.tone(samples, 660.0, 0.5, 0.09)
 	SoundBank.tone(samples, 990.0, 0.45, 0.10, 0.07)
-	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(INCIDENTAL_LEVEL))
 
 
 ## **The most important sound in the game, and the only one that rises.**
@@ -687,7 +728,7 @@ func _telegraph_of(archetype: StringName) -> AudioStreamWAV:
 	SoundBank.climb(samples, float(voice["from"]), float(voice["to"]), 0.75)
 	SoundBank.hiss(samples, 0.16, 0.02, int(voice["grain"]))
 	SoundBank.release(samples, 0.07)
-	return SoundBank.bake(samples, TELEGRAPH_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(TELEGRAPH_LEVEL))
 
 
 ## The last round in the magazine. Two short clicks a semitone apart, dry and quiet: running out is
@@ -701,7 +742,7 @@ func _low_ammo() -> AudioStreamWAV:
 	SoundBank.tone(samples, 880.0, 0.6, 0.02)
 	SoundBank.tone(samples, 932.0, 0.6, 0.05, 0.07)
 	SoundBank.soften(samples, 0.30)
-	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(INCIDENTAL_LEVEL))
 
 
 ## A wave passed. Three notes up, and the only sound in the game allowed to be musical: it is the
@@ -711,7 +752,7 @@ func _sting() -> AudioStreamWAV:
 	SoundBank.tone(samples, A, 0.5, 0.20)
 	SoundBank.tone(samples, C, 0.5, 0.24, 0.15)
 	SoundBank.tone(samples, E, 0.5, 0.42, 0.30)
-	return SoundBank.bake(samples, STING_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(STING_LEVEL))
 
 
 ## The counter opening. Two notes a fifth apart and nothing above them — quiet, warm and over
@@ -722,7 +763,7 @@ func _merchant() -> AudioStreamWAV:
 	SoundBank.tone(samples, A, 0.6, 0.22)
 	SoundBank.tone(samples, E, 0.45, 0.30, 0.09)
 	SoundBank.soften(samples, 0.25)
-	return SoundBank.bake(samples, INCIDENTAL_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(INCIDENTAL_LEVEL))
 
 
 ## The end of a run, either way. **The same three notes in the same order**, and the whole
@@ -743,7 +784,7 @@ func _ending(victory: bool) -> AudioStreamWAV:
 			ENDING_RING if last else ENDING_STEP * 1.6,
 			ENDING_STEP * float(index)
 		)
-	return SoundBank.bake(samples, STING_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(STING_LEVEL))
 
 
 ## The player going down: a yelp that falls away and cracks doing it.
@@ -765,7 +806,7 @@ func _death_cry() -> AudioStreamWAV:
 	SoundBank.soften(samples, 0.35)
 	SoundBank.swell(samples, 0.03)
 	SoundBank.release(samples, 0.16)
-	return SoundBank.bake(samples, STING_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(STING_LEVEL))
 
 
 ## A menu press. Two short tones a fifth apart and gone in a tenth of a second — the same interval
@@ -774,7 +815,7 @@ func _click() -> AudioStreamWAV:
 	var samples := SoundBank.long_enough(0.05, 0.02)
 	SoundBank.tone(samples, 880.0, 0.5, 0.04)
 	SoundBank.tone(samples, 1320.0, 0.35, 0.035, 0.02)
-	return SoundBank.bake(samples, CLICK_PEAK * HEADROOM)
+	return SoundBank.bake(samples, _level(CLICK_LEVEL))
 
 
 ## The surf, and nothing else. It is the only sound here with no event behind it, and the only one
@@ -792,7 +833,7 @@ func _surf() -> AudioStreamWAV:
 	var samples := SoundBank.join(noise)
 	SoundBank.breathe(samples, SURF_SWELLS, 0.55)
 	SoundBank.breathe(samples, SURF_SWELLS + 1, 0.30)
-	return SoundBank.bake_loop(samples, SURF_PEAK * HEADROOM)
+	return SoundBank.bake_loop(samples, _level(SURF_LEVEL))
 
 
 ## One layer of the music: a chord that breathes, built on the same seam the surf uses.
@@ -823,7 +864,7 @@ func _layer(id: StringName) -> AudioStreamWAV:
 	var looped := SoundBank.join(samples)
 	SoundBank.breathe(looped, int(voice["swells"]), 0.45)
 	SoundBank.breathe(looped, int(voice["swells"]) + 1, 0.2)
-	return SoundBank.bake_loop(looped, MUSIC_PEAK * HEADROOM)
+	return SoundBank.bake_loop(looped, _level(LAYER_LEVEL))
 
 
 ## The bed starts with the game and never stops. On its own bus, so a player who wants the island
