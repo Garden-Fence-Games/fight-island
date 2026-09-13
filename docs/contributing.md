@@ -64,10 +64,19 @@ These are where this document earns its keep.
 | New asset or third-party source | `docs/credits.md`, and `asset-pipeline.md` if the process changed | `Assets et pipeline` only if the pipeline changed |
 | A style or naming rule | `docs/conventions.md` | `Conventions` |
 | Export preset, signing, Steam, versioning | `docs/build-and-release.md`, `CHANGELOG.md` | `Build et Distribution` |
+| Anything under `scripts/`, `scenes/`, `data/` or `assets/` | `CHANGELOG.md`, under `## [Unreleased]` — **enforced by CI**, or the label `no changelog` | — |
 | A milestone completed or re-scoped | `docs/roadmap.md` | hub note, `## Où en est le projet` |
 | An open question **closed** | new ADR in `docs/decisions/` | delete the line from `Décisions à trancher` |
 | A new open question | — | add to `Décisions à trancher`, with a recommended default |
 | Anything that changes the one-line answer to "where is this project at?" | `README.md` status | hub note, `## Où en est le projet` |
+
+**The changelog is machine-checked.** A pull request that touches the game and writes no entry
+fails `Pull request hygiene`. It only asks that the file was touched — a check that graded the prose
+would be a check people route around — and `no changelog` on the pull request is the way out for a
+change a player could not notice. It exists because six pull requests shipped without an entry in
+one evening, including a new font, the whole soundtrack and a change to how long a wave lasts, and
+none of it reached the release notes until somebody read the build against the merge log. **Nothing
+in a diff shows an entry that was never written.**
 
 **Cadence.** Repo docs in the same pull request, always — that is already the definition of done.
 ZenNotes per milestone, plus immediately when a decision closes or the status line becomes false.
