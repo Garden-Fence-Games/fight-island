@@ -40,3 +40,14 @@ func physics_update(delta: float) -> void:
 	player.apply_motion(_direction, speed, delta)
 	if _elapsed >= DURATION:
 		transition_to(&"Idle")
+
+
+func clip_name() -> StringName:
+	return &"dodge_roll"
+
+
+## The roll plays over exactly the time the dodge takes, not at the clip's own rate. The clip is
+## authored a little longer than the dodge, and at its own rate the body would still be mid-roll on
+## the frame the player is handed back control — a picture that promises the dodge is not over yet.
+func clip_duration() -> float:
+	return DURATION

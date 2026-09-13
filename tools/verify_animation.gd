@@ -64,6 +64,7 @@ func _run() -> void:
 	await _check_a_gun_in_hand_changes_the_cycle(machine, anim)
 	_check_the_body_can_be_tinted(player)
 	await _check_the_fist_combo_animates(player, machine, anim)
+	await _check_the_dodge_rolls(machine, anim)
 	_check_the_gun_starts_hidden(player)
 	await _check_the_farmer_animates()
 	_report()
@@ -192,12 +193,14 @@ func _check_clipless_state_rests(anim: AnimationComponent) -> void:
 	anim.clip_missing.connect(
 		func(state: StringName, _clip: StringName) -> void: missing.append(state)
 	)
-	var played := anim.play_state(&"Dodge")
+	# Parry, since the dodge got its roll. When `parry` lands on the rig this fails on purpose, and the
+	# next state still waiting for its clip takes the job.
+	var played := anim.play_state(&"Parry")
 	await get_tree().physics_frame
 	if played:
-		_fail("Dodge reports a clip, so this check is no longer testing a clipless state")
+		_fail("Parry reports a clip, so this check is no longer testing a clipless state")
 	if anim.current_clip() != &"":
-		_fail("Dodge has no clip yet but the component reports %s" % [anim.current_clip()])
+		_fail("Parry has no clip yet but the component reports %s" % [anim.current_clip()])
 	if missing.is_empty():
 		_fail("a state with no clip should emit clip_missing")
 
@@ -362,6 +365,41 @@ func _check_the_fist_combo_animates(
 		await get_tree().physics_frame
 
 
+## The dodge rolls, over exactly the dodge. The clip is authored longer than the state lasts, so at
+## its own rate the body would still be mid-roll when control comes back; and a roll that looped
+## would start a second one on the last frame of a dodge nobody asked to repeat.
+func _check_the_dodge_rolls(machine: StateMachine, anim: AnimationComponent) -> void:
+	if not anim.animation_player.has_animation("dodge_roll"):
+		_fail("the rig has no dodge_roll clip")
+		return
+	machine.current.transition_to(&"Dodge")
+	await get_tree().physics_frame
+	if machine.current_name != &"Dodge":
+		_fail("a dodge left the machine in %s" % machine.current_name)
+		return
+	if anim.current_clip() != &"dodge_roll":
+		_fail("the dodge plays %s, expected dodge_roll" % anim.current_clip())
+	var clip := anim.animation_player.get_animation("dodge_roll")
+	if clip.loop_mode != Animation.LOOP_NONE:
+		_fail("dodge_roll loops, so a held dodge would roll twice")
+	var wanted := clip.length / PlayerDodge.DURATION
+	if not is_equal_approx(anim.animation_player.get_playing_speed(), wanted):
+		_fail(
+			(
+				"dodge_roll runs at %.3f, it has to run at %.3f to last the dodge's %.2fs"
+				% [anim.animation_player.get_playing_speed(), wanted, PlayerDodge.DURATION]
+			)
+		)
+	# Let the roll finish on its own rather than cutting it: entering a dodge plays the roll sound,
+	# and a check that quits while it is still sounding leaks the playback at exit.
+	var waited := 0
+	while machine.current_name == &"Dodge" and waited < 120:
+		await get_tree().physics_frame
+		waited += 1
+	for _index: int in 30:
+		await get_tree().physics_frame
+
+
 ## The gun is modelled into the rig rather than attached at runtime, so it is in the character's
 ## hand from the first frame unless something hides it — including through all three punches.
 func _check_the_gun_starts_hidden(player: Player) -> void:
@@ -399,6 +437,7 @@ func _report() -> void:
 				"animation OK — the cycles loop, Move walks past one cycle, Idle idles, "
 				+ "Sprint runs the same cycle faster, "
 				+ "the three punches play their own clip at the attack's speed, "
+				+ "the dodge rolls over exactly the dodge, "
 				+ "a gun in hand carries the body differently, "
 				+ "the gun stays hidden, the body can be tinted, the farmer walks and idles"
 			)
