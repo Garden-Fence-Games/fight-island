@@ -81,3 +81,8 @@ scripts/autoload/audio_manager.gd|const C: float = 523.25|const C: float = 466.1
 # A key bound by logical keycode rather than physical describes to an empty string, which is not
 # UNBOUND — so a hint prints a word with no key in front of it and nothing notices.
 scripts/systems/input_bindings.gd|		if code == KEY_NONE:|		if false:|verify_glyphs
+
+# A clip named by a state or an attack that no rig carries: the component plays nothing and says
+# nothing, which is the designed behaviour and the reason the inventory has to be held from outside.
+scripts/components/animation_component.gd|&"Dodge": &"dodge_roll",|&"Dodge": &"dodge_rol",|verify_clips
+scripts/components/animation_component.gd|if mine.has_animation(clip):|if not mine.has_animation(clip):|verify_clips
