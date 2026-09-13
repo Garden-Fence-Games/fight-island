@@ -15,7 +15,7 @@ func enter(_message: Dictionary) -> void:
 		enemy.hitbox.disarm()
 	if enemy.hurtbox != null:
 		enemy.hurtbox.monitorable = false
-	enemy.set_collision_layer_value(3, false)
+	enemy.set_collision_layer_value(PhysicsLayers.INDEX_ENEMY_BODY, false)
 
 
 func physics_update(delta: float) -> void:
