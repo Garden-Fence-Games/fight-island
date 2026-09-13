@@ -40,4 +40,3 @@ extends Resource
 
 @export_group("Presentation")
 @export var tint: Color = Color(0.78, 0.36, 0.28)
-@export var first_wave: int = 1

@@ -22,4 +22,3 @@ preferred_range = 10.0
 retreat_range = 5.0
 projectile = ExtResource("3")
 tint = Color(0.86, 0.82, 0.58, 1)
-first_wave = 5
