@@ -41,10 +41,12 @@ func _run() -> void:
 	await _check_a_passive_farmer_cannot_swing()
 	_check_the_player_cannot_die()
 	await _check_one_blow_closes_three_lessons()
+	_check_the_lesson_lets_the_farmer_swing()
 	_check_the_parry_holds_the_wave()
 	await _check_the_wave_hands_over()
 	_check_progress_persists()
 	await _check_a_second_run_skips_it()
+	await _check_switching_the_prompts_off_hands_the_island_back()
 	_put_back_what_was_on_this_machine()
 	_report()
 
@@ -81,10 +83,7 @@ func _check_the_tutorial_owns_wave_one() -> void:
 ## The whole of the first two lessons: something to hit that will not hit back. The token is the one
 ## gate into WindUp, so refusing it is what makes a body harmless.
 func _check_a_passive_farmer_cannot_swing() -> void:
-	var farmhand := load("res://data/enemies/farmhand.tres") as EnemyData
-	var body := _waves.spawner.spawn_at(
-		farmhand, Vector3(4.0, 0.5, 0.0), 1.0, 1.0, 1.0, 1.0, null, true
-	)
+	var body := _place_a_harmless_farmer()
 	if body == null:
 		_fail("a farmer could not be placed by hand")
 		return
@@ -124,9 +123,14 @@ func _check_one_blow_closes_three_lessons() -> void:
 	if _director.current_step() == null or _director.current_step().id != &"attack":
 		_fail("walking did not close the movement lesson")
 		return
-	# The second blow of a chain, landed inside the perfect window.
-	_player.chain_index = 1
-	EventBus.attack_landed.emit(_player, 10.0, true, null)
+	# The second blow of a chain, landed inside the perfect window — named by the attack, which is
+	# all a landed blow carries. Saying it with `Player.chain_index` instead would prove something
+	# no real hit can: entering a swing closes the window, so it reads -1 for every blow that lands.
+	var second := _player.weapon.attack_at(1) if _player.weapon != null else null
+	if second == null:
+		_fail("the player holds nothing that chains, so the chain lesson cannot be answered")
+		return
+	EventBus.attack_landed.emit(_player, 10.0, true, second)
 	await get_tree().process_frame
 	var step := _director.current_step()
 	if step == null:
@@ -136,6 +140,24 @@ func _check_one_blow_closes_three_lessons() -> void:
 		_fail("a chained perfect hit left %s open instead of closing three lessons" % step.id)
 	if _prompt().is_showing():
 		_fail("a player who was never asked anything still saw a prompt")
+
+
+## The first lessons need a farmer who cannot swing and the last two need one who can, and the
+## director only ever tops the island up — so the body left over from the attack lesson has to
+## change its mind when the dodge lesson opens, or nothing ever swings at the player again.
+func _check_the_lesson_lets_the_farmer_swing() -> void:
+	var step := _director.current_step()
+	if step == null or step.id != &"dodge" or step.passive:
+		_fail("the dodge lesson is not the one open, or it no longer asks for a farmer who swings")
+		return
+	var body := _place_a_harmless_farmer()
+	if body == null:
+		_fail("a farmer could not be placed by hand")
+		return
+	_director._process(0.1)
+	if body.passive:
+		_fail("the farmer left over from the first lessons is still harmless during the dodge one")
+	body.retire()
 
 
 func _check_the_parry_holds_the_wave() -> void:
@@ -197,6 +219,26 @@ func _check_a_second_run_skips_it() -> void:
 		_fail("the wave formula did not take wave 1 back")
 
 
+## Turning the prompts off mid-lesson is asking not to be taught. The parry holds wave 1 open until
+## it lands, so a tutorial that carried on unseen is a wave that never ends and never says why.
+func _check_switching_the_prompts_off_hands_the_island_back() -> void:
+	_close_the_arena()
+	SaveManager.write_progress({})
+	Settings.set_value(&"gameplay_tutorial_prompts", true)
+	await _open_a_fresh_arena()
+	if _director == null or not _director.is_running():
+		_fail("a fresh run with the prompts on did not start the tutorial")
+		return
+	Settings.set_value(&"gameplay_tutorial_prompts", false)
+	_director._process(0.1)
+	if _director.is_running():
+		_fail("the prompts were switched off and the tutorial kept the island anyway")
+	if _waves.wave != 1:
+		_fail("the formula was never handed wave 1 back, so no wave can ever arrive")
+	if _player != null and not is_zero_approx(_player.health.minimum_health):
+		_fail("the player is still protected after the tutorial stepped aside")
+
+
 func _satisfy_movement() -> void:
 	var step := _director.current_step()
 	if step == null or _player == null:
@@ -205,6 +247,13 @@ func _satisfy_movement() -> void:
 	_director._process(0.016)
 	_player.global_position += Vector3(step.travel * 2.0, 0.0, 0.0)
 	_director._process(0.016)
+
+
+## A farmhand where the check wants him, spawned unable to swing. By hand rather than by the
+## director, because both checks are about what happens to a body the lessons did not choose.
+func _place_a_harmless_farmer() -> Enemy:
+	var farmhand := load("res://data/enemies/farmhand.tres") as EnemyData
+	return _waves.spawner.spawn_at(farmhand, Vector3(4.0, 0.5, 0.0), 1.0, 1.0, 1.0, 1.0, null, true)
 
 
 func _steps() -> Array[TutorialStep]:
