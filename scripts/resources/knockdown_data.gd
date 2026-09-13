@@ -23,7 +23,7 @@ extends Resource
 ## moving, which is almost always first; this is the ceiling for the times it does not — wedged
 ## against a rock, caught on a slope. A flat ceiling would put a jab down as long as an uppercut.
 @export var fall_ceiling: float = 4.0
-## How long standing back up takes. A placeholder for the clip: `get_up` is not on the rig yet, and
-## a clip the rig does not carry resolves to the rest pose, so the farmer stands and walks off over
-## this many seconds. The day it is authored, this becomes the clip's own length.
+## How long standing back up takes **for a rig with no get-up clip**. The farmer now carries two,
+## `get_up_back` and `get_up_front`, and a rise lasts the length of whichever is playing — this is
+## the stand-in for a body that has neither, and the rest pose is what it stands up in.
 @export var rise_time: float = 0.7

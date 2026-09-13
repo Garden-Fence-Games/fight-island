@@ -58,6 +58,12 @@ signal came_to_rest
 ## wedged against a rock would otherwise wait for ever. A backstop for a tumble that was given no
 ## ceiling of its own, not the figure a knockdown is meant to run to.
 @export var longest: float = 3.0
+## Which way a body lies once it has settled, so the right get-up can be played: the axis of the
+## hips bone that points out of the belly, and the bone the head is. Measured on the farmer's rig
+## standing, where the hips' own +Z faces the way he faces. A rig that is not Mixamo's will not
+## agree, which is why they are exported rather than written into the reading.
+@export var belly_axis: Vector3 = Vector3(0.0, 0.0, 1.0)
+@export var head_bone: StringName = &"mixamorig_Head"
 
 var _skeleton: Skeleton3D = null
 var _simulator: PhysicalBoneSimulator3D = null
@@ -130,6 +136,31 @@ func settle_pose() -> void:
 		if bone < 0:
 			continue
 		_skeleton.set_bone_global_pose(bone, into_skeleton * body.global_transform)
+
+
+## Whether the body came to rest on its back rather than on its front.
+##
+## **Read off the physical bodies, not off the skeleton.** The simulator moves the bodies and the
+## skeleton's own pose query goes on reporting the pose underneath — which, with no clip playing
+## during a tumble, is a man standing to attention. Read that way every farmer in the game lay on
+## his back. And it has to be asked **before** `stop()`, which hands the bones back standing.
+func lies_face_up() -> bool:
+	var hips := _body_of(bones[0] if not bones.is_empty() else &"")
+	if hips == null:
+		return true
+	return (hips.global_basis * belly_axis).y >= 0.0
+
+
+## Which way the head lies from the hips, flat along the ground, in world space. Zero when the rig
+## has no head to ask. Same two rules as `lies_face_up`: the bodies, and before `stop()`.
+func settled_heading() -> Vector3:
+	var hips := _body_of(bones[0] if not bones.is_empty() else &"")
+	var head := _body_of(head_bone)
+	if hips == null or head == null:
+		return Vector3.ZERO
+	var flat := head.global_position - hips.global_position
+	flat.y = 0.0
+	return flat.normalized() if not flat.is_zero_approx() else Vector3.ZERO
 
 
 ## Takes the body back. Safe to call when nothing is running, which is what makes it the right thing
@@ -220,6 +251,14 @@ func _bone_length(index: int) -> float:
 		return 0.2
 	var from_parent := (here - _skeleton.get_bone_global_rest(parent).origin).length()
 	return maxf(from_parent * 0.6, 0.08)
+
+
+## The simulated body standing in for a bone, or null when that bone is not simulated.
+func _body_of(bone: StringName) -> PhysicalBone3D:
+	for body: PhysicalBone3D in _bodies:
+		if StringName(body.bone_name) == bone:
+			return body
+	return null
 
 
 func _find_skeleton(root: Node) -> Skeleton3D:

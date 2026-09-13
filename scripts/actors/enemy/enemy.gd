@@ -131,6 +131,9 @@ func revive(
 	roused = false
 	if head_look != null:
 		head_look.watching = null
+		# A body that died on the ground went into the pool with its neck at rest; the next life
+		# has to be able to look at somebody.
+		head_look.resting = false
 	# A body handed back mid-tumble comes out of the pool still tumbling, which is the kind of bug
 	# that only shows up five waves in. Cheap to call when nothing is running, so it is called always.
 	if ragdoll != null:

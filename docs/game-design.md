@@ -256,8 +256,11 @@ States: `Spawn → Idle → Chase → Strafe → WindUp → Attack → Recover`,
 **`Stagger` is two phases, and a knockdown is physics.** A hit hard enough to throw a rigged enemy
 hands his skeleton to the simulator: nothing animates while it has him, he tumbles where the blow
 sent him, and the body node catches up with wherever his hips came to rest — leaving it where he was
-hit would teleport him back in front of the player who just watched him fall. He then takes 0.7 s to
-stand.
+hit would teleport him back in front of the player who just watched him fall. He then **gets up the
+way he fell**: off his back he sits up and stands in 1.2 s, off his front he rolls over first and
+takes 1.65 s. Those are the clips' own lengths, and the rise lasts exactly as long as the one
+playing. A rig without get-up clips falls back to `KnockdownData.rise_time`, 0.7 s. He does not
+watch the player while he is down.
 
 The fall ends when he stops moving, which is almost always what happens. When it does not — wedged
 against a rock, caught on a slope — he is taken back after **four times the attack's own `Stagger`

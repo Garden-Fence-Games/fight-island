@@ -41,6 +41,10 @@ extends Node
 ## A body to keep the head on, for an owner that has no aiming device of its own. Null means "use
 ## the aim, or look where the body looks" — which is the player's case and the state at rest.
 var watching: Node3D = null
+## Set while the body is on the ground or getting up off it. A neck that keeps turning towards the
+## player through a tumble or a roll twists the face into places faces do not go, and the clip is
+## already saying where the head is.
+var resting: bool = false
 
 var _skeleton: Skeleton3D = null
 var _aim: AimComponent = null
@@ -97,6 +101,8 @@ func _build() -> void:
 ## Visuals, so `_process` rather than `_physics_process` — nothing about where the head points is
 ## read by hit registration.
 func _process(_delta: float) -> void:
+	if _modifier != null:
+		_modifier.active = not resting
 	if _target == null or _skeleton == null:
 		return
 	if not _target.is_inside_tree() or not _skeleton.is_inside_tree():
