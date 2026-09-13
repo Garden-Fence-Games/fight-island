@@ -334,6 +334,12 @@ compared to anything.
 It runs headless, so nothing about drawing is measured and nothing about drawing should be read
 into it. What it does measure is the side the crowd rules live on.
 
+The isolated pass calls **`Enemy._separation()` itself**, reaching past the underscore to do it. It
+used to hold a copy of the arithmetic, and a copy measures whatever the copy still does: the day the
+rule changes, the tool watching its cost goes on reporting the cost of the rule it replaced, and
+neither of them is wrong about anything. Reaching in is the smaller of the two evils — and the
+figures above were taken through the real one.
+
 **What it found, and what was not done because of it.** The two suspects named in #31 were
 `Enemy._separation()`, which is every body against every other, and the hitbox polling
 `get_overlapping_areas()`. Neither is measurable at the budget:
@@ -353,6 +359,14 @@ into it. What it does measure is the side the crowd rules live on.
   more code to say the same thing. The decision stands; only its reason changes. *Not quadratic*
   would have meant never looking again, and the difference matters the day the budget rises —
   past about sixty bodies the grid wins by roughly four to one.
+- **Written a third time, and thrown away a third time.** A bucketed grid, then the same grid with
+  the pass run over *pairs* and the bodies addressed by index into packed arrays rather than through
+  a dictionary — which is the version that has to be measured, because the naive one spends more on
+  bookkeeping per pair than the arithmetic it is bookkeeping for. Per body, against the scan in the
+  same process: 13 µs against 14 at ten, **15 against 27 at thirty**, 8 against 49 at a hundred and
+  twenty. The shape flattens exactly as advertised and the budget case is a wash — at thirty the
+  whole pass moves from 0.35 ms to 0.45 ms, which is under this machine's own noise. Three
+  measurements, one answer: **do not write it again until the budget is past sixty.**
 
 The run-to-run noise on a busy machine is larger than the gap between no enemies and forty of them,
 which is the most useful single fact here: **nothing on this side is close to the budget**, and the

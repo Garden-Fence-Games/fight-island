@@ -6,6 +6,19 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **`stress_enemies` times the real separation rule, not a copy of it.** The tool held its own copy
+  of the arithmetic because the method was private, and a copy measures whatever the copy still
+  does — the day the rule changes, the tool goes on reporting the cost of the one it replaced and
+  neither of them is wrong. The isolated pass calls `Enemy._separation()` itself, reaching past the
+  underscore rather than keeping a copy that can drift.
+- The spatial grid for #31 was written a **third** time — bucketed, over pairs, addressed by index
+  into packed arrays rather than through a dictionary — measured against the scan in the same
+  process, and thrown away a third time: 15 µs per body against 27 at thirty, 8 against 49 at a
+  hundred and twenty. The shape flattens and the budget case is a wash. `docs/architecture.md`
+  carries the three sets of figures so the fourth attempt has somewhere to read them.
+
 ### Fixed
 
 - **`verify_corpses` was a coin toss** — four runs in five on `main`, and it blocked every pull
