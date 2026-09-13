@@ -15,7 +15,9 @@ const PROMPT: String = "res://scenes/ui/tutorial_prompt.tscn"
 ## Fewer hints than this means the search stopped finding scenes rather than that the game stopped
 ## having hints.
 const HINTS_AT_LEAST: int = 6
-const TUTORIAL_STEPS: PackedStringArray = ["01_angry", "02_fight", "03_sprint", "04_survive"]
+const TUTORIAL_STEPS: PackedStringArray = [
+	"01_angry", "02_fight", "03_sprint", "04_survive", "05_weapon_switch"
+]
 const SETTLE_FRAMES: int = 4
 ## Words that name hardware the other device does not have. A prompt containing one of these while
 ## the pad is in hand is the exact failure this issue was opened for.
