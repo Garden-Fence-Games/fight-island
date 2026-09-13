@@ -6,6 +6,24 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **The farmers have voices.** Nine recorded lines, the project's own — the first sounds in this
+  game that are not synthesised, because a voice is the one thing a sine cannot do. A farmer speaks
+  when he notices you and now and then on the way over, and **not on his wind-up**: everything here
+  refuses to shout over a telegraph, and a voice from the same body would be the worst offender.
+- **Doppler, so you hear him closing.** Each body carries its own `AudioStreamPlayer3D` rather than
+  borrowing a pooled positional voice — a pooled voice is put at a point and played, stationary for
+  its whole length, and a stationary sound cannot say *closing*.
+- **The gulls call.** Two recorded cries, only from the ones settled on the sand, each bird on its
+  own clock so the shore is a shore and not a chorus.
+- **Dying has a sound.** A yelp that slides down most of an octave while a rasp falls with it. The
+  famous one is under copyright and there is no version this project could ship, so this is the same
+  joke built from the same parts — and deliberately off the key, because a scream on the tonic would
+  read as the game approving.
+- `tools/verify_voices.tscn` — both families shipped, every line mono and short, sitting under a
+  wind-up, and moving with the body that says them.
+
 ### Changed
 
 - **Everything is 6 dB quieter, and the figure is derived rather than tasted.** Four loud sounds

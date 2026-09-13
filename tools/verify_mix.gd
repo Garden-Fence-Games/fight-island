@@ -22,7 +22,11 @@ const QUARTER_TONE: float = 0.5
 const LOWEST_PITCH: float = 380.0
 ## The one tone deliberately outside the key. The dry-fire warning is two clicks a semitone apart
 ## and has to be heard as *not* music; 932 Hz is B flat, which A minor does not contain.
+## The tones deliberately outside the key, and why. The dry-fire warning is two clicks a semitone
+## apart and has to be heard as *not* music; the death cry slides rather than lands, and a scream on
+## the tonic would read as the game approving.
 const OFF_KEY: Array[float] = [932.0]
+const OFF_KEY_NAMES: Array[String] = ["CRY_FROM", "CRY_TO"]
 ## Fewer named tones than this means the search stopped finding them and the check stopped checking.
 const TONES_AT_LEAST: int = 10
 ## Pitches built at runtime rather than written down, and where each is covered instead: the impact
@@ -125,6 +129,8 @@ func _check_everything_tonal_is_in_the_same_key() -> void:
 	for found: RegExMatch in expression.search_all(file.get_as_text()):
 		var written := found.get_string(1)
 		var hertz := written.to_float() if written.is_valid_float() else -1.0
+		if OFF_KEY_NAMES.has(written):
+			continue
 		if hertz < 0.0:
 			if COMPUTED.has(written):
 				continue
