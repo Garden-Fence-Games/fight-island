@@ -21,6 +21,14 @@ enum Phase { FALLING, RISING }
 const KNOCK_SPEED: float = 12.0
 ## How long standing up takes until `get_up` exists to say so.
 const RISE_TIME: float = 0.7
+## How much longer than the attack's own stagger figure a man may stay down before he is taken back
+## whether the physics has settled him or not.
+##
+## **The attack still decides how long a knockdown lasts.** The tumble ends when the body stops
+## moving, which is almost always first; this is the ceiling for the times it does not — wedged
+## against a rock, caught on a slope. Without it the ceiling was a flat three seconds for every blow
+## in the game, and a jab put a farmer down for as long as an uppercut did.
+const FALL_CEILING: float = 4.0
 
 var _phase: Phase = Phase.RISING
 var _remaining: float = 0.0
@@ -38,7 +46,7 @@ func enter(message: Dictionary) -> void:
 	_phase = Phase.FALLING
 	if not enemy.ragdoll.came_to_rest.is_connected(_on_came_to_rest):
 		enemy.ragdoll.came_to_rest.connect(_on_came_to_rest)
-	enemy.ragdoll.knock(from, push)
+	enemy.ragdoll.knock(from, push, _remaining * FALL_CEILING)
 
 
 ## Whatever takes him out of here — a killing blow, a wave cleared, a body returned to the pool —
