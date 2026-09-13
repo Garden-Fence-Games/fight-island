@@ -6,6 +6,32 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **The sea is deep enough to drown in** (#196). Past the wading limit the bar comes down, faster
+  the deeper you are — nothing at 1.1 m, twenty health a second by 1.6 — and at zero the run ends
+  through `player_died`, the same door as any other death.
+  - **The push is untouched.** It already beat a walk before the water was over a head, which is
+    exactly what makes this fair: a walk out against it stalls at about 1.4 m and a sprint at 1.6,
+    so drowning costs five to eight seconds of holding yourself out there while watching it happen.
+    Stop pushing and the sea carries you back in. There is no line you cross.
+  - **It drains rather than killing at a depth.** A threshold is unreadable — fine, then the run is
+    over — while a bar coming down is on the screen the player already watches and tells them how
+    long they have.
+  - **No drowning clip, and this does not fake one.** The body sinking is the terrain falling away
+    under it, which is free and already true. When the clip lands it plays where every other death
+    animation does, and nothing here has to change.
+  - Figures in `data/combat/tide.tres`, and in `docs/game-design.md` once.
+
+### Fixed
+
+- **A body could sit at zero health, alive, for ever.** `HealthComponent` lost a death to floating
+  point: a drain lands on the floor by subtraction rather than by a blow that overshoots it, and
+  `0.333333 - 0.333333` is not exactly zero. The bar held a billionth of a point, `current_health <=
+  0.0` was false, nobody died — and the next frame was swallowed by the no-change guard, because a
+  billionth is inside `is_equal_approx`. Found by the drowning check, which is the first thing in
+  the game to take health away a fraction at a time rather than in whole blows.
+
 ### Changed
 
 - **The merchant sells what you carry.** A weapon's upgrade track is refused until the weapon is in
