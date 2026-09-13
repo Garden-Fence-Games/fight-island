@@ -70,6 +70,14 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- **The macOS build could not be made at all.** Apple Silicon reads ASTC and nothing else, and
+  `import_etc2_astc` was off — so the universal preset refused to export with "Cannot export for
+  universal or arm64 if ETC2 ASTC texture format is disabled". Nothing in the project could see it,
+  because no check and no script reads an export preset: it would have surfaced on the first `v*`
+  tag, with the release already cut and nothing to attach. Found by dry-running `release.yml`, which
+  is now written down as the thing to do before tagging. `verify_project_config` holds the settings
+  the presets depend on.
+
 - **A dying body took the knock rate whole.** `KnockdownData.knock_speed` is metres per second *per
   point of `AttackData.stagger`*, and `EnemyDead` passed it bare — so a man killed by a jab was
   thrown as hard as one killed by the heaviest blow in the game. It is the killing blow's own share

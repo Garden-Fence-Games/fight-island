@@ -69,15 +69,34 @@ The workflow attaches both archives to a draft GitHub Release, then pushes them 
 `butler`. If `BUTLER_API_KEY` is unset the publish step **skips with a warning** rather than
 failing the tag.
 
+**Dry-run it before you tag.** Both the release and the publish jobs are gated on the tag, so
+`gh workflow run release.yml --ref main` runs the export alone and leaves the archives as build
+artifacts — no release, no publish. Worth doing after anything that touches project settings or the
+presets: the first time this was run it failed on a setting no other check could see, and on a real
+tag that failure arrives with the release already cut.
+
 ## itch.io
 
 Free to publish, no entry fee, and it takes exactly the same binaries Steam would. Channels are
 `mac` and `windows`; `--userversion` is taken from the tag.
 
-Needed once: an itch.io project page at `pepito2t/fight-island`, and the API key stored as the
-`BUTLER_API_KEY` repository secret.
+**Two things are needed once, and both are yours to do** — they are an account and a credential,
+so nothing in the repository can do them:
 
-## Steam — manual, and later
+1. Create the project page at `pepito2t/fight-island` on itch.io. The channel names `mac` and
+   `windows` are set by the workflow and need no configuration on the page.
+2. Generate an API key at <https://itch.io/user/settings/api-keys> and store it as the
+   `BUTLER_API_KEY` **repository secret** — `gh secret set BUTLER_API_KEY`, which prompts rather
+   than putting the key in your shell history. Never in a file, never in the workflow.
+
+Everything else is already wired: until the secret exists the publish step skips with a warning, so
+a tag still produces a draft GitHub Release with both archives attached.
+
+## Steam — manual, and not for now
+
+**The decision as of 2026-09-13 is that Steam is not happening for this release.** The procedure
+below stays written down because it costs nothing to keep and a month to rediscover, but nothing in
+the repository depends on it and no CI job references it.
 
 Deliberately **not** automated. The procedure is written down so it is ready when the decision is
 made, but nothing in the repository depends on it.
