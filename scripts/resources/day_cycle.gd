@@ -11,9 +11,8 @@ extends Resource
 ## how long a wave lasts, and where night sits in it is when night falls.
 
 const HOURS_IN_A_DAY: float = 24.0
-## How long before a phase ends the sky starts turning into the next one, as a share of its span.
-## Short, because the point of a phase is the stretch where it holds: a sky that is always halfway
-## between two things never looks like either.
+## What a phase turns over when it does not say. Each phase carries its own `turning_share`, because
+## how long a look should slide is a fact about that look — a day holds and a dusk does not.
 const TURNING_SHARE: float = 0.25
 
 @export var phases: Array[DayPhase] = []
@@ -69,13 +68,20 @@ func turn_amount(seconds: float) -> float:
 		return 0.0
 	var span := wave_seconds()
 	var into := fposmod(seconds - _opens_at(phase), span)
-	var window := phase.seconds * TURNING_SHARE
+	var window := phase.seconds * _turning_share_of(phase)
 	if window <= 0.0:
 		return 0.0
 	var holds_until := phase.seconds - window
 	if into <= holds_until:
 		return 0.0
 	return clampf((into - holds_until) / window, 0.0, 1.0)
+
+
+## What share of a phase is a turn, from the phase itself. Falls back to the constant so a resource
+## written before phases carried one still behaves the way it did.
+func _turning_share_of(phase: DayPhase) -> float:
+	var share: float = phase.get("turning_share")
+	return share if share > 0.0 else TURNING_SHARE
 
 
 ## The phase a look is turning into.
