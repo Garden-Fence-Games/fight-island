@@ -6,6 +6,45 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **The sea is deep enough to drown in** (#196). Past the wading limit the bar comes down, faster
+  the deeper you are — nothing at 1.1 m, twenty health a second by 1.6 — and at zero the run ends
+  through `player_died`, the same door as any other death.
+  - **The push is untouched.** It already beat a walk before the water was over a head, which is
+    exactly what makes this fair: a walk out against it stalls at about 1.4 m and a sprint at 1.6,
+    so drowning costs five to eight seconds of holding yourself out there while watching it happen.
+    Stop pushing and the sea carries you back in. There is no line you cross.
+  - **It drains rather than killing at a depth.** A threshold is unreadable — fine, then the run is
+    over — while a bar coming down is on the screen the player already watches and tells them how
+    long they have.
+  - **No drowning clip, and this does not fake one.** The body sinking is the terrain falling away
+    under it, which is free and already true. When the clip lands it plays where every other death
+    animation does, and nothing here has to change.
+  - Figures in `data/combat/tide.tres`, and in `docs/game-design.md` once.
+
+### Fixed
+
+- **A body could sit at zero health, alive, for ever.** `HealthComponent` lost a death to floating
+  point: a drain lands on the floor by subtraction rather than by a blow that overshoots it, and
+  `0.333333 - 0.333333` is not exactly zero. The bar held a billionth of a point, `current_health <=
+  0.0` was false, nobody died — and the next frame was swallowed by the no-change guard, because a
+  billionth is inside `is_equal_approx`. Found by the drowning check, which is the first thing in
+  the game to take health away a fraction at a time rather than in whole blows.
+
+### Changed
+
+- **The merchant sells what you carry.** A weapon's upgrade track is refused until the weapon is in
+  the bag — the stick is found in wave 2 and the gun in wave 4, and fifteen per cent more damage on
+  something the player cannot swing yet is money spent on nothing they would only discover was
+  worthless two waves later.
+  - The card **stays on the shelf and says where the weapon turns up**, rather than disappearing.
+    The screen already held that line — *a card nobody can read is a card nobody can want* — and a
+    player who can see the gun track has a reason to save for the wave it arrives in.
+  - The gate is on `can_buy`, not on the button. A card is one of two ways to reach a purchase and
+    `buy()` is the other, so greying out a button that `buy()` would still honour is not a gate —
+    which `verify_merchant` now proves by calling `buy()` directly with an empty bag.
+
 ### Fixed
 
 - **`verify_waves` failed on a distance it measured too late** — "something spawned 11.49 m from
@@ -46,6 +85,27 @@ All notable changes to this project are documented here, following
   palette; the interface stays sharp. `PixelLook` runs after the transparent pass, so the sea, the
   blood and the particles are styled with everything else, and `data/fx/pixel_look.tres` tunes it.
   *Pixel art* under Video switches it off, live.
+
+### Changed
+
+- **The island is half the size.** `MAX_RADIUS` was 88 m — a hundred and seventy-six metres across
+  for a fight that happens inside eighteen. Forty-four is still two and a half times the ring bodies
+  arrive in: room to give ground and to break a thrower's line, and not room to get lost in.
+  - **Halving a radius quarters an area**, so everything scattered by an absolute count came down
+    with it — palms, rocks, pebbles, grass and bushes are each a quarter of what they were, or the
+    same island would have been four times as dense.
+  - **Five of the six rock formations would have been standing in the sea.** They sat a little past
+    half the old radius, at the edge of the plateau. They and the five huts are *scaled* rather than
+    re-placed, so the composition the fixed camera was chosen for is the one it was. `CORE_RADIUS`
+    did not move: nine metres of flat ground is sized to the player, not to the island.
+  - **The sea was audible in the middle** — 1.7 dB quieter inland than it was ankle-deep, where it
+    is meant to be ten. `SurfBed.CARRIES` is a distance, and the only distance it is about is the
+    one from the middle to the water, so it halved with the island. `FROM_THE_MIDDLE_DB` did not
+    have to move at all.
+  - `verify_navigation` aims at one authored boulder by its coordinates, written out on purpose;
+    `verify_coconut` held the grove against a hundred palms and a forty-metre spread. Both follow
+    the island now, and the coconut bounds sit well under what the island lays down rather than
+    beside it — they are there to catch a `MultiMesh` that was not read, not to re-state a count.
 
 ### Changed
 

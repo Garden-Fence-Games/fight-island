@@ -34,11 +34,29 @@ func refresh() -> void:
 	var maxed: bool = owned >= Economy.LEVEL_CAP
 	title.text = tr(track.display_name).to_upper()
 	level.text = tr("MERCHANT_LEVEL") % owned
+	var carried := _is_carried()
 	blurb.text = tr("MERCHANT_MAXED") if maxed else tr(track.next_level_key)
 	price.text = "—" if maxed else "$%d" % GameState.price_of(track)
-	# Dimmed but never hidden: a card nobody can read is a card nobody can want.
+	if not carried:
+		blurb.text = tr("MERCHANT_LOCKED") % _found_at()
+		price.text = "—"
+	# Dimmed but never hidden: a card nobody can read is a card nobody can want, and a player who
+	# cannot see the gun track has no reason to save for the wave it arrives in.
 	modulate.a = 1.0 if GameState.can_buy(track) or maxed else DIM
 	_paint()
+
+
+## Whether the weapon this track belongs to is in the bag. Tracks that name no weapon — health and
+## stamina — are always carried, because there is nothing to find.
+func _is_carried() -> bool:
+	return track.weapon == &"" or GameState.loadout.owns(track.weapon)
+
+
+## The wave the weapon turns up in, read off the weapon rather than written here: the merchant
+## should not be able to promise a wave the pickup director disagrees with.
+func _found_at() -> int:
+	var weapon := Arsenal.find(track.weapon)
+	return weapon.found_at_wave if weapon != null else 0
 
 
 func _set_track(value: UpgradeTrack) -> void:

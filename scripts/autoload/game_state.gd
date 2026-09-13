@@ -164,6 +164,11 @@ func can_buy(track: UpgradeTrack) -> bool:
 		return false
 	if level_of(track) >= Economy.LEVEL_CAP:
 		return false
+	# A track for a weapon that is not in the bag is not for sale. Fifteen per cent more damage on a
+	# gun the player finds two waves from now is money spent on nothing they can use, and the card
+	# said nothing about it — the merchant sells what you carry.
+	if track.weapon != &"" and not loadout.owns(track.weapon):
+		return false
 	return money >= price_of(track)
 
 

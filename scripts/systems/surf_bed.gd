@@ -9,8 +9,8 @@ extends Node3D
 ## the sea shouting over a wind-up sixty metres inland.
 ##
 ## So the sea is put where the sea is. The shoreline is found by asking the terrain rather than by
-## assuming a radius — **this island is not round**, and its coast runs between fifty-six and
-## eighty-three metres from the middle — and a ring of sources is placed along it.
+## assuming a radius — **this island is not round**, and its coast runs between twenty-seven and
+## forty-one metres from the middle — and a ring of sources is placed along it.
 ##
 ## **The sources are deliberately out of phase with each other.** Eight players starting the same
 ## six-second loop at the same instant are one loop eight times over: they sum coherently, which is
@@ -24,15 +24,22 @@ extends Node3D
 ## *supposed* to fall away as you walk inland, and the gentle law would carry it to the middle of
 ## the island almost undiminished.
 
-## How many stretches of water the coast is broken into. Eight puts them about fifty metres apart,
-## which is far enough that the nearest one clearly wins when the player is standing in it and close
-## enough that they blend into one sea from inland.
+## How many stretches of water the coast is broken into. Eight puts them about twenty-five metres
+## apart, which is far enough that the nearest one clearly wins when the player is standing in it
+## and close enough that they blend into one sea from inland.
 const EMITTERS: int = 8
 ## How loudly a stretch of surf carries. Wide, because this is the only sound in the game whose
 ## source is tens of metres away rather than a few, and it still has to arrive.
-const CARRIES: float = 25.0
+##
+## **Halved with the island.** It is a distance, and the only distance it is about is the one from
+## the middle of the island to the water; at twenty-five on the smaller coast the sea was 1.7 dB
+## quieter inland than it was ankle-deep, where it is meant to be ten. Halving both keeps the ratio,
+## and `FROM_THE_MIDDLE_DB` below did not have to move at all.
+const CARRIES: float = 12.5
 ## Where the ring is looked for. No island reaches past this, and a search that found nothing inside
-## it has found nothing.
+## it has found nothing. Left well clear of the coast it is looking for on purpose: it is a bound on
+## a search, not a description of an island, and an island rebuilt larger should find its shore
+## rather than fail to.
 const FURTHEST_SHORE: float = 120.0
 ## How far above and below the ground a probe is cast from. The island's relief fits inside this
 ## with room to spare.
@@ -72,7 +79,7 @@ func _ready() -> void:
 		water.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_SQUARE_DISTANCE
 		water.unit_size = CARRIES
 		# Unlimited on purpose. `REACH` is what a sound that belongs to a body may carry; the sea is
-		# sixty metres away from the fight and still has to be heard.
+		# tens of metres away from the fight and still has to be heard.
 		water.max_distance = 0.0
 		add_child(water)
 		_placed.append(water)
