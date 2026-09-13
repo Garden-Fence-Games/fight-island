@@ -114,6 +114,24 @@ func settled_position() -> Vector3:
 	return _bodies[0].global_position
 
 
+## Writes where the physics actually put the bones into the skeleton, so the pose survives the
+## simulation ending.
+##
+## Needed because the simulator is a `SkeletonModifier3D`: its output reaches the skin, but the
+## skeleton's own pose is only the animation's, and the moment it stops contributing the body snaps
+## back upright. Anything that wants to keep the pose — a corpse, a screenshot — has to ask for it
+## while the bodies are still where they landed, and the bodies are the only thing that knows.
+func settle_pose() -> void:
+	if _skeleton == null or _bodies.is_empty():
+		return
+	var into_skeleton := _skeleton.global_transform.affine_inverse()
+	for body: PhysicalBone3D in _bodies:
+		var bone := body.get_bone_id()
+		if bone < 0:
+			continue
+		_skeleton.set_bone_global_pose(bone, into_skeleton * body.global_transform)
+
+
 ## Takes the body back. Safe to call when nothing is running, which is what makes it the right thing
 ## for a pooled body to call on its way back into the world.
 func stop() -> void:

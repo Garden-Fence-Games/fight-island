@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -25,12 +25,16 @@
 [ext_resource type="Script" path="res://scripts/systems/effect_pool.gd" id="23"]
 [ext_resource type="Script" path="res://scripts/systems/bird_flock.gd" id="24"]
 [ext_resource type="PackedScene" path="res://scenes/world/bird.tscn" id="25"]
+[ext_resource type="Script" path="res://scripts/systems/corpse_field.gd" id="26"]
 
 [node name="Arena" type="Node3D"]
 
 [node name="Sky" parent="." instance=ExtResource("21")]
 
 [node name="Island" parent="." instance=ExtResource("5")]
+[node name="Corpses" type="Node3D" parent="."]
+script = ExtResource("26")
+
 [node name="Effects" type="Node" parent="."]
 script = ExtResource("23")
 
