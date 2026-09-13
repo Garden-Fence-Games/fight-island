@@ -34,13 +34,28 @@ licence = "prototype only — not CC0, see below"
 
 [sub_resource type="Resource" id="Resource_p5aey"]
 script = ExtResource("1_2q5yg")
+subject = "assets/models/char_farmer.glb — mesh, textures and clips"
+source = "original, Blender"
+author = "Purple-Sigil"
+licence = "© the project, all rights reserved"
+
+[sub_resource type="Resource" id="Resource_56av3"]
+script = ExtResource("1_2q5yg")
+subject = "assets/models/char_farmer.glb — skeleton"
+source = "Mixamo auto-rigger"
+source_url = "https://www.mixamo.com"
+author = "Adobe"
+licence = "prototype only — not CC0, see below"
+
+[sub_resource type="Resource" id="Resource_xxy2o"]
+script = ExtResource("1_2q5yg")
 subject = "assets/fonts/badeen_display.ttf"
 source = "Google Fonts"
 source_url = "https://fonts.google.com/specimen/Badeen+Display"
 author = "The Badeen Project Authors"
 licence = "SIL OFL 1.1"
 
-[sub_resource type="Resource" id="Resource_56av3"]
+[sub_resource type="Resource" id="Resource_8eb3d"]
 script = ExtResource("1_2q5yg")
 subject = "assets/fonts/inter_semibold.ttf"
 source = "Google Fonts"
@@ -48,14 +63,35 @@ source_url = "https://fonts.google.com/specimen/Inter"
 author = "The Inter Project Authors"
 licence = "SIL OFL 1.1"
 
-[sub_resource type="Resource" id="Resource_xxy2o"]
+[sub_resource type="Resource" id="Resource_j4xby"]
 script = ExtResource("1_2q5yg")
 subject = "assets/models/nature/palm_tree.glb"
 source = "original, modelled and painted in Blender"
 author = "Purple-Sigil"
 licence = "© the project, all rights reserved"
 
-[sub_resource type="Resource" id="Resource_8eb3d"]
+[sub_resource type="Resource" id="Resource_t6bex"]
+script = ExtResource("1_2q5yg")
+subject = "assets/models/nature/grass_tuft.glb"
+source = "original, modelled and painted in Blender"
+author = "Purple-Sigil"
+licence = "© the project, all rights reserved"
+
+[sub_resource type="Resource" id="Resource_xfmof"]
+script = ExtResource("1_2q5yg")
+subject = "assets/models/nature/bush.glb"
+source = "original, modelled and painted in Blender"
+author = "Purple-Sigil"
+licence = "© the project, all rights reserved"
+
+[sub_resource type="Resource" id="Resource_yk254"]
+script = ExtResource("1_2q5yg")
+subject = "assets/models/nature/bird.glb"
+source = "original, modelled and painted in Blender"
+author = "Purple-Sigil"
+licence = "© the project, all rights reserved"
+
+[sub_resource type="Resource" id="Resource_rk4m6"]
 script = ExtResource("1_2q5yg")
 subject = "assets/models/nature/stone_largeD.glb"
 source = "Nature Kit 2.1"
@@ -63,7 +99,7 @@ source_url = "https://kenney.nl/assets/nature-kit"
 author = "Kenney"
 licence = "CC0 1.0"
 
-[sub_resource type="Resource" id="Resource_j4xby"]
+[sub_resource type="Resource" id="Resource_4lkwu"]
 script = ExtResource("1_2q5yg")
 subject = "assets/models/nature/stone_smallA.glb"
 source = "Nature Kit 2.1"
@@ -71,15 +107,7 @@ source_url = "https://kenney.nl/assets/nature-kit"
 author = "Kenney"
 licence = "CC0 1.0"
 
-[sub_resource type="Resource" id="Resource_t6bex"]
-script = ExtResource("1_2q5yg")
-subject = "assets/models/nature/grass_leafs.glb"
-source = "Nature Kit 2.1"
-source_url = "https://kenney.nl/assets/nature-kit"
-author = "Kenney"
-licence = "CC0 1.0"
-
-[sub_resource type="Resource" id="Resource_xfmof"]
+[sub_resource type="Resource" id="Resource_tgv8e"]
 script = ExtResource("1_2q5yg")
 subject = "assets/models/camp/structure.glb"
 source = "Survival Kit, the 1.0 export on Poly Pizza"
@@ -87,7 +115,7 @@ source_url = "https://kenney.nl/assets/survival-kit"
 author = "Kenney"
 licence = "CC0 1.0"
 
-[sub_resource type="Resource" id="Resource_yk254"]
+[sub_resource type="Resource" id="Resource_o5woe"]
 script = ExtResource("1_2q5yg")
 subject = "assets/models/camp/structure_base.glb"
 source = "Survival Kit, the 1.0 export on Poly Pizza"
@@ -95,7 +123,7 @@ source_url = "https://kenney.nl/assets/survival-kit"
 author = "Kenney"
 licence = "CC0 1.0"
 
-[sub_resource type="Resource" id="Resource_rk4m6"]
+[sub_resource type="Resource" id="Resource_e6gsf"]
 script = ExtResource("1_2q5yg")
 subject = "assets/models/camp/structure_roof.glb"
 source = "Survival Kit, the 1.0 export on Poly Pizza"
@@ -103,7 +131,7 @@ source_url = "https://kenney.nl/assets/survival-kit"
 author = "Kenney"
 licence = "CC0 1.0"
 
-[sub_resource type="Resource" id="Resource_4lkwu"]
+[sub_resource type="Resource" id="Resource_jfifh"]
 script = ExtResource("1_2q5yg")
 subject = "assets/models/camp/floor.glb"
 source = "Survival Kit, the 1.0 export on Poly Pizza"
@@ -111,19 +139,19 @@ source_url = "https://kenney.nl/assets/survival-kit"
 author = "Kenney"
 licence = "CC0 1.0"
 
-[sub_resource type="Resource" id="Resource_tgv8e"]
+[sub_resource type="Resource" id="Resource_eaha6"]
 script = ExtResource("1_2q5yg")
 subject = "Godot Engine 4.7.2"
 source_url = "https://godotengine.org"
 licence = "MIT"
 
-[sub_resource type="Resource" id="Resource_o5woe"]
+[sub_resource type="Resource" id="Resource_52eap"]
 script = ExtResource("1_2q5yg")
 subject = "Jolt Physics"
 source_url = "https://github.com/jrouwe/JoltPhysics"
 licence = "MIT"
 
-[sub_resource type="Resource" id="Resource_e6gsf"]
+[sub_resource type="Resource" id="Resource_vjvk4"]
 script = ExtResource("1_2q5yg")
 subject = "gdUnit4 6.2.1, vendored in addons/gdUnit4"
 source_url = "https://github.com/MikeSchulze/gdUnit4"
@@ -131,5 +159,5 @@ licence = "MIT"
 
 [resource]
 script = ExtResource("2_ptgt7")
-assets = Array[ExtResource("1_2q5yg")]([SubResource("Resource_nsrer"), SubResource("Resource_vhv8o"), SubResource("Resource_btpt5"), SubResource("Resource_q8wms"), SubResource("Resource_p5aey"), SubResource("Resource_56av3"), SubResource("Resource_xxy2o"), SubResource("Resource_8eb3d"), SubResource("Resource_j4xby"), SubResource("Resource_t6bex"), SubResource("Resource_xfmof"), SubResource("Resource_yk254"), SubResource("Resource_rk4m6"), SubResource("Resource_4lkwu")])
-tools = Array[ExtResource("1_2q5yg")]([SubResource("Resource_tgv8e"), SubResource("Resource_o5woe"), SubResource("Resource_e6gsf")])
+assets = Array[ExtResource("1_2q5yg")]([SubResource("Resource_nsrer"), SubResource("Resource_vhv8o"), SubResource("Resource_btpt5"), SubResource("Resource_q8wms"), SubResource("Resource_p5aey"), SubResource("Resource_56av3"), SubResource("Resource_xxy2o"), SubResource("Resource_8eb3d"), SubResource("Resource_j4xby"), SubResource("Resource_t6bex"), SubResource("Resource_xfmof"), SubResource("Resource_yk254"), SubResource("Resource_rk4m6"), SubResource("Resource_4lkwu"), SubResource("Resource_tgv8e"), SubResource("Resource_o5woe"), SubResource("Resource_e6gsf"), SubResource("Resource_jfifh")])
+tools = Array[ExtResource("1_2q5yg")]([SubResource("Resource_eaha6"), SubResource("Resource_52eap"), SubResource("Resource_vjvk4")])
