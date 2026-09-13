@@ -61,6 +61,7 @@ func _ready() -> void:
 	_camera = Camera3D.new()
 	_camera.name = "IntroCamera"
 	arena.add_child(_camera)
+	PixelLook.attach(_camera)
 	if _rig != null and _rig.camera != null:
 		_camera.fov = _rig.camera.fov
 	_camera.make_current()
