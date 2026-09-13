@@ -135,16 +135,15 @@ is shown rather than hidden for the same reason the merchant shows a locked card
 A finisher has no windows of its own: the press that produced it was timed against the previous
 attack's recovery, and its perfect multiplier applies to that press.
 
-**Poise** is what a hit takes off an enemy's stagger meter — 15 on a farmhand, 30 on a reaper,
-25 on a pirate. It had been in the resources since M1 with no row here, which is the drift this
+**Poise** is what a hit takes off an enemy's stagger meter — 15 on a farmhand, 25 on a pirate. It had been in the resources since M1 with no row here, which is the drift this
 document exists to prevent, so it is tabled now.
 
 **Poise no longer decides whether an enemy reacts, only how hard.** Every hit that lands throws
 him, and therefore opens the next one — that is what makes a combo a combo rather than three swings
 at a man who is already walking away. What breaking his poise buys is the difference between rocked
 and sprawling: the blow's own `Stagger` figure becomes a push, and a blow that broke poise pushes
-**1.8×** as hard. Read the three poise numbers against that: **the stick's overhead is the only
-single blow that sends a reaper sprawling**, which is a large part of why the stick is the answer
+**1.8×** as hard. Read the two poise numbers against that: **the stick's overhead is the only
+single blow that sends a pirate sprawling**, which is a large part of why the stick is the answer
 to him — but every other blow still rocks him and still leaves him open.
 
 The three figures that turn a `Stagger` number into a knockdown — the push per point of it
@@ -245,21 +244,21 @@ and is therefore the only body in the game pooled apart. They are behaviourally 
 bodies in different shirts would be decoration, not design — and together they stop any single
 answer from working.
 
-| | Farmhand | Reaper | Pirate |
-|---|---|---|---|
-| Role | the swarm | the bruiser | the punishment |
-| Health | 45 | 90 | 70 |
-| Damage | 8 | 16 | **22** |
-| Move speed | 3.4 m/s | 2.4 m/s | 3.0 m/s |
-| Windup — the telegraph | 0.45 s | 0.75 s | **0.80 s** |
-| Active | 0.12 s | 0.18 s | 0.20 s |
-| Recovery | 0.60 s | 0.95 s | 0.90 s |
-| Reach | 1.6 m, 60° | 2.8 m, **160°** | 2.0 m, 90° |
-| Poise | 15 | 30 | 25 |
-| Notices the player at | 9 m | 9 m | 9 m |
-| Rouses others within | 7 m | 7 m | 7 m |
-| Money on kill | 2 | 5 | 8 |
-| Enters at wave | 1 | 3 | 4 |
+| | Farmhand | Pirate |
+|---|---|---|
+| Role | the swarm | the punishment |
+| Health | 45 | 70 |
+| Damage | 8 | **22** |
+| Move speed | 3.4 m/s | 3.0 m/s |
+| Windup — the telegraph | 0.45 s | **0.80 s** |
+| Active | 0.12 s | 0.20 s |
+| Recovery | 0.60 s | 0.90 s |
+| Reach | 1.6 m, 60° | 2.0 m, 90° |
+| Poise | 15 | 25 |
+| Notices the player at | 9 m | 9 m |
+| Rouses others within | 7 m | 7 m |
+| Money on kill | 2 | 8 |
+| Enters at wave | 1 | 4 |
 
 **A farmer minds his own business until he notices you.** He stands where he appeared; he does not
 set off from the horizon. This is what lets a wave build instead of arriving as one flat press — the
@@ -294,25 +293,22 @@ parry, and what makes a crowd feel like a crowd.
 everything the swing could reach, and a contact is then confirmed against the weapon's own `reach`
 and `arc_degrees`. The box used to *be* the shape — a rectangle from the nose out to the reach — and
 it was wrong at both ends: its corners reached half again the weapon's length, and because it ran
-from the attacker's nose backwards it clipped the arc short of its own angle, so a 160° sweep was
-never 160°. Whichever way that box was sized, the number here was not the number the player felt.
-
-**Reaper.** A scythe on a wide horizontal sweep. The 160° arc is the point: **sidestepping does not
-work on him** — you dodge backward, dodge through, or parry. He is slow enough to be read and
-punishing enough that reading him matters. He is also the reason the stick exists.
+from the attacker's nose backwards it clipped the arc short of its own angle, so a wide swing was
+never its own width. Whichever way that box was sized, the number here was not the number the
+player felt.
 
 **Pirate.** A length of wood, swung with both hands. He hits for **22** — nearly three farmhands —
 and he is the only archetype that can take a quarter of the player's health off a single mistake.
 
 Two things keep that fair rather than cheap. He telegraphs for **0.80 s**, the longest wind-up in
-the game, and his warning is the lowest and the longest of the four: a pirate committing is
+the game, and his warning is the lower and the longer of the two: a pirate committing is
 audible under a crowd and readable across the island. And **he is a tenth of a wave** — enough that
 every wave from the third has some, few enough that he is read one at a time rather than fought as
 a crowd.
 
-He is deliberately **not** a heavier reaper. The reaper's 160° sweep is a geometry problem: you
-cannot sidestep it. The pirate's 90° arc can be walked out of by anyone who saw it coming, and the
-whole of him is whether you did.
+**His 90° arc can be walked out of by anyone who saw it coming, and the whole of him is whether you
+did.** He is not a geometry problem to be solved once; he is the same problem the farmhand is, at
+a price that makes getting it wrong matter.
 
 ## Enemy AI
 
@@ -385,31 +381,28 @@ harder version of wave six.
 Each spawn rolls an archetype against the wave's mix. The result is rounded to whole enemies, and
 the farmhand always takes the remainder.
 
-| Wave | Farmhand | Reaper | Pirate |
-|---|---|---|---|
-| 1–2 | 100 % | — | — |
-| 3 | 85 % | 15 % | — |
-| 4 | 72 % | 18 % | 10 % |
-| 5 | 68 % | 22 % | 10 % |
-| 6–7 | 64 % | 26 % | 10 % |
-| 8–11 | 55 % | 35 % | 10 % |
-| 12–15 | 45 % | 45 % | 10 % |
+| Wave | Farmhand | Pirate |
+|---|---|---|
+| 1–3 | 100 % | — |
+| 4–15 | 90 % | 10 % |
 
-**One new thing at a time, and never in the waves that teach.** Waves 1 and 2 are farmhands and
-nothing else, because that is where the player uses what the tutorial taught rather than meeting
-somebody new. Then the reaper at 3 and the pirate at 4, each its own step, in the band the design
-gives to pressure. From 5 on nothing new arrives and the mix simply hardens: by wave 12 a body on
-the island is as likely to be a reaper as a farmhand.
+**Two archetypes, so two bands.** Waves 1 to 3 are farmhands and nothing else — that is where the
+player uses what the tutorial taught rather than meeting somebody new — and the pirate joins from
+wave 4 and never leaves.
 
 **Ten per cent is a roll per spawn and not a quota.** At wave 5 the island sends twenty-two bodies
 and about two of them are pirates; *which* two, and whether it is one or four, is the wave's own
 business. A fixed number per wave would be a schedule the player learns. A chance is a thing that
 happens to them, and the pirate is the archetype that has to be able to arrive at the wrong moment.
+Ten per cent flat rather than a ramp — he is a hazard, and a hazard that grows on a schedule stops
+being one.
 
-**His share is taken off the other two proportionally, not off the farmhand alone**, so the shape
-they make is untouched at every band and the farmhand is still the most common thing on the island
-until the very last of them. Ten per cent flat rather than a ramp — he is a hazard, and a hazard
-that grows on a schedule stops being one.
+**The mix is no longer a difficulty lever, and that is a consequence rather than a decision.** With
+one swarm archetype and one flat hazard there is nothing left for a band to escalate, so every wave
+from the fourth is composed identically and the whole of the curve is carried by `hp_mult`,
+`dmg_mult` and the crowd. If waves 12 to 15 should feel different from wave 6 in what they *send*
+rather than only in what it costs, the pirate's share has to climb — which is a decision about what
+he is, not a number to nudge.
 
 **Implemented in M2, tuned in M3.** `data/waves/standard.tres` carries every coefficient above, and
 `tools/verify_waves.tscn` asserts the table and the resource still agree — including the floors and
@@ -805,7 +798,6 @@ night:
 | | climbs | over |
 |---|---|---|
 | Farmhand | 300 → 690 Hz | 0.30 s |
-| Reaper | 150 → 300 Hz | 0.42 s |
 | Pirate | 200 → 380 Hz | 0.48 s |
 
 They are set apart rather than ranked. Several commit at once in a crowd at night, and an archetype

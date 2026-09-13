@@ -26,13 +26,13 @@ extends Node3D
 const DEFAULT_ZOOM: float = 17.0
 ## How close the wheel may come, and it is a **readability floor rather than a taste**. The ground
 ## that stays in shot on the blind bearing is very nearly half the arm: six metres showed 2.75 m of
-## it, nine 4.25, eleven 5.25, seventeen 8.50. A reaper strikes from 2.8 m and covers 1.8 m more
-## while he winds up, so under 4.6 m of visible ground his swing begins off-screen — which made the
+## it, nine 4.25, eleven 5.25, seventeen 8.50. A pirate strikes from 2.0 m and covers 2.4 m more
+## while he winds up, so under 4.4 m of visible ground his swing begins off-screen — which made the
 ## old floor of six a setting that quietly took the fight away from whoever chose it.
 ##
 ## Eleven is the first step of the wheel clear of that bound. `tools/verify_view.tscn` winds the
-## wheel all the way in and re-measures, so a change to the pitch, the field of view or the reaper
-## fails here rather than in someone's hands.
+## wheel all the way in and re-measures, so a change to the pitch, the field of view or an
+## archetype's reach fails here rather than in someone's hands.
 const MIN_ZOOM: float = 11.0
 ## Room to pull further back when a crowd closes in. The cost of doing so is the ring above, and it
 ## is the player's to pay for a moment rather than the game's to pay for a whole run.

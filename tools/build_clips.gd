@@ -38,11 +38,8 @@ const FARMER_RIG: String = "res://assets/models/char_farmer.glb"
 const FARMER_STANDING_CLIP: String = "idle"
 const FARMER_OUTPUT: String = "res://assets/models/char_farmer_stand_ins.tres"
 ## Each archetype's attack, and how far its arm travels relative to the farmhand's straight punch.
-## The reaper swings a scythe through a hundred and sixty degrees, so the same draw and the same
-## swing at different depths is most of the difference.
 const BLOWS: Dictionary[String, float] = {
 	"res://data/attacks/farmhand_swing.tres": 1.0,
-	"res://data/attacks/reaper_sweep.tres": 1.5,
 }
 ## The clip a shot poses the body in. One, not three, and **it has no shooting arm in it.**
 ##
