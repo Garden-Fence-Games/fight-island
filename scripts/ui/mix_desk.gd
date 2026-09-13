@@ -118,9 +118,26 @@ func _strip(family: StringName) -> Control:
 	_readouts[family] = readout
 	var listen := Button.new()
 	listen.text = "hear"
+	# **Dead for the families that have nothing to play, and visibly dead.** `track` and `layer` are
+	# the soundtrack: no sound is registered under either, so this button used to do nothing at all
+	# and say nothing about it. Somebody moved the music fader eleven decibels down while listening
+	# to silence, against a playlist that was still empty, and that is how the soundtrack shipped
+	# under the menu click. A button that cannot be pressed is the smallest thing that stops it.
+	listen.disabled = not _can_audition(family)
+	listen.tooltip_text = "" if listen.disabled else "play this family"
+	if listen.disabled:
+		listen.tooltip_text = "nothing to audition — listen to what is already playing"
 	listen.pressed.connect(_on_audition_pressed.bind(family))
 	strip.add_child(listen)
 	return strip
+
+
+## Whether pressing `hear` would produce a sound. The voices are pooled rather than registered, so
+## they are named; everything else has to have something under its family to play.
+func _can_audition(family: StringName) -> bool:
+	if family == &"farmer" or family == &"gull":
+		return not AudioManager.voices_of(family).is_empty()
+	return not MixTable.sounds_of(family).is_empty()
 
 
 func _master_strip() -> Control:

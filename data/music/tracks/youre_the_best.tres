@@ -8,3 +8,4 @@ script = ExtResource("1")
 title = "You're the Best"
 artist = "Sarah, the Illstrumentalist"
 stream = ExtResource("2")
+as_recorded = -6.42
