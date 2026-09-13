@@ -94,6 +94,16 @@ All notable changes to this project are documented here, following
   his rig carries no `RESET` — the player's does, so the same arrangement would have stood a dying
   man upright on the frame he was knocked down. `AnimationComponent` now lets go of the rig when the
   physics takes the body and refuses to touch it until the physics gives it back.
+- **A ragdoll is a body, not a sock.** Build 6 threw sixteen one-kilogram capsules a few
+  centimetres across on the same loose cone, and a farmer folded like cloth with his skin a metre
+  into the sand. Each bone now weighs its anthropometric share of the body, its capsule is fitted to
+  the vertices it carries, and its joint is limited in an anatomical frame — a knee folds back, a
+  neck does not turn the head round. `RagdollData` and `JointLimits` carry all of it.
+- **Corpses lie on the sand and stay bodies.** They were pictures lifted onto the navigation mesh,
+  which sits above the terrain, so every one hovered and a body still sliding when the fall ended
+  froze in place. A corpse now takes the tumble over and keeps its ragdoll until it is still, then
+  rests as a baked mesh with no skeleton in the tree. Walking into one shoves it; striking one
+  throws it and it bleeds, without the blow counting as a hit. `verify_corpses` holds all of it.
 - **The music slider reached nothing.** `MusicBed` lerped the `Music` bus towards nought every frame
   while `Settings` wrote the player's figure to it once, so the slider was overwritten within about
   a second of the arena loading — and `_exit_tree` handed full volume back on the way to the title.
