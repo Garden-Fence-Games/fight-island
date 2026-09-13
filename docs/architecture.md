@@ -80,8 +80,7 @@ editor, can carry `@export` tuning per instance, and are reused across actors by
 machine rather than inheriting the actor.
 
 - **Player:** `Idle`, `Move`, `Sprint`, `Dodge`, `Parry`, `Attack`, `Reload`, `Hurt`, `Dead`.
-- **Enemy:** `Spawn`, `Idle`, `Chase`, `Strafe`, `WindUp`, `Attack`, `Recover`, `Stagger`, `Dead`,
-  plus `Retreat` for the thrower.
+- **Enemy:** `Spawn`, `Idle`, `Chase`, `Strafe`, `WindUp`, `Attack`, `Recover`, `Stagger`, `Dead`.
 
 `WindUp` carries the telegraph, and since #122 took the ring off the ground it carries it **on the
 body**: the farmer tips backwards over the wind-up and snaps forward on the swing. It is geometry
@@ -98,9 +97,10 @@ to `AnimationComponent.play_clip(clip, seconds)` and nothing else has to move.
 
 `Attack` is **one** state driven by `AttackData`. The nine player attacks are data, not nine states.
 
-The same applies to the enemies: **one `enemy.tscn`, three `EnemyData` resources.** Farmhand,
-reaper and thrower differ by their stats, their attack and their material — not by three scenes to
-keep in sync. A fourth archetype would be a `.tres`, not a branch.
+The same applies to the enemies: **one `enemy.tscn`, two `EnemyData` resources on it.** The
+farmhand and the reaper differ by their stats, their attack and their material — not by two scenes
+to keep in sync. A third archetype on the same rig would be a `.tres`, not a branch; the pirate has
+a scene of his own only because he wears a different model.
 
 ## Data-driven balance
 
@@ -113,8 +113,8 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   The distance is **`reach`** and not "range", which is a GDScript built-in — and it is measured
   centre to centre, which is why `Hitbox` adds half a body on top of it.
 - **`EnemyData`** — `id`, `display_name`, `health`, `move_speed`, `poise`, `money`,
-  `attack: AttackData`, `notice_radius`, `rouse_radius`, `attack_range`, `is_ranged`,
-  `preferred_range`, `retreat_range`, `projectile: PackedScene`, `tint`.
+  `attack: AttackData`, `notice_radius`, `rouse_radius`, `attack_range`, `preferred_range`,
+  `tint`.
   **There is no "first_wave" here either.** When an archetype starts appearing is decided by the
   `WaveBand` it is listed in, and a second copy of that number on the enemy would be a balance
   figure with two homes — correct until the day somebody retunes the bands and not after it.
@@ -222,24 +222,6 @@ does not do the knowing, so *signals only, zero state* still holds.
 every reader asks for the value at the moment it needs it, which is why no signal is missing.
 The first read loads the file and applies everything, so a scene launched straight from the
 editor behaves exactly like one reached through boot.
-
-## The thrower, and the one stone
-
-Two things about the ranged archetype are not obvious.
-
-**`Retreat` releases its token on the way in.** A body walking backwards is not committing to
-anything, and a held token would keep the other thrower waiting for a turn that is not coming.
-
-**The ranged token is held until the stone lands, not until the throw ends.** The design says at
-most one stone is in the air, and a throw whose recovery is shorter than its own stone's flight
-would otherwise let a second one go. With the figures as they ship the two are the same thing — a
-stone crosses its range in 1.17 s while the next thrower needs 1.4 s to claim and wind up, so
-nothing in a running fight distinguishes them. Shorten a recovery or slow a stone and it would
-matter, and nobody would find out by watching. `verify_combat` therefore checks the rule directly:
-throw, release, and assert the pool still shows the token held.
-
-The stone is parented to the thrower's **parent**, not to the thrower. A projectile owned by a body
-that dies mid-flight would be freed in the air.
 
 ## The tutorial
 
@@ -556,8 +538,8 @@ Everything downstream is a listener or a reader, and none of them knows a direct
   unwinding — a body holding a token keeps it, and the pool refuses the next claim until enough
   have let go.
 - `Enemy.rouse()` multiplies its radius by `GameState.rouse_scale()`. **Noticing is deliberately
-  left alone**: a farmer arrives no closer than twelve metres and the thrower already notices at
-  twelve, so scaling that would put every night wave back to charging from the horizon.
+  left alone**: a farmer arrives no closer than twelve metres and notices at nine, so scaling that
+  would put every night wave back to charging from the horizon.
 - `DayNight` owns the sun and the `WorldEnvironment` as children and reads `GameState.day_elapsed`
   — the same clock the rules read, so the light and the damage change together. It duplicates the
   environment on `_ready`, because a scene sub-resource is shared by every instance of the scene
@@ -608,8 +590,8 @@ who forgets he was swung at is worse than one who never noticed.
 
 **Rousing spreads, and terminates on its own guard.** `rouse()` returns immediately if the body is
 already roused, so each one is visited once however the crowd is arranged — no depth limit, no
-visited set. Being hit routes through the same call, which is what stops a thrower plinking at
-someone from outside their own notice radius forever.
+visited set. Being hit routes through the same call, which is what stops a body hit from outside
+its own notice radius standing there forever.
 
 None of this needed a token change: tokens are claimed on entering `WindUp`, and an idle body never
 gets there. Nor did the wave director: a wave ends when the last body *dies*, not when the last one
@@ -844,8 +826,7 @@ Two rules follow from it, and both are checked:
   drop in two hundred was going missing.
 
 The merchant is a screen rather than a body, so the third of issue #39's placement rules has
-nothing to bind. **The thrower test is still open**: he strikes from 14 m, and neither "enough
-sightline to be a threat" nor "enough cover to close on him" has an honest threshold yet.
+nothing to bind.
 
 Occlusion is handled by **fading** what comes between the camera and the player, not by dodging it.
 With a fixed angle the offenders are known at authoring time, which a moving camera could never
@@ -975,17 +956,6 @@ answering a question the others cannot:
   every zoom the wheel reaches, and a dropped weapon lands where the player can see it.
 - **`verify_playfield`** walks every square metre the fight can reach and fails on a corner where a
   160° sweep leaves nowhere to dodge — the reaper's question.
-- **`verify_sightlines`** is the thrower's, and it is a **band rather than a floor**, because it has
-  two opposite failures. Too little open ground and a ranged enemy is decoration, throwing into rock
-  from ten metres. No cover at all and he is a tax rather than a threat that can be answered, since
-  there is nothing to break his line behind while closing. The shipped island sits at 79% clear and
-  21% blocked.
-
-`verify_sightlines` casts **the ray the stone actually flies** — the `world` layer, chest to chest,
-flat — rather than a navigation query or the walkability grid `verify_playfield` rasterises. That
-distinction is the whole accuracy of it: a wreck a metre high is cover to a stone and is not a wall
-to a body, and a walkable dip is neither.
-
 ## Wind and water
 
 Both are shaders, and both are shaders for the same reason: the thing that has to move is drawn
@@ -1278,9 +1248,8 @@ Two headless guards run in CI and locally:
   making them. The spawn rules are checked against **two hundred points from the search**, not
   against the four a wave happened to use — with the "never in shot" rule deleted, a four-body wave
   still passed, which made that check decorative. It also asserts the upgrade cost curve, that a
-  run buys about two tracks out of five, that clearing a wave puts both the reward and the kills
-  into the purse, and that no wave ever opens with a thrower while one can still turn up later —
-  rolled four hundred times a band, because a rule that holds for one seed is not a rule.
+  run buys about two tracks out of five, and that clearing a wave puts both the reward and the
+  kills into the purse.
 - **`tools/verify_aim.tscn`** — drives a real joypad event and a real key press through the
   engine's own input path, and the real camera projection for the cursor, then asserts that holding
   a movement key still walks the body and does not follow its facing, that the body turns at a

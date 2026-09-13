@@ -8,6 +8,14 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **A drowned player struggles and goes under.** Dying out of their depth no longer hands the body
+  to the ragdoll, which had nothing true to do in the water: the player plays `drowning`,
+  Purple-Sigil's looping struggle with a strong bob, and sinks while it loops. The summary waits
+  until the body is all the way under, and the sea stops carrying it back to the sand. A death on
+  land, or in the shallows, still falls the way the blow threw it.
+- **Forcing against the sea is exponential.** Walking out against the push doubles the drain every
+  second it goes on, up to a cap, and resets the moment the player stops heading out — drifting out
+  of depth still costs the ordinary rate. Figures in `data/combat/tide.tres`.
 - **The accessibility switches are held together, not one at a time.** Each already had a check of
   its own — the shake slider means nought at nought, reduce-flashing damps the flare and leaves the
   debris, no switch is dead — and one at a time is not the question a player who needs all of them
@@ -26,6 +34,27 @@ All notable changes to this project are documented here, following
     `HitFeedback` was not listening and passed without testing anything. The mutation caught it.
     `verify_feel` warns about that exact trap in its own docstring, and this is the second time the
     project has paid for it.
+
+### Removed
+
+- **The thrower is gone, and nothing stands in for him.** He was never wanted: issue #9 asked for a
+  ranged farmer and #73 built him, and the design he was built into is not the one this game is.
+  Removed rather than switched off — the archetype, his stone, the `Projectile` he flew, the
+  `Retreat` state, the separate ranged token pool, `EnemyData.is_ranged`, `retreat_range` and
+  `projectile`, the rule that no wave may open with a ranged body, his telegraph, his clips, his
+  locale row, and `verify_sightlines`, which existed to answer a question only he asked.
+  - **The composition closes over him.** The pirate stays a flat ten per cent hazard and the reaper
+    takes the escalation the thrower used to carry: by wave 12 a body on the island is as likely to
+    be a reaper as a farmhand. One new archetype per wave still, the reaper at 3 and the pirate at
+    4, and nothing new after that — the mix simply hardens.
+  - **The late game is measurably gentler**, and this is the price rather than a side effect. His
+    token was a free one: he queued on a pool nobody else could use, so being shot at cost nothing
+    the melee pool was already spending. Measured by `tools/measure_waves.tscn`, wave 15 goes from
+    103 to 81 points of incoming damage a second at the night pool, and survival under full contact
+    from 1.2 s to 1.5 s.
+  - **The curve is smoother for it.** The worst wave-to-wave step in the run was his arrival at 32
+    per cent; the worst now is the pirate's at 17, and every other step is under 14.
+
 ## [0.1.0] - 2026-09-13
 
 The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
@@ -104,6 +133,21 @@ still fail.
   the game to take health away a fraction at a time rather than in whole blows.
 
 ### Changed
+
+- **The menus are set in a face you can read.** Badeen Display was chosen for impact and failed the
+  one thing a menu owes the player: its counters close up at every size, so at 40 px `THE STUDIO`
+  rendered as a row of filled blocks. Oswald Medium replaces it through one `ext_resource` that
+  eight theme variations point at. A standing rule goes with it — Badeen drew its Latin digits as
+  the Arabic-Indic forms, so no string carrying a number could be set in it.
+- **A wave is ninety seconds**, forty-five of light and forty-five of dark, down from four minutes.
+  Fifteen waves goes from about an hour to about twenty-five minutes. The turn of the sky moved with
+  it: `turning_share` is now a fact about each phase rather than one global, and **dawn and dusk
+  carry all of it** — they exist to *be* the turn, and holding a dusk before flipping into night in
+  its last few seconds was the abrupt version of the thing dusk was added to smooth.
+- **The credits say whose game it is.** A `The studio` row leads the roll — Garden Fence,
+  gardenfence.ch — through the existing document-to-screen chain rather than around it.
+- **The whole mix was set by ear**, in a fight, at a fader desk built for it, and the figures it was
+  left at are the defaults.
 
 - **Both weapons lie on the island from wave 1.** The stick used to arrive in wave 2 and the gun in
   wave 4, and holding them back cost more than it bought: a weapon nobody has found is a weapon that

@@ -8,7 +8,6 @@ extends Node
 const ARENA: String = "res://scenes/world/arena.tscn"
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
 const REAPER: String = "res://data/enemies/reaper.tres"
-const THROWER: String = "res://data/enemies/thrower.tres"
 ## The least the two archetypes may differ in brightness. Hue is not enough: the camera is high, the
 ## bodies are small, and a player who cannot tell a bruiser from a swarm body has no way to choose
 ## what to do about either. Measured the way an eye weighs the channels.
@@ -100,11 +99,6 @@ func _run() -> void:
 	await _check_the_sweep_covers_the_sides_and_nothing_else()
 	await _check_a_sidestep_still_beats_a_farmhand()
 	await _check_one_swing_never_shrinks_another()
-	_check_the_thrower_matches_the_table()
-	_check_the_stone_can_be_sidestepped()
-	await _check_he_backs_away_when_crowded()
-	await _check_only_one_stone_is_ever_in_the_air()
-	await _check_the_ranged_token_is_held_until_the_stone_lands()
 	# Last of the checks, because it is the one that kills the sparring partner on purpose — and
 	# before the run goes back, because it pays money into the wallet on its way through.
 	await _check_a_finisher_pays_double()
@@ -515,7 +509,7 @@ func _report() -> void:
 		print(
 			(
 				"combat OK — hit, perfect, chain, lockout, parry, the reaper's arc through a second "
-				+ "man's swing, the thrower's stone, a combo finished for double money, and a "
+				+ "man's swing, a combo finished for double money, and a "
 				+ "farmer who waits until he notices you"
 			)
 		)
@@ -571,8 +565,8 @@ func _check_walking_up_to_him_starts_the_chase() -> void:
 		_fail("the farmer telegraphed a swing from outside his own reach")
 
 
-## Whatever his eyes say. Without this a thrower could plink at someone standing outside their own
-## notice radius forever, and nothing would ever come after him.
+## Whatever his eyes say. Without this a farmer hit from outside his own notice radius would stand
+## there forever, and nothing would ever come after the player.
 func _check_a_hit_wakes_him_from_any_distance() -> void:
 	_park_enemy_at(40.0)
 	await _advance(0.2)
@@ -674,7 +668,7 @@ func _check_the_reaper_matches_the_table() -> void:
 
 ## Told apart at a glance from a high camera, which means told apart with the colour taken out.
 func _check_the_two_farmers_differ_in_greyscale() -> void:
-	var archetypes := [FARMHAND, REAPER, THROWER]
+	var archetypes := [FARMHAND, REAPER]
 	for first: int in archetypes.size():
 		for second: int in range(first + 1, archetypes.size()):
 			var one := load(archetypes[first]) as EnemyData
@@ -826,140 +820,6 @@ func _lease(archetype: String) -> Enemy:
 	if director == null:
 		return null
 	return director.spawner.spawn_at(load(archetype) as EnemyData, Vector3(0.0, 0.0, -3.0))
-
-
-## The thrower's row of docs/game-design.md, asserted against the resource that drives him.
-func _check_the_thrower_matches_the_table() -> void:
-	var data := load(THROWER) as EnemyData
-	if data == null or data.attack == null:
-		_fail("there is no thrower to check")
-		return
-	if not is_equal_approx(data.health, 40.0) or not is_equal_approx(data.move_speed, 2.8):
-		_fail(
-			(
-				"the thrower should be 40 health at 2.8 m/s, is %.0f at %.1f"
-				% [data.health, data.move_speed]
-			)
-		)
-	if not data.is_ranged or data.projectile == null:
-		_fail("the thrower should be ranged and should have something to throw")
-	if not is_equal_approx(data.retreat_range, 5.0):
-		_fail(
-			"the thrower should back away inside 5 m, backs away inside %.1f" % data.retreat_range
-		)
-	if not is_equal_approx(data.attack.reach, 14.0):
-		_fail("a stone should carry 14 m, carries %.1f" % data.attack.reach)
-	if data.money != 4 or not is_equal_approx(data.attack.damage, 10.0):
-		_fail("the thrower's damage or worth does not match the table")
-
-
-## The claim that makes him fair: a stone can be stepped out of. Asserted as arithmetic on the
-## shipped figures rather than by driving a dodge, because what has to be true is that the flight
-## lasts longer than the roll — and a dodge that only just makes it is not a dodge the player can
-## be asked to find under pressure.
-func _check_the_stone_can_be_sidestepped() -> void:
-	var data := load(THROWER) as EnemyData
-	var stone := data.projectile.instantiate() as Projectile if data != null else null
-	if stone == null:
-		_fail("the thrower throws something that is not a projectile")
-		return
-	var flight := data.attack.reach / stone.speed
-	stone.free()
-	if flight < PlayerDodge.DURATION * 2.0:
-		_fail(
-			(
-				"a stone crosses its range in %.2f s against a %.2f s roll — too quick to read"
-				% [flight, PlayerDodge.DURATION]
-			)
-		)
-
-
-## He is the reason a corner is not a plan. Crowded, he gives ground rather than trading.
-func _check_he_backs_away_when_crowded() -> void:
-	var thrower := _lease(THROWER)
-	if thrower == null:
-		_fail("could not lease a thrower")
-		return
-	_player.global_position = Vector3.ZERO
-	_player.machine.current.transition_to(&"Idle")
-	thrower.global_position = Vector3(0.0, 0.0, -3.0)
-	thrower.rouse()
-	var before := thrower.distance_to_target()
-	await _advance(2.0)
-	var after := thrower.distance_to_target()
-	if after <= before:
-		_fail(
-			(
-				"a thrower three metres from the player should have given ground, went %.1f to %.1f"
-				% [before, after]
-			)
-		)
-	if after < load(THROWER).retreat_range:
-		_fail("a thrower should end up outside the range he backs away from, is %.1f m out" % after)
-	thrower.retire()
-
-
-## Three throwers, eight seconds, and never two stones at once.
-##
-## Honest about what this proves: with the figures as they ship, a stone crosses its range in 1.17 s
-## while the next thrower needs 1.4 s to claim the token and wind up, so **two stones could not
-## overlap even without the rule**. This check would pass with the token released early. It earns
-## its place by proving stones fly at all from three bodies at once — the mechanism itself is proven
-## by the check below it.
-func _check_only_one_stone_is_ever_in_the_air() -> void:
-	var throwers: Array[Enemy] = []
-	for index: int in 3:
-		var thrower := _lease(THROWER)
-		if thrower == null:
-			continue
-		thrower.global_position = Vector3(float(index) * 2.0 - 2.0, 0.0, -9.0)
-		thrower.rouse()
-		throwers.append(thrower)
-	if throwers.size() < 3:
-		_fail("could not lease three throwers")
-		return
-	_player.global_position = Vector3.ZERO
-	var most := 0
-	for _step: int in 480:
-		await get_tree().physics_frame
-		most = maxi(most, get_tree().get_nodes_in_group(&"projectiles").size())
-	if most == 0:
-		_fail("three throwers stood at nine metres for eight seconds and threw nothing")
-	if most > 1:
-		_fail("%d stones were in the air at once, the ranged pool holds one" % most)
-	for thrower: Enemy in throwers:
-		thrower.retire()
-
-
-## The rule itself, rather than a timing that happens to satisfy it.
-##
-## The ranged pool holds one, and a thrower keeps that one until its stone lands — not until the
-## throw finishes. Today the two are the same thing because a stone lands before the next thrower
-## could possibly wind up, so nothing in a running fight distinguishes them. Shorten the recovery or
-## slow the stone and it would matter, and nobody would find out from watching.
-func _check_the_ranged_token_is_held_until_the_stone_lands() -> void:
-	var tokens := get_tree().get_first_node_in_group(&"attack_tokens") as AttackTokens
-	var thrower := _lease(THROWER)
-	if tokens == null or thrower == null:
-		_fail("could not lease a thrower and its token pool")
-		return
-	_hold_still(thrower, true)
-	thrower.global_position = Vector3(0.0, 0.0, -9.0)
-	_player.global_position = Vector3.ZERO
-	thrower.claim_token()
-	thrower.throw_at(_player.global_position)
-	thrower.release_token()
-	if not tokens.holds(thrower, true):
-		_fail("a thrower let go of the ranged token with its stone still in the air")
-	var waited := 0.0
-	while not get_tree().get_nodes_in_group(&"projectiles").is_empty() and waited < 4.0:
-		await get_tree().physics_frame
-		waited += 1.0 / 60.0
-	await get_tree().physics_frame
-	if tokens.holds(thrower, true):
-		_fail("a thrower kept the ranged token after its stone had landed")
-	_hold_still(thrower, false)
-	thrower.retire()
 
 
 func _put_the_run_back() -> void:

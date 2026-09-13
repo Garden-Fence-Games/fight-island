@@ -39,9 +39,6 @@ const SNAPPED_OUTWARD: float = 0.5
 ## This is also why the first wave is not instant in the game.
 const MAP_SYNC_FRAMES: int = 120
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
-const THROWER: String = "res://data/enemies/thrower.tres"
-## Long enough for a stone thrown at nine metres to land, whatever it meets on the way.
-const STONE_FLIGHT: float = 4.0
 ## Far enough apart that neither shoves the other while they are being measured.
 const SHOULDER_TO_SHOULDER: float = 4.0
 ## Long enough for a flash to settle all the way back.
@@ -97,7 +94,6 @@ func _run() -> void:
 	_check_the_formulas_match_the_table()
 	_check_the_cost_curve()
 	_check_a_run_affords_about_two_tracks()
-	_check_a_wave_never_opens_with_a_thrower()
 
 	_arena = (load(ARENA) as PackedScene).instantiate() as Node3D
 	add_child(_arena)
@@ -123,7 +119,6 @@ func _run() -> void:
 	_check_the_bodies_were_reused()
 	await _check_an_elite_is_worse_and_obviously_so()
 	_check_elites_keep_away_from_the_first_waves()
-	await _check_a_wave_cleared_mid_throw_leaves_the_throwers_throwing()
 	# Last, because it leaves a body standing for twelve seconds and every check above it leases
 	# from the same pool.
 	await _check_a_wave_comes_to_the_player()
@@ -625,119 +620,12 @@ func _check_the_money_reached_the_wallet(before: int, paid: int, bodies: int) ->
 	var per_kill := 0
 	var band := _director.config.band_for(1)
 	if band != null:
-		var archetype := band.pick(RandomNumberGenerator.new(), true)
+		var archetype := band.pick(RandomNumberGenerator.new())
 		per_kill = archetype.money if archetype != null else 0
 	var due := paid + bodies * per_kill
 	var earned := GameState.money - before
 	if earned != due:
 		_fail("clearing wave 1 should be worth %d in the purse, was worth %d" % [due, earned])
-
-
-## Nobody is shot at before there is anything on screen to explain it. `WaveBand.pick` has carried
-## the rule since the wave work and has never had a ranged archetype to filter — this is the first
-## time it has anything to do, so it is the first time the rule is worth anything.
-##
-## Rolled many times rather than once: a rule that holds for one seed and not the next is not a
-## rule, and a single roll of a table where the thrower is a fifth of the mix passes four times in
-## five by luck alone.
-func _check_a_wave_never_opens_with_a_thrower() -> void:
-	var config := load(CONFIG) as WaveConfig
-	if config == null:
-		return
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 20260912
-	for wave_index: int in [5, 8, 12, 20]:
-		var band := config.band_for(wave_index)
-		if band == null:
-			_fail("wave %d has no composition band" % wave_index)
-			continue
-		var ranged_seen := false
-		var opened := 0
-		for _roll: int in 400:
-			var first := band.pick(rng, true)
-			if first == null:
-				continue
-			opened += 1
-			if first.is_ranged:
-				ranged_seen = true
-		if opened == 0:
-			_fail("wave %d cannot open with anybody at all" % wave_index)
-		if ranged_seen:
-			_fail("a wave %d opened with a thrower" % wave_index)
-		# And the other half of it: the archetype has to be reachable once the wave is under way,
-		# or "never opens with one" would be satisfied by never sending one.
-		var ever_ranged := false
-		for _roll: int in 400:
-			var later := band.pick(rng, false)
-			if later != null and later.is_ranged:
-				ever_ranged = true
-				break
-		if wave_index >= 5 and not ever_ranged:
-			_fail("no thrower ever appears at wave %d, where the table says they do" % wave_index)
-
-
-## The commonest way a run loses its throwers. `_finish_the_wave` clears the island, and a thrower
-## whose stone is still travelling used to retire holding the one ranged token — from the next wave
-## on, every thrower closed and circled and never committed, and nothing anywhere said so.
-##
-## The rule that made it happen is a good one: a thrower keeps the token until its stone lands, so a
-## recovery shorter than a flight cannot put two stones up. It protects a *living* thrower. A body
-## going back to the pool has no second throw to protect, so it must let go of both.
-func _check_a_wave_cleared_mid_throw_leaves_the_throwers_throwing() -> void:
-	var tokens := get_tree().get_first_node_in_group(&"attack_tokens") as AttackTokens
-	var data := load(THROWER) as EnemyData
-	var thrower := _director.spawner.spawn_at(data, Vector3(0.0, 0.0, -9.0))
-	if tokens == null or data == null or thrower == null:
-		_fail("could not stand up a thrower and find its token pool")
-		return
-	_hold_still(thrower, true)
-	thrower.claim_token()
-	thrower.throw_at(_player.global_position)
-	if get_tree().get_nodes_in_group(&"projectiles").is_empty():
-		_fail("the thrower this check needs put no stone in the air")
-		return
-
-	# The end of a wave, which retires everyone standing whatever they have in the air.
-	_director.spawner.clear()
-	if tokens.holds(thrower, true):
-		_fail("a thrower retired with its stone in the air kept the ranged token")
-
-	var next := _director.spawner.spawn_at(data, Vector3(3.0, 0.0, -9.0))
-	var spare: Enemy = null
-	if next == thrower:
-		# The one body this may not be is the one that just retired: a pool answers `true` to an id
-		# it already holds, which is what makes the fault read as "the throwers went quiet".
-		spare = next
-		next = _director.spawner.spawn_at(data, Vector3(-3.0, 0.0, -9.0))
-	if next == null:
-		_fail("the pool would not lease a second thrower")
-		return
-	_hold_still(next, true)
-	if not next.claim_token():
-		_fail("the next thrower out of the pool was refused the ranged token")
-
-	# And the old life's stone must not take the token off the thrower now holding it.
-	var waited := 0.0
-	while not get_tree().get_nodes_in_group(&"projectiles").is_empty() and waited < STONE_FLIGHT:
-		await get_tree().physics_frame
-		waited += 1.0 / 60.0
-	await get_tree().physics_frame
-	if not tokens.holds(next, true):
-		_fail("an old life's stone landing took the token off the thrower now holding it")
-	_hold_still(next, false)
-	if spare != null:
-		spare.retire()
-	next.retire()
-
-
-## A body the check drives by hand rather than lets fight, so a state machine cannot walk it out of
-## the measurement.
-func _hold_still(enemy: Enemy, still: bool) -> void:
-	if enemy == null or enemy.machine == null:
-		return
-	enemy.machine.process_mode = (
-		Node.PROCESS_MODE_DISABLED if still else Node.PROCESS_MODE_INHERIT
-	)
 
 
 func _stand_the_tutorial_down(arena: Node) -> void:

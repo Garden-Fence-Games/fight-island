@@ -128,7 +128,7 @@ A finisher has no windows of its own: the press that produced it was timed again
 attack's recovery, and its perfect multiplier applies to that press.
 
 **Poise** is what a hit takes off an enemy's stagger meter — 15 on a farmhand, 30 on a reaper,
-10 on a thrower. It had been in the resources since M1 with no row here, which is the drift this
+25 on a pirate. It had been in the resources since M1 with no row here, which is the drift this
 document exists to prevent, so it is tabled now.
 
 **Poise no longer decides whether an enemy reacts, only how hard.** Every hit that lands throws
@@ -237,21 +237,21 @@ and is therefore the only body in the game pooled apart. They are behaviourally 
 bodies in different shirts would be decoration, not design — and together they stop any single
 answer from working.
 
-| | Farmhand | Reaper | Thrower | Pirate |
-|---|---|---|---|---|
-| Role | the swarm | the bruiser | the pressure | the punishment |
-| Health | 45 | 90 | 40 | 70 |
-| Damage | 8 | 16 | 10 | **22** |
-| Move speed | 3.4 m/s | 2.4 m/s | 2.8 m/s | 3.0 m/s |
-| Windup — the telegraph | 0.45 s | 0.75 s | 0.60 s | **0.80 s** |
-| Active | 0.12 s | 0.18 s | projectile | 0.20 s |
-| Recovery | 0.60 s | 0.95 s | 0.80 s | 0.90 s |
-| Reach | 1.6 m, 60° | 2.8 m, **160°** | 14 m | 2.0 m, 90° |
-| Poise | 15 | 30 | 10 | 25 |
-| Notices the player at | 9 m | 9 m | 12 m | 9 m |
-| Rouses others within | 7 m | 7 m | 7 m | 7 m |
-| Money on kill | 2 | 5 | 4 | 8 |
-| Enters at wave | 1 | 3 | 5 | 3 |
+| | Farmhand | Reaper | Pirate |
+|---|---|---|---|
+| Role | the swarm | the bruiser | the punishment |
+| Health | 45 | 90 | 70 |
+| Damage | 8 | 16 | **22** |
+| Move speed | 3.4 m/s | 2.4 m/s | 3.0 m/s |
+| Windup — the telegraph | 0.45 s | 0.75 s | **0.80 s** |
+| Active | 0.12 s | 0.18 s | 0.20 s |
+| Recovery | 0.60 s | 0.95 s | 0.90 s |
+| Reach | 1.6 m, 60° | 2.8 m, **160°** | 2.0 m, 90° |
+| Poise | 15 | 30 | 25 |
+| Notices the player at | 9 m | 9 m | 9 m |
+| Rouses others within | 7 m | 7 m | 7 m |
+| Money on kill | 2 | 5 | 8 |
+| Enters at wave | 1 | 3 | 4 |
 
 **A farmer minds his own business until he notices you.** He stands where he appeared; he does not
 set off from the horizon. This is what lets a wave build instead of arriving as one flat press — the
@@ -261,7 +261,8 @@ Four rules make that read as calm rather than as broken:
 
 - **Noticing spreads.** A roused farmer rouses everyone within 7 m, so a group turns together. One
   waking alone while the two beside him keep staring at the sea looks like a bug.
-- **Being hit always wakes him**, whatever the distance. Without it the thrower could plink at
+- **Being hit always wakes him**, whatever the distance. Without it a farmer hit from outside his
+  own notice radius could be shot at
   someone from outside their own notice radius forever.
 - **Noticing is one way.** He does not lose interest because the player stepped back. A leash would
   make the edge of every crowd breathe in and out.
@@ -292,10 +293,6 @@ never 160°. Whichever way that box was sized, the number here was not the numbe
 work on him** — you dodge backward, dodge through, or parry. He is slow enough to be read and
 punishing enough that reading him matters. He is also the reason the stick exists.
 
-**Thrower.** Stays at range and lobs stones. The projectile is slow enough to sidestep, so he is
-never unfair, but he **never stops** — he retreats when the player comes within 5 m. He is what
-stops the player from camping one corner, and he is the single best argument for the gun.
-
 **Pirate.** A length of wood, swung with both hands. He hits for **22** — nearly three farmhands —
 and he is the only archetype that can take a quarter of the player's health off a single mistake.
 
@@ -312,7 +309,7 @@ whole of him is whether you did.
 ## Enemy AI
 
 States: `Spawn → Idle → Chase → Strafe → WindUp → Attack → Recover`, plus `Stagger`, `Flinch`,
-`Dead`. The thrower adds `Retreat`.
+`Dead`.
 
 **`Stagger` is two phases, and a knockdown is physics.** A hit hard enough to throw a rigged enemy
 hands his skeleton to the simulator: nothing animates while it has him, he tumbles where the blow
@@ -329,12 +326,10 @@ figure**, so a jab that tips a man over does not put him down for as long as an 
 enemy with no rig, or one whose skeleton did not resolve, falls back to standing still for the
 attack's stagger duration, which is what this state used to be.
 
-Three global rules keep a crowd fair rather than unfair:
+Two global rules keep a crowd fair rather than unfair:
 
-- **A melee attack-token pool of 2.** Only two melee enemies may be in `WindUp` or `Attack` at
-  once; the rest strafe.
-- **A separate ranged token of 1.** Throwers queue on their own, so at most one stone is in the
-  air. Sharing the melee pool would let throwers starve the melee enemies and make waves passive.
+- **An attack-token pool of 2.** Only two enemies may be in `WindUp` or `Attack` at once; the rest
+  strafe. Night widens it to 3, and that is the change a player feels rather than reads.
 - **Minimum 1.2 m separation** steering, so bodies never stack into an unreadable blob.
 
 ## Elites
@@ -382,46 +377,36 @@ harder version of wave six.
 Each spawn rolls an archetype against the wave's mix. The result is rounded to whole enemies, and
 the farmhand always takes the remainder.
 
-| Wave | Farmhand | Reaper | Thrower | Pirate |
-|---|---|---|---|---|
-| 1–2 | 100 % | — | — | — |
-| 3 | 85 % | 15 % | — | — |
-| 4 | 72 % | 18 % | — | 10 % |
-| 5 | 66 % | 18 % | 6 % | 10 % |
-| 6–7 | 59 % | 18 % | 13 % | 10 % |
-| 8–11 | 45 % | 27 % | 18 % | 10 % |
-| 12–15 | 36 % | 32 % | 22 % | 10 % |
+| Wave | Farmhand | Reaper | Pirate |
+|---|---|---|---|
+| 1–2 | 100 % | — | — |
+| 3 | 85 % | 15 % | — |
+| 4 | 72 % | 18 % | 10 % |
+| 5 | 68 % | 22 % | 10 % |
+| 6–7 | 64 % | 26 % | 10 % |
+| 8–11 | 55 % | 35 % | 10 % |
+| 12–15 | 45 % | 45 % | 10 % |
 
 **One new thing at a time, and never in the waves that teach.** Waves 1 and 2 are farmhands and
 nothing else, because that is where the player uses what the tutorial taught rather than meeting
-somebody new. Then the reaper at 3, the pirate at 4, the thrower at 5, and the thrower again at 6:
-four introductions across four waves, each its own step, in the band the design gives to pressure.
+somebody new. Then the reaper at 3 and the pirate at 4, each its own step, in the band the design
+gives to pressure. From 5 on nothing new arrives and the mix simply hardens: by wave 12 a body on
+the island is as likely to be a reaper as a farmhand.
 
-**The thrower opens at six per cent and doubles at wave six.** He is the one archetype whose arrival
-is a step rather than a slope, and the reason is the token pool: he queues on the ranged pool, which
-is one token and nobody else's, so *one* thrower standing is the whole of what being shot at costs
-and a second adds nothing. A share is therefore the odds of paying it at all, and six per cent of
-eight bodies pays it about two times in five. Landing him whole at thirteen per cent was a
-thirty-two per cent jump in incoming damage in a single wave, against a run that otherwise steps by
-five to fifteen.
-
-**Ten per cent is a roll per spawn and not a quota.** At wave 5 the island sends forty-two bodies
-and about four of them are pirates; *which* four, and whether it is two or six, is the wave's own
+**Ten per cent is a roll per spawn and not a quota.** At wave 5 the island sends twenty-two bodies
+and about two of them are pirates; *which* two, and whether it is one or four, is the wave's own
 business. A fixed number per wave would be a schedule the player learns. A chance is a thing that
 happens to them, and the pirate is the archetype that has to be able to arrive at the wrong moment.
 
-**His share is taken proportionally from the other three, not off the farmhand alone**, so the
-triangle they form is untouched at every band: the reaper is still half again the thrower, and the
-farmhand is still the most common thing on the island in every wave of the run. Ten per cent flat
-rather than a ramp — he is a hazard, and a hazard that grows on a schedule stops being one.
-
-A wave never opens with a thrower: the first spawn of every wave is melee, so the player is never
-shot at before anything is on screen.
+**His share is taken off the other two proportionally, not off the farmhand alone**, so the shape
+they make is untouched at every band and the farmhand is still the most common thing on the island
+until the very last of them. Ten per cent flat rather than a ramp — he is a hazard, and a hazard
+that grows on a schedule stops being one.
 
 **Implemented in M2, tuned in M3.** `data/waves/standard.tres` carries every coefficient above, and
 `tools/verify_waves.tscn` asserts the table and the resource still agree — including the floors and
-ceilings, which are what a tuning pass is most likely to break. All four archetypes exist and a band
-normalises over what it can actually spawn, so a row naming one that is missing still costs nothing.
+ceilings, which are what a tuning pass is most likely to break. A band normalises over what it can
+actually spawn, so a row naming an archetype that is missing costs nothing.
 
 **The curve itself is measured rather than argued about.** `tools/measure_waves.tscn` reads these
 resources and prints, for each of the fifteen, the crowd, the hit points standing, the damage coming
@@ -488,7 +473,7 @@ token is the other — two farmers committing at once is a fight you can answer,
 have to give ground to.
 
 **The notice radius is deliberately not scaled.** A farmer arrives between 12 m and 18 m away and
-the thrower already notices at 12 m — any night bonus on the radius and every wave charges from the
+a farmer notices at 9 m — any night bonus on the radius and every wave charges from the
 horizon again. What night does scale is the **patience**: ten seconds of standing ignored in
 daylight, five after dark, on the same `rouse_scale` that already carries a shout further.
 
@@ -581,11 +566,15 @@ you are:
 |---|---|---|
 | Wading | 0 – 1.1 m | costs speed, down to 35 % at the limit |
 | Out of your depth | 1.1 – 1.6 m | the bar comes down, 0 to **20 health a second** |
-| Drowned | — | 0 HP ends the run, the same as any other death |
+| Forcing | out of your depth, heading out to sea | that drain **doubles every second** of forcing, up to **×10** |
+| Drowned | — | 0 HP ends the run; the body struggles and sinks **1.6 m** at **0.45 m/s** |
 
-A walk out against the push stalls at about 1.4 m and a sprint at about 1.6, so five to eight
-seconds of insisting is what it costs to drown. **Every point of it is reversible**: stop pushing
-outward and the sea carries you back in. There is no line you cross and no threshold that kills —
+**Insisting is exponential.** Forcing is walking out against the push — heading out to sea, within
+a 0.3 dot of straight out, in the water that shoves back. Its clock resets the moment the player
+stands still, walks along the shore or turns back, so the sea is only merciless to somebody fighting
+it: a player drifting out of their depth loses the bar at the ordinary rate, one who keeps pushing
+loses it in about three seconds. **Every point of it is still reversible**: stop pushing outward and
+the sea carries you back in. There is no line you cross and no threshold that kills —
 a threshold is unreadable, the player is fine and then the run is over, while a bar coming down is
 on the screen they already watch and it tells them how long they have.
 
@@ -810,16 +799,11 @@ night:
 | Farmhand | 300 → 690 Hz | 0.30 s |
 | Reaper | 150 → 300 Hz | 0.42 s |
 | Pirate | 200 → 380 Hz | 0.48 s |
-| **Thrower** | **520 → 1240 Hz** | 0.36 s |
 
-The thrower is the outlier on purpose. He strikes from fourteen metres and is the one archetype the
-player may never see coming, so sound is the only warning the design gives them: his is the highest,
-the longest climb, and the only one that crosses an octave. The check fails if any other archetype
-climbs as high as his.
-
-The pirate is the other end of the same argument. He hits hardest and from arm's length, so his is
-the lowest and the longest warning there is — the one that carries under a crowd at night, which is
-exactly when he turns up.
+They are set apart rather than ranked. Several commit at once in a crowd at night, and an archetype
+the ear cannot pick out of that is one the player cannot answer differently — so the check holds the
+gap between them and nothing else. The pirate's is the longest and the only one that climbs less
+than an octave, which is what makes him the one you feel coming rather than the one that pierces.
 
 ### The bed lifts with the island
 

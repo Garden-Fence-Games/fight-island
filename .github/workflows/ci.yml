@@ -245,14 +245,6 @@ jobs:
       - name: Verify the playfield
         run: tools/run-check.sh res://tools/verify_playfield.tscn
 
-      # The thrower's half of the same composition question #39 asks, and it is two failures rather
-      # than one: an island with no open ground makes a ranged enemy decoration, and one with no
-      # cover makes him a tax the player eats instead of answers. It casts the ray the stone
-      # actually flies — the `world` layer, chest to chest — rather than a navigation query, so it
-      # cannot drift from what really stops a stone.
-      - name: Verify the thrower's sightlines
-        run: tools/run-check.sh res://tools/verify_sightlines.tscn
-
       # The navigation mesh comes out of the same generator, and nothing about a wrong one is
       # visible in a diff or a screenshot — enemies simply walk into rocks. This walks one of them
       # around a boulder and checks a spawn point inside the rock is refused.
