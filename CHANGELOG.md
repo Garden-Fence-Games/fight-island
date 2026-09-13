@@ -149,6 +149,12 @@ All notable changes to this project are documented here, following
 
 ### Changed
 
+- **A wave is four minutes rather than six** — two of daylight and two of dark. Every phase keeps
+  its share of the turn, its opening hour and every rule in its column, so the ramp is the one the
+  design already describes, walked at a pace that does not ask for ninety minutes to see fifteen
+  waves. The one thing it changes beyond the clock: a late wave, which ended on the hour rather
+  than on an empty roster, now sends a third fewer bodies before daybreak.
+
 - The duck bus is named once, on `AudioManager`, instead of written out as `"MusicDuck"` in the bed,
   the jukebox and the bus lookup. A rename in the layout used to leave `get_bus_index` returning -1
   in whichever of the three was missed, with nothing to say so — a silent bed, or a duck that never

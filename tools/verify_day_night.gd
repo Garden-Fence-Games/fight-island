@@ -10,8 +10,8 @@ extends Node
 const ARENA: String = "res://scenes/world/arena.tscn"
 const SKY: String = "res://scenes/world/island_sky.tscn"
 const CONFIG: String = "res://data/waves/standard.tres"
-## Six minutes, which is what "a wave" means now.
-const WAVE_SECONDS: float = 360.0
+## Four minutes, which is what "a wave" means now.
+const WAVE_SECONDS: float = 240.0
 ## The rule from the spawn director, written out rather than read off it for the same reason.
 const NEAREST_SPAWN: float = 12.0
 ## Sun plus ambient at night. A telegraph nobody can see is not difficulty either, and this is the
@@ -32,7 +32,7 @@ const PATIENCE: float = 10.0
 const TABLE: Array[Dictionary] = [
 	{
 		"id": &"dawn",
-		"seconds": 30.0,
+		"seconds": 20.0,
 		"hour": 7.0,
 		"damage": 1.0,
 		"windup": 1.0,
@@ -41,7 +41,7 @@ const TABLE: Array[Dictionary] = [
 	},
 	{
 		"id": &"day",
-		"seconds": 135.0,
+		"seconds": 100.0,
 		"hour": 9.0,
 		"damage": 1.0,
 		"windup": 1.0,
@@ -50,7 +50,7 @@ const TABLE: Array[Dictionary] = [
 	},
 	{
 		"id": &"dusk",
-		"seconds": 30.0,
+		"seconds": 20.0,
 		"hour": 18.0,
 		"damage": 1.1,
 		"windup": 0.95,
@@ -59,7 +59,7 @@ const TABLE: Array[Dictionary] = [
 	},
 	{
 		"id": &"night",
-		"seconds": 165.0,
+		"seconds": 100.0,
 		"hour": 19.0,
 		"damage": 1.25,
 		"windup": 0.88,
