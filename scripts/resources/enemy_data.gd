@@ -26,20 +26,12 @@ extends Resource
 ## beside him keep staring at the sea reads as broken rather than calm.
 @export var rouse_radius: float = 7.0
 @export var attack_range: float = 1.6
-@export var is_ranged: bool = false
 ## Which wind-up this archetype announces itself with. Empty falls back to the generic one, and that
 ## is a fallback rather than a default: three archetypes that sound alike are one warning wearing
-## three coats, and the thrower is the one the player cannot see coming.
+## three coats.
 @export var telegraph_sound: StringName = &""
-## How far the archetype wants to stay from the player. Melee archetypes close to attack_range.
+## How far the archetype wants to stay from the player. Every archetype closes to attack_range.
 @export var preferred_range: float = 1.4
-## Closer than this and the archetype backs away instead of fighting. Zero for anyone who stands
-## their ground, which is everyone but the thrower — he is what stops the player camping a corner,
-## and he only does that by refusing to be cornered himself.
-@export var retreat_range: float = 0.0
-## What this archetype throws. A `PackedScene` export, which does resolve in a hand-written scene
-## where a node export would not (ADR 0006).
-@export var projectile: PackedScene = null
 
 @export_group("Presentation")
 @export var tint: Color = Color(0.78, 0.36, 0.28)
