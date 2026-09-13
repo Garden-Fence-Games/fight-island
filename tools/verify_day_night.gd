@@ -11,7 +11,7 @@ const ARENA: String = "res://scenes/world/arena.tscn"
 const SKY: String = "res://scenes/world/island_sky.tscn"
 const CONFIG: String = "res://data/waves/standard.tres"
 ## Four minutes, which is what "a wave" means now.
-const WAVE_SECONDS: float = 240.0
+const WAVE_SECONDS: float = 90.0
 ## The rule from the spawn director, written out rather than read off it for the same reason.
 const NEAREST_SPAWN: float = 12.0
 ## Sun plus ambient at night. A telegraph nobody can see is not difficulty either, and this is the
@@ -32,7 +32,8 @@ const PATIENCE: float = 10.0
 const TABLE: Array[Dictionary] = [
 	{
 		"id": &"dawn",
-		"seconds": 20.0,
+		"seconds": 10.0,
+		"turning": 1.0,
 		"hour": 7.0,
 		"damage": 1.0,
 		"windup": 1.0,
@@ -41,7 +42,8 @@ const TABLE: Array[Dictionary] = [
 	},
 	{
 		"id": &"day",
-		"seconds": 100.0,
+		"seconds": 35.0,
+		"turning": 0.25,
 		"hour": 9.0,
 		"damage": 1.0,
 		"windup": 1.0,
@@ -50,7 +52,8 @@ const TABLE: Array[Dictionary] = [
 	},
 	{
 		"id": &"dusk",
-		"seconds": 20.0,
+		"seconds": 10.0,
+		"turning": 1.0,
 		"hour": 18.0,
 		"damage": 1.1,
 		"windup": 0.95,
@@ -59,7 +62,8 @@ const TABLE: Array[Dictionary] = [
 	},
 	{
 		"id": &"night",
-		"seconds": 100.0,
+		"seconds": 35.0,
+		"turning": 0.25,
 		"hour": 19.0,
 		"damage": 1.25,
 		"windup": 0.88,
@@ -147,6 +151,9 @@ func _check_the_phases_match_the_table() -> void:
 			_fail("phase %d should be %s" % [index, row["id"]])
 			continue
 		_same("%s lasts" % phase.id, phase.seconds, row["seconds"])
+		# The share that turns is what makes the sky a slide rather than a flip, and a dusk that
+		# went back to holding its look would read as the hard cut this cycle was fixed to stop.
+		_same("%s turns over" % phase.id, phase.turning_share, row["turning"])
 		_same("%s opens at" % phase.id, phase.starts_at_hour, row["hour"])
 		_same("%s damage" % phase.id, phase.damage_scale, row["damage"])
 		_same("%s telegraph" % phase.id, phase.windup_scale, row["windup"])
@@ -385,8 +392,11 @@ func _check_the_sky_follows_the_clock() -> void:
 		return
 	var opens := 0.0
 	for phase: DayPhase in _cycle.phases:
-		# Mid-phase, clear of the window where it is already turning into the next one.
-		GameState.day_elapsed = opens + phase.seconds * 0.25
+		# **At the instant it opens**, which is the only moment a phase is purely itself. A quarter
+		# of the way in used to be safe, back when every phase held its look for three quarters of
+		# its span; dawn and dusk now turn from their first instant, because they exist to be the
+		# turn, so anywhere past the opening is already part way into the next look.
+		GameState.day_elapsed = opens
 		opens += phase.seconds
 		await get_tree().process_frame
 		_same("the sun at %s" % phase.id, sky.sun.light_energy, phase.sun_energy)

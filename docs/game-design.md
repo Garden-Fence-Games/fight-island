@@ -338,7 +338,7 @@ From wave 4, any archetype can roll elite: the same scene with health ×2.0, dam
 
 ## Waves
 
-`n` is the wave index, 1-based. **A wave lasts four minutes** — see *The day and the night* below —
+`n` is the wave index, 1-based. **A wave lasts ninety seconds** — see *The day and the night* below —
 so `enemy_count` is a budget the island draws on to stay populated for that long, not a queue to be
 emptied. `max_alive(n)` is what the player actually faces at once, and it is the real pressure dial.
 
@@ -399,8 +399,9 @@ through, and the player finishes it in the dark. Survive the night and the wave 
 banner says so, and the next wave begins at daybreak.
 
 ```
-Dawn 0:20  →  Day 1:40  →  Dusk 0:20  →  Night 1:40    = four minutes, one wave
+Dawn 0:10  →  Day 0:35  →  Dusk 0:10  →  Night 0:35    = ninety seconds, one wave
 07:00         09:00        18:00         19:00          → back to 07:00
+ turning       holds 26s    turning       holds 26s      → forty-five of light, forty-five of dark
 ```
 
 This is what makes a wave a **ramp the player can see coming** rather than a flat block of
@@ -411,13 +412,14 @@ difficulty. They are not told the wave is about to get harder; the light tells t
 | | Dawn | Day | Dusk | Night |
 |---|---|---|---|---|
 | Opens at | 07:00 | 09:00 | 18:00 | 19:00 |
-| Lasts | 0:20 | 1:40 | 0:20 | 1:40 |
+| Lasts | 0:10 | 0:35 | 0:10 | 0:35 |
+| Spent turning | all of it | the last quarter | all of it | the last quarter |
 | Damage | ×1.00 | ×1.00 | ×1.10 | ×1.25 |
 | Telegraph | ×1.00 | ×1.00 | ×0.95 | ×0.88 |
 | Rousing carries | ×1.0 | ×1.0 | ×1.4 | ×2.0 |
 | Melee attack tokens | 2 | 2 | 2 | 3 |
 
-**Dawn carries the day's rules on purpose.** It is twenty seconds taken off the day, not added to
+**Dawn carries the day's rules on purpose.** It is ten seconds taken off the day, not added to
 the wave, and every rule in its column is the day's — so the ramp, the economy and how long a wave
 lasts are exactly what they were before there was a dawn. What it buys is the read: a player who
 starts in low orange light and watches the sun climb has been shown the shape of the turn before
@@ -455,9 +457,17 @@ which is what a player fast enough to outpace the island has earned. Bodies stil
 daybreak are **sent home rather than killed**: the wave is passed, and nobody is paid for a fight
 that did not happen.
 
-**Consequence, stated plainly:** fifteen waves at four minutes is about an hour of play. The wave
-length is four numbers in `data/day/` and nothing else reads it, so changing how long a run takes
-is a tuning pass rather than a rewrite — which is exactly how six minutes became four.
+**The light never sits still on the way over.** Dawn and dusk spend **all** of themselves turning,
+because that is what they are for; day and night hold their look and turn over their last quarter.
+So the sky slides for about nine seconds out of the day, straight through the ten of dusk, into the
+night — twenty seconds of continuous change rather than a hold and then a flip. A phase that held
+its own look and then handed over in the last few seconds was the abrupt version of the thing dusk
+was added to smooth.
+
+**Consequence, stated plainly:** fifteen waves at ninety seconds is about twenty-five minutes of
+play. The wave length is four numbers in `data/day/` and nothing else reads it, so changing how long
+a run takes is a tuning pass rather than a rewrite — which is exactly how six minutes became four,
+and four became ninety seconds.
 
 ### The clock and the sky
 
