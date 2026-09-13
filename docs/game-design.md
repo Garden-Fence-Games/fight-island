@@ -61,9 +61,9 @@ costs the most.
 | Stick | 0.50 s | 0.22 s |
 | Gun | — | — |
 
-**The gun has no lockout on purpose.** Its rhythm is the magazine and the 1.6 s reload, which is a
-forced pause with a far better texture than a timer. Two answers to the same question would only
-blur both.
+**The gun has no lockout on purpose.** Its rhythm is its rounds: every one of them fires, and when
+they run out the trigger stops answering until the player walks over more. Two answers to the same
+question would only blur both.
 
 Two properties this has to keep, and `tools/verify_combat.tscn` fails if either goes:
 
@@ -156,21 +156,19 @@ damage, the perfect multiplier, both chain-window boundaries, the chain lockout 
 outcome; `tools/verify_weapons.tscn` asserts the stick's and the gun's figures, that one 120° sweep
 reaches two bodies standing inside it, and that the ammunition behaves as written below.
 
-**Ammunition.** Magazine 6, reload 1.6 s. **The player never holds more than 30 rounds, magazine
-included** — the gun arrives at exactly that, 6 in it and 24 in the pocket. Attacks 1/2/3 cost
-1/2/1 rounds; attack 2 needs at least 2 in the magazine.
+**Ammunition.** **One count, no magazine, no reload.** The player never holds more than **30
+rounds**, and the gun arrives with all 30. Every one of them can be fired in a row; with none left
+the trigger clicks and nothing else happens. Attacks 1/2/3 cost 1/2/1 rounds; attack 2 needs at
+least 2.
 
 **Nothing refills on a clock.** A cleared wave pays money and not one round. Ammunition enters a
-run two ways: **one body in three leaves a round behind** — thrown on the sand, see
-[Coins and rounds](#coins-and-rounds) — and the gun track hands over **+6** the
-moment it is bought. That is the whole of the gun's rhythm, and it points the opposite way to the
-usual one: an empty pocket is a reason to close on the next farmer rather than to back away from
-him. A player who empties it in wave 6 carries that into wave 7 and answers it with the stick until
-the bodies pay him back. It is also why the gun has no chain lockout — two answers to the same
-question would be one too many.
-
-**The ceiling counts the magazine**, which is what makes the gun track's +1 magazine a rhythm
-upgrade rather than a supply one: one more shot before a reload, out of the same thirty.
+run two ways: **one body in three leaves rounds behind — one, two or three, each a third of the
+time** — thrown on the sand and taken the moment they are walked over, see
+[Coins and rounds](#coins-and-rounds); and the gun track hands over **+6** the moment it is bought.
+That is the whole of the gun's rhythm, and it points the opposite way to the usual one: an empty gun
+is a reason to close on the next farmer rather than to back away from him. A player who empties it
+in wave 6 carries that into wave 7 and answers it with the stick until the bodies pay him back. It
+is also why the gun has no chain lockout — two answers to the same question would be one too many.
 
 **The charged shot is held, and letting go early cancels it.** The windup only advances while the
 button is down; releasing before it completes abandons the shot and hands the round back, but not
@@ -204,7 +202,8 @@ Parry is a **tap**, not a held stance. One defensive button, and all the difficu
 
 **A kill's pay is thrown out of the body and walked over.** The coins add up to exactly what the body
 is worth — its money times its elite rank — split across **at most 6** coins, gold. One kill in
-**three** also throws a round, silver, once the gun has been found: one round, one drop. Both fly on
+**three** also throws rounds, silver, once the gun has been found: **one, two or three** of them,
+each count a third of the time, and each round its own piece on the sand. Both fly on
 an arc **1.4 to 2.2 m** high for **0.75 to 1.05 s** and land **0.6 to 2.2 m** from the body, so a
 player always has time to see where they went.
 
@@ -622,7 +621,7 @@ than disappearing. The gate is on the purchase itself, not on the button — gre
 | Stamina | +15 max stamina, +2/s regen | 175 stamina, 30/s |
 | Fists | +15 % damage, −5 % stamina cost | ×1.75 damage, −25 % cost |
 | Stick | +15 % damage, +5 % range and arc | ×1.75 damage, 3.0 m reach |
-| Gun | +15 % damage, +1 magazine, +6 rounds handed over on purchase | ×1.75 damage, magazine 11 |
+| Gun | +15 % damage, +6 rounds handed over on purchase | ×1.75 damage |
 
 ## Win and lose
 
@@ -863,7 +862,7 @@ cost atmosphere and never information.
 
 ### Running dry is announced a round early
 
-The shot that leaves **one** round in the magazine plays two short dry clicks a semitone apart.
+The shot that leaves **one** round in the gun plays two short dry clicks a semitone apart.
 Running out is a designed moment and the answer to it is to close on the next farmer rather than
 back away from him — which is a decision the player has to be able to make before the trigger stops
 answering, not after. Two rounds would be a warning heard most of a wave before it mattered.

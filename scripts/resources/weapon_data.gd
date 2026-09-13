@@ -28,8 +28,8 @@ extends Resource
 ## is what makes "should I finish this?" a question rather than a formality. Stopping at one or two
 ## costs nothing.
 ##
-## Zero for a weapon whose rhythm is governed by something else — the gun's magazine and reload do
-## it better than a timer could, and stacking both would be two answers to the same question.
+## Zero for a weapon whose rhythm is governed by something else — the gun's rounds do it better
+## than a timer could, and stacking both would be two answers to the same question.
 @export var chain_lockout: float = 0.35
 ## The wait a *perfect* finisher earns instead. Lower on purpose: the subject of this game is
 ## timing, so the thing that costs the most is exactly where the reward for timing belongs. A
@@ -38,20 +38,21 @@ extends Resource
 @export var perfect_lockout: float = 0.15
 
 @export_group("Ranged")
-@export var magazine: int = 0
-@export var reload_time: float = 0.0
-## What the player carries beyond the magazine when the weapon is first picked up.
-@export var reserve_start: int = 0
-## Every round the player may hold at once, **magazine included**. One number rather than two
-## because one number is what the player counts: a reload moves rounds, it never makes them.
+## The rounds the weapon arrives with when it is first picked up.
+@export var rounds_start: int = 0
+## Every round the player may hold at once. There is no magazine and no reload: every one of them
+## can be fired, one after another, until there are none.
 ##
 ## Nothing refills this on a clock. Ammunition comes off the bodies of the people who came to kill
-## you, a round at a time, and from the merchant — so **running dry is a designed moment** and the
-## way out of it is to keep fighting rather than to wait.
+## you and from the merchant — so **running dry is a designed moment** and the way out of it is to
+## keep fighting rather than to wait.
 @export var ammo_cap: int = 0
-## How often a body leaves a round behind. The gun's whole supply line, and the reason an empty
-## pocket is a reason to close rather than to retreat.
+## How often a body leaves rounds behind. The gun's whole supply line, and the reason an empty gun
+## is a reason to close rather than to retreat.
 @export_range(0.0, 1.0) var scavenge_chance: float = 0.0
+## The most rounds one body leaves. A body that drops any drops between one and this many, each
+## count as likely as the others.
+@export var scavenge_most: int = 1
 
 
 func attack_at(index: int) -> AttackData:

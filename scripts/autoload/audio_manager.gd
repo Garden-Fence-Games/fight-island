@@ -14,7 +14,7 @@ extends Node
 ##
 ## Everything added since divides into three, and the division is what keeps the mix legible:
 ##
-## - **The player's own body** — footfalls, a roll, a reload, a trigger on an empty magazine. Flat,
+## - **The player's own body** — footfalls, a roll, a trigger on an empty gun. Flat,
 ##   quiet, and never the thing you are listening for. They exist so the player knows the game
 ##   heard them.
 ## - **The world** — a farmer committing, a body going down. **Positional**, because a wind-up the
@@ -130,7 +130,7 @@ const JITTER: float = 0.04
 ## Footfalls get more of it than anything else. Two identical steps in a row is the single most
 ## artificial sound a game can make, and the ear catches it long before it catches a pitch.
 const STEP_JITTER: float = 0.12
-## How many rounds have to be left for the warning to sound. One: the shot that empties the magazine
+## How many rounds have to be left for the warning to sound. One: the shot that empties the gun
 ## is too late to act on, and two is a warning the player hears most of a wave before it matters.
 const LAST_ROUNDS: int = 1
 ## A swing gets nearly as much. Three misses in a chain is the same trap as three identical steps,
@@ -236,7 +236,6 @@ func _ready() -> void:
 	EventBus.player_damaged.connect(_on_player_damaged)
 	EventBus.player_state_changed.connect(_on_player_state_changed)
 	EventBus.weapon_found.connect(_on_weapon_found)
-	EventBus.weapon_reloaded.connect(_on_weapon_reloaded)
 	EventBus.weapon_dry_fired.connect(_on_weapon_dry_fired)
 	EventBus.weapon_fired.connect(_on_weapon_fired)
 	EventBus.wave_cleared.connect(_on_wave_cleared)
@@ -433,7 +432,6 @@ func _build() -> void:
 	_register(&"step_sand", _step(false), &"footfall")
 	_register(&"step_water", _step(true), &"footfall")
 	_register(&"roll", _roll(), &"footfall")
-	_register(&"reload", _reload(), &"incidental")
 	_register(&"dry_fire", _dry_fire(), &"incidental")
 	_register(&"hurt", _hurt(), &"incidental")
 	_register(&"enemy_down", _enemy_down(), &"incidental")
@@ -602,17 +600,7 @@ func _roll() -> AudioStreamWAV:
 	return SoundBank.bake(samples, _level(MixTable.FOOTFALL_LEVEL))
 
 
-## Two dry clacks, a magazine out and a magazine in. Nothing rings: it is the one sound in the game
-## that is purely mechanical, and that is what separates it from everything that hits.
-func _reload() -> AudioStreamWAV:
-	var samples := SoundBank.long_enough(0.008, 0.10)
-	SoundBank.hiss(samples, 0.8, 0.006, 41)
-	SoundBank.hiss(samples, 0.6, 0.008, 43, 0.10)
-	SoundBank.soften(samples, 0.75)
-	return SoundBank.bake(samples, _level(MixTable.INCIDENTAL_LEVEL))
-
-
-## The trigger on an empty magazine. One dead click and a stub of low body — the sound of a thing
+## The trigger on an empty gun. One dead click and a stub of low body — the sound of a thing
 ## not happening, which is exactly what the player needs told: a press that produces nothing at all
 ## reads as a dropped input, and they blame the game rather than their own ammunition.
 func _dry_fire() -> AudioStreamWAV:
@@ -679,7 +667,7 @@ func _telegraph_of(archetype: StringName) -> AudioStreamWAV:
 	return SoundBank.bake(samples, _level(MixTable.TELEGRAPH_LEVEL))
 
 
-## The last round in the magazine. Two short clicks a semitone apart, dry and quiet: running out is
+## The last round in the gun. Two short clicks a semitone apart, dry and quiet: running out is
 ## a **designed** moment and the answer to it is to close on the next farmer, which is a decision
 ## the player has to be able to make before the trigger stops answering rather than after.
 ##
@@ -866,7 +854,7 @@ func _on_weapon_fired(attack: AttackData) -> void:
 	if attack == null:
 		return
 	play(&"shot_heavy" if attack.charges else &"shot", JITTER)
-	if GameState.loadout != null and GameState.loadout.magazine == LAST_ROUNDS:
+	if GameState.loadout != null and GameState.loadout.rounds == LAST_ROUNDS:
 		play(&"low_ammo")
 
 
@@ -920,8 +908,8 @@ func _on_player_damaged(current: float, _maximum: float) -> void:
 		play(&"hurt", JITTER)
 
 
-## A roll and a reload are states, and the bus already says when the player enters one — the signal
-## exists for exactly this. Cheaper than two more signals, and it cannot drift out of step with the
+## A roll is a state, and the bus already says when the player enters one — the signal exists for
+## exactly this. Cheaper than another signal, and it cannot drift out of step with the
 ## animation, because it *is* the transition the animation plays.
 func _on_player_state_changed(state: StringName) -> void:
 	if state == &"Dodge":
@@ -930,10 +918,6 @@ func _on_player_state_changed(state: StringName) -> void:
 
 func _on_weapon_found(_id: StringName) -> void:
 	play(&"pickup")
-
-
-func _on_weapon_reloaded() -> void:
-	play(&"reload", JITTER)
 
 
 func _on_weapon_dry_fired() -> void:
