@@ -94,11 +94,14 @@ func _ready() -> void:
 	_draw_stamps()
 	_make_decals()
 	EventBus.attack_landed.connect(_on_attack_landed)
+	EventBus.corpse_struck.connect(_on_corpse_struck)
 
 
 func _exit_tree() -> void:
 	if EventBus.attack_landed.is_connected(_on_attack_landed):
 		EventBus.attack_landed.disconnect(_on_attack_landed)
+	if EventBus.corpse_struck.is_connected(_on_corpse_struck):
+		EventBus.corpse_struck.disconnect(_on_corpse_struck)
 
 
 func _process(delta: float) -> void:
@@ -183,13 +186,21 @@ func showing_decals() -> Array[Decal]:
 func _on_attack_landed(target: Node3D, _damage: float, perfect: bool, _attack: AttackData) -> void:
 	if target == null or not is_instance_valid(target) or not target.is_inside_tree():
 		return
-	var direction := _blow_direction(target)
 	var feet := target.global_position
+	_bleed(feet, feet + Vector3.UP * BLOOD.splash_height, _blow_direction(target), perfect)
+
+
+## A corpse bleeds from where it lies, not from chest height: the body is on the sand.
+func _on_corpse_struck(where: Vector3, direction: Vector3, perfect: bool) -> void:
+	_bleed(where, where, direction, perfect)
+
+
+func _bleed(feet: Vector3, wound: Vector3, direction: Vector3, perfect: bool) -> void:
 	var pool := get_tree().get_first_node_in_group(&"effects") as EffectPool
 	if pool != null and splash_scene != null:
 		var splash := pool.lease(splash_scene) as BloodSplash
 		if splash != null:
-			splash.play(feet + Vector3.UP * BLOOD.splash_height, direction, perfect, BLOOD)
+			splash.play(wound, direction, perfect, BLOOD)
 	spill(feet, direction, perfect)
 
 

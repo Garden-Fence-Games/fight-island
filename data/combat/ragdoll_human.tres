@@ -1,0 +1,132 @@
+[gd_resource type="Resource" script_class="RagdollData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/joint_limits.gd" id="1_0vsqw"]
+[ext_resource type="Script" path="res://scripts/resources/ragdoll_data.gd" id="2_c4mnp"]
+
+[sub_resource type="Resource" id="Resource_epj64"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-25, 85)
+twist = 50.0
+side = Vector2(-45, 45)
+
+[sub_resource type="Resource" id="Resource_6acdd"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-20, 30)
+twist = 20.0
+side = Vector2(-30, 30)
+
+[sub_resource type="Resource" id="Resource_vnie4"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-15, 25)
+side = Vector2(-20, 20)
+
+[sub_resource type="Resource" id="Resource_6weie"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-35, 45)
+twist = 40.0
+side = Vector2(-30, 30)
+
+[sub_resource type="Resource" id="Resource_728af"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-45, 45)
+twist = 30.0
+side = Vector2(-25, 25)
+
+[sub_resource type="Resource" id="Resource_3uemy"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-30, 100)
+twist = 110.0
+side = Vector2(-100, 100)
+
+[sub_resource type="Resource" id="Resource_rommq"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-30, 100)
+twist = 110.0
+side = Vector2(-100, 100)
+
+[sub_resource type="Resource" id="Resource_r8rsu"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-5, 145)
+twist = 60.0
+
+[sub_resource type="Resource" id="Resource_dug2e"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-5, 145)
+twist = 60.0
+
+[sub_resource type="Resource" id="Resource_m71ng"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-45, 120)
+twist = 95.0
+side = Vector2(-65, 65)
+
+[sub_resource type="Resource" id="Resource_gy2i8"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-45, 120)
+twist = 95.0
+side = Vector2(-65, 65)
+
+[sub_resource type="Resource" id="Resource_8bl3d"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-5, 150)
+twist = 30.0
+side = Vector2(-12, 12)
+bends_back = true
+
+[sub_resource type="Resource" id="Resource_sro80"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-5, 150)
+twist = 30.0
+side = Vector2(-12, 12)
+bends_back = true
+
+[sub_resource type="Resource" id="Resource_i02e8"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-40, 40)
+twist = 20.0
+side = Vector2(-20, 20)
+
+[sub_resource type="Resource" id="Resource_45kj1"]
+script = ExtResource("1_0vsqw")
+flex = Vector2(-40, 40)
+twist = 20.0
+side = Vector2(-20, 20)
+
+[resource]
+script = ExtResource("2_c4mnp")
+fit_share = 0.9
+shares = Dictionary[StringName, float]({
+&"mixamorig_Head": 0.069,
+&"mixamorig_Hips": 0.142,
+&"mixamorig_LeftArm": 0.027999999999999997,
+&"mixamorig_LeftFoot": 0.014499999999999999,
+&"mixamorig_LeftForeArm": 0.022000000000000002,
+&"mixamorig_LeftLeg": 0.04650000000000001,
+&"mixamorig_LeftUpLeg": 0.1,
+&"mixamorig_Neck": 0.012,
+&"mixamorig_RightArm": 0.027999999999999997,
+&"mixamorig_RightFoot": 0.014499999999999999,
+&"mixamorig_RightForeArm": 0.022000000000000002,
+&"mixamorig_RightLeg": 0.04650000000000001,
+&"mixamorig_RightUpLeg": 0.1,
+&"mixamorig_Spine": 0.0695,
+&"mixamorig_Spine1": 0.0695,
+&"mixamorig_Spine2": 0.21600000000000003
+})
+joints = Dictionary[StringName, ExtResource("1_0vsqw")]({
+&"mixamorig_Head": SubResource("Resource_728af"),
+&"mixamorig_LeftArm": SubResource("Resource_3uemy"),
+&"mixamorig_LeftFoot": SubResource("Resource_i02e8"),
+&"mixamorig_LeftForeArm": SubResource("Resource_r8rsu"),
+&"mixamorig_LeftLeg": SubResource("Resource_8bl3d"),
+&"mixamorig_LeftUpLeg": SubResource("Resource_m71ng"),
+&"mixamorig_Neck": SubResource("Resource_6weie"),
+&"mixamorig_RightArm": SubResource("Resource_rommq"),
+&"mixamorig_RightFoot": SubResource("Resource_45kj1"),
+&"mixamorig_RightForeArm": SubResource("Resource_dug2e"),
+&"mixamorig_RightLeg": SubResource("Resource_sro80"),
+&"mixamorig_RightUpLeg": SubResource("Resource_gy2i8"),
+&"mixamorig_Spine": SubResource("Resource_epj64"),
+&"mixamorig_Spine1": SubResource("Resource_6acdd"),
+&"mixamorig_Spine2": SubResource("Resource_vnie4")
+})

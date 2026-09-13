@@ -1,10 +1,12 @@
 extends Node
-## Proof that a dead farmer lands, stays, and costs a picture rather than a body.
+## Proof that a dead farmer lands, stays, is still a body, and costs a picture once he is still.
 ##
-## Three things have to be true at once and each of them breaks the other two if it is done wrong.
+## Four things have to be true at once and each of them breaks the others if it is done wrong.
 ## He must **stay** — the pile is the record of the run. He must **not be an enemy any more** — the
-## pool is thirty-two bodies and a fifteen-wave run kills several hundred. And he must **not sink**,
-## which is what he used to do and what made the first two moot.
+## pool is thirty-two bodies and a fifteen-wave run kills several hundred. He must **lie on the
+## sand**, neither in it nor above it, which the first corpses managed neither of. And he must
+## **still be a body**: walked into, he moves; struck, he bleeds and moves, and the blow is not a
+## hit.
 ## Run: godot --headless --path . res://tools/verify_corpses.tscn
 
 const ARENA: String = "res://scenes/world/arena.tscn"
@@ -13,9 +15,12 @@ const KILLING_BLOW: String = "res://data/attacks/fist_uppercut.tres"
 ## Long enough for a tumble to finish and the body to be handed over. The fall has its own ceiling
 ## of 2.5 s; this is that plus room.
 const FALLS_WITHIN: float = 4.0
-## How far below the ground a corpse may be found before it is sinking rather than lying. A body
-## half in the sand reads as a bug, which is what the sink used to be dressed up as.
+## How far the corpse's lowest point may be from the sand under it, either way. A body half in the
+## sand reads as a bug, and one hovering over it reads as a worse one.
 const NO_DEEPER: float = 0.35
+const NO_HIGHER: float = 0.25
+## How far a shove has to move a body to count as having moved it.
+const MOVED: float = 0.3
 ## More bodies than the field will hold, so the ceiling has to do something.
 const PAST_THE_CEILING: int = 6
 ## The player's own death, which is the same physics and the same failure modes.
@@ -43,6 +48,8 @@ var _arena: Node3D = null
 var _field: CorpseField = null
 var _director: SpawnDirector = null
 var _leased_while_alive: int = -1
+var _landed: int = 0
+var _struck: int = 0
 
 
 func _ready() -> void:
@@ -65,11 +72,16 @@ func _run() -> void:
 		_fail("the arena has no corpse field or no spawner")
 		_report()
 		return
+	EventBus.attack_landed.connect(_on_attack_landed)
+	EventBus.corpse_struck.connect(_on_corpse_struck)
 	await get_tree().physics_frame
 
 	await _check_a_dead_farmer_is_laid_down_and_the_body_comes_back()
-	await _check_he_is_not_buried()
+	await _check_he_lies_on_the_sand()
 	await _check_he_is_lying_down()
+	await _check_a_resting_corpse_keeps_no_skeleton()
+	await _check_a_struck_corpse_bleeds_and_moves_and_is_not_a_hit()
+	await _check_walking_into_a_corpse_shoves_it()
 	await _check_the_pile_has_a_ceiling()
 	await _check_a_heavier_blow_throws_him_further()
 	await _check_the_player_goes_down_too()
@@ -120,19 +132,19 @@ func _thrown_by(attack_path: String, where: Vector3) -> float:
 	while waited < FALLS_WITHIN and farmer.is_inside_tree() and farmer.visible:
 		await get_tree().physics_frame
 		waited += 1.0 / 60.0
-	var corpse := _newest()
-	if corpse == null:
+	var laid := _field.laid()
+	if laid.is_empty():
 		_fail("%s killed him and laid nothing down" % attack_path)
 		return -1.0
-	# The middle of what was baked, not the node it hangs off. The freeze puts the settled bones
-	# into the vertices, so a body that tumbled twenty metres leaves a corpse node still standing
-	# at the spawn point with its geometry twenty metres away — which is a thing worth knowing and
-	# not a thing worth measuring the node for.
-	var box := _box_of(corpse)
-	if box.size == Vector3.ZERO:
-		_fail("%s laid down a corpse with no mesh to find" % attack_path)
-		return -1.0
-	var at := box.get_center()
+	var corpse: Corpse = laid[laid.size() - 1]
+	# Where it comes to rest, not where it was handed over: a corpse carries on the tumble.
+	waited = 0.0
+	while waited < Corpse.LONGEST_TUMBLE + 1.0 and not corpse.is_resting():
+		await get_tree().physics_frame
+		waited += 1.0 / 60.0
+	# The hips, not the node it hangs off. The corpse node stays where the fall began, so a body
+	# that tumbled twenty metres leaves it at the spawn point with the body twenty metres away.
+	var at := corpse.where()
 	return Vector2(at.x - stood.x, at.z - stood.z).length()
 
 
@@ -225,8 +237,8 @@ func _check_a_dead_farmer_is_laid_down_and_the_body_comes_back() -> void:
 	_field.clear_field()
 	var pool := _director.pool
 	var spare := pool.idle_count()
-	var farmer := await _kill_one(Vector3(0.0, 0.0, -6.0), true)
-	if farmer == null:
+	var corpse := await _kill_one(Vector3(0.0, 0.0, -6.0), true)
+	if corpse == null:
 		return
 	if _field.count() != 1:
 		_fail("one farmer died and %d corpses are lying there" % _field.count())
@@ -255,51 +267,35 @@ func _check_a_dead_farmer_is_laid_down_and_the_body_comes_back() -> void:
 		)
 
 
-## He used to sink two metres and disappear. The ragdoll lands on the world layer, so what is
-## checked is that nothing put him back under it afterwards.
-func _check_he_is_not_buried() -> void:
+## He used to sink two metres, and then he used to hover: a picture lifted onto the navigation mesh,
+## which sits above the sand. Measured on the **lowest vertex** against the terrain itself.
+func _check_he_lies_on_the_sand() -> void:
 	_field.clear_field()
-	var at := Vector3(4.0, 0.0, -5.0)
-	var farmer := await _kill_one(at)
-	if farmer == null:
-		return
-	var corpse := _newest()
+	var corpse := await _kill_one(Vector3(4.0, 0.0, -5.0))
 	if corpse == null:
-		_fail("nothing was laid down to look at")
 		return
-	# The lowest **vertex**, not the origin. A rig's origin is between its feet and a body lying
-	# down has its geometry elsewhere, so measuring the origin says nothing about whether a shoulder
-	# is buried — which is exactly what "he sinks a little" looks like.
 	var box := _box_of(corpse)
 	if box.size == Vector3.ZERO:
-		_fail("the corpse has no mesh, so there is nothing to be above the sand")
+		_fail("the corpse has no mesh, so there is nothing to be on the sand")
 		return
-	var ground := Ground.closest_point(_arena.get_world_3d(), box.get_center())
-	if ground == Vector3.INF:
+	var ground := _ground_under(box.get_center())
+	if is_nan(ground):
 		_fail("there is no ground under the corpse to measure against")
 		return
-	var under := ground.y - box.position.y
-	if under > NO_DEEPER:
-		_fail(
-			"the corpse's lowest point is %.2f m under the sand — he is sinking, not lying" % under
-		)
+	var gap := box.position.y - ground
+	if gap < -NO_DEEPER:
+		_fail("the corpse's lowest point is %.2f m under the sand — he is sinking" % -gap)
+	if gap > NO_HIGHER:
+		_fail("the corpse's lowest point is %.2f m over the sand — he is floating" % gap)
 
 
-## **Lying, not standing.** Measured rather than looked at: from a camera seventeen metres up and
-## tipped fifty degrees, a body on its back and a body on its feet are genuinely hard to tell apart
-## in a screenshot, and I read three of them wrong before measuring.
-##
-## A farmer stands 2.2 m and is 0.7 m across. Flat on the sand he is the other way round, so the
-## test is simply that he is wider than he is tall — which no standing pose can satisfy and every
-## fallen one does.
+## **Lying, not standing.** A farmer stands 2.4 m and is 0.7 m across. Flat on the sand he is the
+## other way round, so the test is simply that he is wider than he is tall — which no standing pose
+## can satisfy and every fallen one does.
 func _check_he_is_lying_down() -> void:
 	_field.clear_field()
-	var farmer := await _kill_one(Vector3(-3.0, 0.0, -6.0))
-	if farmer == null:
-		return
-	var corpse := _newest()
+	var corpse := await _kill_one(Vector3(-3.0, 0.0, -6.0))
 	if corpse == null:
-		_fail("nothing was laid down to measure")
 		return
 	var box := _box_of(corpse)
 	if box.size == Vector3.ZERO:
@@ -318,37 +314,87 @@ func _check_he_is_lying_down() -> void:
 		)
 
 
-## What the corpse actually occupies, in world metres. Taken off the baked mesh rather than a
-## collision shape, because a corpse has no collision at all.
-func _box_of(corpse: Node3D) -> AABB:
-	var box := AABB()
-	var found := false
+## Still, a corpse is a picture. A `Skeleton3D` in the tree costs a fraction of a millisecond every
+## frame whether anything moves it or not, and the pile is forty-eight of them.
+func _check_a_resting_corpse_keeps_no_skeleton() -> void:
+	_field.clear_field()
+	var corpse := await _kill_one(Vector3(1.0, 0.0, -8.0))
+	if corpse == null:
+		return
+	if not corpse.is_resting():
+		_fail("the corpse never came to rest")
+		return
 	for node: Node in _everything_under(corpse):
-		var mesh := node as MeshInstance3D
-		if mesh == null or mesh.mesh == null:
-			continue
-		var here := mesh.global_transform * mesh.mesh.get_aabb()
-		box = here if not found else box.merge(here)
-		found = true
-	return box if found else AABB()
+		if node is Skeleton3D or node is PhysicalBone3D:
+			_fail("a resting corpse still has %s in the tree" % node.get_class())
+			return
 
 
-func _everything_under(node: Node) -> Array[Node]:
-	var found: Array[Node] = [node]
-	for child: Node in node.get_children():
-		found.append_array(_everything_under(child))
-	return found
+## A blow on a corpse throws it and it bleeds — and it is **not a hit**: no `attack_landed`, so no
+## combo, no money and no hitstop come out of a pile.
+func _check_a_struck_corpse_bleeds_and_moves_and_is_not_a_hit() -> void:
+	_field.clear_field()
+	var corpse := await _kill_one(Vector3(-1.0, 0.0, -4.0))
+	if corpse == null:
+		return
+	var hurtbox := corpse.get_node_or_null(^"Hurtbox") as Hurtbox
+	if hurtbox == null:
+		_fail("the corpse has no hurtbox, so nothing can strike it")
+		return
+	var before := corpse.where()
+	_landed = 0
+	_struck = 0
+	var blow := HitInfo.new(load(KILLING_BLOW) as AttackData, null, false, 1.0)
+	blow.direction = Vector3.RIGHT
+	if hurtbox.take_hit(blow):
+		_fail("the corpse consumed the blow, so the swing counts as having landed")
+	await _wait(1.0)
+	if _struck != 1:
+		_fail("a struck corpse raised corpse_struck %d times rather than once" % _struck)
+	if _landed != 0:
+		_fail("a struck corpse raised attack_landed — a pile pays out like a fight")
+	if corpse.where().distance_to(before) < MOVED:
+		_fail(
+			(
+				"a struck corpse moved %.2f m — it is a picture, not a body"
+				% corpse.where().distance_to(before)
+			)
+		)
 
 
-## The pile is bounded, and the oldest is what goes. A run of fifteen waves kills several hundred,
-## and a skinned mesh is not free even when nothing moves it.
+## Walked into, a body is shoved along. Called the way the field calls it for the player, so the
+## check does not depend on steering a player into the right spot.
+func _check_walking_into_a_corpse_shoves_it() -> void:
+	_field.clear_field()
+	var corpse := await _kill_one(Vector3(2.0, 0.0, -3.0))
+	if corpse == null:
+		return
+	var before := corpse.where()
+	# Beside the hips and a little under them, wherever the blow threw him — an uppercut can carry a
+	# farmer fifteen metres and up a dune.
+	var feet := before - Vector3(0.4, 0.25, 0.0)
+	for _frame: int in 20:
+		corpse.trample(feet, Vector3(5.0, 0.0, 0.0))
+		feet.x += 5.0 / 60.0
+		await get_tree().physics_frame
+	await _wait(0.5)
+	if corpse.where().distance_to(before) < MOVED:
+		_fail(
+			(
+				"a corpse walked into moved %.2f m — the player walks through it"
+				% corpse.where().distance_to(before)
+			)
+		)
+
+
+## The pile is bounded, and the oldest is what goes. A run of fifteen waves kills several hundred.
 func _check_the_pile_has_a_ceiling() -> void:
 	_field.clear_field()
 	var ceiling := _field.most
 	_field.most = 3
 	for index: int in PAST_THE_CEILING:
-		var farmer := await _kill_one(Vector3(float(index) * 2.0 - 5.0, 0.0, -7.0))
-		if farmer == null:
+		var corpse := await _kill_one(Vector3(float(index) * 2.0 - 5.0, 0.0, -7.0), false, false)
+		if corpse == null:
 			break
 	if _field.count() > 3:
 		_fail("the field holds %d corpses against a ceiling of 3" % _field.count())
@@ -368,8 +414,9 @@ func _check_a_new_run_starts_on_a_clean_island() -> void:
 		_fail("%d corpses survived the field being cleared" % _field.count())
 
 
-## Stands a farmer up, kills him with a real blow through the hurtbox, and waits for him to land.
-func _kill_one(where: Vector3, count_the_pool: bool = false) -> Enemy:
+## Stands a farmer up, kills him with a real blow through the hurtbox, waits for him to be handed
+## over, and — unless told not to — for the corpse to come to rest. Returns the corpse.
+func _kill_one(where: Vector3, count_the_pool: bool = false, until_still: bool = true) -> Corpse:
 	var data := load(FARMHAND) as EnemyData
 	var farmer := _director.spawn_at(data, where, 1.0, 1.0, 1.0, 1.0, null, true)
 	if farmer == null or farmer.hurtbox == null:
@@ -378,18 +425,72 @@ func _kill_one(where: Vector3, count_the_pool: bool = false) -> Enemy:
 	if count_the_pool:
 		_leased_while_alive = _director.pool.idle_count()
 	await get_tree().physics_frame
+	var laid_before := _field.count()
 	var blow := HitInfo.new(load(KILLING_BLOW) as AttackData, null, false, 99.0)
 	farmer.hurtbox.take_hit(blow)
 	var waited := 0.0
 	while waited < FALLS_WITHIN and farmer.is_inside_tree() and farmer.visible:
 		await get_tree().physics_frame
 		waited += 1.0 / 60.0
-	return farmer
+	if _field.count() == laid_before and _field.count() < _field.most:
+		_fail("a farmer died and nothing was laid down")
+		return null
+	var laid := _field.laid()
+	var corpse: Corpse = laid[laid.size() - 1] if not laid.is_empty() else null
+	if corpse == null or not until_still:
+		return corpse
+	waited = 0.0
+	while waited < Corpse.LONGEST_TUMBLE + 1.0 and not corpse.is_resting():
+		await get_tree().physics_frame
+		waited += 1.0 / 60.0
+	return corpse
 
 
-func _newest() -> Node3D:
-	var children := _field.get_children()
-	return children[children.size() - 1] as Node3D if not children.is_empty() else null
+func _wait(seconds: float) -> void:
+	var waited := 0.0
+	while waited < seconds:
+		await get_tree().physics_frame
+		waited += 1.0 / 60.0
+
+
+## What the corpse occupies, in world metres, off the meshes in the tree — the picture when it is
+## resting, which is the only time these checks read it.
+func _box_of(corpse: Node3D) -> AABB:
+	var box := AABB()
+	var found := false
+	for node: Node in _everything_under(corpse):
+		var mesh := node as MeshInstance3D
+		if mesh == null or mesh.mesh == null or not mesh.visible:
+			continue
+		var here := mesh.global_transform * mesh.mesh.get_aabb()
+		box = here if not found else box.merge(here)
+		found = true
+	return box if found else AABB()
+
+
+func _ground_under(at: Vector3) -> float:
+	var query := PhysicsRayQueryParameters3D.create(
+		at + Vector3.UP * 4.0, at + Vector3.DOWN * 8.0, PhysicsLayers.BIT_WORLD
+	)
+	var hit := _arena.get_world_3d().direct_space_state.intersect_ray(query)
+	return (hit["position"] as Vector3).y if not hit.is_empty() else NAN
+
+
+func _everything_under(node: Node) -> Array[Node]:
+	var found: Array[Node] = [node]
+	for child: Node in node.get_children():
+		found.append_array(_everything_under(child))
+	return found
+
+
+func _on_attack_landed(
+	_target: Node3D, _damage: float, _perfect: bool, _attack: AttackData
+) -> void:
+	_landed += 1
+
+
+func _on_corpse_struck(_where: Vector3, _direction: Vector3, _perfect: bool) -> void:
+	_struck += 1
 
 
 func _fail(message: String) -> void:
@@ -400,8 +501,9 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"corpses OK — a dead farmer lands, stays out of the sand, hands his body back to "
-				+ "the pool, the pile has a ceiling, and the player goes down by the same physics"
+				"corpses OK — a dead farmer lands on the sand, rests as a picture, is shoved when "
+				+ "walked into, bleeds and moves when struck without paying out, hands his body back "
+				+ "to the pool, the pile has a ceiling, and the player goes down by the same physics"
 			)
 		)
 		get_tree().quit(0)
