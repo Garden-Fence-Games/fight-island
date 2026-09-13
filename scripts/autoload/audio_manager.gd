@@ -81,6 +81,22 @@ const SURF_PEAK: float = 0.3
 ## The table of peaks is untouched by this: it is the **shape** of the mix, and one figure moves the
 ## whole thing down together rather than nine figures moving apart.
 const HEADROOM: float = 0.5
+## Where the project's own recordings live, and how a family is spelled. The only sounds in the game
+## that are **not** synthesised: a voice is the one thing a sine cannot do, and these are recordings
+## made for this project rather than anything with a licence to clear.
+const VOICES_AT: String = "res://assets/audio/voice"
+## What a body's own voice is worth in the mix. **Under a wind-up, and well under it.** A farmer
+## shouting is flavour; a farmer committing is the one sound the whole game is built around being
+## able to hear, and a voice that competed with it would be taking away the thing it is decorating.
+const VOICE_PEAK: float = 0.30
+## How loudly a moving source carries. Lower than the pooled positional voices: those announce a
+## wind-up and have to cut through, this one is a man muttering on his way over.
+const VOICE_UNIT: float = 5.0
+## The player's own death. Most of an octave down, over two thirds of a second — long enough to be
+## a shout and short enough to be over before the summary screen slides in.
+const CRY_SECONDS: float = 0.66
+const CRY_FROM: float = 430.0
+const CRY_TO: float = 150.0
 
 ## The thud both hits share. Short, because a jab that rings is a jab that covers the next one — and
 ## because what tells a perfect hit apart has to be the partial on top, not a longer body.
@@ -199,6 +215,7 @@ const LAYERS: Dictionary = {
 var audible: bool = DisplayServer.get_name() != "headless"
 
 var _sounds: Dictionary = {}
+var _recordings: Dictionary = {}
 var _peaks: Dictionary = {}
 var _voices: Array[AudioStreamPlayer] = []
 var _placed: Array[AudioStreamPlayer3D] = []
@@ -227,6 +244,7 @@ func _ready() -> void:
 		voice.unit_size = 8.0
 		add_child(voice)
 		_placed.append(voice)
+	_load_the_recordings()
 	_start_the_bed()
 	EventBus.attack_landed.connect(_on_attack_landed)
 	EventBus.attack_whiffed.connect(_on_attack_whiffed)
@@ -244,6 +262,7 @@ func _ready() -> void:
 	EventBus.wave_cleared.connect(_on_wave_cleared)
 	EventBus.merchant_opened.connect(_on_merchant_opened)
 	EventBus.run_ended.connect(_on_run_ended)
+	EventBus.player_died.connect(_on_player_died)
 
 
 ## A stream left playing at teardown is an object the engine reports as leaked on the way out: the
@@ -322,6 +341,21 @@ func sound(id: StringName) -> AudioStreamWAV:
 
 ## Every id there is. The mix is a property of the whole set, so the set has to be askable: a check
 ## that listed them itself would be short of exactly the loud one that clips.
+## The clips of one family, in a stable order. Loaded once at startup like everything else, so a
+## body asking for a line is not touching the disk in the middle of a fight.
+func voices_of(kind: StringName) -> Array[AudioStream]:
+	var found: Array[AudioStream] = []
+	found.assign(_recordings.get(kind, []))
+	return found
+
+
+## What a voice comes out at. Separate from `peak_of` because a recording is not registered as one
+## of the synthesised sounds — it has no id, there are nine of it, and what the mix cares about is
+## the family.
+func peak_of_voice() -> float:
+	return VOICE_PEAK * HEADROOM
+
+
 func every_sound() -> Array[StringName]:
 	var all: Array[StringName] = []
 	all.assign(_sounds.keys())
@@ -389,9 +423,27 @@ func _build() -> void:
 	_register(&"merchant", _merchant(), INCIDENTAL_PEAK)
 	_register(&"victory", _ending(true), STING_PEAK)
 	_register(&"defeat", _ending(false), STING_PEAK)
+	_register(&"death_cry", _death_cry(), STING_PEAK)
 	_register(&"surf", _surf(), SURF_PEAK)
 	for layer: StringName in LAYERS:
 		_register(layer, _layer(layer), MUSIC_PEAK)
+
+
+## The recordings, by family, taken from the file names. A directory rather than a list in code: a
+## line added to the game is a file dropped in, and a table here would be a second place to forget.
+func _load_the_recordings() -> void:
+	for name: String in DirAccess.get_files_at(VOICES_AT):
+		var file := name.trim_suffix(".remap").trim_suffix(".import")
+		if not file.ends_with(".wav"):
+			continue
+		var kind := StringName(file.get_basename().rsplit("_", true, 1)[0])
+		var stream := load("%s/%s" % [VOICES_AT, file]) as AudioStream
+		if stream == null:
+			push_error("voice: %s did not load" % file)
+			continue
+		if not _recordings.has(kind):
+			_recordings[kind] = [] as Array[AudioStream]
+		(_recordings[kind] as Array[AudioStream]).append(stream)
 
 
 func _register(id: StringName, stream: AudioStreamWAV, peak: float) -> void:
@@ -644,6 +696,28 @@ func _ending(victory: bool) -> AudioStreamWAV:
 	return SoundBank.bake(samples, STING_PEAK * HEADROOM)
 
 
+## The player going down: a yelp that falls away and cracks doing it.
+##
+## The famous one is a recording under copyright and there is no version of it this project could
+## ship, so this is the same **joke** built out of the same parts — a voiced tone that slides down
+## most of an octave while a noisy rasp on top falls with it, which is what a shout is. It is short
+## and it is silly, and both of those are the point: a death is the one moment the game is allowed
+## to stop taking itself seriously, and a long one would still be going while the summary arrives.
+##
+## Off the key deliberately, like the dry-fire warning. A death is not a musical event and a scream
+## that landed on the tonic would read as the game approving.
+func _death_cry() -> AudioStreamWAV:
+	var samples := SoundBank.span(CRY_SECONDS)
+	SoundBank.fall(samples, CRY_FROM, CRY_TO, 0.75)
+	# The rasp. Noise that falls with the voice rather than sitting under it — a shout is a voice
+	# that is breaking, and a steady hiss underneath reads as wind instead.
+	SoundBank.hiss(samples, 0.30, CRY_SECONDS * 0.5, 97)
+	SoundBank.soften(samples, 0.35)
+	SoundBank.swell(samples, 0.03)
+	SoundBank.release(samples, 0.16)
+	return SoundBank.bake(samples, STING_PEAK * HEADROOM)
+
+
 ## The surf, and nothing else. It is the only sound here with no event behind it, and the only one
 ## that loops.
 ##
@@ -761,6 +835,12 @@ func _on_footstep_taken(wading: bool) -> void:
 ## the sound is for.
 func _on_merchant_opened() -> void:
 	play(&"merchant")
+
+
+## The yelp goes on the death, not on the summary. `run_ended` arrives a beat later and carries the
+## screen; this is the body hitting the sand.
+func _on_player_died() -> void:
+	play(&"death_cry")
 
 
 func _on_run_ended(victory: bool) -> void:

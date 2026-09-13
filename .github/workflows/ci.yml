@@ -275,6 +275,12 @@ jobs:
       - name: Verify nothing walks the tree per frame
         run: tools/run-check.sh res://tools/verify_lookups.tscn
 
+      # The only sounds in the game that are not synthesised, which makes them the only ones that
+      # can go missing: a synthesised sound is code and fails loudly, a file is a file. And a voice
+      # that drew level with a wind-up would drown the one sound the game is built around.
+      - name: Verify the recorded voices
+        run: tools/run-check.sh res://tools/verify_voices.tscn
+
       # The waveforms are verify_audio's; this is their relationship, which is the only thing that
       # can go wrong once each is individually fine — a footfall at a hit's level walks over the
       # fight, four loud things at once sum past full scale, and two sounds that disagree about the

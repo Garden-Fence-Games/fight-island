@@ -538,6 +538,33 @@ hits, *what* is ringing: the perfect one carries a partial the plain one does no
 to outlast its plain version by at least twice, the perfect hit's tail has to be three times
 brighter than the plain one's, and a whiff's opening must stay well under a hit's.
 
+### The farmers have voices, and they are the only thing not synthesised
+
+Nine recorded lines for a farmer and two cries for a gull, the project's own. They are the one thing
+a sine cannot do.
+
+**A farmer speaks when he notices you, and now and then on the way over** — not on his wind-up. The
+wind-up already carries the one sound the player must hear, and everything in this game refuses to
+shout over a telegraph: a camera knock does, the music does, and a voice would be worse than either
+because it comes from the same body.
+
+What makes it read as *coming towards you* is **Doppler**. Each body carries its own
+`AudioStreamPlayer3D` rather than borrowing one of the pooled positional voices, because a pooled
+voice is put at a point and played — stationary for its whole length, and a stationary sound cannot
+say *closing*. The pitch rises as he closes and falls as he leaves, which is a cue nobody has to
+learn.
+
+They sit at 0.30 against a wind-up's 0.95, and `verify_voices` fails if that order ever reverses.
+
+### Dying has a sound, and it is ours
+
+A yelp that slides down most of an octave in two thirds of a second while a rasp on top falls with
+it. The famous one is a recording under copyright and there is no version of it this project could
+ship, so this is the same joke built out of the same parts.
+
+Off the key on purpose, like the dry-fire warning: a death is not a musical event, and a scream that
+landed on the tonic would read as the game approving.
+
 ### One key, and room to be a mix
 
 **The whole game is in A minor.** It was already mostly true and nobody had written it down — the

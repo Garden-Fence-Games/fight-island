@@ -61,6 +61,7 @@ const EXPECTED: Array[StringName] = [
 	&"merchant",
 	&"victory",
 	&"defeat",
+	&"death_cry",
 ]
 ## The three music layers, checked on their own terms like the bed is: they loop, they carry no
 ## event, and they are the one thing here allowed to be muted.
@@ -546,6 +547,7 @@ func _check_the_right_sound_answers_each_signal() -> void:
 		[&"merchant", func() -> void: EventBus.merchant_opened.emit()],
 		[&"victory", func() -> void: EventBus.run_ended.emit(true)],
 		[&"defeat", func() -> void: EventBus.run_ended.emit(false)],
+		[&"death_cry", func() -> void: EventBus.player_died.emit()],
 	]
 	for case: Array in cases:
 		var wanted: StringName = case[0]

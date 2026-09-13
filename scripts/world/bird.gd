@@ -39,6 +39,8 @@ var _heading: Vector3 = Vector3.FORWARD
 var _started_at: float = NAN
 var _bob: float = 0.0
 
+@onready var _voice: VoiceComponent = get_node_or_null(^"Voice") as VoiceComponent
+
 
 func _ready() -> void:
 	_bob = randf() * TAU
@@ -77,6 +79,13 @@ func startle(away_from: Vector3) -> void:
 	_heading = escape.normalized() if not escape.is_zero_approx() else _heading
 	_face(_heading)
 	_play_flight()
+
+
+## A cry, from where the bird is. Only from the ones on the sand and only now and then — a flock
+## where every bird calls is not a shore, it is an alarm.
+func cry() -> void:
+	if _voice != null:
+		_voice.speak()
 
 
 func _process(delta: float) -> void:

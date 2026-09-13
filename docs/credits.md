@@ -31,6 +31,8 @@ both modelled rigs. The weapons and the terrain itself are still Godot primitive
 | `assets/models/camp/structure.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/camp/structure_base.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
 | `assets/models/camp/structure_roof.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
+| `assets/audio/voice/farmer_01..09.wav` | original recording | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/audio/voice/gull_01..02.wav` | original recording | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/camp/floor.glb` | [Survival Kit](https://kenney.nl/assets/survival-kit), the 1.0 export on [Poly Pizza](https://poly.pizza/bundle/Survival-Kit-yGnSPFp2lH) | Kenney | CC0 1.0 | 2026-09-12 |
 
 CC0 waives every requirement, crediting included. Kenney is credited here anyway, and each pack's
@@ -44,11 +46,13 @@ still carries separate, untextured `wood` and `woodDark` materials, which is the
 [asset-pipeline.md](asset-pipeline.md) requires and the same form the Nature Kit ships in. Same
 author, same licence, same pack — an older cut of it.
 
-No third-party file is used by the effects or the sounds: the impacts are Godot primitives driven by
+No third-party file is used by the effects or the sounds. The impacts are Godot primitives driven by
 `CPUParticles3D`, and **every sound in the game is synthesised at startup** — the combat signatures,
-the footfalls, the wind-up, the gunshots, the stings and the surf bed alike. There is still not one
-audio file in the repository, so there is nothing to credit here and nothing that can ship without
-a row.
+the footfalls, the wind-up, the gunshots, the stings, the death cry and the surf bed alike.
+
+**The voices are the one exception**, and they are ours: eleven recordings made for this project,
+listed above. They are the only audio files in the repository, and a voice is the one thing a sine
+cannot do.
 There is nothing to credit and nothing to clear before release.
 
 ## Engine and tools
