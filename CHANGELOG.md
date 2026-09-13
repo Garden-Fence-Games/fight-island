@@ -6,6 +6,14 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Fixed
+
+- **The itch.io publish had the wrong account.** `ITCH_USER` was the repository owner, and the page
+  lives at `garden-fence/fight-island`. The 0.1.0 tag exported both platforms and attached them to
+  the GitHub release before failing on `/wharf/builds: invalid target (bad user)` — everything up to
+  the last step was fine, which is why nothing caught it earlier: it is the one part of the chain
+  that cannot be checked without a key.
+
 ### Changed
 
 - **Both weapons lie on the island from wave 1.** The stick used to arrive in wave 2 and the gun in
@@ -22,7 +30,6 @@ All notable changes to this project are documented here, following
   - `verify_weapons` gains the assertion the failure needed: **every upgrade track that names a
     weapon names a weapon that is dropped.** A track for a weapon nobody can find is a locked card
     for the length of a run, and nothing said so.
-
 
 ## [0.1.0] - 2026-09-13
 
@@ -87,6 +94,13 @@ still fail.
   the game to take health away a fraction at a time rather than in whole blows.
 
 ### Changed
+
+- **The tutorial runs on a clock, before wave 1.** It was wave 1 itself, seven lessons each waiting
+  for the player to perform them, and the parry lesson could hold the wave open for ever. After the
+  new-run opening, four lines now follow one another on an empty island — how the player got here,
+  punch and dodge, sprint, survive — each for its own `seconds` in `data/tutorial/`, with the real
+  buttons of the device in hand. Then wave 1 starts at once. Nothing waits for an input. It shows on
+  every run begun from the title, like the opening; a retry, a restart or a resume skips it.
 
 - **The fifteen waves are tuned, off a measurement rather than off the formulas** (#82). The curve
   now steps by about 11 and 14 per cent through the waves that teach, by 17 to 22 through 4–6 where

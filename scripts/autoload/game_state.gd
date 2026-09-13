@@ -18,7 +18,7 @@ signal day_phase_changed(phase: DayPhase)
 ## the merchant does not need to know a player exists.
 signal upgrade_purchased(track: UpgradeTrack, level: int)
 
-## The one thing in `progress.json` this build writes. The tutorial adds its own beside it.
+## The one thing in `progress.json` this build writes.
 const BEST_WAVE_KEY: String = "best_wave"
 
 var run_seed: int = 0
@@ -35,6 +35,9 @@ var fighting: bool = false
 ## a run started from the title and spent by `RunIntro` the moment it plays, so a resume, a retry
 ## and every headless check that begins a run go straight into the game.
 var intro_owed: bool = false
+## Whether the run about to load shows the tutorial lines after that opening. Set alongside
+## `intro_owed` and spent by `TutorialDirector`, so every run begun from the title teaches it again.
+var tutorial_owed: bool = false
 ## Carries between waves and is spent at the merchant. It only ever changes through `earn` and
 ## `spend`, so nothing can move it without the signal going out.
 var money: int = 0
@@ -91,9 +94,10 @@ func _process(delta: float) -> void:
 		stats.seconds += delta
 
 
-## `with_intro` is the title's to pass: see `intro_owed`.
+## `with_intro` is the title's to pass: see `intro_owed` and `tutorial_owed`.
 func begin_run(with_intro: bool = false) -> void:
 	intro_owed = with_intro
+	tutorial_owed = with_intro
 	_rng.randomize()
 	run_seed = _rng.seed
 	run_in_progress = true

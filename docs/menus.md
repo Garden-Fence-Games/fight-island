@@ -161,7 +161,7 @@ will set it and believe they are covered.
 |---|---|---|
 | Sprint | **auto** — hold on keyboard, toggle on pad, decided per press | The two audiences genuinely expect different things, and a player who disagrees can say so — [ADR 0007](decisions/0007-sprint-hold-or-toggle.md) |
 | Aim assist | soft | The gun is unplayable on a stick without it, and unsatisfying with too much. `soft` takes half the error off, `strong` takes all of it, and neither reaches outside a 12° cone or past what the weapon in hand can hit — a wider one starts choosing targets, which is worse than missing |
-| Show tutorial prompts | on until completed once | See [tutorial.md](tutorial.md) |
+| Show tutorial prompts | on | Off skips the lines before wave 1 on a new run — see [tutorial.md](tutorial.md) |
 | Damage numbers | **off** | The design says the hit should be felt; the numbers are a debugging comfort |
 | Credit numbers | **on** | The opposite default, and for the opposite reason: that a kill pays is a rule the player has to learn, and it is one number per body rather than one per hit |
 

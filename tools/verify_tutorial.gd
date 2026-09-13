@@ -1,29 +1,27 @@
 extends Node
-## Headless proof of the one claim `docs/tutorial.md` makes that cannot be checked by playing:
-## **a good player never sees a prompt.** Every step closes retroactively, so a chained perfect hit
-## landed before anything was asked for has to close three lessons in one blow.
+## Headless proof of what `docs/tutorial.md` promises: **the opening lines run on a clock, never on
+## a button, and wave 1 starts when they are over.**
 ##
-## The rest is the safety net around that: wave 1 belongs to the tutorial and not to the formula, a
-## passive farmer really cannot swing, the player cannot die while being taught, the parry holds the
-## wave open, and a second run skips the whole thing.
+## The failure this guards against is the one the old tutorial had — a lesson waiting for an input
+## nobody made, and a run that never reached a wave. So the check never presses anything: it only
+## lets time pass, and asks that everything moves on anyway.
 ##
 ## Whatever is on this machine is put back at the end.
 ## Run: godot --headless --path . res://tools/verify_tutorial.tscn
 
 const ARENA: String = "res://scenes/world/arena.tscn"
 const SETTLE_FRAMES: int = 4
-## Past the prompt delay with room to spare, in frames of a sixty-hertz headless run.
-const PROMPT_FRAMES: int = 150
+const STEPS: PackedStringArray = ["01_angry", "02_fight", "03_sprint", "04_survive"]
+const ORDER: Array[StringName] = [&"angry", &"fight", &"sprint", &"survive"]
+## A tick of the clock, as a sixty-hertz frame.
+const TICK: float = 1.0 / 60.0
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
 var _director: TutorialDirector = null
 var _waves: WaveDirector = null
-var _player: Player = null
 var _kept_run: Dictionary = {}
-var _kept_progress: Dictionary = {}
 var _kept_prompts: bool = true
-var _cleared_waves: Array = []
 
 
 func _ready() -> void:
@@ -37,252 +35,146 @@ func _run() -> void:
 	if _director == null:
 		_report()
 		return
-	_check_the_tutorial_owns_wave_one()
-	await _check_a_passive_farmer_cannot_swing()
-	_check_the_player_cannot_die()
-	await _check_one_blow_closes_three_lessons()
-	_check_the_lesson_lets_the_farmer_swing()
-	_check_the_parry_holds_the_wave()
-	await _check_the_wave_hands_over()
-	_check_progress_persists()
-	await _check_a_second_run_skips_it()
-	await _check_switching_the_prompts_off_hands_the_island_back()
+	_check_the_island_waits_for_the_lines()
+	_check_the_lines_run_on_the_clock()
+	_check_wave_one_starts_after_the_last_line()
+	await _check_only_a_title_run_shows_it()
+	await _check_switching_the_prompts_off_starts_the_wave()
+	_close_the_arena()
 	_put_back_what_was_on_this_machine()
 	_report()
 
 
-## The order and the wording live in `data/tutorial/`, so the failure this catches is a step whose
-## copy was never written — a prompt that reads as its own key, mid-fight.
+## The order, the wording and the timing live in `data/tutorial/`, so the failure this catches is a
+## line whose copy was never written — a prompt that reads as its own key — or one with no time on
+## screen, which the player would never see.
 func _check_the_steps_are_data() -> void:
-	var steps := _steps()
-	if steps.size() != 7:
-		_fail("expected seven tutorial steps, found %d" % steps.size())
-	for step: TutorialStep in steps:
-		if step.id.is_empty() or step.prompt_key.is_empty():
-			_fail("a tutorial step is missing its id or its prompt key")
+	for name: String in STEPS:
+		var step := load("res://data/tutorial/%s.tres" % name) as TutorialStep
+		if step == null:
+			_fail("data/tutorial/%s.tres is not a TutorialStep" % name)
 			continue
-		if tr(step.prompt_key) == step.prompt_key:
+		if step.id.is_empty() or step.prompt_key.is_empty():
+			_fail("%s is missing its id or its prompt key" % name)
+		elif tr(step.prompt_key) == step.prompt_key:
 			_fail("%s has no string for %s" % [step.id, step.prompt_key])
-	if steps.size() > 0 and steps[0].travel <= 0.0:
-		_fail("the movement lesson has no distance to cover, so nothing can close it")
+		if step.seconds <= 0.0:
+			_fail("%s is on screen for no time at all" % step.id)
 
 
-func _check_the_tutorial_owns_wave_one() -> void:
+func _check_the_island_waits_for_the_lines() -> void:
 	if not _director.is_running():
 		_fail("a fresh run did not start the tutorial")
 		return
+	var ids: Array[StringName] = []
+	for step: TutorialStep in _director.steps:
+		ids.append(step.id)
+	if ids != ORDER:
+		_fail("the tutorial runs %s, expected %s" % [ids, ORDER])
 	if _waves.is_running():
-		_fail("the wave formula is sending wave 1 alongside the tutorial")
-	if GameState.wave != 1:
-		_fail("wave 1 was never announced, so the HUD and the save would disagree")
-	var step := _director.current_step()
-	if step == null or step.id != &"move":
-		_fail("the tutorial did not open on the movement lesson")
+		_fail("wave 1 is running underneath the tutorial")
+	if _waves.spawner != null and _waves.spawner.alive_count() > 0:
+		_fail("something is standing on the island while the lines are up")
+	if not _director.prompt.is_showing():
+		_fail("the first line is not on screen")
 
 
-## The whole of the first two lessons: something to hit that will not hit back. The token is the one
-## gate into WindUp, so refusing it is what makes a body harmless.
-func _check_a_passive_farmer_cannot_swing() -> void:
-	var body := _place_a_harmless_farmer()
-	if body == null:
-		_fail("a farmer could not be placed by hand")
-		return
-	await get_tree().physics_frame
-	if not body.passive:
-		_fail("a farmer spawned harmless did not come up harmless")
-	if body.claim_token():
-		_fail("a harmless farmer claimed an attack token, so he is about to swing")
-	body.retire()
-	await get_tree().physics_frame
-
-
-func _check_the_player_cannot_die() -> void:
-	if _player == null or _player.health == null:
-		_fail("the arena holds no player to protect")
-		return
-	if not is_equal_approx(_player.health.minimum_health, 1.0):
-		_fail("the player is not protected during wave 1")
-	var hit := HitInfo.new()
-	hit.damage = _player.health.max_health * 10.0
-	_player.health.apply(hit)
-	if _player.health.current_health < 1.0:
-		_fail("a killing blow during the lesson took the player below one")
-	if not _player.is_alive():
-		_fail("the player died during wave 1")
-	_player.health.current_health = _player.health.max_health
-
-
-## The design target, stated as a check: a chained perfect hit closes attack, chain and perfect at
-## once, and the player is never asked for any of them.
-func _check_one_blow_closes_three_lessons() -> void:
-	# Sprinting away at the very start, six lessons before anyone asks. It has to count when the
-	# sprint lesson finally comes round, or "retroactive" only means "in the right order".
-	EventBus.player_state_changed.emit(&"Sprint")
-	_satisfy_movement()
-	await get_tree().process_frame
-	if _director.current_step() == null or _director.current_step().id != &"attack":
-		_fail("walking did not close the movement lesson")
-		return
-	# The second blow of a chain, landed inside the perfect window — named by the attack, which is
-	# all a landed blow carries. Saying it with `Player.chain_index` instead would prove something
-	# no real hit can: entering a swing closes the window, so it reads -1 for every blow that lands.
-	var second := _player.weapon.attack_at(1) if _player.weapon != null else null
-	if second == null:
-		_fail("the player holds nothing that chains, so the chain lesson cannot be answered")
-		return
-	EventBus.attack_landed.emit(_player, 10.0, true, second)
-	await get_tree().process_frame
-	var step := _director.current_step()
-	if step == null:
-		_fail("one blow closed every lesson, including the ones it could not answer")
-		return
-	if step.id != &"dodge":
-		_fail("a chained perfect hit left %s open instead of closing three lessons" % step.id)
-	if _prompt().is_showing():
-		_fail("a player who was never asked anything still saw a prompt")
-
-
-## The first lessons need a farmer who cannot swing and the last two need one who can, and the
-## director only ever tops the island up — so the body left over from the attack lesson has to
-## change its mind when the dodge lesson opens, or nothing ever swings at the player again.
-func _check_the_lesson_lets_the_farmer_swing() -> void:
-	var step := _director.current_step()
-	if step == null or step.id != &"dodge" or step.passive:
-		_fail("the dodge lesson is not the one open, or it no longer asks for a farmer who swings")
-		return
-	var body := _place_a_harmless_farmer()
-	if body == null:
-		_fail("a farmer could not be placed by hand")
-		return
-	_director._process(0.1)
-	if body.passive:
-		_fail("the farmer left over from the first lessons is still harmless during the dodge one")
-	body.retire()
-
-
-func _check_the_parry_holds_the_wave() -> void:
-	EventBus.dodge_evaded.emit()
-	var step := _director.current_step()
-	if step == null or step.id != &"parry":
-		_fail("rolling through a swing did not open the parry lesson")
-		return
-	if not step.holds_wave:
-		_fail("the parry lesson does not hold the wave, so it can be skipped")
-	_waves.spawner.clear()
-	_director._process(0.1)
-	if not _cleared_waves.is_empty():
-		_fail("wave 1 ended before a parry ever landed")
-	if not _director.is_running():
-		_fail("the tutorial gave up with the parry still unanswered")
-
-
-## The parry is the last thing actually asked for: the sprint was answered before the wave started
-## and must close on its own the moment it comes round.
-func _check_the_wave_hands_over() -> void:
-	EventBus.parry_perfect.emit()
-	if _director.current_step() != null:
-		_fail(
-			(
-				"the sprint from before the wave was not credited, %s is still open"
-				% _director.current_step().id
+## The whole point: nothing is pressed, and every line still gives way after its own time — not
+## before, not never.
+func _check_the_lines_run_on_the_clock() -> void:
+	for index: int in ORDER.size():
+		var step := _director.current_step()
+		if step == null or step.id != ORDER[index]:
+			_fail(
+				"expected %s on screen, found %s" % [ORDER[index], step.id if step else &"nothing"]
 			)
-		)
-	_waves.spawner.clear()
-	await get_tree().process_frame
+			return
+		# A few frames short of its time, then frame by frame until it goes, so the next line starts
+		# on a clean clock rather than on whatever this one overshot by.
+		_let_time_pass(step.seconds - TICK * 4.0)
+		if _director.current_step() != step:
+			_fail("%s gave way before its %.1f seconds were up" % [step.id, step.seconds])
+			return
+		var frames := 0
+		while _director.current_step() == step and frames < 12:
+			_let_time_pass(TICK)
+			frames += 1
+		if _director.current_step() == step:
+			_fail(
+				(
+					"%s is still up after its %.1f seconds, with nothing pressed"
+					% [step.id, step.seconds]
+				)
+			)
+			return
+
+
+func _check_wave_one_starts_after_the_last_line() -> void:
 	if _director.is_running():
-		_fail("every lesson was answered and the tutorial kept the island")
-	if not _cleared_waves.has(1):
-		_fail("wave 1 never announced itself cleared, so nothing paid out")
-	if _player != null and not is_zero_approx(_player.health.minimum_health):
-		_fail("the player is still protected after wave 1")
+		_fail("every line has run and the tutorial kept the island")
+	if _director.prompt.is_showing():
+		_fail("the last line stayed on screen into the wave")
+	if not _waves.is_running() or _waves.wave != 1:
+		_fail("wave 1 did not start when the lines were over (wave %d)" % _waves.wave)
+	if not bool(Settings.get_value(&"gameplay_tutorial_prompts")):
+		_fail("the tutorial switched the player's setting off, so the next new run skips it")
 
 
-func _check_progress_persists() -> void:
-	var stored: Variant = SaveManager.read_progress().get(TutorialDirector.PROGRESS_KEY, [])
-	var cleared := stored as Array if stored is Array else []
-	for step: TutorialStep in _steps():
-		if not cleared.has(String(step.id)):
-			_fail("%s was answered but not written to progress.json" % step.id)
-
-
-## A second run spawns wave 1 on the formula like any other wave. Checked by building the arena
-## again with the progress the first one just wrote.
-func _check_a_second_run_skips_it() -> void:
+## Every run begun from the title teaches it again — the bug this replaced was a tutorial that ran
+## once per machine. A retry or a restart does not: it is the same player straight back in.
+func _check_only_a_title_run_shows_it() -> void:
 	_close_the_arena()
-	GameState.begin_run()
+	await _open_a_fresh_arena(false)
+	if _director != null and (_director.is_running() or _director.prompt.is_showing()):
+		_fail("a retry showed the tutorial, and only a run from the title should")
+	_close_the_arena()
 	await _open_a_fresh_arena()
-	if _director == null:
-		return
-	if _director.is_running():
-		_fail("a second run taught the tutorial again")
-	if not _waves.is_running() and _waves.wave != 0:
-		_fail("the wave formula did not take wave 1 back")
+	if _director != null and not _director.is_running():
+		_fail("a second run from the title did not show the tutorial again")
+	if GameState.tutorial_owed:
+		_fail("the tutorial started and the run still owes one, so a reload would show it twice")
 
 
-## Turning the prompts off mid-lesson is asking not to be taught. The parry holds wave 1 open until
-## it lands, so a tutorial that carried on unseen is a wave that never ends and never says why.
-func _check_switching_the_prompts_off_hands_the_island_back() -> void:
+## Switched off mid-way is asking to skip it, and the run has to carry on rather than sit empty.
+func _check_switching_the_prompts_off_starts_the_wave() -> void:
 	_close_the_arena()
-	SaveManager.write_progress({})
 	Settings.set_value(&"gameplay_tutorial_prompts", true)
 	await _open_a_fresh_arena()
 	if _director == null or not _director.is_running():
 		_fail("a fresh run with the prompts on did not start the tutorial")
 		return
 	Settings.set_value(&"gameplay_tutorial_prompts", false)
-	_director._process(0.1)
+	_let_time_pass(TICK)
 	if _director.is_running():
 		_fail("the prompts were switched off and the tutorial kept the island anyway")
-	if _waves.wave != 1:
-		_fail("the formula was never handed wave 1 back, so no wave can ever arrive")
-	if _player != null and not is_zero_approx(_player.health.minimum_health):
-		_fail("the player is still protected after the tutorial stepped aside")
+	if not _waves.is_running() or _waves.wave != 1:
+		_fail("switching the prompts off left the island with no wave")
 
 
-func _satisfy_movement() -> void:
-	var step := _director.current_step()
-	if step == null or _player == null:
-		return
-	# Two frames of walking, told as one stride: the director measures the distance itself.
-	_director._process(0.016)
-	_player.global_position += Vector3(step.travel * 2.0, 0.0, 0.0)
-	_director._process(0.016)
+## Driven by hand rather than by frames, so the check takes no real time and cannot race the clock.
+func _let_time_pass(seconds: float) -> void:
+	var left := seconds
+	while left > 0.0:
+		_director._process(minf(TICK, left))
+		left -= TICK
 
 
-## A farmhand where the check wants him, spawned unable to swing. By hand rather than by the
-## director, because both checks are about what happens to a body the lessons did not choose.
-func _place_a_harmless_farmer() -> Enemy:
-	var farmhand := load("res://data/enemies/farmhand.tres") as EnemyData
-	return _waves.spawner.spawn_at(farmhand, Vector3(4.0, 0.5, 0.0), 1.0, 1.0, 1.0, 1.0, null, true)
-
-
-func _steps() -> Array[TutorialStep]:
-	if _director != null:
-		return _director.steps
-	var out: Array[TutorialStep] = []
-	for name: String in [
-		"01_move", "02_attack", "03_chain", "04_perfect", "05_dodge", "06_parry", "07_sprint"
-	]:
-		var step := load("res://data/tutorial/%s.tres" % name) as TutorialStep
-		if step != null:
-			out.append(step)
-	return out
-
-
-func _prompt() -> TutorialPrompt:
-	return _director.prompt
-
-
-func _open_a_fresh_arena() -> void:
-	GameState.begin_run()
+## `from_title` is the run the title begins, which owes the opening and the tutorial. The opening
+## itself belongs to `Main`, which this check never builds, so its flag is dropped here.
+func _open_a_fresh_arena(from_title: bool = true) -> void:
+	GameState.begin_run(from_title)
+	GameState.intro_owed = false
 	_arena = (load(ARENA) as PackedScene).instantiate() as Node3D
 	add_child(_arena)
 	await get_tree().physics_frame
 	_director = _arena.get_node_or_null("TutorialDirector") as TutorialDirector
 	_waves = _arena.get_node_or_null("WaveDirector") as WaveDirector
-	_player = _arena.get_node_or_null("Player") as Player
 	if _director == null or _waves == null:
 		_fail("the arena is missing its tutorial or its wave director")
+		_director = null
+		return
+	# The clock is this check's to turn.
+	_director.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 func _close_the_arena() -> void:
@@ -293,33 +185,20 @@ func _close_the_arena() -> void:
 	_arena = null
 	_director = null
 	_waves = null
-	_player = null
 
 
 func _keep_what_is_on_this_machine() -> void:
 	_kept_run = SaveManager.read_json(SaveManager.RUN_PATH)
-	_kept_progress = SaveManager.read_json(SaveManager.PROGRESS_PATH)
 	_kept_prompts = bool(Settings.get_value(&"gameplay_tutorial_prompts"))
-	SaveManager.write_progress({})
 	Settings.set_value(&"gameplay_tutorial_prompts", true)
-	EventBus.wave_cleared.connect(_on_wave_cleared)
 
 
 func _put_back_what_was_on_this_machine() -> void:
 	Settings.set_value(&"gameplay_tutorial_prompts", _kept_prompts)
-	_write_or_erase(SaveManager.RUN_PATH, _kept_run)
-	_write_or_erase(SaveManager.PROGRESS_PATH, _kept_progress)
-
-
-func _write_or_erase(path: String, data: Dictionary) -> void:
-	if data.is_empty():
-		SaveManager.erase(path)
-		return
-	SaveManager.write_json(path, data)
-
-
-func _on_wave_cleared(wave: int, _reward: int) -> void:
-	_cleared_waves.append(wave)
+	if _kept_run.is_empty():
+		SaveManager.erase(SaveManager.RUN_PATH)
+	else:
+		SaveManager.write_json(SaveManager.RUN_PATH, _kept_run)
 
 
 func _fail(message: String) -> void:
@@ -330,7 +209,7 @@ func _report() -> void:
 	for _index: int in SETTLE_FRAMES:
 		await get_tree().physics_frame
 	if _failures.is_empty():
-		print("tutorial OK — wave 1 teaches, closes retroactively, and never asks twice")
+		print("tutorial OK — the lines run on the clock, and wave 1 starts when they are over")
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:

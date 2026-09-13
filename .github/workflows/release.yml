@@ -11,7 +11,10 @@ permissions:
 env:
   GODOT_VERSION: "4.7.2"
   GAME_NAME: "FightIsland"
-  ITCH_USER: "pepito2t"
+  # The itch.io account, which is **not** the GitHub one: the page lives at
+  # https://garden-fence.itch.io/fight-island. Guessing it from the repository owner is what put
+  # `invalid target (bad user)` at the end of the 0.1.0 release, after the export had already worked.
+  ITCH_USER: "garden-fence"
   ITCH_GAME: "fight-island"
 
 # Godot's export templates are cross-platform, so macOS and Windows both export from one Linux
