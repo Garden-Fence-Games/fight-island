@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="KnockdownData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/knockdown_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+knock_speed = 12.0
+broken_poise_push = 1.8
+fall_ceiling = 4.0

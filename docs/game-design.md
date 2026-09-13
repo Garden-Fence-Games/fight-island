@@ -132,10 +132,10 @@ and sprawling: the blow's own `Stagger` figure becomes a push, and a blow that b
 single blow that sends a reaper sprawling**, which is a large part of why the stick is the answer
 to him — but every other blow still rocks him and still leaves him open.
 
-This is the one place the combat's figures are not yet in `data/`: the push per point of `Stagger`
-(12 m/s), the broken-poise multiplier (1.8) and the knockdown ceiling below live in the scripts that
-use them. They are tabled here because this document is their home; moving them into a resource is
-outstanding work.
+The three figures that turn a `Stagger` number into a knockdown — the push per point of it
+(12 m/s), the broken-poise multiplier (1.8) and the ceiling below — are one `KnockdownData` in
+`data/combat/knockdown.tres`. They are the same conversion for every attack in the game, which is
+why they are one resource rather than another column on the table above.
 
 **All three weapons are in**, exactly as tabled above. `tools/verify_combat.tscn` asserts the fists'
 damage, the perfect multiplier, both chain-window boundaries, the chain lockout and the parry
