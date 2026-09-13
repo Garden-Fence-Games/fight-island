@@ -70,20 +70,33 @@ still fail.
 
 ### Changed
 
-- **The menus are set in a face you can read.** Badeen Display was chosen for impact and failed the
-  one thing a menu owes the player: its counters close up at every size, so at 40 px `THE STUDIO`
-  rendered as a row of filled blocks. Oswald Medium replaces it through one `ext_resource` that
-  eight theme variations point at. A standing rule goes with it — Badeen drew its Latin digits as
-  the Arabic-Indic forms, so no string carrying a number could be set in it.
-- **A wave is ninety seconds**, forty-five of light and forty-five of dark, down from four minutes.
-  Fifteen waves goes from about an hour to about twenty-five minutes. The turn of the sky moved with
-  it: `turning_share` is now a fact about each phase rather than one global, and **dawn and dusk
-  carry all of it** — they exist to *be* the turn, and holding a dusk before flipping into night in
-  its last few seconds was the abrupt version of the thing dusk was added to smooth.
-- **The credits say whose game it is.** A `The studio` row leads the roll — Garden Fence,
-  gardenfence.ch — through the existing document-to-screen chain rather than around it.
-- **The whole mix was set by ear**, in a fight, at a fader desk built for it, and the figures it was
-  left at are the defaults.
+- **The fifteen waves are tuned, off a measurement rather than off the formulas** (#82). The curve
+  now steps by about 11 and 14 per cent through the waves that teach, by 17 to 22 through 4–6 where
+  three archetypes arrive one per wave, and by under 5 across 12–15, which is the endurance band
+  doing what its name says.
+  - **The cliff was the thrower, and it was the token pool that made it one.** He queues on the
+    ranged pool, which is one token and nobody else's, so *one* thrower standing is the whole of
+    what being shot at costs and a second adds nothing. Landing him whole at thirteen per cent in
+    wave 5 was a **32 per cent jump in incoming damage in a single wave**, against a run that
+    otherwise steps by five to fifteen. He opens at six per cent in wave 5 and doubles at wave 6.
+  - **The archetypes no longer arrive together.** Waves 1 and 2 are farmhands and nothing else —
+    that is where the player uses what the tutorial taught rather than meeting somebody new. Then
+    the reaper at 3, the pirate at 4, the thrower at 5.
+  - **The roster budget is a budget again.** `enemy_count` was `12 + floor(n * 6)`, sized for a
+    four-minute wave; after the wave was cut to ninety seconds it promised a hundred and two bodies
+    at wave fifteen and delivered twenty-two, and the number *fell* as the waves rose because bodies
+    harden faster than the player's damage grows. It is `16 + floor(n * 1.2)` — just above what can
+    physically be killed, so outrunning a wave is something a good player can do.
+  - **The crowd climbs to the end**: `max_alive` caps at 14 rather than 12, and reaches it at wave
+    13 instead of stopping at 10. It is not the damage dial — the pool is two bodies by day and
+    three at night in every wave of the run — so what a bigger crowd adds is somebody always in the
+    way, which is the difference between an endurance test and a harder wave six.
+
+  `docs/game-design.md` said `max_alive` was "the real pressure dial" and that a run affords about
+  two tracks of five. Neither was true: the pool caps damage whatever the crowd, and the run earns
+  another 680 or so in kill money on top of the 2 010 in rewards — about three and a half tracks.
+  Both are corrected rather than tuned away; the wind-up floor was not touched.
+
 
 - **The merchant sells what you carry.** A weapon's upgrade track is refused until the weapon is in
   the bag — the stick is found in wave 2 and the gun in wave 4, and fifteen per cent more damage on
@@ -136,6 +149,12 @@ still fail.
     is two machines' solvers disagreeing, not a body sinking.
 
 ### Added
+
+- **`tools/measure_waves.tscn`** — the fifteen waves, read off the shipped resources: the crowd, the
+  hit points standing, the damage coming in by day and by night, how long the player lives under
+  full contact, how much of the roster can physically arrive, and what the run earns against what a
+  track costs. It changes nothing and asserts nothing. A tuning pass is read off this page, and
+  re-running it is how the next one starts.
 
 - **The stick's return and finisher are authored.** `attack_stick_2` and `attack_stick_3` come from
   `Boy_stick_fight_2/3`, each with its own trail (`StickTrail2`, `StickTrail3`), and replace the

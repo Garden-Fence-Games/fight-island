@@ -292,14 +292,14 @@ func _check_the_formulas_match_the_table() -> void:
 	if config == null:
 		_fail("there is no wave configuration to check")
 		return
-	for pair: Array in [[1, 18], [5, 42], [10, 72], [15, 102]]:
+	for pair: Array in [[1, 17], [5, 22], [10, 28], [15, 34]]:
 		var got := config.enemy_count(int(pair[0]))
 		if got != int(pair[1]):
 			_fail("wave %d should send %d enemies, sends %d" % [pair[0], pair[1], got])
 	if config.max_alive(1) != 4:
 		_fail("wave 1 should hold 4 alive, holds %d" % config.max_alive(1))
-	if config.max_alive(15) != 12:
-		_fail("max_alive should cap at 12, wave 15 holds %d" % config.max_alive(15))
+	if config.max_alive(15) != 14:
+		_fail("max_alive should cap at 14, wave 15 holds %d" % config.max_alive(15))
 	if not is_equal_approx(config.health_multiplier(15), 3.52):
 		_fail("wave 15 health should be x3.52, is x%.2f" % config.health_multiplier(15))
 	if not is_equal_approx(config.damage_multiplier(15), 2.40):
