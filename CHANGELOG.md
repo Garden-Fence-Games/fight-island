@@ -6,6 +6,12 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-13
+
+The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
+between waves — held by 39 headless checks in CI and 46 mutations that prove those checks can
+still fail.
+
 ### Added
 
 - **The player falls when they die.** The run ended on the rest pose — a body standing to attention
@@ -787,4 +793,5 @@ All notable changes to this project are documented here, following
 - Five input actions that a fixed camera has no use for: `camera_left`, `camera_right`,
   `camera_up`, `camera_down`, `camera_recenter`.
 
-[Unreleased]: https://github.com/pepito2t/fight-island/commits/main
+[Unreleased]: https://github.com/pepito2t/fight-island/compare/v0.1.0...main
+[0.1.0]: https://github.com/pepito2t/fight-island/releases/tag/v0.1.0
