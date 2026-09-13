@@ -7,15 +7,24 @@ extends Resource
 ## the two cannot drift apart while nobody is looking.
 
 @export_group("Size")
-## The roster is a budget the island draws on to stay populated for a whole four-minute wave, not a
-## queue to be emptied — `max_alive` is what the player actually faces at once. It is generous on
-## purpose: a wave that runs out of farmers halfway through its night is a wave that stops.
-@export var base_count: int = 12
-@export var count_per_wave: float = 6.0
+## The roster is a budget the island draws on to stay populated for the wave's ninety seconds, not a
+## queue to be emptied — `max_alive` is what the player actually faces at once.
+##
+## **A budget nobody can spend is not a budget.** Once the island is full a body only enters when
+## one falls, so what the roster costs is a rate of killing, and `tools/measure_waves.tscn` puts
+## that at a little over twenty bodies a wave. The figures below sit just above it: a wave ends
+## early when the budget runs dry and nothing is standing, and outrunning a wave is something a
+## good player should be able to do rather than a number they can never reach.
+@export var base_count: int = 16
+@export var count_per_wave: float = 1.2
 @export var base_alive: int = 4
 @export var alive_per_wave: float = 0.8
 @export var fewest_alive: int = 4
-@export var most_alive: int = 12
+## **The crowd is not what hurts.** `AttackTokens` lets two bodies commit at once and three at
+## night, in every wave of the run, so a bigger crowd is more to walk through and more to see past
+## rather than more damage. It still climbs to the end: waves twelve to fifteen have nothing left
+## to learn, and what they have instead is somebody always in the way.
+@export var most_alive: int = 14
 
 @export_group("Scaling")
 @export var health_per_wave: float = 0.18
