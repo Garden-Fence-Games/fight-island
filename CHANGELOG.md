@@ -6,6 +6,25 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **A new intro video** with the VFX pass — impact shake, bloom, chromatic aberration, grain and a
+  particle layer keyed to where the logo's planks land. The two scripts that generate it are in
+  `art-source/video/`, the same way a `.blend` lives there and the `.glb` ships.
+
+### Fixed
+
+- **The intro video had never been credited**, and nor had `bird_fly.glb`. `docs/credits.md` states
+  the rule in its own second line — *a file with no row does not ship* — and nothing enforced it.
+  `verify_credits` holds the document against the baked resource and the screen, which is a
+  different question and cannot see a file nobody wrote down.
+
+### Added
+
+- `tools/verify_shipped.tscn` — every file under `assets/` that is content rather than a Godot
+  sidecar has a row. A row may name a family (`farmer_01..09.wav`), and a texture is covered by the
+  model it was imported out of, because it is the same asset.
+
 ### Added
 
 - **The dead stay where they fall.** A killed farmer is thrown by the ragdoll, lands, and the pose
