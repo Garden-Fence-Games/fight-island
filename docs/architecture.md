@@ -97,7 +97,7 @@ to `AnimationComponent.play_clip(clip, seconds)` and nothing else has to move.
 
 `Attack` is **one** state driven by `AttackData`. The nine player attacks are data, not nine states.
 
-The same applies to the enemies: **one `enemy.tscn` and one `EnemyData` on it** — The
+The same applies to the enemies: **one `enemy.tscn` and one `EnemyData` on it** —
 the farmhand is the only archetype on it. A second one on the same rig would be a `.tres` and a
 material, not a branch; the pirate has a scene of his own only because he wears a different model.
 

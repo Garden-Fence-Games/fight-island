@@ -64,7 +64,7 @@ func _ready() -> void:
 	EventBus.ammo_changed.connect(_on_ammo_changed)
 	EventBus.rounds_scavenged.connect(_on_rounds_scavenged)
 	EventBus.attack_landed.connect(_on_attack_landed)
-	EventBus.enemy_died.connect(_on_enemy_died)
+	EventBus.coins_collected.connect(_on_coins_collected)
 	# Captions are capitals in the design system and a Godot theme carries no text transform.
 	for caption: Label in captions:
 		caption.text = tr(caption.text).to_upper()
@@ -181,16 +181,16 @@ func _on_attack_landed(target: Node3D, damage: float, perfect: bool, _attack: At
 	_float_over(target, DAMAGE_HEIGHT, str(roundi(damage)), variation, DAMAGE_RISE, DAMAGE_LIFE)
 
 
-## What the body was worth, off the same signal the wallet is paid by — so the number on screen and
-## the money in the purse can never disagree, elite multiplier included.
+## What a coin was worth, the moment it is walked over and off the same collection that pays the
+## purse — so the number on screen and the money in it can never disagree.
 ##
-## A body worth nothing says nothing: the tutorial's farmhands pay no money, and a `+$0` over each
-## of them would be the first thing the player ever learns about the economy.
-func _on_enemy_died(enemy: Node3D, _archetype: StringName, money_paid: int) -> void:
-	if money_paid <= 0 or not bool(Settings.get_value(&"gameplay_credit_numbers")):
+## A coin worth nothing says nothing: a `+$0` would be the first thing the player ever learns about
+## the economy.
+func _on_coins_collected(amount: int, piece: Node3D) -> void:
+	if amount <= 0 or not bool(Settings.get_value(&"gameplay_credit_numbers")):
 		return
-	var text := "+$%s" % Economy.grouped(money_paid)
-	_float_over(enemy, CREDIT_HEIGHT, text, &"CreditNumber", CREDIT_RISE, CREDIT_LIFE)
+	var text := "+$%s" % Economy.grouped(amount)
+	_float_over(piece, CREDIT_HEIGHT, text, &"CreditNumber", CREDIT_RISE, CREDIT_LIFE)
 
 
 ## A label that starts over a point in the world and rises off the top of it. Screen space rather

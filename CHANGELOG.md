@@ -8,6 +8,77 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **A kill's coins and rounds spray out of the body.** They were paid into the corner the instant a
+  body fell. Now they are thrown — gold coins adding up to exactly what the body was worth, and a
+  silver round — on a high arc so the player sees where they land, then spin and glint on the sand
+  with a small constant flare that twinkles. Walking near is enough: inside a generous radius they
+  fly to the player. Whatever is left when a wave is cleared flies in before the merchant opens, so
+  no money is lost; a round the pocket has no room for waits on the sand. The `+$` number now rises
+  as a coin is taken. Figures in `data/pickups/loot.tres`; held by `tools/verify_loot.tscn`.
+
+### Changed
+
+- **One kill in three leaves a round, up from one in eight.** A drop is a single round, so the gun
+  can afford to be generous — and a round that has to be walked over is worth more of them.
+
+- **The mutation sweep runs on every pull request instead of once a week.** It breaks the game on
+  purpose one constant at a time and reports which breakages no check notices — and it was kept off
+  pull requests because it "takes the better part of half an hour". That figure was never measured.
+  Its last sweep finished in **seven minutes nineteen**, which is about what the checks it audits
+  cost, because it runs each of them once and stops at the first that fails.
+  - Weekly is not a cadence this repository has. That green sweep ran on a Sunday morning against a
+    twenty-six line table; ninety-one commits landed in the day after it, ten of them appending to
+    the table, and by the Monday three entries named constants that had been renamed, moved or
+    deleted. A guard that goes quiet is now caught by the change that quietened it.
+  - `.github/workflows/mutation.yml` is gone and the job lives in `ci.yml`, behind the same CI gate
+    as every other job, so a survivor blocks a merge rather than sending a mail on Sunday.
+
+### Fixed
+
+- **Three of the mutations pointed at code that had moved, so `mutate.sh` could not run.** An entry
+  whose original text is no longer in the file it names is reported `STALE` and counted as a
+  survivor, which fails the whole run. `PEAK` had moved from `AudioManager` to `SoundBank`,
+  `HEADROOM` had become `MixTable.HEADROOM_DB` and changed units with it, and one entry still broke
+  the thrower's telegraph. Both survivors are repointed and proved — the peak mutation makes
+  `verify_audio` report two sounds twenty decibels under what they declared, and the headroom
+  mutation makes `verify_mix` say in as many words that a night wave clips.
+  - **And with the table able to run again, two entries turned out to measure nothing.** The tide's
+    `drains` and `drains_from` were mutated on the `@export` default in `tide_data.gd`, which
+    `data/combat/tide.tres` overrides on every load — so the game got the shipped figure whatever
+    the mutation said, and `verify_drowning` was right not to notice. Both now mutate the `.tres`,
+    where the number actually lives, and both are caught. They were the only two of their kind.
+
+### Removed
+
+- **Fifteen methods nothing called.** A sweep of every `func` in `scripts/` against every call site
+  in the project found fifteen with no caller at all, and three of them had been dead since the
+  archetype that used them was taken out. Two carried a docstring claiming a headless check read
+  them — `RunIntro.is_holding` and `SurfBed.on_the_coast` — which no check has ever done; a comment
+  that names a reader who does not exist is worse than no comment, because the next person believes
+  it. `AttackTokens.holds`, `WaveDirector.hand_over` and `WaveDirector.left_to_send` went with the
+  thrower's check and the old tutorial. `AimComponent.device` was the aim's own reading of the last
+  device touched, offered to the button glyphs before `Devices` existed to answer them properly.
+  The rest: `StateMachine.has_state`, `WeaponData.index_of`, `UpgradeTrack.touches_body`,
+  `CameraRig.screen_forward`, `MixTable.family_of`, `Settings.reset` and `reset_all`,
+  `WaveDirector.progress` and `PlayerAttack.charge`. No behaviour changed, and every headless check
+  still passes — which is the point: nothing was reading any of it.
+
+- **Five constants nothing read, and the comments that vouched for them.** `Enemy.CHEST_HEIGHT`
+  named `verify_sightlines` as its keeper, and that check went out with the thrower.
+  `WeaponPickup.LABEL_HEIGHT` was a second home for a height the scene already sets — the same 1.3,
+  written twice. `AudioManager.BODY_DECAY` said it was "the thud both hits share" long after each
+  impact family got a decay of its own. `PosedMesh.PER_VERTEX` was a hard-coded four under a
+  docstring saying the figure is read rather than assumed — which the code does, from the arrays,
+  three lines further down. `Emphasis.NOTHING` was never returned; the decision it was written to
+  record, that an ordinary hit gets no mark at all, moves onto `for_hit`, which is what makes it.
+
+## [0.2.0] - 2026-09-14
+
+Two archetypes leave the island and nothing replaces them; the sea kills for the first time;
+and the macOS build can be opened, which the 0.1.0 one could not.
+
+### Added
+
 - **The first weapon picked up says how to switch.** Nobody could find the swap: the only thing
   that ever named `Tab` was the input table. The first pickup of a run begun from the title now
   shows *[Tab] to switch weapons* — RB on a pad — for its own `seconds`, once, and waits for the
@@ -67,57 +138,7 @@ All notable changes to this project are documented here, following
   moved with it. `Tab` is free again — it had been sharing with `ui_focus_next`.
   - On a pad nothing moved: the swap has been **RB** and **LB** all along.
 
-- **The mutation sweep runs on every pull request instead of once a week.** It breaks the game on
-  purpose one constant at a time and reports which breakages no check notices — and it was kept off
-  pull requests because it "takes the better part of half an hour". That figure was never measured.
-  Its last sweep finished in **seven minutes nineteen**, which is about what the checks it audits
-  cost, because it runs each of them once and stops at the first that fails.
-  - Weekly is not a cadence this repository has. That green sweep ran on a Sunday morning against a
-    twenty-six line table; ninety-one commits landed in the day after it, ten of them appending to
-    the table, and by the Monday three entries named constants that had been renamed, moved or
-    deleted. A guard that goes quiet is now caught by the change that quietened it.
-  - `.github/workflows/mutation.yml` is gone and the job lives in `ci.yml`, behind the same CI gate
-    as every other job, so a survivor blocks a merge rather than sending a mail on Sunday.
-
-### Fixed
-
-- **Three of the mutations pointed at code that had moved, so `mutate.sh` could not run.** The table
-  breaks the game on purpose one constant at a time and reports which breakages no check notices; an
-  entry whose original text is no longer in the file is reported `STALE` and counted as a survivor,
-  which fails the whole run. `PEAK` had moved from `AudioManager` to `SoundBank`, `HEADROOM` had
-  become `MixTable.HEADROOM_DB` and changed units with it, and one entry still broke the thrower's
-  telegraph. Both survivors are repointed and proved — the peak mutation makes `verify_audio` report
-  two sounds twenty decibels under what they declared, and the headroom mutation makes `verify_mix`
-  say in as many words that a night wave clips.
-  - **And with the table able to run again, two entries turned out to measure nothing.** The tide's
-    `drains` and `drains_from` were mutated on the `@export` default in `tide_data.gd`, which
-    `data/combat/tide.tres` overrides on every load — so the game got the shipped figure whatever
-    the mutation said, and `verify_drowning` was right not to notice. Both now mutate the `.tres`,
-    where the number actually lives, and both are caught. They were the only two of their kind.
-
 ### Removed
-
-- **Fifteen methods nothing called.** A sweep of every `func` in `scripts/` against every call site
-  in the project found fifteen with no caller at all, and three of them had been dead since the
-  archetype that used them was taken out. Two carried a docstring claiming a headless check read
-  them — `RunIntro.is_holding` and `SurfBed.on_the_coast` — which no check has ever done; a comment
-  that names a reader who does not exist is worse than no comment, because the next person believes
-  it. `AttackTokens.holds`, `WaveDirector.hand_over` and `WaveDirector.left_to_send` went with the
-  thrower's check and the old tutorial. `AimComponent.device` was the aim's own reading of the last
-  device touched, offered to the button glyphs before `Devices` existed to answer them properly.
-  The rest: `StateMachine.has_state`, `WeaponData.index_of`, `UpgradeTrack.touches_body`,
-  `CameraRig.screen_forward`, `MixTable.family_of`, `Settings.reset` and `reset_all`,
-  `WaveDirector.progress` and `PlayerAttack.charge`. No behaviour changed, and every headless check
-  still passes — which is the point: nothing was reading any of it.
-
-- **Five constants nothing read, and the comments that vouched for them.** `Enemy.CHEST_HEIGHT`
-  named `verify_sightlines` as its keeper, and that check went out with the thrower.
-  `WeaponPickup.LABEL_HEIGHT` was a second home for a height the scene already sets — the same 1.3,
-  written twice. `AudioManager.BODY_DECAY` said it was "the thud both hits share" long after each
-  impact family got a decay of its own. `PosedMesh.PER_VERTEX` was a hard-coded four under a
-  docstring saying the figure is read rather than assumed — which the code does, from the arrays,
-  three lines further down. `Emphasis.NOTHING` was never returned; the decision it was written to
-  record, that an ordinary hit gets no mark at all, moves onto `for_hit`, which is what makes it.
 
 - **The reaper is gone too. The island is the farmhand and the pirate.** Removed rather than left
   at a share of zero — the archetype, his sweep, his telegraph, his draw and blow, his locale row,
@@ -152,6 +173,17 @@ All notable changes to this project are documented here, following
     from 1.2 s to 1.5 s.
   - **The curve is smoother for it.** The worst wave-to-wave step in the run was his arrival at 32
     per cent; the worst now is the pirate's at 17, and every other step is under 14.
+
+### Fixed
+
+- **The macOS build could not be opened at all.** The `.app` shipped with a signature claiming
+  resources it did not carry — Godot's export templates are cross-platform but a macOS bundle's
+  seal is not, and the Linux runner cannot write one. macOS calls that *damaged* rather than
+  *unsigned*, which is the refusal with **no Open Anyway offered**: the player has no way through
+  it. The bundle is now re-sealed ad-hoc on a macOS runner, which turns the hard refusal into the
+  ordinary unidentified-developer one that System Settings can approve. Measured both ways on the
+  published 0.1.0 archive, and through a full zip round-trip. Notarisation (#88) is what removes the
+  approval step; this only makes it reachable.
 
 ## [0.1.0] - 2026-09-13
 
@@ -1329,5 +1361,6 @@ still fail.
 - Five input actions that a fixed camera has no use for: `camera_left`, `camera_right`,
   `camera_up`, `camera_down`, `camera_recenter`.
 
-[Unreleased]: https://github.com/pepito2t/fight-island/compare/v0.1.0...main
+[Unreleased]: https://github.com/pepito2t/fight-island/compare/v0.2.0...main
+[0.2.0]: https://github.com/pepito2t/fight-island/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/pepito2t/fight-island/releases/tag/v0.1.0

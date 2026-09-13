@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="LootData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/loot_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+coins_most = 6
+flight_shortest = 0.75
+flight_longest = 1.05
+apex_lowest = 1.4
+apex_highest = 2.2
+lands_nearest = 0.6
+lands_furthest = 2.2
+leaves_at = 1.0
+bounce_height = 0.15
+bounce_for = 0.22
+takes_within = 1.1
+pulls_within = 2.6
+pull_speed = 11.0
+settles_for = 0.15
+sweep_after = 0.9
+flare_size = 1.1
+twinkle_hz = 1.3
+glint_share = 0.6
+spin = 3.0
