@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1")
-id = &"weapon_switch"
-prompt_key = "TUTORIAL_SWITCH"
-prompt_actions = PackedStringArray("weapon_next")
-seconds = 4.0
+id = &"gun"
+prompt_key = "TUTORIAL_GUN"
+prompt_actions = PackedStringArray("attack", "reload")
+seconds = 4.5
