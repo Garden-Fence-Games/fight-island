@@ -103,7 +103,9 @@ is three times the price per metre.
 ## Weapons
 
 Fists are always available. The **stick and the gun are both ground pickups from wave 1**, dropped
-where the player can see them. Pickups last the whole run; swapping is free and instant.
+where the player can see them. Pickups last the whole run; swapping is free and instant — no
+animation, no penalty, no cooldown, because the interesting decision is which weapon suits the
+moment and not whether the player can afford to find out.
 
 They used to arrive in waves 2 and 4, and holding them back cost more than it bought. A weapon
 nobody has found is a weapon that does not exist — and behind the gun sat an upgrade track the
@@ -111,6 +113,12 @@ merchant could not sell, so a player saving for it had money with nowhere to go 
 three weapons are a *choice*, not a drip feed: the whole subject of the game is which one suits the
 moment, and that question cannot be asked until all three are in the bag. Ammunition comes off the
 bodies from the first wave for the same reason.
+
+**The bag is on screen**, bottom right: the three weapons in the order the key walks along them, the
+one in hand lit, the ones carried dim, and the ones nobody has picked up yet dimmer still, badged
+with the wave they arrive in instead of a key. A weapon the player owns and cannot see is a weapon
+they do not use, and an empty slot says there is something out there to go and find. An unfound slot
+is shown rather than hidden for the same reason the merchant shows a locked card.
 
 | Weapon | # | Attack | Damage | Stamina | Windup | Active | Recovery | Chain window | Perfect window | Perfect × | Range | Arc | Stagger | Poise |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -558,11 +566,15 @@ you are:
 |---|---|---|
 | Wading | 0 – 1.1 m | costs speed, down to 35 % at the limit |
 | Out of your depth | 1.1 – 1.6 m | the bar comes down, 0 to **20 health a second** |
-| Drowned | — | 0 HP ends the run, the same as any other death |
+| Forcing | out of your depth, heading out to sea | that drain **doubles every second** of forcing, up to **×10** |
+| Drowned | — | 0 HP ends the run; the body struggles and sinks **1.6 m** at **0.45 m/s** |
 
-A walk out against the push stalls at about 1.4 m and a sprint at about 1.6, so five to eight
-seconds of insisting is what it costs to drown. **Every point of it is reversible**: stop pushing
-outward and the sea carries you back in. There is no line you cross and no threshold that kills —
+**Insisting is exponential.** Forcing is walking out against the push — heading out to sea, within
+a 0.3 dot of straight out, in the water that shoves back. Its clock resets the moment the player
+stands still, walks along the shore or turns back, so the sea is only merciless to somebody fighting
+it: a player drifting out of their depth loses the bar at the ordinary rate, one who keeps pushing
+loses it in about three seconds. **Every point of it is still reversible**: stop pushing outward and
+the sea carries you back in. There is no line you cross and no threshold that kills —
 a threshold is unreadable, the player is fine and then the run is over, while a bar coming down is
 on the screen they already watch and it tells them how long they have.
 

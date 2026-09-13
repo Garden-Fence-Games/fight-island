@@ -6,6 +6,26 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **A drowned player struggles and goes under.** Dying out of their depth no longer hands the body
+  to the ragdoll, which had nothing true to do in the water: the player plays `drowning`,
+  Purple-Sigil's looping struggle with a strong bob, and sinks while it loops. The summary waits
+  until the body is all the way under, and the sea stops carrying it back to the sand. A death on
+  land, or in the shallows, still falls the way the blow threw it.
+- **Forcing against the sea is exponential.** Walking out against the push doubles the drain every
+  second it goes on, up to a cap, and resets the moment the player stops heading out — drifting out
+  of depth still costs the ordinary rate. Figures in `data/combat/tide.tres`.
+- **The HUD says what is in hand and what is in the bag.** The three weapons sit bottom right in the
+  order the swap key walks along them: the one being swung is lit and wears the active chip, a
+  weapon carried but not held is dim, and one nobody has found yet is dimmer still and says **the
+  wave it turns up in** rather than its key — read off the weapon, so the row cannot promise a wave
+  the pickup director disagrees with. The slots are built from `Arsenal`, so a fourth weapon is a
+  `.tres` and not an edit to a scene.
+  - The badge on each slot is **the key on the device in hand**, and a pad has no direct weapon
+    keys, so there the slots carry no badge and the cycle key at the end of the row is the only one
+    shown. `verify_hud` moves the hand from keyboard to pad and asserts the row changes with it.
+
 ### Removed
 
 - **The reaper is gone too. The island is the farmhand and the pirate.** Removed rather than left
@@ -49,6 +69,15 @@ All notable changes to this project are documented here, following
   - **The curve is smoother for it.** The worst wave-to-wave step in the run was his arrival at 32
     per cent; the worst now is the pirate's at 17, and every other step is under 14.
 
+### Changed
+
+- **Swapping weapons is `E`, and picking one up is `F`.** They were the other way round. Swapping is
+  something the player does inside a fight, several times a wave, under pressure; picking up is done
+  once, standing still, with a prompt on the ground naming the key. The hand belongs to the thing
+  done often. The pickup prompt renders whatever `interact` is bound to, so the letter on the ground
+  moved with it. `Tab` is free again — it had been sharing with `ui_focus_next`.
+  - On a pad nothing moved: the swap has been **RB** and **LB** all along.
+
 ## [0.1.0] - 2026-09-13
 
 The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
@@ -75,6 +104,9 @@ still fail.
   Pro at 1080p: **9.74 ms empty, 10.32 at thirty, 10.83 at sixty.** Double the budget costs 1.1 ms
   more than an empty island, which costs 9.74 on its own — the crowd is not what spends the frame.
 
+
+### Added
+
 - **The sea is deep enough to drown in** (#196). Past the wading limit the bar comes down, faster
   the deeper you are — nothing at 1.1 m, twenty health a second by 1.6 — and at zero the run ends
   through `player_died`, the same door as any other death.
@@ -92,6 +124,11 @@ still fail.
 
 ### Fixed
 
+- **The pirate wears his own paint.** `char_pirate.glb` shipped with only the eyes' image: the body
+  and club textures in `char_pirate.blend` pointed at a folder on the artist's desktop, never loaded
+  during the export, and the exporter dropped them without a word — so Godot drew both white. They
+  point at `art-source/textures/pirate_texture.png` and `stick.png` now, and the re-exported rig
+  embeds all three images; the clips are unchanged.
 - **Nobody could find a coconut.** Reported as the feature not working at all; it worked perfectly —
   ten drops out of ten, two in a live wave, exactly the wave-1 ceiling. It was simply impossible to
   know any of it had happened. Three reasons, each measured: they were judged in frame at the palm
