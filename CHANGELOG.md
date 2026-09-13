@@ -44,6 +44,18 @@ All notable changes to this project are documented here, following
   - The gate is on `can_buy`, not on the button. A card is one of two ways to reach a purchase and
     `buy()` is the other, so greying out a button that `buy()` would still honour is not a gate —
     which `verify_merchant` now proves by calling `buy()` directly with an empty bag.
+- **`stress_enemies` times the real separation rule, not a copy of it.** The tool held its own copy
+  of the arithmetic because the method was private, and a copy measures whatever the copy still
+  does — the day the rule changes, the tool goes on reporting the cost of the one it replaced and
+  neither of them is wrong. The isolated pass calls `Enemy._separation()` itself, reaching past the
+  underscore rather than keeping a copy that can drift.
+- The spatial grid for #31 was written a **third** time — bucketed, over pairs, addressed by index
+  into packed arrays rather than through a dictionary — measured against the scan in the same
+  process, and thrown away a third time: 15 µs per body against 27 at thirty, 8 against 49 at a
+  hundred and twenty. The pass really is about twice as fast at the budget — what makes it not worth
+  shipping is where the time goes, because that pass is 0.36 ms of a frame whose other 9.7 ms are
+  the island being drawn. `docs/architecture.md` carries the three sets of figures so the fourth
+  attempt has somewhere to read them.
 
 ### Fixed
 

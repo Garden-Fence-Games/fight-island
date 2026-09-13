@@ -343,6 +343,14 @@ func path_direction(delta: float) -> Vector3:
 
 
 ## Steering that keeps bodies from stacking. Cheap, and worth far more than it costs.
+##
+## Every body against every other, and it stays that way: the spatial grid that would flatten it has
+## now been written and measured three times and thrown away three times, because at the budget of
+## thirty it is the same figure. See *The crowd's cost* in `docs/architecture.md`.
+##
+## `tools/stress_enemies.gd` times this one rather than a copy of it, and reaches in to do it. A
+## measurement taken on a copy measures whatever the copy still does — which is how a rule and the
+## tool watching its cost drift apart without either of them being wrong.
 func _separation() -> Vector3:
 	var push := Vector3.ZERO
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
