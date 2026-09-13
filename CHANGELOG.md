@@ -27,6 +27,19 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **A new run opens on the player waking up.** Purple-Sigil's `new_run_awakening` plays whole while
+  the camera turns once round him, close and low, and opens out onto the game camera exactly — the
+  turn's last point is where the game is played from, so nothing is cut to. For its length there is
+  no body to control, no free head, no waves, no tutorial and no HUD. Only a run begun from the
+  title opens this way; a retry, a restart or a resume goes straight in. `verify_run_intro` holds
+  both.
+- **Bottles in the grass where the player wakes up, and the midday sun catches them.** Seventy of
+  Purple-Sigil's bottles, standing and lying, in glass, within ten metres of the spawn and nowhere
+  else. Around midday the one whose glass best mirrors the sun into the camera throws a lens flare
+  across the screen — a burst, a streak and a line of ghosts through the centre — and as the player
+  moves, different bottles catch and let go. Reduced flashing turns it off. `SunGlint`, tuned by
+  `data/fx/sun_glint.tres`.
+
 - **The pirate comes ashore.** The rig arrived with #192 and nothing used it. He is an archetype
   now, and he is the hardest blow in the game: **22 damage**, nearly three farmhands, a quarter of
   the player's health off one mistake.

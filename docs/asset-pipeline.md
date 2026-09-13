@@ -364,7 +364,9 @@ Names are fixed, so `AttackData.animation` can be a `StringName` constant.
 `pickup`, `reload`, `attack_fist_1/2/3`, `attack_stick_1/2/3`, plus `idle_gun` and `walk_gun` — the
 gun is held across the whole body, so standing and walking with it are their own clips rather than a
 layer over the unarmed ones. The stick has the same pair, `idle_stick` and `walk_stick`, both
-looping, and a roll of its own, `dodge_roll_stick`.
+looping, and a roll of its own, `dodge_roll_stick`. `new_run_awakening` is the player waking up at
+the start of a run begun from the title — played whole, once, by `RunIntro`; its stray frame-0 rest
+key was dropped on the way in, like the farmer's get-ups.
 
 **The gun has no attack clips and is not waiting for any.** All three shots play one held pose,
 `aim_gun`, and the kick is the ragdoll — see *The recoil is physics* below.
