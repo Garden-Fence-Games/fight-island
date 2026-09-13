@@ -4,6 +4,12 @@ extends Button
 ## is a Button, so focus, hover and the click come from the engine — and left and right adjust the
 ## value rather than move the focus, because up and down are what walk the list.
 ##
+## **A slider answers the mouse on its meter, and only there.** A toggle and a picker can take a
+## click anywhere on the row because they have one next value; a slider has ten, so where you
+## clicked is the whole of what you meant. Clicking the label would have to guess, and guessing at
+## the master volume is the worst possible place to be wrong — so the label does nothing and the
+## ten blocks do everything, drag included.
+##
 ## It reads and writes `Settings` directly. There is no Apply button anywhere in this game, so a
 ## row that did not write on the spot would be a row that lies.
 
@@ -65,6 +71,9 @@ func _ready() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if kind == Kind.SLIDER and _mouse_sets_the_meter(event):
+		accept_event()
+		return
 	var direction := 0
 	if event.is_action_pressed(&"ui_left", true):
 		direction = -1
@@ -74,6 +83,38 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	accept_event()
 	nudge(direction)
+
+
+## A press or a drag on the meter, turned into a value. Returns whether it was one — anything
+## landing outside the blocks is somebody clicking the row, not setting it, and is left alone.
+func _mouse_sets_the_meter(event: InputEvent) -> bool:
+	var button := event as InputEventMouseButton
+	var motion := event as InputEventMouseMotion
+	var at := Vector2.ZERO
+	if button != null and button.button_index == MOUSE_BUTTON_LEFT and button.pressed:
+		at = button.position
+	elif motion != null and (motion.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+		# Dragging past the ends is still dragging: once the press has landed on the meter the
+		# pointer owns it, which is what makes running the volume to zero one movement.
+		at = motion.position
+	else:
+		return false
+	# In this row's own space, which is what a `_gui_input` position is in. `segment_box.position`
+	# is relative to its container, and using it directly put the meter somewhere near the label —
+	# so a click on the name of the setting ran the volume to zero.
+	var meter := Rect2(segment_box.global_position - global_position, segment_box.size)
+	if button != null and not meter.grow(SEGMENT_HEIGHT).has_point(at):
+		return false
+	_write_number(_value_under(at.x, meter))
+	return true
+
+
+## Where along the meter a point falls, snapped to the notches the blocks are drawn as. Clicking a
+## block fills it: the third block is three tenths, which is what the picture says it is.
+func _value_under(x: float, meter: Rect2) -> float:
+	var across := clampf((x - meter.position.x) / maxf(meter.size.x, 0.001), 0.0, 1.0)
+	var notches := maxf((maximum - minimum) / maxf(step, 0.001), 1.0)
+	return clampf(minimum + roundf(across * notches) * step, minimum, maximum)
 
 
 ## Pulls the row back in line with what is actually stored. Called whenever the screen opens, so a
@@ -128,6 +169,15 @@ func _typed(value: String) -> Variant:
 		TYPE_BOOL:
 			return value == "true"
 	return value
+
+
+## A slider's value, written and redrawn, and only when it actually moved — a drag crosses the same
+## notch many times and every crossing would otherwise be a settings write and a bus change.
+func _write_number(value: float) -> void:
+	if is_equal_approx(value, _current_number()):
+		return
+	_write(int(value) if typeof(Settings.get_value(setting)) == TYPE_INT else value)
+	_draw_slider(value)
 
 
 func _write(value: Variant) -> void:

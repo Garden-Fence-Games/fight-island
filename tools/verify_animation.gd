@@ -10,6 +10,9 @@ extends Node
 const PLAYER: String = "res://scenes/actors/player.tscn"
 const ENEMY: String = "res://scenes/actors/enemy.tscn"
 const SETTLE_FRAMES: int = 8
+## How far the footfall rate may sit from the cycle's own, in steps per second. A tenth of a step
+## is inaudible; half a step is the difference between a walk and a jog.
+const FOOTFALL_SLACK: float = 0.12
 
 var _failures: PackedStringArray = []
 var _kept_run: Dictionary = {}
@@ -66,8 +69,38 @@ func _run() -> void:
 	await _check_the_fist_combo_animates(player, machine, anim)
 	await _check_the_dodge_rolls(machine, anim)
 	_check_the_gun_starts_hidden(player)
+	_check_the_footsteps_keep_the_cycles_time(anim)
 	await _check_the_farmer_animates()
 	_report()
+
+
+## **The sound of walking has to be the walk you are watching.** The footfall is emitted per metre
+## of ground covered, which is a figure that cannot see the clip — so it drifted: 0.95 m of stride
+## against a 1.017 s cycle is 202 footfalls a minute under an animation putting down 118, and what
+## the player hears is somebody jogging while the character strolls.
+##
+## Asserted against the clip rather than against a number, so re-exporting the cycle at a different
+## length fails here instead of quietly running the sound fast again.
+func _check_the_footsteps_keep_the_cycles_time(anim: AnimationComponent) -> void:
+	if anim.animation_player == null or not anim.animation_player.has_animation("walk"):
+		_fail("there is no walk cycle to time the footsteps against")
+		return
+	var cycle := anim.animation_player.get_animation("walk").length
+	if cycle <= 0.0:
+		_fail("the walk cycle has no length")
+		return
+	var the_clip := Player.FOOTFALLS_PER_CYCLE / cycle
+	var the_sound := Player.MOVE_SPEED / Player.STRIDE
+	if absf(the_sound - the_clip) > FOOTFALL_SLACK:
+		_fail(
+			(
+				(
+					"the legs put down %.0f steps a minute and the sound plays %.0f — a stride of "
+					+ "%.2f m against a %.3f s cycle"
+				)
+				% [the_clip * 60.0, the_sound * 60.0, Player.STRIDE, cycle]
+			)
+		)
 
 
 ## The states a farmer is actually in while a wave is running have to name a clip the rig carries.
@@ -439,7 +472,8 @@ func _report() -> void:
 				+ "the three punches play their own clip at the attack's speed, "
 				+ "the dodge rolls over exactly the dodge, "
 				+ "a gun in hand carries the body differently, "
-				+ "the gun stays hidden, the body can be tinted, the farmer walks and idles"
+				+ "the gun stays hidden, the body can be tinted, the footsteps keep the cycle's "
+				+ "time, the farmer walks and idles"
 			)
 		)
 		get_tree().quit(0)

@@ -10,6 +10,9 @@ extends Node
 
 const SCREEN: String = "res://scenes/ui/options_screen.tscn"
 const SETTLE_FRAMES: int = 4
+## Where the volumes live. Written out rather than searched for, so a page that is reordered fails
+## here rather than quietly measuring whatever ended up fourth.
+const AUDIO_PAGE: int = 3
 
 var _failures: PackedStringArray = []
 var _screen: OptionsScreen = null
@@ -32,6 +35,7 @@ func _run() -> void:
 	_check_a_toggle_writes_through()
 	_check_a_picker_keeps_its_type()
 	_check_a_slider_clamps()
+	await _check_a_slider_answers_the_mouse()
 	_check_bindings_are_listed()
 	_check_a_rebind_moves_the_map()
 	_restore_settings()
@@ -111,6 +115,56 @@ func _check_a_slider_clamps() -> void:
 		_fail("the master volume did not clamp to its maximum")
 
 
+## **A volume has to be settable with the mouse.** Every other row takes a click because it has one
+## next value; a slider has ten, so it took none at all — `_on_pressed` covered toggles and pickers
+## and silently did nothing for a slider. The meter looked like a control and was not one, and the
+## four rows it affects are the volumes, which is the first thing anybody touches.
+##
+## Driven through `_gui_input` rather than the viewport: a headless run does not route synthetic
+## clicks to a `Button` at all, so going through the window would prove nothing either way.
+func _check_a_slider_answers_the_mouse() -> void:
+	var row := _find_row(&"audio_sfx")
+	if row == null:
+		_fail("there is no master SFX row to click on")
+		return
+	if row.kind != OptionRow.Kind.SLIDER:
+		_fail("audio_sfx stopped being a slider, so this is measuring the wrong thing")
+		return
+	# The audio page, so the meter has a real width to divide up.
+	_screen.show_page(AUDIO_PAGE)
+	for _index: int in SETTLE_FRAMES:
+		await get_tree().process_frame
+	var meter: Control = row.segment_box
+	var origin := meter.global_position - row.global_position
+	for wanted: Array in [[0.0, row.minimum], [1.0, row.maximum]]:
+		row._gui_input(_click_at(origin + Vector2(meter.size.x * float(wanted[0]), 1.0)))
+		var got := float(Settings.get_value(&"audio_sfx"))
+		if not is_equal_approx(got, float(wanted[1])):
+			_fail(
+				(
+					(
+						"clicking the meter at %.0f%% left audio_sfx at %.0f, and %.0f is what that end "
+						+ "of it means"
+					)
+					% [float(wanted[0]) * 100.0, got, float(wanted[1])]
+				)
+			)
+	# And the name of the setting is not part of the control. Clicking it used to run the volume to
+	# zero, because the meter was being compared in its parent's coordinates rather than the row's.
+	var held := float(Settings.get_value(&"audio_sfx"))
+	row._gui_input(_click_at(Vector2(2.0, 2.0)))
+	if not is_equal_approx(float(Settings.get_value(&"audio_sfx")), held):
+		_fail("clicking the row's label moved the volume, and the label is not the meter")
+
+
+func _click_at(spot: Vector2) -> InputEventMouseButton:
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	click.position = spot
+	return click
+
+
 func _check_bindings_are_listed() -> void:
 	var listed := InputBindings.rebindable()
 	for action: StringName in InputMap.get_actions():
@@ -161,7 +215,12 @@ func _report() -> void:
 	for _index: int in SETTLE_FRAMES:
 		await get_tree().process_frame
 	if _failures.is_empty():
-		print("options OK — every setting listed, rows write through, bindings move and reset")
+		print(
+			(
+				"options OK — every setting listed, rows write through, a volume answers the "
+				+ "mouse, bindings move and reset"
+			)
+		)
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:
