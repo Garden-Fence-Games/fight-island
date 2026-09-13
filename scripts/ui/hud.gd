@@ -1,6 +1,7 @@
 extends CanvasLayer
-## The least possible while the fight is on: health and stamina bottom-left, ammo bottom-right when
-## a ranged weapon is held, wave and money top-right. Everything else is the world.
+## The least possible while the fight is on: health and stamina bottom-left, the weapons and — when
+## a ranged one is held — the ammo bottom-right, wave and money top-right. Everything else is the
+## world.
 ##
 ## It listens on the EventBus and holds no reference to the player, so it survives a respawn, a
 ## restart and a player that does not exist yet — nothing here has to be wired to a node.
