@@ -319,6 +319,13 @@ is only half authored degrades one clip at a time instead of leaving a state wit
 `death`, plus one attack set per archetype — `windup_punch` / `attack_punch`,
 `windup_sweep` / `attack_sweep`, `windup_throw` / `attack_throw` — and `retreat` for the thrower.
 
+**Bird:** `bird_fly` (wings beating) and `bird_fly_idle` (wings held out, gliding), both looping, on
+the flying rig `assets/models/nature/bird_fly.glb`. A startled bird only beats; a cruising one
+alternates, whole wingbeats at a time so a stroke is never cut in half. **The bird is two models**:
+the rig rests with its wings spread flat, so a bird on the ground is the perched `bird.glb`, wings
+folded, and hops about in code rather than in a clip. `bird.tscn` turns both models half a circle,
+because glTF puts a model's front at +Z and Godot's forward is −Z.
+
 Split them in Godot's import dock, not by exporting nine files.
 
 ## Textures

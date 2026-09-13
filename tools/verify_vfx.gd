@@ -52,6 +52,13 @@ const UNDER_WAY: int = 30
 ## How much more dust a sprint has to kick up than a walk. The two rates are the feature the player
 ## asked for, and a ratio that drifts towards one is the feature quietly going away.
 const SPRINT_DUST_GAIN: float = 1.5
+const BIRD: String = "res://scenes/world/bird.tscn"
+## One simulated frame for a bird driven by hand. The bird is stepped rather than left to run,
+## because what is checked here is spread over seconds and headless frames do not take real ones.
+const BIRD_STEP: float = 1.0 / 60.0
+## How far the share of a cruise spent flapping may stray from the bird's own `flap_share`. Loose,
+## because it is sampled over whole bouts and a sampled window never starts on a bout's edge.
+const FLAP_SLACK: float = 0.08
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -86,6 +93,9 @@ func _run() -> void:
 	await _check_the_dust_rises_with_the_body()
 	await _check_the_birds_stand_on_sand_and_fly_in_the_sky()
 	await _check_a_bird_leaves_when_you_walk_into_it()
+	_check_a_perched_bird_hops_and_keeps_its_wings_folded()
+	_check_a_cruising_bird_flaps_a_third_of_the_time()
+	_check_a_startled_bird_beats_and_flies_head_first()
 	_report()
 
 
@@ -501,6 +511,130 @@ func _stand_him_down(farmer: Enemy) -> void:
 		farmer.retire()
 
 
+## A bird on the sand is the perched model — the rig lies with its wings spread flat, and a beach of
+## birds standing on it would stand there mid-glide. And it is alive: it hops, and it does not hop
+## its way off the spot the flock chose for it.
+func _check_a_perched_bird_hops_and_keeps_its_wings_folded() -> void:
+	var bird := _a_bird(true, Vector3.FORWARD)
+	if bird == null:
+		return
+	var lowest := INF
+	var highest := -INF
+	var furthest := 0.0
+	var home := bird.global_position
+	for _frame: int in int(12.0 / BIRD_STEP):
+		bird._process(BIRD_STEP)
+		lowest = minf(lowest, bird.global_position.y)
+		highest = maxf(highest, bird.global_position.y)
+		furthest = maxf(
+			furthest,
+			Vector2(bird.global_position.x - home.x, bird.global_position.z - home.z).length()
+		)
+	if bird.flight == null or bird.perched == null:
+		_fail("the bird scene is missing its Perched or Flight model")
+	elif bird.flight.visible or not bird.perched.visible:
+		_fail("a bird on the ground is showing its flying rig, wings spread")
+	if highest - home.y < bird.hop_height * 0.5:
+		_fail("a bird sat on the sand for twelve seconds without hopping once")
+	if lowest < home.y - 0.001:
+		_fail("a hopping bird sank %.3f m into the sand" % (home.y - lowest))
+	if furthest > Bird.HOME_RANGE + bird.hop_length * 2.0:
+		_fail("a hopping bird wandered %.2f m off the spot the flock put it on" % furthest)
+	bird.queue_free()
+
+
+## Nothing flaps the whole way across the sky: a cruising bird beats a third of the time and glides
+## the rest, and the two clips are different clips. Measured over several whole cycles.
+func _check_a_cruising_bird_flaps_a_third_of_the_time() -> void:
+	var bird := _a_bird(false, Vector3.FORWARD)
+	if bird == null:
+		return
+	var wings := _wings_of(bird)
+	if wings == null:
+		return
+	for clip: StringName in [bird.fly_clip, bird.glide_clip]:
+		if not wings.has_animation(String(clip)):
+			_fail("the flying rig carries no %s" % clip)
+			bird.queue_free()
+			return
+		if wings.get_animation(String(clip)).loop_mode == Animation.LOOP_NONE:
+			_fail("%s does not loop — the wings would stop dead after one pass" % clip)
+	var flapping := 0
+	var frames := int(bird._cruise_period() * 3.0 / BIRD_STEP)
+	for _frame: int in frames:
+		bird._process(BIRD_STEP)
+		if wings.current_animation == String(bird.fly_clip):
+			flapping += 1
+	if not bird.flight.visible:
+		_fail("a bird in the sky is not showing its flying rig")
+	var share := float(flapping) / float(maxi(frames, 1))
+	if absf(share - bird.flap_share) > FLAP_SLACK:
+		_fail(
+			(
+				"a cruising bird flapped %.0f%% of the time, and it should be about %.0f%%"
+				% [share * 100.0, bird.flap_share * 100.0]
+			)
+		)
+	bird.queue_free()
+
+
+## Startled, it only beats — and it goes head first. The models' fronts are +Z and Godot's forward
+## is −Z, so without the half turn in the scene every bird that ever fled the player did it
+## backwards.
+func _check_a_startled_bird_beats_and_flies_head_first() -> void:
+	var bird := _a_bird(true, Vector3.FORWARD)
+	if bird == null:
+		return
+	var wings := _wings_of(bird)
+	bird._process(BIRD_STEP)
+	var from := bird.global_position
+	bird.startle(from + Vector3(0.0, 0.0, 3.0))
+	var other := 0
+	for _frame: int in int(2.0 / BIRD_STEP):
+		bird._process(BIRD_STEP)
+		if wings != null and wings.current_animation != String(bird.fly_clip):
+			other += 1
+	if not bird.flight.visible or bird.perched.visible:
+		_fail("a startled bird took off still showing the perched model")
+	if other > 0:
+		_fail("a startled bird glided for %d frames — it should beat the whole way out" % other)
+	var travelled := bird.global_position - from
+	travelled.y = 0.0
+	# The model's head is its local +Z; the scene turns it, so in the world it is the flight node's +Z.
+	var head := bird.flight.global_basis.z
+	head.y = 0.0
+	if travelled.normalized().dot(head.normalized()) < 0.9:
+		_fail("a startled bird flies tail first — its head points away from where it is going")
+	if travelled.z > -1.0:
+		_fail("a bird startled from behind did not fly away from what startled it")
+	bird.queue_free()
+
+
+## One bird, standing on its own in the tree and driven by hand. The flock is not involved: these
+## checks are about the bird, and a flock would free it or startle it at its own pace.
+func _a_bird(on_the_ground: bool, heading: Vector3) -> Bird:
+	var bird := (load(BIRD) as PackedScene).instantiate() as Bird
+	if bird == null:
+		_fail("bird.tscn is not a Bird")
+		return null
+	bird.launch(on_the_ground, heading)
+	add_child(bird)
+	bird.set_process(false)
+	bird.global_position = Vector3(200.0, 5.0, 200.0)
+	return bird
+
+
+func _wings_of(bird: Bird) -> AnimationPlayer:
+	if bird.flight == null:
+		_fail("the bird scene has no Flight model")
+		return null
+	var players := bird.flight.find_children("*", "AnimationPlayer", true, false)
+	if players.is_empty():
+		_fail("the flying rig carries no AnimationPlayer")
+		return null
+	return players[0] as AnimationPlayer
+
+
 func _report() -> void:
 	if _failures.is_empty():
 		print(
@@ -508,7 +642,9 @@ func _report() -> void:
 				"vfx OK — every attack names an effect, a perfect hit differs three ways, a "
 				+ "fight builds nothing, a farmer rears back in a shape that keeps the "
 				+ "wind-up's own time and never stays leaning, the birds stand on sand and "
-				+ "leave when walked into, and a sprint kicks up more dust than a walk"
+				+ "leave when walked into, a perched bird hops with its wings folded, a cruising "
+				+ "one flaps a third of the time, a startled one beats and flies head first, and "
+				+ "a sprint kicks up more dust than a walk"
 			)
 		)
 		get_tree().quit(0)
