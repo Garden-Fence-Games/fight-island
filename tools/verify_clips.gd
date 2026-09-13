@@ -20,12 +20,35 @@ const ENEMY: String = "res://scenes/actors/enemy.tscn"
 const PIPELINE: String = "res://docs/asset-pipeline.md"
 const ENEMY_DATA: String = "res://data/enemies"
 const RIG: String = "res://assets/models/char_player.glb"
+const FARMER_RIG: String = "res://assets/models/char_farmer.glb"
 ## The heading the inventory lives under, and the shape of a row in it.
 const INVENTORY_HEADING: String = "## Clips the rigs do not carry yet"
 const INVENTORY_CELLS: int = 3
 ## The clips the stand-in library exists to lend. Written out rather than read from the library,
 ## which would make this check agree with whatever the library happens to hold.
 const LENT: Array[String] = ["attack_gun_1", "attack_gun_2", "attack_gun_3", "parry"]
+const FARMER_LENT: Array[String] = [
+	"windup_punch", "attack_punch", "windup_sweep", "attack_scythe", "windup_throw", "attack_throw"
+]
+## The farmer's attacks, and the joint a blow is read off. A draw and the blow that follows it are
+## one movement split across two states, so the blow has to begin on the pose the draw ended on —
+## and a blow is shorter than the crossfade into it, which is what makes that a requirement rather
+## than a nicety.
+const BLOWS: Array[String] = [
+	"res://data/attacks/farmhand_swing.tres",
+	"res://data/attacks/reaper_sweep.tres",
+	"res://data/attacks/thrower_stone.tres",
+]
+const SWINGING_JOINT: String = "Armature/Skeleton3D:mixamorig_RightArm"
+## How far apart the draw's last pose and the blow's first may be, in degrees. A tenth is a rounding
+## difference; a degree is somebody having edited one of the two.
+const SAME_POSE_DEGREES: float = 0.5
+## The wind-up scale the telegraph is driven at while it is being watched. Deliberately not one: at
+## one, a clip built at the tuned length plays at speed one whether or not anything stretched it,
+## and a duration that had stopped being asked for would look exactly like one that had not.
+const A_SHORTER_NIGHT: float = 0.5
+## How far the playing speed may sit from the stretch the wind-up asked for.
+const SAME_SPEED: float = 0.02
 ## What each stand-in is as long as, and the thing it took its length from. A stand-in is built to
 ## the rules rather than to a number typed beside them, and this is what holds that promise after
 ## somebody retunes the rules and forgets to run `tools/build_clips.tscn` — the clip would go on
@@ -71,6 +94,8 @@ func _run() -> void:
 			)
 		)
 	_check_the_stand_ins_are_lent_and_not_the_rigs()
+	await _check_every_blow_starts_where_its_draw_ended()
+	await _check_the_farmer_actually_plays_them()
 	await _check_the_stand_ins_still_fit_the_rules()
 	_check_the_gaps_are_written_down(missing, documented)
 	_check_the_list_has_nothing_stale(missing, documented)
@@ -136,9 +161,22 @@ func _enemy_attacks() -> Array:
 ## Asserted from both ends, because a library that stopped being lent and a rig that grew the clips
 ## of its own look identical from the game's side and mean opposite things.
 func _check_the_stand_ins_are_lent_and_not_the_rigs() -> void:
-	var packed := load(RIG) as PackedScene
+	_check_one_rig_lends_nothing_of_its_own(RIG, LENT)
+	_check_one_rig_lends_nothing_of_its_own(FARMER_RIG, FARMER_LENT)
+
+
+## Read off the file rather than out of the cache, and that is not fussiness. `AnimationComponent`
+## lends by adding to the AnimationPlayer's own library, which belongs to the imported rig and is
+## shared by every instance of it — so once one farmer has walked past, the cached rig answers yes
+## to clips that are not in the `.glb` at all. Asking the file is the only way this check keeps
+## meaning what it says.
+func _check_one_rig_lends_nothing_of_its_own(rig_path: String, lent: Array[String]) -> void:
+	var packed := (
+		ResourceLoader.load(rig_path, "PackedScene", ResourceLoader.CACHE_MODE_IGNORE_DEEP)
+		as PackedScene
+	)
 	if packed == null:
-		_fail("cannot load " + RIG)
+		_fail("cannot load " + rig_path)
 		return
 	var rig := packed.instantiate()
 	var raw: AnimationPlayer = null
@@ -148,7 +186,7 @@ func _check_the_stand_ins_are_lent_and_not_the_rigs() -> void:
 		_fail("the rig carries no AnimationPlayer")
 		rig.free()
 		return
-	for clip: String in LENT:
+	for clip: String in lent:
 		if raw.has_animation(clip):
 			_fail(
 				(
@@ -237,6 +275,138 @@ func _same_length(player: AnimationPlayer, clip: String, wanted: float, source: 
 				% [clip, got, source, wanted]
 			)
 		)
+
+
+## The wiring, which is a different question from whether the clips exist. Both are read off the
+## component rather than off the states, because what matters is the clip that ends up playing:
+## a `clip_name` that answered with the wrong field, or a `clip_duration` that stopped asking the
+## body how long its own telegraph is, would leave the clips on disk and the farmer still moving
+## like nothing had been added.
+##
+## Watched at half the tuned wind-up on purpose. The waves shorten the telegraph and the hour
+## shortens it again, so the clip has to stretch to the wind-up actually being fought — and at the
+## tuned length that promise is invisible, because the right answer and no answer are both speed
+## one.
+func _check_the_farmer_actually_plays_them() -> void:
+	var enemy := (load(ENEMY) as PackedScene).instantiate() as Enemy
+	add_child(enemy)
+	await get_tree().physics_frame
+	var anim := enemy.get_node_or_null("Animation") as AnimationComponent
+	if anim == null or enemy.machine == null:
+		_fail("the enemy carries no AnimationComponent and no StateMachine")
+		enemy.queue_free()
+		return
+	for path: String in BLOWS:
+		var attack := load(path) as AttackData
+		var data := _archetype_using(attack)
+		if data == null:
+			_fail("no enemy in %s attacks with %s" % [ENEMY_DATA, path])
+			continue
+		enemy.data = data
+		enemy.revive(Vector3.ZERO, 1.0, 1.0, 1.0, A_SHORTER_NIGHT)
+		await get_tree().physics_frame
+
+		enemy.machine.current.transition_to(&"WindUp")
+		await get_tree().physics_frame
+		if anim.current_clip() != attack.windup_animation:
+			_fail(
+				(
+					"%s winds up playing %s, expected %s"
+					% [data.id, anim.current_clip(), attack.windup_animation]
+				)
+			)
+		var wanted := attack.windup / maxf(enemy.windup(), 0.001)
+		var speed := anim.animation_player.get_playing_speed()
+		if absf(speed - wanted) > SAME_SPEED:
+			_fail(
+				(
+					"%s plays its telegraph at %.2f and the wind-up it is fighting asks for %.2f"
+					% [data.id, speed, wanted]
+				)
+			)
+
+		enemy.machine.current.transition_to(&"Attack")
+		await get_tree().physics_frame
+		if anim.current_clip() != attack.animation:
+			_fail(
+				(
+					"%s strikes playing %s, expected %s"
+					% [data.id, anim.current_clip(), attack.animation]
+				)
+			)
+		enemy.machine.current.transition_to(&"Idle")
+		await get_tree().physics_frame
+	enemy.queue_free()
+
+
+## The archetype whose attack this is. Found rather than named here, so an archetype pointed at a
+## different attack is a change this check follows instead of one it contradicts.
+func _archetype_using(attack: AttackData) -> EnemyData:
+	var directory := DirAccess.open(ENEMY_DATA)
+	if directory == null or attack == null:
+		return null
+	for name: String in directory.get_files():
+		var data := load("%s/%s" % [ENEMY_DATA, name.trim_suffix(".remap")]) as EnemyData
+		if data != null and data.attack == attack:
+			return data
+	return null
+
+
+## One movement, two states. `EnemyWindUp` draws the arm back and `EnemyAttack` throws it, and the
+## handover is a crossfade the blow is shorter than — so if the two poses are not the same pose, the
+## strike is spent getting to its own first frame and the player sees nothing land.
+func _check_every_blow_starts_where_its_draw_ended() -> void:
+	var actor := (load(ENEMY) as PackedScene).instantiate()
+	add_child(actor)
+	await get_tree().physics_frame
+	var anim := actor.get_node_or_null("Animation") as AnimationComponent
+	if anim != null and anim.animation_player != null:
+		for path: String in BLOWS:
+			var attack := load(path) as AttackData
+			if attack == null:
+				_fail("%s is not an AttackData" % path)
+				continue
+			_check_one_pair(anim.animation_player, attack, path)
+	actor.queue_free()
+
+
+func _check_one_pair(player: AnimationPlayer, attack: AttackData, path: String) -> void:
+	if attack.windup_animation == &"":
+		_fail("%s names a blow and no wind-up to lead into it" % path)
+		return
+	if not player.has_animation(String(attack.windup_animation)):
+		return
+	if not player.has_animation(String(attack.animation)):
+		return
+	var draw := player.get_animation(String(attack.windup_animation))
+	var blow := player.get_animation(String(attack.animation))
+	var drawn := draw.find_track(NodePath(SWINGING_JOINT), Animation.TYPE_ROTATION_3D)
+	var thrown := blow.find_track(NodePath(SWINGING_JOINT), Animation.TYPE_ROTATION_3D)
+	if drawn < 0 or thrown < 0:
+		_fail(
+			(
+				"%s or %s does not turn %s"
+				% [attack.windup_animation, attack.animation, SWINGING_JOINT]
+			)
+		)
+		return
+	var cocked: Quaternion = draw.rotation_track_interpolate(drawn, draw.length)
+	var opens: Quaternion = blow.rotation_track_interpolate(thrown, 0.0)
+	var apart := _apart(cocked, opens)
+	if apart > SAME_POSE_DEGREES:
+		_fail(
+			(
+				(
+					"%s ends %.1f degrees away from where %s starts — the blow would spend itself "
+					% [attack.windup_animation, apart, attack.animation]
+				)
+				+ "blending. Rebake with tools/build_clips.tscn"
+			)
+		)
+	var lands: Quaternion = blow.rotation_track_interpolate(thrown, blow.length)
+	if _apart(opens, lands) <= SAME_POSE_DEGREES:
+		_fail("%s never moves the arm — the blow lands on nothing" % attack.animation)
+	_same_length(player, String(attack.animation), attack.active, path + " active window")
 
 
 func _check_the_gaps_are_written_down(missing: Array[String], documented: Array[String]) -> void:

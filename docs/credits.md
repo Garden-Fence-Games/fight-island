@@ -31,6 +31,7 @@ both modelled rigs. The weapons and the terrain itself are still Godot primitive
 | `assets/models/char_player_stand_ins.tres` — generated recoil and guard clips | built by `tools/build_clips.tscn` from the rig's own poses | Purple-Sigil, posed | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/char_player.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-12 |
 | `assets/models/char_farmer.glb` — mesh, textures and clips | original, Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/char_farmer_stand_ins.tres` — generated draw and blow clips | built by `tools/build_clips.tscn` from the rig's own idle | Purple-Sigil, posed | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/char_farmer.glb` — skeleton | [Mixamo](https://www.mixamo.com) auto-rigger | Adobe | **`prototype only`** — not CC0, see below | 2026-09-13 |
 | `assets/fonts/badeen_display.ttf` | [Google Fonts](https://fonts.google.com/specimen/Badeen+Display) | The Badeen Project Authors | SIL OFL 1.1 | 2026-09-12 |
 | `assets/fonts/inter_semibold.ttf` | [Google Fonts](https://fonts.google.com/specimen/Inter) | The Inter Project Authors | SIL OFL 1.1 | 2026-09-12 |

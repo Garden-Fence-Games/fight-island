@@ -56,6 +56,14 @@ extends Resource
 
 @export_group("Presentation")
 @export var animation: StringName = &""
+## The clip the telegraph plays, for an attack whose wind-up is a state of its own. The player's
+## chain has no such state — a swing is one `Attack` from the first frame — so this is empty on
+## every weapon and set on every farmer.
+##
+## It is a second name rather than a prefix rule on the first, because deriving `windup_punch` from
+## `attack_punch` would be a convention nothing enforces, and the first attack that broke it would
+## simply play nothing and say nothing about it.
+@export var windup_animation: StringName = &""
 ## What a landed hit looks like. A `PackedScene` export, which resolves in a hand-written scene
 ## where a node export would not (ADR 0006). Null plays nothing, which is what every attack does
 ## until somebody gives it one — a weapon with no effect is a weapon that still works.

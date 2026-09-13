@@ -50,6 +50,20 @@ func exit() -> void:
 		enemy.visual.rotation.x = 0.0
 
 
+## The telegraph's own clip, asked for by the animation component rather than looked up in its
+## table: which one it is belongs to the archetype, and one state drives all three.
+func clip_name() -> StringName:
+	var attack := enemy.data.attack if enemy.data != null else null
+	return attack.windup_animation if attack != null else &""
+
+
+## As long as this wind-up actually lasts, which is not a constant — the waves shorten it and the
+## hour shortens it again. The same share the lean is driven by, handed to the clip, so the body
+## and the arm cannot tell the player two different things about how much time is left.
+func clip_duration() -> float:
+	return enemy.windup()
+
+
 func physics_update(delta: float) -> void:
 	_elapsed += delta
 	enemy.apply_motion(Vector3.ZERO, 0.0, delta)

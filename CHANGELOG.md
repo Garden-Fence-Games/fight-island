@@ -8,6 +8,24 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The farmer swings.** His telegraph froze him mid-stride and the blow that followed moved nothing
+  at all — `EnemyWindUp` and `EnemyAttack` named no clip, and the three `attack_*` names in
+  `data/enemies` were promises the rig had never been asked to keep. Both states name their clip now,
+  the way `PlayerAttack` already did, and six stand-ins are generated from the farmer's own idle:
+  a draw and a blow for the farmhand, the reaper and the thrower.
+  - The **pair** is the point. A blow lasts an eighth of a second — shorter than the crossfade into
+    it — so an arm starting from wherever the walk cycle left it would spend the whole strike
+    blending and read as nothing. The draw puts the arm where the blow begins, and `verify_clips`
+    asserts the blow's first pose *is* the draw's last.
+  - The telegraph stretches to the wind-up **actually being fought**, not the tuned one: the waves
+    shorten it and the hour shortens it again, and the lean and the arm are driven by the same
+    share so they cannot tell the player two different things.
+  - The 35° lean is untouched. It is geometry at twenty metres and it survives greyscale; the arm
+    says *which* farmer is swinging, which the lean never could.
+- **`AttackData.windup_animation`**, for an attack whose wind-up is a state of its own. A second
+  name rather than a prefix rule on the first: deriving `windup_punch` from `attack_punch` would be
+  a convention nothing enforces, and the first attack to break it would play nothing and say so to
+  nobody.
 - **A blow bleeds, and the island keeps it.** Droplets are thrown the way the blow travelled,
   stretched along their own flight rather than tumbling as cubes. Stains come down where they land —
   at the victim's feet and thrown downstream, on sand or rock but never on the sea — first as sharp

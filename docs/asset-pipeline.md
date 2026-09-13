@@ -373,14 +373,23 @@ that is never wrong about anything is one nobody reads.
 | `attack_stick_1` | player | The stick swings and nothing moves. The stick has no mesh on the rig either, so it is invisible in hand — one job, not two. |
 | `attack_stick_2` | player | As above. |
 | `attack_stick_3` | player | As above. |
-| `attack_punch` | farmer | The farmhand's wind-up reads, because that is a separate state; the blow that follows does not. |
-| `attack_scythe` | farmer | The reaper's swing is the widest telegraph in the game and lands on nothing. |
-| `attack_throw` | farmer | The thrower's arm never comes over. The stone appears anyway. |
 
-**`attack_gun_1/2/3` and `parry` are not on this list, and they are not authored either.** They are
-lent by `assets/models/char_player_stand_ins.tres`, built by `tools/build_clips.tscn` from the rig's
-own poses — `idle_gun` for the shots, `idle` for the guard. The body is the one Purple-Sigil posed
-and only the movement is generated.
+**The gun's three shots, the parry, and all three farmer blows are not on this list and are not
+authored either.** They are lent by `assets/models/char_player_stand_ins.tres` and
+`assets/models/char_farmer_stand_ins.tres`, built by `tools/build_clips.tscn` from each rig's own
+poses — `idle_gun` for the shots, `idle` for the guard and for every farmer clip. The body is the
+one Purple-Sigil posed and only the movement is generated.
+
+The farmer gets **six**, in draw-and-blow pairs: `windup_punch` / `attack_punch`,
+`windup_sweep` / `attack_scythe`, `windup_throw` / `attack_throw`. The pair is the point. A blow
+lasts an eighth of a second, which is shorter than the crossfade into it, so an arm that started
+from wherever the walk cycle left it would spend the whole strike blending and read as nothing at
+all. The draw puts the arm where the blow begins, and **the blow's first key is the draw's last** —
+asserted, not assumed.
+
+The lean that tells the player a blow is coming is still `EnemyWindUp`'s and is untouched: it is
+geometry at twenty metres and it survives greyscale. The arm says *which* farmer is swinging, which
+the lean never could.
 
 Each one takes its **shape from the rule it belongs to**, never from a number typed beside it: the
 gun's kick lands on the frame the ray is cast and clears before the recovery ends, and the guard is
