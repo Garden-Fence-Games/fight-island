@@ -16,6 +16,17 @@ All notable changes to this project are documented here, following
   it has to be a rule rather than a habit. The label `no changelog` is the way out for a change a
   player could not notice.
 
+### Fixed
+
+- **The macOS build could not be opened at all.** The `.app` shipped with a signature claiming
+  resources it did not carry — Godot's export templates are cross-platform but a macOS bundle's
+  seal is not, and the Linux runner cannot write one. macOS calls that *damaged* rather than
+  *unsigned*, which is the refusal with **no Open Anyway offered**: the player has no way through
+  it. The bundle is now re-sealed ad-hoc on a macOS runner, which turns the hard refusal into the
+  ordinary unidentified-developer one that System Settings can approve. Measured both ways on the
+  published 0.1.0 archive, and through a full zip round-trip. Notarisation (#88) is what removes the
+  approval step; this only makes it reachable.
+
 ### Added
 
 - **The first weapon picked up says how to switch.** Nobody could find the swap: the only thing

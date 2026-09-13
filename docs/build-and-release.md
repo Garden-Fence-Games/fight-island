@@ -75,6 +75,33 @@ artifacts — no release, no publish. Worth doing after anything that touches pr
 presets: the first time this was run it failed on a setting no other check could see, and on a real
 tag that failure arrives with the release already cut.
 
+## The macOS build and Gatekeeper
+
+**The bundle is re-sealed on a macOS runner, and it has to be.** Godot's export templates are
+cross-platform, so both platforms export from one Linux runner — but a macOS bundle's signature
+seals its *resources* as well as its binary, and Godot on Linux cannot write that seal. The `.app`
+comes out carrying the template's own `Developer ID Application: Prehensile Tales B.V.` signature
+with no `_CodeSignature` beside it, and macOS answers:
+
+```
+code has no resources but signature indicates they must be present
+```
+
+The player meets that as **"is damaged and can't be opened"** — the refusal with no way through.
+It is not the familiar "unidentified developer" dialog, and **System Settings offers no Open
+Anyway**, because as far as macOS is concerned the app has been tampered with.
+
+An **ad-hoc re-seal** on a macOS runner fixes it: `codesign --force --deep --sign -`. The signature
+becomes valid, Gatekeeper falls back to the ordinary unidentified-developer refusal, and the player
+can approve it in **System Settings → Privacy & Security → Open Anyway**. Measured both ways on the
+0.1.0 archive.
+
+The bundle is repacked with `ditto`, not `zip`: an `.app` carries symlinks and metadata that a plain
+zip flattens, which is its own way of arriving damaged.
+
+**This does not remove the approval step — it makes it reachable.** Notarisation is what removes it,
+and it needs the Apple Developer membership (#88).
+
 ## itch.io
 
 Free to publish, no entry fee, and it takes exactly the same binaries Steam would. Channels are
