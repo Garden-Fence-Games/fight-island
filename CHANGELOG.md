@@ -6,6 +6,32 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **The sea is deep enough to drown in.** The waterline was a fence that shoved the player back and
+  could not be argued with. It is a slope with a consequence at the bottom of it now: the shove
+  *builds* from nothing at the wading limit instead of arriving whole, the ground goes on falling
+  away for anyone who insists, and past the depth in `data/world/sea.tres` the water is over the
+  head and takes health a second at a time. Closes #196.
+  - **The descent is the warning and the drowning is only where it ends.** The shove, the list of
+    the body and the figure on the bus are all one number — how far past the wading limit the player
+    is — and it reaches one exactly where the first point of health goes. Everything before that
+    costs nothing but the walk back, and `player_sinking(share)` is what a HUD will draw.
+  - **Stopping is enough.** The sea pushes the whole time, so letting go of the stick is carried
+    back to the shallows; drowning is what happens to somebody who keeps insisting, with seven
+    seconds of a draining bar in which to stop.
+  - It ends the run through **`HealthComponent` and `player_died`**, the same door every other death
+    uses — and through a new `drain`, never through `apply`: a blow hands out the invulnerability
+    window that stops a player being chain-stunned, and drowning through it would have made the
+    water the safest place in a wave.
+  - **No clip, so the tell is the body**, tipped as a share of depth — the same trade `EnemyWindUp`
+    makes for its telegraph, and the same seam left for the real clip once the rig lands (#180).
+    Nothing flashes and nothing shakes: a wind-up is the one thing that must stay readable, and a
+    farmer swinging at somebody chased into the surf is exactly when both happen at once.
+  - `verify_sea` walks a body out and holds the three promises — the descent warns before anything
+    is lost, the depth that drowns is the one in `data/`, and the run ends once. Two mutations hold
+    the check itself: a sea that says nothing on the way down and one that takes no health.
+
 ### Changed
 
 - **The merchant sells what you carry.** A weapon's upgrade track is refused until the weapon is in

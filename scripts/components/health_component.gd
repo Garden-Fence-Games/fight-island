@@ -55,6 +55,28 @@ func apply(info: HitInfo) -> bool:
 	return true
 
 
+## Points taken by something that is not a blow — the sea, and nothing else today.
+##
+## **Not `apply`**, and the difference is the whole reason this exists. A blow grants the
+## invulnerability window that stops a player being chain-stunned to death, so drowning through
+## `apply` would make the water a place to stand and shrug off a wave; and it would arrive once
+## every `hit_invulnerability` seconds instead of every frame, which is not a drain. There is no
+## `damaged` either: a number over the player's head for a sea that is visibly winning is noise.
+##
+## `minimum_health` is honoured, so the tutorial's protection covers drowning like everything else.
+func drain(amount: float, delta: float) -> float:
+	if not is_alive() or amount <= 0.0:
+		return 0.0
+	var before := current_health
+	current_health = maxf(current_health - amount * delta, minimum_health)
+	if is_equal_approx(current_health, before):
+		return 0.0
+	health_changed.emit(current_health, max_health)
+	if current_health <= 0.0:
+		died.emit()
+	return before - current_health
+
+
 ## Points back, clamped at the maximum. **No invulnerability window and no signal of its own**:
 ## being healed is not being hit, and a coconut that handed out i-frames would be a dodge the player
 ## did not earn. Healing the dead does nothing, which is what stops a pickup landing on the frame a

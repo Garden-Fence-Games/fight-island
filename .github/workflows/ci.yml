@@ -227,6 +227,12 @@ jobs:
       - name: Verify the island
         run: tools/run-check.sh res://tools/verify_island.tscn
 
+      # The sea is the edge of the world and it now ends runs, so what it costs and where it starts
+      # costing are checked rather than trusted: a drowning depth that crept above the wading limit
+      # would drown a player standing in the shallows, and it would do it silently.
+      - name: Verify the sea
+        run: tools/run-check.sh res://tools/verify_sea.tscn
+
       # The camera never turns, so a corner the player can be swept in is a corner they can never
       # look their way out of. This walks every square metre of ground the fight can reach and
       # checks a dodge always lands somewhere the reaper's arc does not cover — the "walk every

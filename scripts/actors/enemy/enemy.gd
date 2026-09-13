@@ -362,7 +362,7 @@ func apply_motion(direction: Vector3, speed: float, delta: float) -> void:
 	var steered := (direction + _separation()).limit_length(1.0)
 	# Enemies pay the same toll as the player, so backing into the shallows is a real choice
 	# rather than a free escape.
-	var wading := Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH)
+	var wading := Water.drag_at(global_position.y, PlayableArea.SEA.wade_depth)
 	velocity.x = steered.x * speed * wading
 	velocity.z = steered.z * speed * wading
 	velocity.y -= _gravity * delta

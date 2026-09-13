@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SeaData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/sea_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+wade_depth = 1.1
+push_speed = 5.0
+drowns_at = 2.2
+drowns_over = 1.0
+drains = 14.0
+lists_by = 28.0

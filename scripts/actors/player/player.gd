@@ -56,6 +56,9 @@ var _sprint_toggle: bool = false
 var _sprint_latched: bool = false
 var _gravity: float = 9.8
 
+## The body itself, tipped by the sea as it goes under — see `PlayableArea`. Named apart from
+## `visual`, which is the component that decides which weapon is in the hand.
+@onready var rig: Node3D = get_node_or_null("Visual") as Node3D
 @onready var health: HealthComponent = $Health
 @onready var stamina: StaminaComponent = $Stamina
 @onready var hitbox: Hitbox = $Hitbox
@@ -204,7 +207,7 @@ func _mesh_instances(root: Node) -> Array[MeshInstance3D]:
 ## too and it is not two steps, and an attack calls `halt` and travels none — so the two states that
 ## actually walk say so, and nothing else has to know footfalls exist.
 func apply_motion(direction: Vector3, speed: float, delta: float, on_foot: bool = false) -> void:
-	var wading := Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH)
+	var wading := Water.drag_at(global_position.y, PlayableArea.SEA.wade_depth)
 	velocity.x = direction.x * speed * wading
 	velocity.z = direction.z * speed * wading
 	velocity.y -= _gravity * delta
@@ -330,7 +333,9 @@ func _carry_the_stride(delta: float) -> void:
 	if _stride_walked < STRIDE:
 		return
 	_stride_walked = 0.0
-	EventBus.footstep_taken.emit(Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH) < 1.0)
+	EventBus.footstep_taken.emit(
+		Water.drag_at(global_position.y, PlayableArea.SEA.wade_depth) < 1.0
+	)
 
 
 func _on_sprint_pressed(from_gamepad: bool) -> void:

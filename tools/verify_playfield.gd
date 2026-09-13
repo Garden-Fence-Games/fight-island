@@ -25,10 +25,10 @@ const DODGE_DISTANCE: float = 3.2
 ## cell is called blocked, because a dodge that ends with a shoulder inside a post is not a dodge
 ## that landed.
 const PLAYER_RADIUS: float = 0.35
-## The still waterline and how deep `PlayableArea` lets anyone wade. Below the two together the sea
-## pushes back, so that is the edge of the ground a dodge may land on.
+## The still waterline. How deep anyone may wade before the sea pushes back is `data/world/sea.tres`
+## and is read from there — below the two together the sea pushes back, so that is the edge of the
+## ground a dodge may land on.
 const WATERLINE: float = -1.1
-const WADE_DEPTH: float = 1.1
 ## How deep the navigation mesh follows the player in. **This is what makes the question the right
 ## question.** The fight happens where a reaper can stand, not everywhere a player can paddle: out
 ## past this the enemies do not come, and a body alone in the surf with the sea at its back is not
@@ -115,7 +115,7 @@ func _build_ground(island: Node) -> bool:
 	_origin = -half
 	_open.resize(_side * _side)
 	_fight.resize(_side * _side)
-	var wade_floor := WATERLINE - WADE_DEPTH
+	var wade_floor := WATERLINE - PlayableArea.SEA.wade_depth
 	var fight_floor := WATERLINE - FIGHT_DEPTH
 
 	for row: int in _side:

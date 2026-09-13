@@ -223,6 +223,33 @@ a third of it at the wading limit. It is the cheapest way to make the shoreline 
 beach stops being scenery and becomes somewhere you think twice about being caught. Enemies pay the
 same toll, so backing into the shallows is a real decision rather than a free escape.
 
+### The sea is deep enough to drown in
+
+The island is not round, so the edge of the world is the waterline rather than a circle — and it is
+a consequence rather than a fence. **Nothing is ever blocked.** At the wading limit the sea begins
+to push back, and the push builds with the depth: a boundary that cannot be pushed against is a
+wall, and this one is meant to be losable. Keep walking out against it and the ground goes on
+falling away, until the water closes over the head and starts taking health a second at a time.
+
+Drowning is a death like any other — the run ends, and there is no revive. It arrives through the
+same door: health reaching nought.
+
+Three things make that fair, and they are the whole design:
+
+- **The descent is the warning, and the drowning is only where it ends.** The shove, the slow, and
+  the body listing as it goes under all come from one figure — how far past the wading limit you
+  are — and that figure reaches one exactly where the first point of health is taken. Everything
+  before that costs nothing but the walk back.
+- **Stopping is enough.** The sea is pushing you in the whole time. A player who lets go of the
+  stick is carried back to the shallows; drowning is what happens to someone who keeps insisting,
+  and there are several seconds of a draining bar in which to stop insisting.
+- **It is slow, and it is quiet.** No flash, no screen shake, no muffle over the audio — a wind-up
+  is the one thing that must always be readable, and a farmer swinging at a player who has been
+  chased into the surf is exactly when both happen at once.
+
+The four numbers — where it pushes, how hard, how deep it drowns, how fast it drains — live in
+`data/world/sea.tres` and are checked by `verify_sea`.
+
 ## Enemies
 
 Three farmers, **one rig and one mesh, three textures** — and one pirate, who has a model of his own

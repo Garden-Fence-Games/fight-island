@@ -223,8 +223,10 @@ func _check_boundary(island: Node) -> void:
 	if area == null:
 		_failures.append("the island has no playable area")
 		return
-	if area.wade_depth <= 0.0:
+	if PlayableArea.SEA.wade_depth <= 0.0:
 		_failures.append("the playable area does not let the player reach the water")
+	if PlayableArea.SEA.drowns_at <= PlayableArea.SEA.wade_depth:
+		_failures.append("the sea drowns at or above the depth it only pushes back at")
 
 
 ## Twelve floats of transform per instance, and four more when the instance carries an anchor.

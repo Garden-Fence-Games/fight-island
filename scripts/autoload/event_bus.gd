@@ -92,6 +92,10 @@ signal weapon_fired(attack: AttackData)
 ## happened: the lesson is not the button, it is the moment — and only this says the moment was
 ## right.
 signal dodge_evaded
+## How far under the player is, nought at the wading limit and one at the depth that drowns. The
+## warning, and the only one there is: the sea takes health at one and nothing before it, so whoever
+## draws this is drawing the time there is left to turn round.
+signal player_sinking(share: float)
 ## The player's state machine moved. Cross-cutting because a sprint, a roll and a death are each
 ## something audio and the tutorial want to know about without holding the player.
 signal player_state_changed(state: StringName)
