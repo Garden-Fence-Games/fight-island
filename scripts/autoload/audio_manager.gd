@@ -170,6 +170,18 @@ const LAYERS: Dictionary = {
 ## noise has no natural join; this is what stops the wrap being an audible tick every few seconds.
 const SURF_SEAM: float = 0.25
 
+## Whether anything should actually be played. False headless, because there is nobody to hear it —
+## and a one-shot still in flight when the engine tears down is an object it reports as leaked, for
+## the reason the bed has always known: the audio server releases a playback on its own iteration,
+## and at quit there is no next iteration. That is issue #145, and it was intermittent because it
+## depended on what happened to be sounding when the window closed.
+##
+## **A headless check is the exception, and it is not a special case — it is the literal reading of
+## the rule.** "There is nobody to hear it" is false when a check is listening on purpose, which is
+## what `verify_audio` does: it asks which voice is carrying which waveform. So it says so, and
+## everything else stays quiet.
+var audible: bool = DisplayServer.get_name() != "headless"
+
 var _sounds: Dictionary = {}
 var _peaks: Dictionary = {}
 var _voices: Array[AudioStreamPlayer] = []
@@ -218,21 +230,46 @@ func _ready() -> void:
 	EventBus.run_ended.connect(_on_run_ended)
 
 
-## The bed is the one sound still going when the game is asked to close, and a stream left playing
-## at teardown is two objects the engine reports as leaked on the way out. Nothing about it is
-## visible in the game; it is visible in CI, which fails the boot on any warning at all — which is
-## exactly what a leak check is for.
+## A stream left playing at teardown is an object the engine reports as leaked on the way out: the
+## audio server releases a playback on its own iteration, and at quit there is no next iteration.
+##
+## The bed knew this and the pooled voices did not, which is issue #145 — `main.tscn` leaked a
+## waveform for as long as anything happened to be sounding when the window closed. **And CI could
+## not see it**: the boot gate greps every boot for a warning, and the Linux runner does not
+## reproduce this one. The gate was green while a developer on the same commit was not.
+##
+## So the invariant is held where a platform cannot hide it — `verify_audio` calls `silence()` and
+## asks the voices — rather than by watching for the warning.
 func _exit_tree() -> void:
-	if _bed == null:
-		return
-	_bed.stop()
-	_bed.stream = null
+	silence()
+
+
+## Every voice stopped and every waveform let go of. Public because it is a real thing to want — the
+## end of a run could ask for it — and because it is the only way a check can hold the invariant on
+## a machine where the symptom never appears.
+##
+## **Stopping is not enough; the stream has to be released.** A player freed with a stream still
+## assigned is an object the engine reports as leaked, and the bed knew that while the twelve pooled
+## voices did not — so `main.tscn` leaked one waveform at exit for as long as anything was still
+## sounding when the window closed.
+func silence() -> void:
+	for voice: AudioStreamPlayer in _voices:
+		voice.stop()
+		voice.stream = null
+	for voice: AudioStreamPlayer3D in _placed:
+		voice.stop()
+		voice.stream = null
+	if _bed != null:
+		_bed.stop()
+		_bed.stream = null
 
 
 ## Plays a sound flat, in front of the player. Unknown ids are ignored rather than pushed as an
 ## error: a caller asking for a sound that does not exist yet should go quiet, not spam the log for
 ## the rest of the run.
 func play(id: StringName, jitter: float = 0.0) -> void:
+	if not audible:
+		return
 	var stream: AudioStreamWAV = _sounds.get(id)
 	if stream == null:
 		return
@@ -248,6 +285,8 @@ func play(id: StringName, jitter: float = 0.0) -> void:
 ## crowd answerable: a player who cannot see the farmer winding up behind them can still hear which
 ## side he is on.
 func play_at(id: StringName, where: Vector3, jitter: float = 0.0) -> void:
+	if not audible:
+		return
 	var stream: AudioStreamWAV = _sounds.get(id)
 	if stream == null:
 		return
@@ -824,7 +863,7 @@ func _start_the_bed() -> void:
 	_bed.bus = &"Ambience"
 	_bed.stream = sound(&"surf")
 	add_child(_bed)
-	if DisplayServer.get_name() != "headless":
+	if audible:
 		_bed.play()
 
 

@@ -67,3 +67,7 @@ tools/verify_lookups.gd|bodies[name] = [] as Array[String]|bodies[name] = Packed
 
 # The hint bar. A glyph typed into a scene stops being true the moment a player rebinds.
 scripts/ui/hint_label.gd|	var glyph := _glyph()|	var glyph := ""|verify_glyphs
+
+# The #145 guard. A headless game that starts audible leaks a one-shot at teardown, and no runner
+# this project uses would report it — the boot gate is green on Linux while a Mac is not.
+scripts/autoload/audio_manager.gd|var audible: bool = DisplayServer.get_name() != "headless"|var audible: bool = true|verify_audio
