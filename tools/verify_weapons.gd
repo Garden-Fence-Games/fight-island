@@ -56,6 +56,7 @@ func _run() -> void:
 	await _check_a_pickup_hands_the_weapon_over()
 	await _check_a_weapon_owed_from_an_earlier_wave_still_arrives()
 	await _check_the_gun_on_the_ground_is_the_gun()
+	_check_every_track_names_a_weapon_that_turns_up()
 	_put_the_run_back()
 	_report()
 
@@ -284,8 +285,16 @@ func _check_a_pickup_hands_the_weapon_over() -> void:
 		_fail("the arena has no pickup director")
 		return
 	var stick := Arsenal.find(&"stick")
-	if stick.found_at_wave != 2 or Arsenal.find(&"gun").found_at_wave != 4:
-		_fail("the stick and the gun do not turn up on waves 2 and 4")
+	# Written out rather than read off the resource: a check that agrees with whatever the data says
+	# is not a check. Both lie on the island from the first wave — the three weapons are a choice,
+	# and the choice cannot be offered until all three are in the bag.
+	if stick.found_at_wave != 1 or Arsenal.find(&"gun").found_at_wave != 1:
+		_fail(
+			(
+				"the stick turns up on wave %d and the gun on wave %d, and both belong on wave 1"
+				% [stick.found_at_wave, Arsenal.find(&"gun").found_at_wave]
+			)
+		)
 	var dropped := pickups.drop(stick)
 	if dropped == null:
 		_fail("nowhere on the island would take a pickup")
@@ -422,7 +431,43 @@ func _check_the_gun_on_the_ground_is_the_gun() -> void:
 				% [stands.size.y, stands.size.x, stands.size.z]
 			)
 		)
+	# **And big enough to be seen from where the camera is.** The gun landed in shot every time and
+	# was walked past anyway: at its own scale it is a quarter of a metre of dark metal on pale sand,
+	# twenty metres below a camera that cannot be moved. A pickup is an object to be noticed before
+	# it is a model of anything.
+	var longest := maxf(maxf(stands.size.x, stands.size.y), stands.size.z)
+	if not is_equal_approx(longest, dropped.reads_at):
+		_fail(
+			(
+				"the gun lies %.2f m long and everything on the ground is brought to %.2f"
+				% [longest, dropped.reads_at]
+			)
+		)
 	dropped.queue_free()
+
+
+## The failure that sent this branch: **a track for a weapon nobody can find is money with nowhere
+## to go.** The merchant refuses a weapon's upgrades until it is in the bag, so a weapon that is
+## never dropped locks its own track for the whole run — and the player saving for it is saving for
+## nothing. Asked of the tracks rather than of the weapons, because the track is the thing that
+## makes the promise.
+func _check_every_track_names_a_weapon_that_turns_up() -> void:
+	for track: UpgradeTrack in Upgrades.all():
+		if track.weapon.is_empty():
+			continue
+		var weapon := Arsenal.find(track.weapon)
+		if weapon == null:
+			_fail("the %s track upgrades a weapon that is not in the arsenal" % track.id)
+			continue
+		if weapon.id == Arsenal.STARTING:
+			continue
+		if weapon.found_at_wave <= 0:
+			_fail(
+				(
+					"the %s track is for sale once the %s is carried, and the %s is never dropped"
+					% [track.id, weapon.id, weapon.id]
+				)
+			)
 
 
 ## The mesh the player rig carries, read straight out of the model rather than through the pickup,

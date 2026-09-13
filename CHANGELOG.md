@@ -6,6 +6,24 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **Both weapons lie on the island from wave 1.** The stick used to arrive in wave 2 and the gun in
+  wave 4, and holding them back cost more than it bought: a weapon nobody has found is a weapon that
+  does not exist, and behind the gun sat an upgrade track the merchant refuses until the weapon is
+  carried — so a player saving for it had money with nowhere to go for four waves. Ammunition comes
+  off the bodies from the first wave for the same reason: the pocket only fills once the gun is in
+  the bag.
+  - The gun **was** being dropped, and in shot: rolled two hundred times on the real island it landed
+    inside the camera's frustum two hundred times. What it was not, was **visible** — a borrowed rig
+    mesh at its own scale is 0.54 m of dark metal on pale sand under a camera twenty metres up, a
+    third of the carved shape it replaced. Everything borrowed is brought to one length on the
+    ground now, so a weapon reads as a thing to pick up before it reads as a model of itself.
+  - `verify_weapons` gains the assertion the failure needed: **every upgrade track that names a
+    weapon names a weapon that is dropped.** A track for a weapon nobody can find is a locked card
+    for the length of a run, and nothing said so.
+
+
 ## [0.1.0] - 2026-09-13
 
 The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
