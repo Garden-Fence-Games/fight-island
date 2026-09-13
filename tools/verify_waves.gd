@@ -114,7 +114,7 @@ func _check_an_elite_is_worse_and_obviously_so() -> void:
 		return
 	_same("an elite's health", elite.health.max_health, plain.health.max_health * 2.0)
 	_same("an elite's damage", elite.damage_scale, plain.damage_scale * 1.4)
-	_same("an elite's size", elite.mesh.scale.x, 1.15)
+	_same("an elite's size", elite.visual.scale.x, 1.15)
 	_check_the_elite_reads_in_greyscale(plain, elite)
 	await _check_the_elite_still_reads_after_being_hit(plain, elite)
 	_check_the_elite_pays_triple(plain, elite)
@@ -125,9 +125,7 @@ func _check_an_elite_is_worse_and_obviously_so() -> void:
 ## The one cue that survives a greyscale screenshot and a colourblind player. Emission is what makes
 ## it work: it reads as brighter, not merely different.
 func _check_the_elite_reads_in_greyscale(plain: Enemy, elite: Enemy) -> void:
-	var apart := (
-		_brightness(elite.mesh.material_override) - _brightness(plain.mesh.material_override)
-	)
+	var apart := _brightness(elite) - _brightness(plain)
 	if apart < TELLS_APART:
 		_fail(
 			(
@@ -137,16 +135,23 @@ func _check_the_elite_reads_in_greyscale(plain: Enemy, elite: Enemy) -> void:
 		)
 
 
-## Rec. 709 luma of what the surface actually puts out, emission included — which is what a
-## greyscale screenshot would show.
-func _brightness(material: Material) -> float:
-	var surface := material as StandardMaterial3D
-	if surface == null:
+## Rec. 709 luma of what the body actually puts out, emission included — which is what a greyscale
+## screenshot would show.
+##
+## **Averaged over every surface the rig is drawn with, not read off one.** A painted character has
+## several, and the rank's glow is applied to all of them; measuring only the first would grade the
+## farmer on his shirt.
+func _brightness(enemy: Enemy) -> float:
+	var surfaces := enemy.body_materials.materials() if enemy.body_materials != null else []
+	if surfaces.is_empty():
 		return 0.0
-	var out := surface.albedo_color
-	if surface.emission_enabled:
-		out += surface.emission * surface.emission_energy_multiplier
-	return 0.2126 * out.r + 0.7152 * out.g + 0.0722 * out.b
+	var total := 0.0
+	for surface: StandardMaterial3D in surfaces:
+		var out := surface.albedo_color
+		if surface.emission_enabled:
+			out += surface.emission * surface.emission_energy_multiplier
+		total += 0.2126 * out.r + 0.7152 * out.g + 0.0722 * out.b
+	return total / float(surfaces.size())
 
 
 ## An elite wears its rank in the emission slot, and so does the hit flash. Flashing to nought took
@@ -159,11 +164,11 @@ func _brightness(material: Material) -> float:
 func _check_the_elite_still_reads_after_being_hit(plain: Enemy, elite: Enemy) -> void:
 	var feedback := HitFeedback.new()
 	add_child(feedback)
-	var before := _brightness(elite.mesh.material_override)
+	var before := _brightness(elite)
 	EventBus.attack_landed.emit(elite, 10.0, true, null)
 	EventBus.attack_landed.emit(plain, 10.0, true, null)
 	await _let_the_flash_finish()
-	var after := _brightness(elite.mesh.material_override)
+	var after := _brightness(elite)
 	if after < before - 0.001:
 		_fail(
 			(
