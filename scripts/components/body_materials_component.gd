@@ -17,6 +17,7 @@ extends Node
 ## when the owner's own `_ready` runs.
 
 var _materials: Array[StandardMaterial3D] = []
+var _flash: Tween = null
 
 
 ## Every material this body is drawn with. Empty only when the visual is not in the tree yet, and
@@ -54,3 +55,34 @@ func glow(colour: Color, energy: float) -> void:
 		material.emission_enabled = energy > 0.0
 		material.emission = colour
 		material.emission_energy_multiplier = energy
+
+
+## A flare over whatever the body is already wearing, settling back to it.
+##
+## **The tween is held here because the materials are.** They are per-instance and they outlive a
+## death: a body goes back to the pool and comes out again wearing the same ones. A flash owned by
+## the system that started it went on running across that handover — settling the body it was
+## leased for next to the glow of the rank the body before it happened to have.
+func flash(
+	colour: Color, energy: float, settles_to: Color, resting_energy: float, seconds: float
+) -> void:
+	var surfaces := materials()
+	if surfaces.is_empty():
+		return
+	stop_flash()
+	_flash = create_tween()
+	_flash.set_parallel(true)
+	for material: StandardMaterial3D in surfaces:
+		material.emission_enabled = true
+		material.emission = colour
+		material.emission_energy_multiplier = energy
+		_flash.tween_property(material, "emission_energy_multiplier", resting_energy, seconds)
+		_flash.tween_property(material, "emission", settles_to, seconds)
+
+
+## Ends a flare where it stands. Safe when nothing is running, which is what makes it the right
+## thing for a body on its way back into the pool to call.
+func stop_flash() -> void:
+	if _flash != null and _flash.is_valid():
+		_flash.kill()
+	_flash = null
