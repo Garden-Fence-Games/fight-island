@@ -46,6 +46,15 @@ signal clip_missing(state_name: StringName, clip: StringName)
 ## reimported under different node names.
 @export var animation_player: AnimationPlayer = null
 @export var state_machine: StateMachine = null
+## Clips to fall back on for names the rig does not carry. A Resource export, so it resolves in a
+## hand-written `.tscn` where a Node export would not — see ADR 0006.
+##
+## **The rig always wins.** A stand-in is added only when the AnimationPlayer has no animation of
+## that name, so exporting a hand-authored `attack_gun_1` retires this file's version on the spot,
+## with nothing to delete and no flag to remember. That is the whole contract, and it is why the
+## library is built by `tools/build_clips.gd` out of the rig's own carry pose rather than authored
+## anywhere a person would be tempted to keep improving it.
+@export var stand_in_clips: AnimationLibrary = null
 
 ## Appended to a state's clip name when the rig carries that variant. `walk` becomes `walk_gun` with
 ## a gun in hand, and the suffix falls away again the moment a variant is missing — so a weapon may
@@ -69,6 +78,7 @@ func _ready() -> void:
 		animation_player = _find_animation_player(host)
 	if state_machine == null:
 		state_machine = _find_state_machine(host)
+	_lend_the_missing_clips()
 	if state_machine == null:
 		return
 	state_machine.transitioned.connect(_on_state_machine_transitioned)
@@ -94,6 +104,25 @@ func set_clip_suffix(suffix: StringName) -> void:
 	if state != null and state.has_method("clip_name") and state.call("clip_name") != &"":
 		return
 	play_state(state_machine.current_name)
+
+
+## Hands the rig whichever stand-ins it has no clip of its own for.
+##
+## Into the AnimationPlayer's own library rather than added beside it as a second one: a library
+## added under a name answers to `gun/attack_gun_1`, and every clip in this project is named by the
+## contract in `docs/asset-pipeline.md` without a prefix. The library belongs to the imported rig
+## and is shared by every instance of it, which is why this is written to be true a second time —
+## the next player to ask finds the clips already there and lends nothing.
+func _lend_the_missing_clips() -> void:
+	if stand_in_clips == null or animation_player == null:
+		return
+	var mine := animation_player.get_animation_library(&"")
+	if mine == null:
+		return
+	for clip: StringName in stand_in_clips.get_animation_list():
+		if mine.has_animation(clip):
+			continue
+		mine.add_animation(clip, stand_in_clips.get_animation(clip))
 
 
 ## The clip currently playing, or an empty name when the state has none. Readable from outside so
