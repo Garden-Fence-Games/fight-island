@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TutorialStep" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/tutorial_step.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon_switch"
+prompt_key = "TUTORIAL_SWITCH"
+prompt_actions = PackedStringArray("weapon_next")
+seconds = 4.0

@@ -18,6 +18,12 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The first weapon picked up says how to switch.** Nobody could find the swap: the only thing
+  that ever named `Tab` was the input table. The first pickup of a run begun from the title now
+  shows *[Tab] to switch weapons* — RB on a pad — for its own `seconds`, once, and waits for the
+  opening lines if they are still up. Fading one line out no longer hides the next one shown
+  straight after it.
+
 - **A drowned player struggles and goes under.** Dying out of their depth no longer hands the body
   to the ragdoll, which had nothing true to do in the water: the player plays `drowning`,
   Purple-Sigil's looping struggle with a strong bob, and sinks while it loops. The summary waits
