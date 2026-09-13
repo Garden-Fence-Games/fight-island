@@ -83,10 +83,7 @@ func _check_the_tutorial_owns_wave_one() -> void:
 ## The whole of the first two lessons: something to hit that will not hit back. The token is the one
 ## gate into WindUp, so refusing it is what makes a body harmless.
 func _check_a_passive_farmer_cannot_swing() -> void:
-	var farmhand := load("res://data/enemies/farmhand.tres") as EnemyData
-	var body := _waves.spawner.spawn_at(
-		farmhand, Vector3(4.0, 0.5, 0.0), 1.0, 1.0, 1.0, 1.0, null, true
-	)
+	var body := _place_a_harmless_farmer()
 	if body == null:
 		_fail("a farmer could not be placed by hand")
 		return
@@ -153,10 +150,7 @@ func _check_the_lesson_lets_the_farmer_swing() -> void:
 	if step == null or step.id != &"dodge" or step.passive:
 		_fail("the dodge lesson is not the one open, or it no longer asks for a farmer who swings")
 		return
-	var farmhand := load("res://data/enemies/farmhand.tres") as EnemyData
-	var body := _waves.spawner.spawn_at(
-		farmhand, Vector3(4.0, 0.5, 0.0), 1.0, 1.0, 1.0, 1.0, null, true
-	)
+	var body := _place_a_harmless_farmer()
 	if body == null:
 		_fail("a farmer could not be placed by hand")
 		return
@@ -253,6 +247,13 @@ func _satisfy_movement() -> void:
 	_director._process(0.016)
 	_player.global_position += Vector3(step.travel * 2.0, 0.0, 0.0)
 	_director._process(0.016)
+
+
+## A farmhand where the check wants him, spawned unable to swing. By hand rather than by the
+## director, because both checks are about what happens to a body the lessons did not choose.
+func _place_a_harmless_farmer() -> Enemy:
+	var farmhand := load("res://data/enemies/farmhand.tres") as EnemyData
+	return _waves.spawner.spawn_at(farmhand, Vector3(4.0, 0.5, 0.0), 1.0, 1.0, 1.0, 1.0, null, true)
 
 
 func _steps() -> Array[TutorialStep]:
