@@ -13,7 +13,6 @@
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_recover.gd" id="11"]
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_stagger.gd" id="12"]
 [ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_dead.gd" id="13"]
-[ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_retreat.gd" id="15"]
 [ext_resource type="Resource" path="res://data/enemies/farmhand.tres" id="14"]
 [ext_resource type="PackedScene" path="res://assets/models/char_farmer.glb" id="17"]
 [ext_resource type="Script" path="res://scripts/components/animation_component.gd" id="18"]
@@ -50,7 +49,6 @@ stand_in_clips = ExtResource("23")
 clips = {
 &"Chase": &"chase",
 &"Idle": &"idle",
-&"Retreat": &"walk",
 &"Strafe": &"walk"
 }
 
@@ -107,9 +105,6 @@ script = ExtResource("7")
 
 [node name="Strafe" type="Node" parent="StateMachine"]
 script = ExtResource("8")
-
-[node name="Retreat" type="Node" parent="StateMachine"]
-script = ExtResource("15")
 
 [node name="WindUp" type="Node" parent="StateMachine"]
 script = ExtResource("9")

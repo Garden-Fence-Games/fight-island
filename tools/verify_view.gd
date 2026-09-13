@@ -158,21 +158,17 @@ func _check_the_swing_is_readable_at_every_zoom_the_wheel_reaches() -> void:
 		)
 
 
-## The ground a melee archetype has to be visible on for its telegraph to be readable: the range it
+## The ground an archetype has to be visible on for its telegraph to be readable: the range it
 ## strikes from, plus what it covers while winding up. Read off the `.tres` files rather than
 ## written down here, so a rebalance moves the bound with it instead of leaving it stale.
-##
-## The thrower is left out on purpose. He strikes from fourteen metres and answering him is the
-## open half of issue #39 — a bound that quietly folded him in would be inventing the threshold
-## that issue says nobody has earned yet.
 func _the_ground_a_swing_needs() -> float:
 	var needed := 0.0
 	for data: EnemyData in _archetypes():
-		if data.is_ranged or data.attack == null:
+		if data.attack == null:
 			continue
 		needed = maxf(needed, data.attack_range + data.move_speed * data.attack.windup)
 	if needed <= 0.0:
-		_fail("no melee archetype offered a range and a wind-up to take the bound from")
+		_fail("no archetype offered a range and a wind-up to take the bound from")
 	return needed
 
 
