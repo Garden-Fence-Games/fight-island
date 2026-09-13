@@ -27,6 +27,24 @@ extends Resource
 ## to notice, short enough to mean something.
 @export var drains: float = 20.0
 
+@export_group("Forcing")
+## **Insisting costs more the longer it goes on.** While the player keeps walking out against the
+## push, the drain doubles every this many seconds — an exponential, so a few seconds of it is a
+## warning and a few more is the end. Standing still or turning back resets it at once: the sea is
+## only merciless to somebody who is fighting it.
+@export var forcing_doubles_every: float = 1.0
+## The most the forcing can multiply the drain by, so the curve stays a curve and not a switch.
+@export var forcing_cap: float = 10.0
+## How squarely the player has to be heading out to count as forcing: the dot of their movement with
+## the way out to sea. Walking along the shore in deep water is not insisting.
+@export var forcing_alignment: float = 0.3
+
+@export_group("Going under")
+## How fast a drowned body sinks, in metres a second, while it keeps struggling.
+@export var sink_speed: float = 0.45
+## How far it sinks before it is gone and the struggle stops — past the top of its head.
+@export var sink_depth: float = 1.6
+
 
 ## How fast the sea is taking this body, at a height above the water plane. Nought anywhere it does
 ## not reach, so a caller never has to ask whether the player is in the water.
@@ -36,3 +54,16 @@ func draining_at(height: float, water_level: float) -> float:
 		return 0.0
 	var into := (depth - drains_from) / maxf(drowns_at - drains_from, 0.01)
 	return drains * clampf(into, 0.0, 1.0)
+
+
+## What the drain is multiplied by after `seconds` of forcing: one at the start, doubling every
+## `forcing_doubles_every`, never past `forcing_cap`.
+func forcing_multiplier(seconds: float) -> float:
+	if seconds <= 0.0:
+		return 1.0
+	return minf(pow(2.0, seconds / maxf(forcing_doubles_every, 0.01)), maxf(forcing_cap, 1.0))
+
+
+## How long a drowned body takes to go all the way under.
+func sink_seconds() -> float:
+	return sink_depth / maxf(sink_speed, 0.01)
