@@ -58,6 +58,12 @@ var last_hit_worth: float = 1.0
 ## Which way the last blow was travelling. What sends a dying man the way he was hit rather than
 ## straight down, which is the difference between a body falling over and a body being killed.
 var last_hit_from: Vector3 = Vector3.FORWARD
+## How hard the last blow that landed throws him, in points of `AttackData.stagger` with the poise
+## multiplier already in it. Kept for the same reason the direction is: by the time he is dying, the
+## swing that did it is gone. Without it the fall took `knock_speed` whole — the figure that means
+## *per point of stagger* — and a farmer killed by a jab was thrown as hard as one killed by the
+## heaviest blow in the game.
+var last_hit_push: float = 0.0
 ## He comes, he circles, and he never swings. The first two tutorial steps need something to hit
 ## that will not hit back — and a farmer standing still would teach the player that farmers do.
 var passive: bool = false
@@ -119,6 +125,7 @@ func revive(
 	# pay a combo nobody threw the next time a jab knocked it over.
 	last_hit_worth = 1.0
 	last_hit_from = Vector3.FORWARD
+	last_hit_push = 0.0
 	damage_scale = damage * (rank.damage_multiplier if rank != null else 1.0)
 	speed_scale = speed
 	windup_scale = windup
@@ -448,6 +455,7 @@ func _on_hurt(info: HitInfo) -> void:
 	# decides *whether* he reacts, only how hard: a blow that breaks it sends him sprawling, one
 	# that does not rocks him where he stands and leaves him open all the same.
 	var push := info.stagger * (KNOCKDOWN.broken_poise_push if broke else 1.0)
+	last_hit_push = push
 	stagger(maxf(info.stagger, 0.4), info.direction, push)
 
 

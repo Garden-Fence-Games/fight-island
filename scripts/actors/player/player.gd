@@ -29,6 +29,13 @@ const FOOTFALLS_PER_CYCLE: float = 2.0
 ## straight from the editor with no run behind it.
 @export var weapon: WeaponData = null
 
+## Where the last blow that landed was travelling, and how hard it throws. Only the fall reads
+## them, which is why neither is reset anywhere: a run that never took a hit is a run that never
+## died either. The push is in points of `AttackData.stagger`, the unit `KnockdownData.knock_speed`
+## is a rate of — the player has no poise to break, so the blow's own figure is the whole of it.
+var last_hit_from: Vector3 = Vector3.FORWARD
+var last_hit_push: float = 0.0
+
 ## Index of the attack that just played, and the clock since its recovery began. A negative clock
 ## means no chain is open. Windows on attack N govern the press that produces attack N + 1.
 var chain_index: int = -1
@@ -60,6 +67,7 @@ var visual: WeaponVisualComponent = get_node_or_null("WeaponVisual") as WeaponVi
 @onready var aim: AimComponent = $Aim
 @onready var head_look: HeadLookComponent = get_node_or_null("HeadLook") as HeadLookComponent
 @onready var animation: AnimationComponent = get_node_or_null("Animation") as AnimationComponent
+@onready var ragdoll: RagdollComponent = get_node_or_null("Ragdoll") as RagdollComponent
 
 
 func _ready() -> void:
@@ -348,6 +356,10 @@ func _on_hurt(info: HitInfo) -> void:
 	# Taking a hit is the loudest thing that happens to the player and the only one they did not
 	# choose, so it spends from the same budget every blow they land does — see `Emphasis`. Here
 	# rather than in `Hurt`, because a blow with no stagger still arrived.
+	# Kept for the fall. A body has to go down the way it was hit, and by the time the health
+	# component has decided this was the last one the blow that threw it is gone.
+	last_hit_from = info.direction
+	last_hit_push = info.stagger
 	Emphasis.spend(Emphasis.for_hurt())
 	if machine != null and info.stagger > 0.0:
 		machine.current.transition_to(&"Hurt", {"stagger": info.stagger})

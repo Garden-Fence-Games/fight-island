@@ -8,6 +8,13 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The player falls when they die.** The run ended on the rest pose — a body standing to attention
+  under the screen that says it is over. The body goes to the physics now, the same
+  `RagdollComponent` the farmers have used since they stopped sinking into the sand, so the fall
+  agrees with where the player was standing, which way the blow came from and what they landed
+  against. **`death` is off the clip list rather than waiting on it**: no clip could do the last of
+  those.
+
 - **The farmer swings.** His telegraph froze him mid-stride and the blow that followed moved nothing
   at all — `EnemyWindUp` and `EnemyAttack` named no clip, and the three `attack_*` names in
   `data/enemies` were promises the rig had never been asked to keep. Both states name their clip now,
@@ -62,6 +69,18 @@ All notable changes to this project are documented here, following
   is the credit a player is actually owed and the asset ledger answers a different question.
 
 ### Fixed
+
+- **A dying body took the knock rate whole.** `KnockdownData.knock_speed` is metres per second *per
+  point of `AttackData.stagger`*, and `EnemyDead` passed it bare — so a man killed by a jab was
+  thrown as hard as one killed by the heaviest blow in the game. It is the killing blow's own share
+  now, on both sides. `verify_corpses` holds it two ways: an absolute bound on how far the player
+  may be thrown, and — because a bound on one distance passes any constant you like — a jab and an
+  uppercut have to lay two bodies **visibly apart**.
+- **Nothing stopped an animation from fighting the simulator.** Both write bone poses and the second
+  writer wins. `EnemyStagger` avoided it by naming no clip, which works on the farmer only because
+  his rig carries no `RESET` — the player's does, so the same arrangement would have stood a dying
+  man upright on the frame he was knocked down. `AnimationComponent` now lets go of the rig when the
+  physics takes the body and refuses to touch it until the physics gives it back.
 
 - **The arrow keys had no name.** `InputBindings` read only `physical_keycode`, and Godot's own
   `ui_*` defaults are bound by logical keycode — so they described to an **empty string**, which is

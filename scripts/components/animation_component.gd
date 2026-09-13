@@ -28,7 +28,6 @@ signal clip_missing(state_name: StringName, clip: StringName)
 	&"Dodge": &"dodge_roll",
 	&"Parry": &"parry",
 	&"Hurt": &"hurt",
-	&"Dead": &"death",
 }
 ## How fast each state plays its clip. Absent means the speed it was authored at.
 ##
@@ -55,6 +54,16 @@ signal clip_missing(state_name: StringName, clip: StringName)
 ## library is built by `tools/build_clips.gd` out of the rig's own carry pose rather than authored
 ## anywhere a person would be tempted to keep improving it.
 @export var stand_in_clips: AnimationLibrary = null
+## Looked up under the owner and optional. While the physics has the body nothing here may touch the
+## rig, and this is what that is asked of rather than each state remembering to say so.
+##
+## **The quiet version of this bug is the expensive one.** `EnemyStagger` handles it by naming no
+## clip while it falls, which works on the farmer only because his rig carries no `RESET` — the
+## component stops the player instead of posing it, and the bones stay where the simulator left
+## them. The player's rig does carry a `RESET`, so the same arrangement would have snapped a dying
+## man upright on the frame he was knocked down. One check here rather than a rule three states have
+## to keep.
+@export var ragdoll: RagdollComponent = null
 
 ## Appended to a state's clip name when the rig carries that variant. `walk` becomes `walk_gun` with
 ## a gun in hand, and the suffix falls away again the moment a variant is missing — so a weapon may
@@ -78,6 +87,10 @@ func _ready() -> void:
 		animation_player = _find_animation_player(host)
 	if state_machine == null:
 		state_machine = _find_state_machine(host)
+	if ragdoll == null:
+		ragdoll = _find_ragdoll(host)
+	if ragdoll != null:
+		ragdoll.took_the_body.connect(_let_go_of_the_rig)
 	_lend_the_missing_clips()
 	if state_machine == null:
 		return
@@ -137,6 +150,8 @@ func current_clip() -> StringName:
 ## not snap the stride back to its first frame. A clip a state names for itself goes through
 ## `play_clip` instead, which always restarts — a second jab has to look like a second jab.
 func play_state(state_name: StringName) -> bool:
+	if _physics_has_the_body():
+		return false
 	var clip := _variant_of(clips.get(state_name, &""))
 	if clip == &"" or animation_player == null or not animation_player.has_animation(String(clip)):
 		_rest()
@@ -156,6 +171,8 @@ func play_state(state_name: StringName) -> bool:
 ## Plays a clip by name, from the start, optionally stretched to last `seconds`. A duration of zero
 ## leaves the clip at the speed it was authored at. A negative `blend` takes the component's own.
 func play_clip(clip: StringName, seconds: float = 0.0, blend: float = -1.0) -> bool:
+	if _physics_has_the_body():
+		return false
 	if clip == &"" or animation_player == null or not animation_player.has_animation(String(clip)):
 		_rest()
 		clip_missing.emit(&"", clip)
@@ -219,12 +236,37 @@ func _variant_of(clip: StringName) -> StringName:
 func _rest() -> void:
 	_current_clip = &""
 	_current_speed = 1.0
-	if animation_player == null:
+	if animation_player == null or _physics_has_the_body():
 		return
 	if animation_player.has_animation("RESET"):
 		animation_player.play("RESET", blend_time)
 	else:
 		animation_player.stop()
+
+
+## Whether the simulator is driving the skeleton. Both write bone poses, and the one that writes
+## second wins — so an animation started during a tumble is not a small glitch, it is the tumble
+## cancelled.
+func _physics_has_the_body() -> bool:
+	return ragdoll != null and ragdoll.is_running()
+
+
+## Stops, rather than resting. `_rest()` plays the rig's `RESET`, and a body posed to its bind pose
+## on the frame it was knocked down is a body that never fell. Stopping leaves the bones wherever
+## they were and lets the simulator have them.
+func _let_go_of_the_rig() -> void:
+	_current_clip = &""
+	_current_speed = 1.0
+	if animation_player != null:
+		animation_player.stop()
+
+
+func _find_ragdoll(root: Node) -> RagdollComponent:
+	for child: Node in root.get_children():
+		var found := child as RagdollComponent
+		if found != null:
+			return found
+	return null
 
 
 ## Depth-first: the importer buries the AnimationPlayer under the glTF scene root.

@@ -37,7 +37,12 @@ func enter(_message: Dictionary) -> void:
 	if enemy.voice != null:
 		enemy.voice.hush()
 	if enemy.ragdoll != null and enemy.ragdoll.is_ready():
-		enemy.ragdoll.knock(enemy.last_hit_from, Enemy.KNOCKDOWN.knock_speed, LONGEST_FALL)
+		# The blow's own throw, not `knock_speed` whole. That figure is metres per second **per point
+		# of stagger**, so passing it bare threw every dead man as hard as a blow of stagger one —
+		# harder than anything in the game but the charged shot, whatever had actually killed him.
+		enemy.ragdoll.knock(
+			enemy.last_hit_from, enemy.last_hit_push * Enemy.KNOCKDOWN.knock_speed, LONGEST_FALL
+		)
 
 
 func physics_update(delta: float) -> void:

@@ -18,6 +18,25 @@ const FALLS_WITHIN: float = 4.0
 const NO_DEEPER: float = 0.35
 ## More bodies than the field will hold, so the ceiling has to do something.
 const PAST_THE_CEILING: int = 6
+## The player's own death, which is the same physics and the same failure modes.
+const KILLED_BY: String = "res://data/attacks/farmhand_swing.tres"
+## A light blow and a heavy one, for the question a bound on either alone cannot answer: is the
+## throw the blow's, or the same throw every time? Their stagger figures are 0.10 and 0.60.
+const A_JAB: String = "res://data/attacks/fist_jab.tres"
+const AN_UPPERCUT: String = "res://data/attacks/fist_uppercut.tres"
+## How much further the heavy blow has to put him. Six times the stagger ought to be far more than
+## this; a metre is only enough to say the two blows are not the same blow.
+const FURTHER_BY: float = 1.0
+## How far a body may be from where it was standing once it has come to rest. A blow sends a man
+## sprawling; it does not send him across the island. Written out rather than derived from the
+## throw, which would move with any figure anybody set — and the figure it is guarding against was
+## `knock_speed` passed whole, which is metres per second **per point of stagger** and put a corpse
+## seventeen metres downrange.
+const SPRAWLS_WITHIN: float = 4.0
+## How high the head may be once the fall is over. Standing, it is 0.89 m on this rig — so this is
+## comfortably below standing and comfortably above the ground, and a man who ended upright fails it
+## whether or not the mesh happened to look right from one angle.
+const HEAD_DOWN_BELOW: float = 0.55
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -52,8 +71,152 @@ func _run() -> void:
 	await _check_he_is_not_buried()
 	await _check_he_is_lying_down()
 	await _check_the_pile_has_a_ceiling()
+	await _check_a_heavier_blow_throws_him_further()
+	await _check_the_player_goes_down_too()
 	_check_a_new_run_starts_on_a_clean_island()
 	_report()
+
+
+## Whether the throw is the blow's at all.
+##
+## A bound on how far one corpse travels cannot answer this: every wrong version of the code throws
+## a body some fixed distance, and a fixed distance passes any single bound you pick. Two blows six
+## times apart in stagger have to land two bodies visibly apart — otherwise the fall is reading a
+## constant, whatever constant it happens to be.
+func _check_a_heavier_blow_throws_him_further() -> void:
+	var light := await _thrown_by(A_JAB, Vector3(6.0, 0.0, -6.0))
+	var heavy := await _thrown_by(AN_UPPERCUT, Vector3(-6.0, 0.0, -6.0))
+	if light < 0.0 or heavy < 0.0:
+		return
+	if heavy - light < FURTHER_BY:
+		_fail(
+			(
+				(
+					"a jab threw him %.1f m and an uppercut %.1f m — six times the stagger moved him "
+					% [light, heavy]
+				)
+				+ "%.1f m, so the fall is not reading the blow" % (heavy - light)
+			)
+		)
+
+
+## How far one blow throws a farmer, measured from where he stood to where his corpse was laid.
+##
+## The corpse rather than the body: the moment a tumble ends the body is handed back to the pool and
+## moved, so anything read off it afterwards is the pool's bookkeeping and not the fall. The corpse
+## is the lasting record and it is what the player sees.
+func _thrown_by(attack_path: String, where: Vector3) -> float:
+	_field.clear_field()
+	var farmer := _director.spawn_at(
+		load(FARMHAND) as EnemyData, where, 1.0, 1.0, 1.0, 1.0, null, true
+	)
+	if farmer == null or farmer.hurtbox == null:
+		_fail("nothing could be stood up to kill with %s" % attack_path)
+		return -1.0
+	await get_tree().physics_frame
+	var stood := farmer.global_position
+	farmer.hurtbox.take_hit(HitInfo.new(load(attack_path) as AttackData, null, false, 99.0))
+	var waited := 0.0
+	while waited < FALLS_WITHIN and farmer.is_inside_tree() and farmer.visible:
+		await get_tree().physics_frame
+		waited += 1.0 / 60.0
+	var corpse := _newest()
+	if corpse == null:
+		_fail("%s killed him and laid nothing down" % attack_path)
+		return -1.0
+	# The middle of what was baked, not the node it hangs off. The freeze puts the settled bones
+	# into the vertices, so a body that tumbled twenty metres leaves a corpse node still standing
+	# at the spawn point with its geometry twenty metres away — which is a thing worth knowing and
+	# not a thing worth measuring the node for.
+	var box := _box_of(corpse)
+	if box.size == Vector3.ZERO:
+		_fail("%s laid down a corpse with no mesh to find" % attack_path)
+		return -1.0
+	var at := box.get_center()
+	return Vector2(at.x - stood.x, at.z - stood.z).length()
+
+
+## The player dies by the same physics, and fails in the same three ways.
+##
+## **The rig has to be let go of.** The simulator writes bone poses and so does an AnimationPlayer;
+## whichever writes second wins, and the player's rig — unlike the farmer's — carries a `RESET`, so
+## the component resting a clipless state would have stood a dying man to attention on the frame he
+## was knocked down.
+##
+## **The pose has to be settled.** The simulator is a modifier: its output reaches the skin and
+## never the skeleton's own pose, so a body that looks like it is lying down answers "standing" to
+## anything that asks the bones — which is what the corpses did before #159.
+##
+## **The throw has to be the blow's.** Sprawling, not launched.
+func _check_the_player_goes_down_too() -> void:
+	var player := _arena.get_node_or_null(^"Player") as Player
+	if player == null:
+		_fail("the arena has no player to kill")
+		return
+	if player.ragdoll == null or not player.ragdoll.is_ready():
+		_fail("the player has no ragdoll to be knocked down with")
+		return
+	var anim := player.get_node_or_null("Animation") as AnimationComponent
+	if anim == null or anim.animation_player == null:
+		_fail("the player has no AnimationComponent to let go of the rig")
+		return
+	var stood := player.global_position
+	player.hurtbox.take_hit(HitInfo.new(load(KILLED_BY) as AttackData, null, false, 99.0))
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	if not player.ragdoll.is_running():
+		_fail("the player died and the physics never took the body")
+		return
+	if anim.animation_player.is_playing() or anim.current_clip() != &"":
+		_fail("the rig is still playing %s while the physics has the body" % anim.current_clip())
+
+	var waited := 0.0
+	while waited < FALLS_WITHIN and player.ragdoll.is_running():
+		await get_tree().physics_frame
+		waited += 1.0 / 60.0
+	# A frame for the state to notice the tumble ended and pin the pose.
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var head := _head_height(player)
+	if head < 0.0:
+		_fail("the player has no skeleton to read a pose off")
+		return
+	if head > HEAD_DOWN_BELOW:
+		_fail(
+			(
+				(
+					"the player came to rest with his head %.2f m up — he is still standing, which "
+					% head
+				)
+				+ "means the pose was never settled into the skeleton"
+			)
+		)
+	var at := player.ragdoll.settled_position()
+	var flew := Vector2(at.x - stood.x, at.z - stood.z).length()
+	if flew > SPRAWLS_WITHIN:
+		_fail(
+			(
+				(
+					"the player was thrown %.1f m by a blow of stagger %.2f — the fall is taking the "
+					% [flew, (load(KILLED_BY) as AttackData).stagger]
+				)
+				+ "knock rate whole instead of the blow's own share of it"
+			)
+		)
+
+
+## Where the head is, asked of the skeleton rather than of the skin — which is the whole point.
+func _head_height(player: Player) -> float:
+	var skeleton: Skeleton3D = null
+	for node: Node in player.find_children("*", "Skeleton3D", true, false):
+		skeleton = node as Skeleton3D
+	if skeleton == null:
+		return -1.0
+	var head := skeleton.find_bone("mixamorig_Head")
+	if head < 0:
+		return -1.0
+	var at: Vector3 = skeleton.global_transform * skeleton.get_bone_global_pose(head).origin
+	return at.y
 
 
 ## The whole shape of it: one body dies, one corpse appears, and the **enemy** goes back to the pool
@@ -238,7 +401,7 @@ func _report() -> void:
 		print(
 			(
 				"corpses OK — a dead farmer lands, stays out of the sand, hands his body back to "
-				+ "the pool, and the pile has a ceiling"
+				+ "the pool, the pile has a ceiling, and the player goes down by the same physics"
 			)
 		)
 		get_tree().quit(0)
