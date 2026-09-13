@@ -31,6 +31,10 @@ const RISE_SLACK: float = 0.4
 ## **This one does not scale with the figure**, and that is the point: a bound derived from the
 ## number being checked passes for every number, including a rise set to half a minute.
 const LONGEST_SENSIBLE_RISE: float = 2.0
+## The gun, the shot fired to measure its recoil, and the joint the measurement is read off.
+const GUN: StringName = &"gun"
+const SHOT: int = 0
+const STILL_BONE: StringName = &"mixamorig_Hips"
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -54,7 +58,58 @@ func _run() -> void:
 		return
 	director.halt()
 	await _check_a_knockdown_ends_and_hands_the_body_back(director)
+	await _check_a_shot_kicks_the_arm_and_nothing_else()
 	_report()
+
+
+## The recoil, which is the other way a skeleton is taken from the animation — and the interesting
+## half is everything it must **not** do.
+##
+## A shot throws the shooting arm at the ragdoll for a tenth of a second and the simulator eases it
+## back onto the clip. So `is_running` stays false for the whole of it — a recoil is not a
+## knockdown, and everything that stops animating when the body is taken over has to go on getting
+## no — the hips are never handed over, and when it is done the simulation is stopped, or the next
+## shot would start from a modifier that is already half off.
+func _check_a_shot_kicks_the_arm_and_nothing_else() -> void:
+	var player := get_tree().get_first_node_in_group(&"player") as Player
+	var gun := Arsenal.find(GUN)
+	if player == null or gun == null or player.ragdoll == null:
+		_fail("the arena has no player with a ragdoll, or no gun to fire")
+		return
+	if not player.ragdoll.is_ready():
+		_fail("the player carries no rigged skeleton to kick")
+		return
+	GameState.loadout.find_weapon(GUN)
+	GameState.loadout.equip(GUN)
+	await get_tree().physics_frame
+
+	var attack := gun.attack_at(SHOT)
+	player.machine.current.transition_to(&"Attack", {"index": SHOT})
+	var fired := false
+	var clock := 0.0
+	while clock < attack.windup + attack.recoil_lasts:
+		await get_tree().physics_frame
+		clock += get_physics_process_delta_time()
+		if not player.ragdoll.is_kicking():
+			continue
+		fired = true
+		if player.ragdoll.is_running():
+			_fail("a shot put the whole body in the physics — a recoil is not a knockdown")
+			return
+		# Whether the bone is simulating at all, rather than how far it turned: a body taken over
+		# from rest barely moves in a tenth of a second, so measuring the pose would pass a recoil
+		# that had quietly taken the whole skeleton.
+		var waist := player.ragdoll.body_of(STILL_BONE)
+		if waist != null and waist.is_simulating_physics():
+			_fail("a shot handed the hips to the physics — the kick is the shooting arm's alone")
+			return
+	if not fired:
+		_fail("the round left and the arm was never handed to the physics")
+		return
+	for _index: int in SETTLE_FRAMES:
+		await get_tree().physics_frame
+	if player.ragdoll.is_kicking():
+		_fail("the recoil never ended and the arm is still the physics engine's")
 
 
 ## The knockdown, end to end. A ragdoll is the one thing here that takes the body away from the

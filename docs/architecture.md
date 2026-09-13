@@ -662,6 +662,23 @@ capsules inside it rested on top. `RagdollComponent` now builds it from `Ragdoll
   its zero. The simulation starts with the skeleton at rest and every body is put straight back
   where the animation had it.
 
+### A recoil is the same component with two bones in it
+
+`RagdollComponent.kick()` hands **only the shooting arm** to the physics, for a tenth of a second,
+and everything else stays kinematic and goes on taking its pose from the AnimationPlayer. So the
+player keeps standing, walking and aiming through a shot; the arm is jointed to a shoulder that is
+still being animated, which is the shape a recoil has. `is_kicking()` is deliberately separate from
+`is_running()` — a recoil is not a knockdown, and everything that stops animating when the body is
+taken over has to go on getting no for the whole of a shot.
+
+The simulator's `influence` falls from one to nought across the window, so the arm eases back onto
+the clip rather than snapping onto it.
+
+**It only works because the clip does not pose those bones.** An AnimationPlayer and a skeleton
+modifier both write bone poses and the clip wins — measured, not assumed: with the arm still in
+`aim_gun`, the physical body swung five centimetres and the skin moved two millimetres. See
+[asset-pipeline.md](asset-pipeline.md) for how the clip is built without it.
+
 ### Nothing walks the tree while the game is running
 
 `@onready` everywhere, and no path lookup in any body that runs every frame. The cost is the smaller

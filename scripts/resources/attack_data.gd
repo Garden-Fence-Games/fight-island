@@ -50,6 +50,15 @@ extends Resource
 @export var is_hitscan: bool = false
 ## Rays one press sends. The double tap is two, which is also why it needs two rounds to exist.
 @export var shots: int = 1
+## What the shot does to the arm that fired it, in metres per second, thrown back and up.
+##
+## **The recoil is physics rather than a clip.** The arm goes to the ragdoll for `recoil_lasts` and
+## the simulator eases it back onto the animation, so a shot never looks the same twice and never
+## disagrees with where the body happened to be standing. Zero for anything that is not fired.
+@export var recoil: float = 0.0
+## How long the arm is the physics engine's. Long enough to read as a kick, short enough that
+## gravity has not started an argument the animation has to win back.
+@export var recoil_lasts: float = 0.10
 ## The windup only advances while the button is held, and letting go early cancels the attack. The
 ## charged shot is the one attack in the game that asks for a hold rather than a tap.
 @export var charges: bool = false
