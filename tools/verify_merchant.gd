@@ -45,6 +45,9 @@ func _run() -> void:
 	_check_money_carries()
 	await _check_a_weapon_track_moves_the_swing()
 	await _check_the_summary_reads_the_run()
+	# Last, and it puts the bag back: it empties the loadout to ask its question, and every check
+	# above it buys.
+	_check_the_merchant_sells_only_what_is_carried()
 	_put_the_run_back()
 	_report()
 
@@ -100,6 +103,31 @@ func _check_health_reaches_the_body() -> void:
 	# Buying more life and not getting it now is a purchase nobody makes twice.
 	if not is_equal_approx(_player.health.current_health, _player.health.max_health):
 		_fail("the health purchase did not heal to full")
+
+
+## The shop sells what the player carries. Fifteen per cent more damage on a gun that turns up two
+## waves from now is money spent on nothing, and the card said nothing about it.
+##
+## Held on `can_buy` rather than on the card, because the card is one of two ways to reach a
+## purchase and the other is `buy` — a gate that only greyed a button out would be a gate.
+func _check_the_merchant_sells_only_what_is_carried() -> void:
+	var gun := Upgrades.find(&"gun")
+	if gun == null or gun.weapon == &"":
+		_fail("there is no gun track naming a weapon to gate on")
+		return
+	var carried := GameState.loadout.found.duplicate()
+	GameState.money = 99999
+	# A wave nothing has been bought in yet, since one purchase a wave is the other rule here.
+	GameState.wave = 99
+	GameState.loadout.found.clear()
+	if GameState.can_buy(gun):
+		_fail("the gun track is for sale before the gun has been found")
+	if GameState.buy(gun):
+		_fail("a gun upgrade was bought before the gun had been found")
+	GameState.loadout.find_weapon(&"gun")
+	if not GameState.can_buy(gun):
+		_fail("the gun track is still refused once the gun is in the bag")
+	GameState.loadout.found = carried
 
 
 func _check_one_purchase_a_wave() -> void:
