@@ -6,7 +6,31 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-13
+
+The first tagged build: a fifteen-wave run on a generated island, three weapons, a merchant
+between waves — held by 42 headless checks in CI and 50 mutations that prove those checks can
+still fail.
+
 ### Added
+
+- **A soundtrack.** Five licensed tracks, drawn as a shuffle bag so everything plays before
+  anything repeats, and playing from the first frame — before the intro, which is a silent video, so
+  the music is its audio. A track carries its **own measured loudness** and the gain is derived from
+  it, the way a recorded voice already was: five masters six decibels apart would otherwise step the
+  level every time the track changed.
+- **The sea is where the sea is.** The surf was one flat loop at a fixed level everywhere — as loud
+  in the middle of the island as with your feet in the water. The shoreline is now found by asking
+  the terrain rather than assuming a radius, and a ring of eight sources sits on it, deliberately
+  out of phase so they do not comb-filter into one loop played eight times. Measured: **-42.7 dB
+  inland against -30.8 dB at the water**.
+- **Ten more farmer lines**, nineteen in all, each levelled to the family's own measured loudness.
+  Five arrived as voice messages recorded nine decibels hot, one clipped at source; dropped in raw
+  they would have been nine decibels louder than every other farmer on the island.
+- **The draw budget is measured with the crowd in the frame.** `measure_draw` places thirty bodies
+  in front of the camera and reports a frame time against the 16.7 ms a 60 Hz frame has. On an M2
+  Pro at 1080p: **9.74 ms empty, 10.32 at thirty, 10.83 at sixty.** Double the budget costs 1.1 ms
+  more than an empty island, which costs 9.74 on its own — the crowd is not what spends the frame.
 
 - **The sea is deep enough to drown in** (#196). Past the wading limit the bar comes down, faster
   the deeper you are — nothing at 1.1 m, twenty health a second by 1.6 — and at zero the run ends
@@ -24,6 +48,18 @@ All notable changes to this project are documented here, following
   - Figures in `data/combat/tide.tres`, and in `docs/game-design.md` once.
 
 ### Fixed
+
+- **The mix was written in peaks, and peaks measure the wrong thing.** Two sounds normalised to the
+  same peak are not the same loudness and are not close — measured across this game's own sounds the
+  gap reached seventeen decibels. The farmers sat at a footstep's loudness because a voice level was
+  applied to recordings already louder than it. The table is in loudness now, and so is the check
+  that should have caught it: it had compared a gain against a peak, two numbers in different units,
+  neither of them a loudness.
+- **The soundtrack shipped inaudible**, at -46.6 dB: under the menu click and barely over a
+  footstep, so in a menu the button was louder than the music. Same fault as the farmers, on the one
+  family still measured in the wrong unit — a level applied as a gain to an already-mastered
+  recording. Two guards now hold it: the soundtrack must sit above the furniture and under a
+  wind-up, and every shipped track must declare a measured loudness.
 
 - **A body could sit at zero health, alive, for ever.** `HealthComponent` lost a death to floating
   point: a drain lands on the floor by subtraction rather than by a blow that overshoots it, and
@@ -1086,4 +1122,5 @@ All notable changes to this project are documented here, following
 - Five input actions that a fixed camera has no use for: `camera_left`, `camera_right`,
   `camera_up`, `camera_down`, `camera_recenter`.
 
-[Unreleased]: https://github.com/pepito2t/fight-island/commits/main
+[Unreleased]: https://github.com/pepito2t/fight-island/compare/v0.1.0...main
+[0.1.0]: https://github.com/pepito2t/fight-island/releases/tag/v0.1.0
