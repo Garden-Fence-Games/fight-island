@@ -40,7 +40,7 @@ const ASSIST_CONE: float = 12.0
 ## takes all of it, which is what somebody who cannot hold a stick steady actually needs.
 const ASSIST_PULL: Dictionary = {"soft": 0.5, "strong": 1.0}
 ## The furthest a target may be when nothing in hand says otherwise — a fist has no reach worth
-## assisting at, and the player may be holding one while a thrower is the only thing on screen.
+## assisting at, and the player may be holding one while nothing is in reach of a fist.
 const ASSIST_RANGE: float = 25.0
 
 var _device: Device = Device.NOBODY

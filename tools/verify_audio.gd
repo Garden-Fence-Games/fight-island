@@ -73,7 +73,7 @@ const MUSIC: Array[StringName] = [&"music_ground", &"music_pulse", &"music_edge"
 ## they are already two rows above it.
 const FAMILIES: Array[StringName] = [&"stick", &"gun"]
 ## The farmhand is the base and keeps the plain `telegraph` id, so he is not in this list either.
-const ARCHETYPES: Array[StringName] = [&"reaper", &"thrower", &"pirate"]
+const ARCHETYPES: Array[StringName] = [&"reaper", &"pirate"]
 ## The one looping sound, checked on its own terms.
 const BED: StringName = &"surf"
 ## How close a baked peak has to be to the peak it declared. Tight: this is arithmetic, not taste,
@@ -352,9 +352,13 @@ func _check_the_perfect_ring_is_the_same_in_every_family() -> void:
 			)
 
 
-## A reaper's wind-up and a thrower's must not sound alike. The thrower is the one the player may
-## never see coming, and sound is the only warning the design gives them — so his is the one that
-## has to be furthest from everybody else's.
+## A reaper's wind-up and a pirate's must not sound alike. Several of them commit at once in a
+## crowd at night, and an archetype the ear cannot pick out of that is an archetype the player
+## cannot answer differently.
+##
+## **There is no "one that stands out" any more.** That claim belonged to the thrower, who struck
+## from fourteen metres and was the one the player might never see; with him gone, every wind-up
+## here is attached to a body already on screen, and what is left to assert is that they differ.
 func _check_every_archetype_announces_itself_differently() -> void:
 	var pitches: Dictionary = {}
 	for id: StringName in _every_telegraph():
@@ -387,19 +391,6 @@ func _check_every_archetype_announces_itself_differently() -> void:
 					)
 				)
 				return
-	var thrower := float(pitches.get(&"telegraph_thrower", 0.0))
-	for id: StringName in pitches:
-		if id != &"telegraph_thrower" and float(pitches[id]) >= thrower:
-			_fail(
-				(
-					(
-						"%s climbs as high as the thrower's — his is the one warning that has to stand "
-						+ "out, because he is the one the player cannot see coming"
-					)
-					% id
-				)
-			)
-			return
 
 
 ## A `.tres` naming a sound nothing registered is silence where a signature should be, and it fails
@@ -901,8 +892,8 @@ func _report() -> void:
 		print(
 			(
 				"audio OK — every sound is its own waveform, three "
-				+ "weapons land with three bodies and one signature, four archetypes wind up "
-				+ "from four pitches and the thrower's stands highest, the last round says so, "
+				+ "weapons land with three bodies and one signature, three archetypes wind up "
+				+ "from three pitches that stay apart, the last round says so, "
 				+ "a swing through air passes rather than snapping, and the surf comes back "
 				+ "round without a tick"
 			)

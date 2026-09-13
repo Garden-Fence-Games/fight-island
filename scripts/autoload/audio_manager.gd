@@ -113,11 +113,8 @@ const IMPACTS: Dictionary = {
 ## reads as a drone — and they differ in **where they climb from and to**, which is the one thing
 ## that survives several of them at once in a crowd at night.
 ##
-## The thrower is the outlier on purpose: he strikes from fourteen metres and is the one archetype
-## the player may never see coming, so his is the highest and the longest, and the only one that
-## climbs more than an octave. The pirate is the other end of it: he strikes hardest and from arm's
-## length, so his is the lowest and the longest warning there is, and it is under an octave like
-## every close-range one.
+## The pirate is the outlier on purpose: he strikes hardest and from arm's length, so his is the
+## lowest and the longest warning there is.
 ##
 ## **The farmhand is the base**, keeping the plain `telegraph` id for the same reason the fists keep
 ## `hit`: he is the archetype every wave is made of, and a wind-up in this game sounds like a
@@ -126,7 +123,6 @@ const BASE_TELEGRAPH: StringName = &"farmhand"
 const TELEGRAPHS: Dictionary = {
 	&"farmhand": {"from": 300.0, "to": 690.0, "seconds": 0.30, "grain": 61},
 	&"reaper": {"from": 150.0, "to": 300.0, "seconds": 0.42, "grain": 67},
-	&"thrower": {"from": 520.0, "to": 1240.0, "seconds": 0.36, "grain": 73},
 	&"pirate": {"from": 200.0, "to": 380.0, "seconds": 0.48, "grain": 79},
 }
 ## Small random pitch on repeated sounds, so a chain does not sound like a machine. The perfect hit

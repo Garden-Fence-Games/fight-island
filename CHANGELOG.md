@@ -6,6 +6,26 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Removed
+
+- **The thrower is gone, and nothing stands in for him.** He was never wanted: issue #9 asked for a
+  ranged farmer and #73 built him, and the design he was built into is not the one this game is.
+  Removed rather than switched off — the archetype, his stone, the `Projectile` he flew, the
+  `Retreat` state, the separate ranged token pool, `EnemyData.is_ranged`, `retreat_range` and
+  `projectile`, the rule that no wave may open with a ranged body, his telegraph, his clips, his
+  locale row, and `verify_sightlines`, which existed to answer a question only he asked.
+  - **The composition closes over him.** The pirate stays a flat ten per cent hazard and the reaper
+    takes the escalation the thrower used to carry: by wave 12 a body on the island is as likely to
+    be a reaper as a farmhand. One new archetype per wave still, the reaper at 3 and the pirate at
+    4, and nothing new after that — the mix simply hardens.
+  - **The late game is measurably gentler**, and this is the price rather than a side effect. His
+    token was a free one: he queued on a pool nobody else could use, so being shot at cost nothing
+    the melee pool was already spending. Measured by `tools/measure_waves.tscn`, wave 15 goes from
+    103 to 81 points of incoming damage a second at the night pool, and survival under full contact
+    from 1.2 s to 1.5 s.
+  - **The curve is smoother for it.** The worst wave-to-wave step in the run was his arrival at 32
+    per cent; the worst now is the pirate's at 17, and every other step is under 14.
+
 ### Fixed
 
 - **The itch.io publish had the wrong account.** `ITCH_USER` was the repository owner, and the page
