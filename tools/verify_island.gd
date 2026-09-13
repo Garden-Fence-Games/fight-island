@@ -27,7 +27,7 @@ const CEILING: float = 2.8
 ## Bushes are here by decision, not by omission: they are waist-high cover the player walks straight
 ## through. A bush that collided would be a dodge-sized obstacle scattered ninety times across the
 ## arena, and the fight is the one thing on this island allowed to stop you.
-const HARMLESS: PackedStringArray = ["Grass", "Pebbles", "Palms", "Bushes"]
+const HARMLESS: PackedStringArray = ["Grass", "Pebbles", "Palms", "Bushes", "Bottles"]
 ## What is placed rather than scattered, and so what the generator is trusted to have put in the
 ## right spot. Every rule the scatter obeys is checked against these too — a hut dropped by hand
 ## into the spawn pad traps the player exactly as surely as a boulder scattered into it.
@@ -35,9 +35,9 @@ const PLACED: PackedStringArray = ["RockFormations", "Huts"]
 ## Everything that grows, and so everything the wind must reach. What is left out matters as much:
 ## a swaying boulder is worse than a still palm.
 const FOLIAGE: PackedStringArray = ["Grass", "Palms", "Bushes"]
-const STILL: PackedStringArray = ["Rocks", "Pebbles"]
+const STILL: PackedStringArray = ["Rocks", "Pebbles", "Bottles"]
 ## Every scattered population, all of which have to be splittable.
-const SCATTERED: PackedStringArray = ["Grass", "Pebbles", "Palms", "Rocks", "Bushes"]
+const SCATTERED: PackedStringArray = ["Grass", "Pebbles", "Palms", "Rocks", "Bushes", "Bottles"]
 ## How wide a chunk may be. The generator cuts on a 12 m grid and a model hangs over the edge of its
 ## own cell, so this is that grid with room for the widest thing standing in it — a palm, at 7.4 m
 ## across. Written out rather than read off the generator, which would make this agree with any grid

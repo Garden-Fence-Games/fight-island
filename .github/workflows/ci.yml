@@ -354,6 +354,11 @@ jobs:
       - name: Verify the telemetry record
         run: tools/run-check.sh res://tools/verify_telemetry.tscn
 
+      # The one moment the player has no body and the camera is somewhere else. Both have to come
+      # back, and only a run begun from the title may take them away.
+      - name: Verify the new-run opening
+        run: tools/run-check.sh res://tools/verify_run_intro.tscn
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

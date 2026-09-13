@@ -6,6 +6,25 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Fixed
+
+- **`verify_corpses` was a coin toss** — four runs in five on `main`, and it blocked every pull
+  request behind it including the release. Three assertions flaked, and none of them was a bug in
+  the game (#207).
+  - The impulse was never being lost. Instrumenting `push_near` showed **sixteen bodies taking it
+    every time**. What varies is how much of it reaches the *hips*, which is what the check reads,
+    and that depends on the pose the tumble happened to leave: splayed on his back the hips travel a
+    third of a metre, folded on his side a tenth. Both are a body reacting; only one was passing. A
+    single blow now has to **disturb** the body — five centimetres, against a picture's nought and
+    the two real modes' nine and thirty-three — and "shoved" is what a sustained walk into one has
+    to do, which is a different claim and keeps its own figure.
+  - The two shove checks **poll for the movement instead of reading at a fixed frame**. A ragdoll
+    woken a frame later than usual had not finished travelling when the reading was taken, and the
+    check reported that the player walks through corpses.
+  - The sand check held the body's lowest point to 35 cm and read 36 on about one run in five. It is
+    45 now: what it was written against was **two metres** of skin under the sand, and a centimetre
+    is two machines' solvers disagreeing, not a body sinking.
+
 ### Added
 
 - **The island is drawn as pixel art.** The finished 3D frame is cut into fat pixels — two screen
@@ -47,6 +66,19 @@ All notable changes to this project are documented here, following
     being watched passes for every number, including a patience nobody would stand through.
 
 ### Added
+
+- **A new run opens on the player waking up.** Purple-Sigil's `new_run_awakening` plays whole while
+  the camera turns once round him, close and low, and opens out onto the game camera exactly — the
+  turn's last point is where the game is played from, so nothing is cut to. For its length there is
+  no body to control, no free head, no waves, no tutorial and no HUD. Only a run begun from the
+  title opens this way; a retry, a restart or a resume goes straight in. `verify_run_intro` holds
+  both.
+- **Bottles in the grass where the player wakes up, and the midday sun catches them.** Seventy of
+  Purple-Sigil's bottles, standing and lying, in glass, within ten metres of the spawn and nowhere
+  else. Around midday the one whose glass best mirrors the sun into the camera throws a lens flare
+  across the screen — a burst, a streak and a line of ghosts through the centre — and as the player
+  moves, different bottles catch and let go. Reduced flashing turns it off. `SunGlint`, tuned by
+  `data/fx/sun_glint.tres`.
 
 - **The pirate comes ashore.** The rig arrived with #192 and nothing used it. He is an archetype
   now, and he is the hardest blow in the game: **22 damage**, nearly three farmhands, a quarter of

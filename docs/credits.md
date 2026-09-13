@@ -53,6 +53,7 @@ the stick ride in the player's. The terrain itself is still built from Godot pri
 | `assets/models/nature/grass_1..3.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/bush_1..3.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/rock_1..7.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
+| `assets/models/nature/bottle_1..2.glb` | original, modelled in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/bird.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/bird_fly.glb` | original, modelled and painted in Blender | Purple-Sigil | © the project, all rights reserved | 2026-09-13 |
 | `assets/models/nature/stone_smallA.glb` | [Nature Kit](https://kenney.nl/assets/nature-kit) 2.1 | Kenney | CC0 1.0 | 2026-09-12 |
