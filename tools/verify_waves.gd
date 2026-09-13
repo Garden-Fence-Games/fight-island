@@ -21,6 +21,18 @@ const POINTS: int = 200
 ## The rule, written out rather than read off the class being checked. Reading SpawnDirector's own
 ## constant would make this assertion agree with any value someone puts there, which is not a test.
 const NEAREST_SPAWN: float = 12.0
+## What the rule is allowed to have drifted by before this is read as a violation.
+##
+## **`SpawnDirector` checks the distance when it places the body; this checks it afterwards**, and
+## in between the player keeps walking — the comment below already said so and then compared with
+## no slack at all. A spawn that landed legitimately at 12.00 m is 11.98 m by the time anything
+## looks, and the check failed intermittently on exactly that, roughly one CI run in four, with
+## "something spawned 12.0 m from the player".
+##
+## Half a metre is far more than the player moves in the frames between the two, and far less than
+## the failure this guards against: a wave arriving on top of somebody is metres inside the rule,
+## not centimetres.
+const MEASURED_LATE: float = 0.5
 ## The navigation map is built on a physics step, and until it answers, every point is refused.
 ## This is also why the first wave is not instant in the game.
 const MAP_SYNC_FRAMES: int = 120
@@ -437,8 +449,8 @@ func _check_nothing_spawned_in_shot_or_underfoot() -> void:
 		var apart := Vector2(
 			where.x - _player.global_position.x, where.z - _player.global_position.z
 		)
-		if apart.length() < NEAREST_SPAWN:
-			_fail("something spawned %.1f m from the player" % apart.length())
+		if apart.length() < NEAREST_SPAWN - MEASURED_LATE:
+			_fail("something spawned %.2f m from the player" % apart.length())
 			return
 		if not Ground.is_spawnable(world, where, _player.global_position):
 			_fail("something spawned where it cannot walk out of, at %s" % where)
