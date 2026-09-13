@@ -197,6 +197,12 @@ jobs:
       - name: Verify the coconuts
         run: tools/run-check.sh res://tools/verify_coconut.tscn
 
+      # A kill's pay is thrown on the sand and walked over now, so the economy was tuned against a
+      # payout that can be missed. This holds that it cannot: the coins add up to the body, the arc is
+      # seen, near is enough, a full pocket leaves its round, and the end of a wave sweeps the rest.
+      - name: Verify the coins and the rounds
+        run: tools/run-check.sh res://tools/verify_loot.tscn
+
       # The save file is the one thing in the game the player owns and can edit, so every way it
       # can be wrong is a check: missing, truncated, not an object, or from a build that does not
       # exist yet. None of that is reachable from a diff, and all of it crashes a launch.

@@ -220,9 +220,9 @@ func _check_damage_numbers() -> void:
 
 
 ## The opposite default to the damage numbers, and the reason is the design rather than symmetry:
-## a player has to learn that killing pays, and that is one number per body where damage is one per
-## hit. A body worth nothing is the case worth checking — the tutorial's farmhands pay no money, and
-## a `+$0` over every one of them would be the first thing anyone ever learns about the economy.
+## a player has to learn that killing pays. The number rises off the coin as it is taken — not off
+## the body as it falls, since a coin nobody has walked over yet is not money in the purse — and a
+## coin worth nothing says nothing.
 func _check_credit_numbers() -> void:
 	if not Settings.DEFAULTS[&"gameplay_credit_numbers"]:
 		_fail("credit numbers must default to on")
@@ -231,7 +231,7 @@ func _check_credit_numbers() -> void:
 	_clear(numbers)
 
 	Settings.set_value(&"gameplay_credit_numbers", false)
-	EventBus.enemy_died.emit(_target, &"farmhand", 5)
+	EventBus.coins_collected.emit(5, _target)
 	await get_tree().process_frame
 	if numbers.get_child_count() != 0:
 		_fail("a credit number appeared while the setting was off")
@@ -239,16 +239,20 @@ func _check_credit_numbers() -> void:
 	Settings.set_value(&"gameplay_credit_numbers", true)
 	EventBus.enemy_died.emit(_target, &"farmhand", 5)
 	await get_tree().process_frame
+	if numbers.get_child_count() != 0:
+		_fail("a body floated its money as it fell, before a coin was taken")
+	EventBus.coins_collected.emit(5, _target)
+	await get_tree().process_frame
 	if numbers.get_child_count() != 1:
-		_fail("the setting is on and no credit number appeared")
+		_fail("the setting is on and taking a coin floated no credit number")
 	elif (numbers.get_child(0) as Label).text != "+$5":
 		_fail("a credit number reads %s, expected +$5" % (numbers.get_child(0) as Label).text)
 
 	_clear(numbers)
-	EventBus.enemy_died.emit(_target, &"farmhand", 0)
+	EventBus.coins_collected.emit(0, _target)
 	await get_tree().process_frame
 	if numbers.get_child_count() != 0:
-		_fail("a body worth nothing still floated a number")
+		_fail("a coin worth nothing still floated a number")
 	Settings.set_value(&"gameplay_credit_numbers", restore)
 	_clear(numbers)
 
@@ -453,8 +457,11 @@ func _check_stats_are_tallied() -> void:
 		_fail("kills are not tallied by archetype")
 	if GameState.stats.waves_cleared != 1:
 		_fail("a cleared wave was not counted")
-	if GameState.money != 55 or GameState.stats.money_earned != 55:
-		_fail("the kill and the wave reward did not both reach the run state")
+	# The kill pays nothing on its own now: its money is thrown on the sand and taken as coins.
+	if GameState.money != 50 or GameState.stats.money_earned != 50:
+		_fail(
+			"the wave reward did not reach the run state, or the kill paid before a coin was taken"
+		)
 	GameState.end_run()
 
 

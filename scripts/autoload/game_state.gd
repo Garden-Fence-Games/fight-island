@@ -312,16 +312,12 @@ func _on_wave_cleared(_index: int, reward: int) -> void:
 	save_run()
 
 
-## A kill pays twice, and the second payment is the one that keeps the gun alive: rounds come off
-## the bodies of the people who came to kill you, a round at a time, and from nowhere else but the
-## merchant. An empty pocket is therefore a reason to close rather than to back away, which is the
-## opposite of what an ammunition counter usually does to a player.
-func _on_enemy_died(enemy: Node3D, archetype: StringName, reward: int) -> void:
+## A kill is tallied here and paid on the sand. The money and the round a body is worth are thrown
+## out of it by `LootDirector` and reach the purse and the pocket when they are walked over — rounds
+## come off the bodies of the people who came to kill you, and from nowhere else but the merchant,
+## so an empty pocket is a reason to close rather than to back away.
+func _on_enemy_died(_enemy: Node3D, archetype: StringName, _reward: int) -> void:
 	stats.record_kill(archetype)
-	earn(reward)
-	var scavenged := loadout.scavenge(_rng.randf())
-	if scavenged > 0:
-		EventBus.rounds_scavenged.emit(scavenged, enemy)
 
 
 func _on_attack_landed(_target: Node3D, _damage: float, perfect: bool, _attack: AttackData) -> void:

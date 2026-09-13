@@ -49,7 +49,7 @@ func _run() -> void:
 	_check_the_double_tap_needs_two()
 	_check_a_cleared_wave_hands_over_no_rounds()
 	_check_the_pocket_stops_at_the_ceiling()
-	_check_a_body_in_eight_leaves_a_round()
+	_check_a_body_in_three_leaves_a_round()
 	await _check_reloading_takes_from_the_pocket()
 	_check_the_wheel_only_offers_what_was_found()
 	await _check_a_swap_drops_the_chain()
@@ -82,8 +82,8 @@ func _check_the_tables_match() -> void:
 		_fail("the magazine is %d and the reload %.2f s" % [gun.magazine, gun.reload_time])
 	if gun.reserve_start != 24 or gun.ammo_cap != 30:
 		_fail("the pocket starts at %d and caps at %d" % [gun.reserve_start, gun.ammo_cap])
-	if not is_equal_approx(gun.scavenge_chance, 0.125):
-		_fail("a body leaves a round %.3f of the time, expected one in eight" % gun.scavenge_chance)
+	if not is_equal_approx(gun.scavenge_chance, 0.333):
+		_fail("a body leaves a round %.3f of the time, expected one in three" % gun.scavenge_chance)
 	if gun.reserve_start + gun.magazine > gun.ammo_cap:
 		_fail(
 			(
@@ -217,21 +217,18 @@ func _check_the_pocket_stops_at_the_ceiling() -> void:
 		_fail("a full bag took another round")
 
 
-## One body in eight leaves a round. The roll is handed in rather than made, so this asks the
-## question with a known answer instead of firing ten thousand kills and squinting at the total.
-func _check_a_body_in_eight_leaves_a_round() -> void:
+## One body in three leaves a round. The roll is handed in rather than made, so this asks the
+## question with a known answer instead of firing ten thousand kills and squinting at the total. The
+## round lands on the sand rather than in the bag — `verify_loot` holds the walking over it.
+func _check_a_body_in_three_leaves_a_round() -> void:
 	var bag := GameState.loadout
 	var chance := Arsenal.find(&"gun").scavenge_chance
-	bag.magazine = 0
-	bag.reserve = 0
-	if bag.scavenge(chance * 0.5) != 1:
+	if not bag.rolls_a_round(chance * 0.5):
 		_fail("a roll inside the chance left nothing behind")
-	if bag.scavenge(chance) != 0:
+	if bag.rolls_a_round(chance):
 		_fail("a roll on the chance itself left a round behind")
-	if bag.scavenge(1.0) != 0:
+	if bag.rolls_a_round(1.0):
 		_fail("a roll past the chance left a round behind")
-	if bag.carried() != 1:
-		_fail("three rolls left %d rounds in the bag, expected one" % bag.carried())
 
 
 func _check_reloading_takes_from_the_pocket() -> void:

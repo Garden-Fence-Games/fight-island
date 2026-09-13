@@ -161,7 +161,8 @@ included** — the gun arrives at exactly that, 6 in it and 24 in the pocket. At
 1/2/1 rounds; attack 2 needs at least 2 in the magazine.
 
 **Nothing refills on a clock.** A cleared wave pays money and not one round. Ammunition enters a
-run two ways: **one body in eight leaves a round behind**, and the gun track hands over **+6** the
+run two ways: **one body in three leaves a round behind** — thrown on the sand, see
+[Coins and rounds](#coins-and-rounds) — and the gun track hands over **+6** the
 moment it is bought. That is the whole of the gun's rhythm, and it points the opposite way to the
 usual one: an empty pocket is a reason to close on the next farmer rather than to back away from
 him. A player who empties it in wave 6 carries that into wave 7 and answers it with the stick until
@@ -198,6 +199,26 @@ default, the stick trades commitment for reach and crowd control, the gun is the
 | Parry — missed | 10 on press | 0.22–0.45 s recovery | none | fully vulnerable — the cost of mashing |
 
 Parry is a **tap**, not a held stance. One defensive button, and all the difficulty in the timing.
+
+## Coins and rounds
+
+**A kill's pay is thrown out of the body and walked over.** The coins add up to exactly what the body
+is worth — its money times its elite rank — split across **at most 6** coins, gold. One kill in
+**three** also throws a round, silver, once the gun has been found: one round, one drop. Both fly on
+an arc **1.4 to 2.2 m** high for **0.75 to 1.05 s** and land **0.6 to 2.2 m** from the body, so a
+player always has time to see where they went.
+
+| | |
+|---|---|
+| Taken within | **1.1 m** of the player, flat |
+| Flies at the player from | **2.6 m**, at 11 m/s |
+| A round, with the pocket full | stays on the sand until there is room |
+| End of a wave | everything left flies in, and what has not arrived after **0.9 s** goes in the bag anyway |
+
+**Nothing is lost by not walking over it.** The economy was tuned against every kill paying, so the
+end of a wave sweeps the sand before the merchant opens; walking over the coins is how they arrive
+sooner, not whether they arrive. The round is the exception, on purpose: a full pocket has a
+ceiling, and the sweep does not overfill it.
 
 ## Coconuts
 

@@ -140,16 +140,15 @@ func take(rounds: int) -> int:
 	return taken
 
 
-## What a body leaves behind, if it leaves anything.
+## Whether a body leaves a round behind. The round is thrown on the sand by `LootDirector` and only
+## reaches the bag when it is walked over, which is where the room is checked.
 ##
-## **The roll arrives rather than being made here.** A one-in-eight that rolls its own dice can only
-## be checked by firing it ten thousand times and squinting at the total; one that is handed a
-## number can be asked the question with a known answer, which is what `verify_weapons` does.
-func scavenge(roll: float) -> int:
+## **The roll arrives rather than being made here.** A chance that rolls its own dice can only be
+## checked by firing it ten thousand times and squinting at the total; one that is handed a number
+## can be asked the question with a known answer, which is what `verify_weapons` does.
+func rolls_a_round(roll: float) -> bool:
 	var ranged := _ranged()
-	if ranged == null or roll >= ranged.scavenge_chance:
-		return 0
-	return take(1)
+	return ranged != null and roll < ranged.scavenge_chance
 
 
 ## The gun, but only once it has been found. Rounds mean nothing to a player who has no gun to put
