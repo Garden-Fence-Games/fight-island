@@ -18,8 +18,9 @@ env:
   ITCH_GAME: "fight-island"
 
 # Godot's export templates are cross-platform, so macOS and Windows both export from one Linux
-# runner. On a private repository a macOS runner bills at ten times the rate, and it would only
-# be needed for codesigning and notarisation - neither of which is set up yet.
+# runner - and then the macOS bundle is re-sealed on a macOS one, because that is the one thing
+# Linux cannot do. This repository is public, so macOS minutes are free; on a private repository
+# they bill at ten times the rate, and that is the trade to weigh if it ever goes private.
 jobs:
   export:
     name: Export macOS and Windows
@@ -61,10 +62,58 @@ jobs:
           path: ${{ env.GAME_NAME }}-*.zip
           retention-days: 30
 
+  sign-macos:
+    name: Re-seal the macOS bundle
+    runs-on: macos-14
+    needs: export
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: builds
+          path: artifacts
+
+      # **Exported on Linux, sealed on macOS.** Godot's template arrives already signed - the
+      # binary carries `Developer ID Application: Prehensile Tales B.V.`, which is the template's
+      # own - but a bundle's signature also seals its *resources*, and Godot on Linux cannot write
+      # that seal. The `.app` therefore ships with a signature claiming resources that are not
+      # there, and macOS reports:
+      #
+      #     code has no resources but signature indicates they must be present
+      #
+      # Which the player meets as **"is damaged and can't be opened"** - the hard refusal, with no
+      # "Open Anyway" offered in System Settings. An ad-hoc re-seal turns it into the ordinary
+      # "unidentified developer", which the player *can* approve. Measured both ways on the 0.1.0
+      # archive before this was written.
+      #
+      # Notarisation (#88) removes the approval step entirely. This only makes it reachable.
+      - name: Re-sign the app and check it took
+        run: |
+          set -euo pipefail
+          cd artifacts
+          mkdir -p unpacked
+          ditto -x -k "${GAME_NAME}-macos-universal.zip" unpacked
+          app=$(find unpacked -maxdepth 1 -name '*.app' | head -1)
+          test -n "$app"
+          codesign --force --deep --sign - "$app"
+          # The verdict that matters. Before the re-seal this line is what fails.
+          codesign --verify --deep --strict --verbose=2 "$app"
+          test -f "$app/Contents/_CodeSignature/CodeResources"
+          # `ditto` rather than `zip`: an .app carries symlinks and metadata that a plain zip
+          # flattens, which is its own way of arriving damaged.
+          rm "${GAME_NAME}-macos-universal.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "${GAME_NAME}-macos-universal.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: builds
+          path: artifacts/*.zip
+          overwrite: true
+          retention-days: 30
+
   github-release:
     name: Publish GitHub release
     runs-on: ubuntu-24.04
-    needs: export
+    needs: sign-macos
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/download-artifact@v4
@@ -81,7 +130,7 @@ jobs:
   itch:
     name: Publish to itch.io
     runs-on: ubuntu-24.04
-    needs: export
+    needs: sign-macos
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/download-artifact@v4

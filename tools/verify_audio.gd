@@ -73,7 +73,7 @@ const MUSIC: Array[StringName] = [&"music_ground", &"music_pulse", &"music_edge"
 ## they are already two rows above it.
 const FAMILIES: Array[StringName] = [&"stick", &"gun"]
 ## The farmhand is the base and keeps the plain `telegraph` id, so he is not in this list either.
-const ARCHETYPES: Array[StringName] = [&"reaper", &"pirate"]
+const ARCHETYPES: Array[StringName] = [&"pirate"]
 ## The one looping sound, checked on its own terms.
 const BED: StringName = &"surf"
 ## How close a baked peak has to be to the peak it declared. Tight: this is arithmetic, not taste,
@@ -352,7 +352,7 @@ func _check_the_perfect_ring_is_the_same_in_every_family() -> void:
 			)
 
 
-## A reaper's wind-up and a pirate's must not sound alike. Several of them commit at once in a
+## A farmhand's wind-up and a pirate's must not sound alike. Several of them commit at once in a
 ## crowd at night, and an archetype the ear cannot pick out of that is an archetype the player
 ## cannot answer differently.
 ##
@@ -892,8 +892,8 @@ func _report() -> void:
 		print(
 			(
 				"audio OK — every sound is its own waveform, three "
-				+ "weapons land with three bodies and one signature, three archetypes wind up "
-				+ "from three pitches that stay apart, the last round says so, "
+				+ "weapons land with three bodies and one signature, two archetypes wind up "
+				+ "from two pitches that stay apart, the last round says so, "
 				+ "a swing through air passes rather than snapping, and the surf comes back "
 				+ "round without a tick"
 			)

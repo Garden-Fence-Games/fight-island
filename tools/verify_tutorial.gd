@@ -11,7 +11,9 @@ extends Node
 
 const ARENA: String = "res://scenes/world/arena.tscn"
 const SETTLE_FRAMES: int = 4
-const STEPS: PackedStringArray = ["01_angry", "02_fight", "03_sprint", "04_survive"]
+const STEPS: PackedStringArray = [
+	"01_angry", "02_fight", "03_sprint", "04_survive", "05_weapon_switch"
+]
 const ORDER: Array[StringName] = [&"angry", &"fight", &"sprint", &"survive"]
 ## A tick of the clock, as a sixty-hertz frame.
 const TICK: float = 1.0 / 60.0
@@ -40,6 +42,7 @@ func _run() -> void:
 	_check_wave_one_starts_after_the_last_line()
 	await _check_only_a_title_run_shows_it()
 	await _check_switching_the_prompts_off_starts_the_wave()
+	await _check_the_first_weapon_teaches_the_switch()
 	_close_the_arena()
 	_put_back_what_was_on_this_machine()
 	_report()
@@ -149,6 +152,55 @@ func _check_switching_the_prompts_off_starts_the_wave() -> void:
 		_fail("the prompts were switched off and the tutorial kept the island anyway")
 	if not _waves.is_running() or _waves.wave != 1:
 		_fail("switching the prompts off left the island with no wave")
+
+
+## The first weapon picked up shows how to switch, once, with the button of the device in hand — and
+## a pickup during the opening lines waits for them rather than cutting one off.
+func _check_the_first_weapon_teaches_the_switch() -> void:
+	_close_the_arena()
+	Settings.set_value(&"gameplay_tutorial_prompts", true)
+	await _open_a_fresh_arena()
+	if _director == null or _director.on_first_weapon == null:
+		_fail("the tutorial has no line for the first weapon")
+		return
+	var line := _director.on_first_weapon
+	var switch_text := tr(line.prompt_key).format([Devices.glyph("weapon_next")])
+	# Picked up while the opening lines are still up: the opening keeps the screen.
+	EventBus.weapon_found.emit(&"stick")
+	if _director.is_showing_weapon_line():
+		_fail("a weapon found during the opening cut an opening line off")
+	var total := 0.0
+	for step: TutorialStep in _director.steps:
+		total += step.seconds
+	_let_time_pass(total + TICK * 12.0)
+	if _director.is_running():
+		_fail("the opening did not finish in the time its lines add up to")
+	if not _director.is_showing_weapon_line() or _director.prompt.text() != switch_text:
+		_fail(
+			(
+				"after the opening the switch line is not up — the prompt reads '%s', expected '%s'"
+				% [_director.prompt.text(), switch_text]
+			)
+		)
+	_let_time_pass(line.seconds + TICK * 4.0)
+	if _director.is_showing_weapon_line():
+		_fail("the switch line is still up after its %.1f seconds" % line.seconds)
+	EventBus.weapon_found.emit(&"gun")
+	if _director.is_showing_weapon_line():
+		_fail("a second weapon showed the switch line again")
+	# After the opening, the line comes up the moment the weapon does.
+	_close_the_arena()
+	await _open_a_fresh_arena()
+	_let_time_pass(total + TICK * 12.0)
+	EventBus.weapon_found.emit(&"gun")
+	if not _director.is_showing_weapon_line():
+		_fail("a weapon found after the opening did not show the switch line")
+	# And a retry does not teach it.
+	_close_the_arena()
+	await _open_a_fresh_arena(false)
+	EventBus.weapon_found.emit(&"gun")
+	if _director != null and _director.is_showing_weapon_line():
+		_fail("a retry showed the switch line, and only a run from the title should")
 
 
 ## Driven by hand rather than by frames, so the check takes no real time and cannot race the clock.

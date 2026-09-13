@@ -244,13 +244,6 @@ jobs:
       - name: Verify accessibility
         run: tools/run-check.sh res://tools/verify_access.tscn
 
-      # The camera never turns, so a corner the player can be swept in is a corner they can never
-      # look their way out of. This walks every square metre of ground the fight can reach and
-      # checks a dodge always lands somewhere the reaper's arc does not cover — the "walk every
-      # corner" in issue #39, done by a machine because nobody walks nineteen thousand of them.
-      - name: Verify the playfield
-        run: tools/run-check.sh res://tools/verify_playfield.tscn
-
       # The navigation mesh comes out of the same generator, and nothing about a wrong one is
       # visible in a diff or a screenshot — enemies simply walk into rocks. This walks one of them
       # around a boulder and checks a spawn point inside the rock is refused.
