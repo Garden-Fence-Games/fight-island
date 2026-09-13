@@ -88,6 +88,7 @@ func _ready() -> void:
 		global_position = target.global_position
 	_jolt.seed = GameState.run_seed
 	EventBus.shake_requested.connect(_on_shake_requested)
+	PixelLook.attach(camera)
 
 
 ## How much knock is left, nought to one. Read by the headless check, which cannot see a camera

@@ -94,6 +94,11 @@ const PAGES: Array = [
 				"values": ["0", "60", "120", "144", "240"],
 				"value_keys": ["OPT_UNLIMITED", "60", "120", "144", "240"],
 			},
+			{
+				"setting": &"video_pixel_look",
+				"label": "OPT_PIXEL_LOOK",
+				"kind": OptionRow.Kind.TOGGLE
+			},
 		],
 	},
 	{

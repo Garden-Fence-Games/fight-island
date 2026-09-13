@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://cjqxv2dewd8f2"
+path="res://.godot/imported/pixel_look_blit.glsl-bc1dce144747785d9bcac77b7321e410.res"
+
+[deps]
+
+source_file="res://assets/shaders/pixel_look_blit.glsl"
+dest_files=["res://.godot/imported/pixel_look_blit.glsl-bc1dce144747785d9bcac77b7321e410.res"]
+
+[params]
+

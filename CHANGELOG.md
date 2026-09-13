@@ -6,6 +6,14 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **The island is drawn as pixel art.** The finished 3D frame is cut into fat pixels — two screen
+  pixels across at 1080p — outlined along silhouettes and lit along creases, on a slightly smaller
+  palette; the interface stays sharp. `PixelLook` runs after the transparent pass, so the sea, the
+  blood and the particles are styled with everything else, and `data/fx/pixel_look.tres` tunes it.
+  *Pixel art* under Video switches it off, live.
+
 ### Changed
 
 - **The gun's recoil is physics rather than a clip.** The arm goes to the ragdoll for a tenth of a
