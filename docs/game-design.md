@@ -82,7 +82,7 @@ not scale with upgrades.
 
 | | |
 |---|---|
-| Health | 100, no regeneration |
+| Health | 100, no regeneration — [coconuts](#coconuts) are the one exception |
 | I-frames after being hit | 0.40 s |
 | Hit-stun | 0.25 s |
 | Stamina | 100 |
@@ -184,6 +184,37 @@ default, the stick trades commitment for reach and crowd control, the gun is the
 | Parry — missed | 10 on press | 0.22–0.45 s recovery | none | fully vulnerable — the cost of mashing |
 
 Parry is a **tap**, not a held stance. One defensive button, and all the difficulty in the timing.
+
+## Coconuts
+
+The island's one source of health while a wave is on. **Two sources, doing different jobs:** the
+merchant's Health track is bought, costs a wave's money and heals to full; a coconut is walked over
+mid-fight and gives back a fixed 25. If a coconut filled the bar there would be no reason to buy
+the track.
+
+They fall out of the palms, at random, and land at the foot of the tree they fell from. Walking over
+one takes it — no button and no prompt, because a coconut exists to be grabbed in the middle of a
+crowd and a prompt there is a moment the player is committed to something other than the fight.
+Walking over one at full health leaves it lying.
+
+| | |
+|---|---|
+| Restores | 25, clamped at maximum HP |
+| Owed per wave | 0.15 per enemy in it, rounded down |
+| On the island at once | 2 on wave 1, +0.25 a wave, never more than 6 |
+| Lands within | 1.6 m of its own palm |
+| Lies there for | 20 s, fading over the last 1.2 |
+| Palms eligible | 7–24 m from the player |
+
+**The ceiling is the dial.** The supply follows the crowd, so a wave that presses harder supplies
+more and the wave tuning does not have to carry a second curve. But the crowd more than doubles over
+fifteen waves and a ceiling rising with it would never bind — it would sit above what the rate
+produces at every wave and brake nothing, exactly where braking matters. So it rises deliberately
+more slowly: more coconuts late on in absolute terms, and fewer per enemy, so the pressure still
+climbs while the island is more generous than it was at wave 2.
+
+Whatever a wave does not spend dies with the wave. A wave cleared early handing its unused supply to
+the next one is the quiet way a ceiling stops meaning anything.
 
 ## The water
 
