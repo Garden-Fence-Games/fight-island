@@ -28,6 +28,7 @@ func _ready() -> void:
 	cancel.pressed.connect(_resolve.bind(false))
 	fill.visible = false
 	set_process(false)
+	UiSounds.arm(self)
 
 
 func _process(delta: float) -> void:

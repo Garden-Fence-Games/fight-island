@@ -203,12 +203,29 @@ func _check_nothing_the_player_needs_is_on_a_bus_they_may_mute() -> void:
 	if AudioServer.get_bus_index(String(INFORMATION)) < 0:
 		_fail("there is no %s bus" % INFORMATION)
 		return
+	# The soundtrack belongs on a bus the player may mute — that is the whole of what it is for — so
+	# it is the one child besides the bed that is allowed off `SFX`. Recognised by identity rather
+	# than by a name or a stream: a jukebox renamed, or playing nothing because the playlist is
+	# still empty, is still the jukebox.
+	var box := AudioManager.jukebox()
+	if box == null:
+		_fail("there is no jukebox, so there is no soundtrack to mute")
+	elif box.bus != &"Music":
+		_fail(
+			(
+				(
+					"the soundtrack plays on %s rather than Music — on anything else the player cannot "
+					+ "switch it off, and a soundtrack they cannot switch off is information"
+				)
+				% box.bus
+			)
+		)
 	for child: Node in AudioManager.get_children():
 		var flat := child as AudioStreamPlayer
 		var placed := child as AudioStreamPlayer3D
 		var bus: StringName = flat.bus if flat != null else (placed.bus if placed != null else &"")
 		var carrying: StringName = _sound_on(flat, placed)
-		if bus.is_empty() or carrying == AudioManager.BED_SOUND:
+		if bus.is_empty() or carrying == AudioManager.BED_SOUND or child == box:
 			continue
 		if bus != INFORMATION:
 			_fail(
@@ -271,7 +288,8 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"music OK — three layers of one length that only ever rise as the island fills, silent "
+				"music OK — the soundtrack is mutable, three layers of one length that only ever "
+				+ "rise as the island fills, silent "
 				+ "in the breather, out of the way of a wind-up, and carrying nothing the player "
 				+ "needs"
 			)

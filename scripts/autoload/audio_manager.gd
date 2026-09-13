@@ -70,7 +70,13 @@ const TELEGRAPH_PEAK: float = 0.95
 ## A wave passing is the only sound in the game the player is allowed to sit and enjoy.
 const STING_PEAK: float = 0.7
 ## The bed sits under the whole game without ever being the reason something was missed.
-const SURF_PEAK: float = 0.3
+##
+## **It is continuous, and that is why it is this far down.** At 0.30 it came out at −16.5 dB — the
+## same level as a farmer's voice and three decibels under a hit, which for a transient is fine and
+## for a sound that never stops is the sea shouting over the fight. Everything else in this table is
+## something that happens; this is something that is always there, and it is graded against the
+## footfalls rather than against the blows.
+const SURF_PEAK: float = 0.12
 ## How much of full scale the loudest sound in the game is allowed to reach, before its own declared
 ## peak scales it further.
 ##
@@ -92,6 +98,21 @@ const VOICE_PEAK: float = 0.30
 ## How loudly a moving source carries. Lower than the pooled positional voices: those announce a
 ## wind-up and have to cut through, this one is a man muttering on his way over.
 const VOICE_UNIT: float = 5.0
+## What a music track comes out at. Above the bed's own layers, which is what "the bed sits under
+## the music" means in figures — and still **under everything that tells the player something**: a
+## soundtrack is the one sound the player is invited to switch off, so it can never be the reason a
+## wind-up went unheard.
+const TRACK_PEAK: float = 0.34
+## What the engine treats as silence, and what a track fades up from rather than starting at.
+const SILENT_DB: float = -80.0
+## What a menu press is worth. **The quietest thing in the game**, under even a footfall: it
+## confirms that the machine heard you and carries nothing else. A menu is a place with no other
+## sound in it, so a click that sat anywhere near a hit would be the loudest thing a player ever
+## hears — and they hear it forty times before they reach the island.
+const CLICK_PEAK: float = 0.10
+## The soundtrack itself. Empty until the music is delivered; the jukebox and the player in the
+## corner both cope with that rather than assuming a track exists.
+const PLAYLIST: String = "res://data/music/playlist.tres"
 ## The player's own death. Most of an octave down, over two thirds of a second — long enough to be
 ## a shout and short enough to be over before the summary screen slides in.
 const CRY_SECONDS: float = 0.66
@@ -220,6 +241,7 @@ var _peaks: Dictionary = {}
 var _voices: Array[AudioStreamPlayer] = []
 var _placed: Array[AudioStreamPlayer3D] = []
 var _bed: AudioStreamPlayer = null
+var _jukebox: Jukebox = null
 var _noise := RandomNumberGenerator.new()
 var _health_seen: float = -1.0
 
@@ -246,6 +268,7 @@ func _ready() -> void:
 		_placed.append(voice)
 	_load_the_recordings()
 	_start_the_bed()
+	_start_the_jukebox()
 	EventBus.attack_landed.connect(_on_attack_landed)
 	EventBus.attack_whiffed.connect(_on_attack_whiffed)
 	EventBus.parry_perfect.connect(_on_parry_perfect)
@@ -356,6 +379,23 @@ func peak_of_voice() -> float:
 	return VOICE_PEAK * HEADROOM
 
 
+## What a track comes out at, headroom included — the same question `peak_of` answers for a sound
+## with an id, for the one stream that has no id and is not synthesised.
+func peak_of_music() -> float:
+	return TRACK_PEAK * HEADROOM
+
+
+## A menu press, heard. Flat rather than positional: a button is not anywhere on the island.
+func click() -> void:
+	play(&"ui_click")
+
+
+## The soundtrack, for the player in the corner and the shortcut that mutes it. Nothing else should
+## be reaching for it: what a track is called is a question for one widget.
+func jukebox() -> Jukebox:
+	return _jukebox
+
+
 func every_sound() -> Array[StringName]:
 	var all: Array[StringName] = []
 	all.assign(_sounds.keys())
@@ -425,6 +465,7 @@ func _build() -> void:
 	_register(&"defeat", _ending(false), STING_PEAK)
 	_register(&"death_cry", _death_cry(), STING_PEAK)
 	_register(&"surf", _surf(), SURF_PEAK)
+	_register(&"ui_click", _click(), CLICK_PEAK)
 	for layer: StringName in LAYERS:
 		_register(layer, _layer(layer), MUSIC_PEAK)
 
@@ -727,6 +768,15 @@ func _death_cry() -> AudioStreamWAV:
 	return SoundBank.bake(samples, STING_PEAK * HEADROOM)
 
 
+## A menu press. Two short tones a fifth apart and gone in a tenth of a second — the same interval
+## everything tonal in this game is built on, so the menus are in the key the island is in.
+func _click() -> AudioStreamWAV:
+	var samples := SoundBank.long_enough(0.05, 0.02)
+	SoundBank.tone(samples, 880.0, 0.5, 0.04)
+	SoundBank.tone(samples, 1320.0, 0.35, 0.035, 0.02)
+	return SoundBank.bake(samples, CLICK_PEAK * HEADROOM)
+
+
 ## The surf, and nothing else. It is the only sound here with no event behind it, and the only one
 ## that loops.
 ##
@@ -795,6 +845,14 @@ func _start_the_bed() -> void:
 	add_child(_bed)
 	if audible:
 		_bed.play()
+
+
+## The soundtrack, built here because music outlives scenes and this is the node that does too.
+func _start_the_jukebox() -> void:
+	_jukebox = Jukebox.new()
+	_jukebox.name = "Jukebox"
+	_jukebox.playlist = load(PLAYLIST) as MusicPlaylist
+	add_child(_jukebox)
 
 
 ## The family the attack names, or the generic thud when it names none. The perfect one never gets

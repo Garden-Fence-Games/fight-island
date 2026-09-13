@@ -38,12 +38,17 @@ bindings.
 | `ui_cancel` | `Esc` | **B** | 0.2 |
 | `menu_options` | `O` | Y | 0.2 |
 | `menu_new_run` | `N` | Y | 0.2 |
+| `music_mute` | `M` | R3 | 0.2 |
 | `menu_prev_tab` | `Q` | LB | 0.2 |
 | `menu_next_tab` | `E` | RB | 0.2 |
 
 `menu_prev_tab` and `menu_next_tab` reuse the shoulder buttons `weapon_prev` and `weapon_next`
 already hold, and `E` already means `interact`. Nothing collides: the options screen is only ever
 open with the game paused or from the title, so no weapon swap and no interaction is listening.
+
+`music_mute` takes **R3**, the one pad button the fight had left. The right stick aims rather than
+looks, so clicking it is the only face or stick button not already spoken for — and muting the
+music is the one thing a player does without taking their thumbs anywhere.
 
 `menu_options` and `menu_new_run` share Y on the pad on purpose: a title screen never shows
 both badges at once, so the run state decides which one answers. They exist because the menu

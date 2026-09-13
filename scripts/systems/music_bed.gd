@@ -32,6 +32,11 @@ const RECOVERS: float = 2.5
 ## How long a duck is held after the wind-up that asked for it. Long enough to cover the swing that
 ## follows, short enough that three farmers in a row do not silence the bed for a whole wave.
 const HOLD: float = 0.55
+## How far the bed steps back while a track is playing. It is the same music at two jobs: a track
+## is the thing being listened to and the bed is the thing telling the player how full the island
+## is, so under a track the bed keeps saying it and stops competing. Not silence — the pressure it
+## carries is the only pacing tool the game has, and it has to survive somebody putting a song on.
+const UNDER_A_TRACK_DB: float = -9.0
 ## Off, rather than very quiet. A layer below its own range contributes nothing, and -80 dB is what
 ## the engine treats as silence.
 const SILENT: float = -80.0
@@ -44,6 +49,7 @@ const SILENT: float = -80.0
 var _players: Dictionary = {}
 var _pressure: float = 0.0
 var _ducked_for: float = 0.0
+var _track_on: bool = false
 var _bus: int = -1
 
 
@@ -60,6 +66,9 @@ func _ready() -> void:
 		if AudioManager.audible:
 			player.play()
 	EventBus.telegraph_began.connect(_on_telegraph_began)
+	EventBus.music_track_changed.connect(_on_music_track_changed)
+	# A track may already be playing: the jukebox starts at boot and this bed arrives with the arena.
+	_track_on = AudioManager.jukebox() != null and AudioManager.jukebox().now_playing() != null
 
 
 ## A layer left playing at teardown is an object the engine reports as leaked on the way out, and CI
@@ -79,7 +88,7 @@ func _process(delta: float) -> void:
 	_pressure = lerpf(_pressure, _trouble(), clampf(FOLLOWS * delta, 0.0, 1.0))
 	for id: StringName in _players:
 		var player: AudioStreamPlayer = _players[id]
-		player.volume_db = _volume_of(id, _pressure)
+		player.volume_db = _volume_of(id, _pressure) + (UNDER_A_TRACK_DB if _track_on else 0.0)
 	_ducked_for = maxf(_ducked_for - delta, 0.0)
 	if _bus < 0:
 		return
@@ -130,6 +139,10 @@ func loudness_at(pressure: float) -> float:
 ## How far the bus is pulled down right now, in decibels. Nought when nothing is committing.
 func duck_db() -> float:
 	return AudioServer.get_bus_volume_db(_bus) if _bus >= 0 else 0.0
+
+
+func _on_music_track_changed(track: MusicTrack) -> void:
+	_track_on = track != null
 
 
 func _on_telegraph_began(_where: Vector3, _archetype: EnemyData) -> void:

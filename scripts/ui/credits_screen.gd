@@ -37,6 +37,7 @@ func _ready() -> void:
 	_build_section("CREDITS_PEOPLE", roll.people, false)
 	_build_section("CREDITS_ASSETS", roll.assets, true)
 	_build_section("CREDITS_TOOLS", roll.tools, false)
+	UiSounds.arm(self)
 
 
 ## Held rather than pressed: a list is wound, not stepped through. Read in `_process` because the

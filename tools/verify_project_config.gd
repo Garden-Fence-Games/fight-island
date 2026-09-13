@@ -26,6 +26,7 @@ const REQUIRED_ACTIONS: PackedStringArray = [
 	"weapon_gun",
 	"pause",
 	"menu_options",
+	"music_mute",
 	"menu_new_run",
 	"menu_prev_tab",
 	"menu_next_tab",

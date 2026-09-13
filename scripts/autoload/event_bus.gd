@@ -7,6 +7,12 @@ extends Node
 ## scene: it notices which device the player just used and says so. The **answer** is kept by
 ## `Devices`, not here, so the no-state rule still holds — this is the noticing, not the knowing.
 
+## A track began, or stopped. Carries the track so the player in the corner can name it, and null
+## when there is nothing playing — an empty playlist, or the soundtrack muted.
+signal music_track_changed(track: MusicTrack)
+## The soundtrack was switched off, or back on.
+signal music_muted(muted: bool)
+
 signal player_damaged(current: float, maximum: float)
 signal player_died
 signal stamina_changed(current: float, maximum: float)
