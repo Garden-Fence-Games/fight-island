@@ -24,6 +24,25 @@ Plain `StandardMaterial3D` colours, chosen so that player, enemy and elite are d
 a glance from a high angled camera. This is the fastest path to knowing whether the timing system
 feels good, and that is the only question milestones 1 and 2 have to answer.
 
+
+## The intro video
+
+`assets/video/garden_fence_intro.ogv` — Theora, 1920×1080 at 30 fps, 8.1 s, 1.6 MB. Godot's
+`VideoStreamPlayer` reads **Ogg Theora and nothing else**, so an mp4 has to be converted; this
+project's ffmpeg has no Theora encoder and `ffmpeg2theora` does the job:
+
+```
+ffmpeg2theora -o garden_fence_intro.ogv --videoquality 8 --optimize --no-audio <source>.mp4
+```
+
+The effects are generated rather than hand-animated, and the two scripts that generate them live in
+[art-source/video/](../art-source/video): `dust_gen.py` renders the particle layer — dust, shards
+and flashes keyed to where the logo's planks land — and `build_filter.py` writes the ffmpeg
+`filter_complex` that adds the impact shake, bloom, chromatic aberration, grain and vignette. Same
+rule as the models: the source stays in `art-source/`, the output ships.
+
+The player can skip it with any key, and the hint saying so fades in after 1.6 s.
+
 ## The two packs that are not primitives
 
 The island's vegetation, stone and huts are downloaded rather than built: four models out of

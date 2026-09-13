@@ -275,6 +275,12 @@ jobs:
       - name: Verify nothing walks the tree per frame
         run: tools/run-check.sh res://tools/verify_lookups.tscn
 
+      # The document's own second line says a file with no row does not ship, and until this was
+      # written nothing enforced it — the intro video had been in the repository since the boot
+      # sequence was built and had never been credited.
+      - name: Verify nothing ships uncredited
+        run: tools/run-check.sh res://tools/verify_shipped.tscn
+
       # Three things that each break the other two if done wrong: he must stay, he must stop being
       # an enemy so the pool of thirty-two can serve a run that kills hundreds, and he must not sink
       # — which is what he used to do and what made the first two moot.
