@@ -15,6 +15,21 @@ still fail.
 =======
 ### Changed
 
+- **The menus are set in a face you can read.** Badeen Display was chosen for impact and failed the
+  one thing a menu owes the player: its counters close up at every size, so at 40 px `THE STUDIO`
+  rendered as a row of filled blocks. Oswald Medium replaces it through one `ext_resource` that
+  eight theme variations point at. A standing rule goes with it — Badeen drew its Latin digits as
+  the Arabic-Indic forms, so no string carrying a number could be set in it.
+- **A wave is ninety seconds**, forty-five of light and forty-five of dark, down from four minutes.
+  Fifteen waves goes from about an hour to about twenty-five minutes. The turn of the sky moved with
+  it: `turning_share` is now a fact about each phase rather than one global, and **dawn and dusk
+  carry all of it** — they exist to *be* the turn, and holding a dusk before flipping into night in
+  its last few seconds was the abrupt version of the thing dusk was added to smooth.
+- **The credits say whose game it is.** A `The studio` row leads the roll — Garden Fence,
+  gardenfence.ch — through the existing document-to-screen chain rather than around it.
+- **The whole mix was set by ear**, in a fight, at a fader desk built for it, and the figures it was
+  left at are the defaults.
+
 - **The merchant sells what you carry.** A weapon's upgrade track is refused until the weapon is in
   the bag — the stick is found in wave 2 and the gun in wave 4, and fifteen per cent more damage on
   something the player cannot swing yet is money spent on nothing they would only discover was
@@ -28,6 +43,18 @@ still fail.
 
 
 ### Fixed
+
+- **The mix was written in peaks, and peaks measure the wrong thing.** Two sounds normalised to the
+  same peak are not the same loudness and are not close — measured across this game's own sounds the
+  gap reached seventeen decibels. The farmers sat at a footstep's loudness because a voice level was
+  applied to recordings already louder than it. The table is in loudness now, and so is the check
+  that should have caught it: it had compared a gain against a peak, two numbers in different units,
+  neither of them a loudness.
+- **The soundtrack shipped inaudible**, at -46.6 dB: under the menu click and barely over a
+  footstep, so in a menu the button was louder than the music. Same fault as the farmers, on the one
+  family still measured in the wrong unit — a level applied as a gain to an already-mastered
+  recording. Two guards now hold it: the soundtrack must sit above the furniture and under a
+  wind-up, and every shipped track must declare a measured loudness.
 
 - **`verify_waves` failed on a distance it measured too late** — "something spawned 11.49 m from
   the player", on a rule of twelve that nothing had broken (#216). `SpawnDirector` measures the
@@ -55,6 +82,24 @@ still fail.
     is two machines' solvers disagreeing, not a body sinking.
 
 ### Added
+
+- **A soundtrack.** Five licensed tracks, drawn as a shuffle bag so everything plays before
+  anything repeats, and playing from the first frame — before the intro, which is a silent video, so
+  the music is its audio. A track carries its **own measured loudness** and the gain is derived from
+  it, the way a recorded voice already was: five masters six decibels apart would otherwise step the
+  level every time the track changed.
+- **The sea is where the sea is.** The surf was one flat loop at a fixed level everywhere — as loud
+  in the middle of the island as with your feet in the water. The shoreline is now found by asking
+  the terrain rather than assuming a radius, and a ring of eight sources sits on it, deliberately
+  out of phase so they do not comb-filter into one loop played eight times. Measured: **-42.7 dB
+  inland against -30.8 dB at the water**.
+- **Ten more farmer lines**, nineteen in all, each levelled to the family's own measured loudness.
+  Five arrived as voice messages recorded nine decibels hot, one clipped at source; dropped in raw
+  they would have been nine decibels louder than every other farmer on the island.
+- **The draw budget is measured with the crowd in the frame.** `measure_draw` places thirty bodies
+  in front of the camera and reports a frame time against the 16.7 ms a 60 Hz frame has. On an M2
+  Pro at 1080p: **9.74 ms empty, 10.32 at thirty, 10.83 at sixty.** Double the budget costs 1.1 ms
+  more than an empty island, which costs 9.74 on its own — the crowd is not what spends the frame.
 
 - **The island is drawn as pixel art.** The finished 3D frame is cut into fat pixels — two screen
   pixels across at 1080p — outlined along silhouettes and lit along creases, on a slightly smaller
