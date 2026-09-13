@@ -128,6 +128,11 @@ All notable changes to this project are documented here, following
 
 ### Changed
 
+- The duck bus is named once, on `AudioManager`, instead of written out as `"MusicDuck"` in the bed,
+  the jukebox and the bus lookup. A rename in the layout used to leave `get_bus_index` returning -1
+  in whichever of the three was missed, with nothing to say so — a silent bed, or a duck that never
+  came off. Carried over from the closed #181, which had it right.
+
 - **A new intro video** with the VFX pass — impact shake, bloom, chromatic aberration, grain and a
   particle layer keyed to where the logo's planks land. The two scripts that generate it are in
   `art-source/video/`, the same way a `.blend` lives there and the `.glb` ships.

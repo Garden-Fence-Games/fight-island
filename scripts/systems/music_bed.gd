@@ -61,10 +61,10 @@ var _bus: int = -1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_bus = AudioServer.get_bus_index("MusicDuck")
+	_bus = AudioServer.get_bus_index(String(AudioManager.DUCK_BUS))
 	for id: StringName in AudioManager.LAYERS:
 		var player := AudioStreamPlayer.new()
-		player.bus = &"MusicDuck"
+		player.bus = AudioManager.DUCK_BUS
 		player.stream = AudioManager.sound(id)
 		player.volume_db = SILENT
 		add_child(player)

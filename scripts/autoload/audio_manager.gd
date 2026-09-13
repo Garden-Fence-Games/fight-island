@@ -152,6 +152,14 @@ const ENDING_RING: float = 0.55
 ## The one looping sound that is not music. Named so a check can tell the bed apart from a one-shot
 ## without knowing what a surf is.
 const BED_SOUND: StringName = &"surf"
+## The bus everything musical plays on, and the one it sends into. They are two buses because two
+## writers on one bus is what silently overwrote the player's volume slider every frame — the duck
+## lands on `MusicDuck` and `Settings` is the only thing that ever writes `Music`.
+##
+## Named here rather than spelled out at each use. Three files sat on this bus by writing the string
+## again, and a bus renamed in the layout would have left `get_bus_index` returning -1 in one of
+## them with nothing to say so: a silent bed, or a duck that never came off.
+const DUCK_BUS: StringName = &"MusicDuck"
 ## How long every layer runs before it comes round. **The same for all of them**, or they drift out
 ## of phase within a minute and the lift stops being one piece of music getting louder.
 const MUSIC_SECONDS: float = 8.0
