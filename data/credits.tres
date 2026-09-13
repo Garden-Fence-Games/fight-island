@@ -182,7 +182,7 @@ licence = "© the project, all rights reserved"
 
 [sub_resource type="Resource" id="Resource_hvr3g"]
 script = ExtResource("1_2q5yg")
-subject = "assets/audio/voice/farmer_01..09.wav"
+subject = "assets/audio/voice/farmer_01..20.wav"
 source = "original recording"
 author = "Purple-Sigil"
 licence = "© the project, all rights reserved"
