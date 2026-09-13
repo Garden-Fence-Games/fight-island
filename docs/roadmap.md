@@ -56,8 +56,9 @@ off a number.
       pickup, a wave-cleared sting, and the surf bed. The wind-up is **positional**, which is the
       part that matters most: with the ring gone and its replacement clip not authored, the sound
       is currently the whole telegraph rather than half of one. Still
-      synthesised, so `assets/audio/` still holds a bus layout and nothing else. **No music** — it
-      needs assets this project does not have, and it takes the ducking rule in #25 with it to #84
+      synthesised, apart from the recorded voices and the soundtrack. **The music has landed** —
+      five licensed tracks, drawn as a shuffle bag from the moment the game boots, which is before
+      the intro because the sting is a silent video and the soundtrack is its audio
 
 **Exit:** the run plays start to finish on a gamepad **and** on keyboard and mouse, and the balance
 table in `docs/game-design.md` matches the shipped `.tres` values.
@@ -137,4 +138,4 @@ nothing blocks. The ones with money or a deadline attached:
 | Licence for the repository | the public itch.io release | all rights reserved on the code |
 | Apple Developer membership, ~99 USD/year | a macOS build that launches | buy it during M4 |
 | Steam Direct, 100 USD + 30 days | M5 | ship on itch.io first, decide after |
-| Music and SFX: CC0, commissioned, or bought | M4 | CC0 through M3, decide before M4 |
+| Music and SFX: CC0, commissioned, or bought | M4 | **decided** — SFX synthesised, five tracks licensed from Epidemic Sound; the subscription's terms still have to be confirmed to cover a commercial game |
