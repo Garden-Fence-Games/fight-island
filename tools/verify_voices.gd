@@ -24,9 +24,9 @@ const CHANNELS: int = 1
 ## Where a voice is judged against a wind-up. A farmer shouts on his way in, so the middle figure is
 ## the range he is usually at and the other two are either side of it.
 const RANGES: Array[float] = [3.0, 8.0, 15.0]
-## How far under a wind-up a voice has to stay, in decibels. Six is about where one sound is heard
-## as being behind another rather than beside it.
-const UNDER_A_WIND_UP: float = 6.0
+## How far a voice may wander from the wind-up it announces, in decibels, **either way**. The mix
+## puts the two side by side on purpose, so what is guarded is a band rather than a margin.
+const BESIDE_A_WIND_UP: float = 3.0
 ## What the engine will not amplify a close source past, which is `max_db`'s default.
 const CLOSE_CEILING: float = 3.0
 
@@ -40,7 +40,7 @@ func _ready() -> void:
 func _run() -> void:
 	_check_every_family_is_there()
 	_check_a_line_is_short_and_mono()
-	_check_a_voice_stays_under_a_wind_up()
+	_check_a_voice_stays_beside_a_wind_up()
 	await _check_a_body_carries_its_own_voice(ENEMY, &"farmer")
 	await _check_a_body_carries_its_own_voice(BIRD, &"gull")
 	_report()
@@ -81,26 +81,29 @@ func _check_a_line_is_short_and_mono() -> void:
 
 
 ## The line the whole mix rests on. Checked against the wind-up rather than against a number,
-## because what must never happen is a voice drawing level with the one sound the player has to
-## hear — and the wind-up's own figure is where that is decided.
+## because what the pair are worth to each other is the thing that matters and the wind-up's own
+## figure is where that is decided.
 ##
-## **At a distance, and at several of them.** The previous version compared the gain a voice is
-## played at against the peak a wind-up is baked to: two numbers in different units, neither of them
-## a loudness. It passed contentedly while the farmers sat thirteen decibels under where the table
+## **At a distance, and at several of them.** An older version compared the gain a voice is played
+## at against the peak a wind-up is baked to: two numbers in different units, neither of them a
+## loudness. It passed contentedly while the farmers sat thirteen decibels under where the table
 ## said they were, because there was nothing in it that could have noticed.
+##
+## **And in both directions**, which is the other half of that lesson. A one-sided rule cannot see a
+## voice disappearing, and disappearing is exactly what these did.
 ##
 ## The two do not carry alike either — a wind-up has the wider unit size precisely so it reaches
 ## further — so the comparison is made where the player stands rather than at the source.
-func _check_a_voice_stays_under_a_wind_up() -> void:
+func _check_a_voice_stays_beside_a_wind_up() -> void:
 	var warning := linear_to_db(AudioManager.level_of(&"telegraph"))
 	var shout := linear_to_db(AudioManager.gain_of_voice(&"farmer")) + MixTable.FARMER_AS_RECORDED
 	for metres: float in RANGES:
 		var heard := shout + _carries(AudioManager.VOICE_UNIT, metres)
 		var over := warning + _carries(AudioManager.POSITIONAL_UNIT, metres)
-		if heard > over - UNDER_A_WIND_UP:
+		if absf(heard - over) > BESIDE_A_WIND_UP:
 			_fail(
 				(
-					"at %.0f m a voice is %.1f dB against a wind-up at %.1f — flavour is drowning it"
+					"at %.0f m a voice is %.1f dB against a wind-up at %.1f — they are not the pair"
 					% [metres, heard, over]
 				)
 			)
@@ -151,7 +154,8 @@ func _report() -> void:
 		print(
 			(
 				"voices OK — both families are shipped, every line is mono and short, they sit "
-				+ "under a wind-up, and they move with the body that says them"
+				+ "beside a wind-up rather than away from it, and they move with the body that "
+				+ "says them"
 			)
 		)
 		get_tree().quit(0)

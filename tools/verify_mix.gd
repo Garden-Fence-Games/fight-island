@@ -25,9 +25,13 @@ const QUIETEST: float = 0.00001
 ## Where a voice is judged. A farmer shouts on his way in, so the middle figure is the range he is
 ## usually at and the other two are either side of it.
 const RANGES: Array[float] = [3.0, 8.0, 15.0]
-## How far under a wind-up a voice has to stay, and how far over the sea it has to sit. Six decibels
-## either way: about where one sound is heard as being behind another rather than beside it.
-const UNDER_A_WIND_UP: float = 6.0
+## How far a voice may wander from the wind-up it announces, **either way**. The mix puts the two
+## side by side on purpose, so what is guarded is no longer a margin but a band: a shout that runs
+## away from the cue is a shout drowning it, and a shout that falls away from it is the bug this
+## whole pass started from.
+const BESIDE_A_WIND_UP: float = 3.0
+## How far over the sea a voice has to sit. Six decibels: about where one sound is heard as being in
+## front of another rather than inside it.
 const OVER_THE_SEA: float = 6.0
 ## What the engine will not amplify a close source past, which is `max_db`'s default.
 const CLOSE_CEILING: float = 3.0
@@ -78,7 +82,7 @@ func _run() -> void:
 	_check_the_mix_is_ordered()
 	_check_the_table_is_what_plays()
 	_check_the_recordings_are_where_the_mix_thinks()
-	_check_a_voice_stays_under_a_wind_up_at_every_range()
+	_check_a_voice_stays_beside_a_wind_up_at_every_range()
 	await _check_the_sea_is_louder_at_the_water()
 	_check_a_busy_fight_does_not_clip()
 	_check_everything_tonal_is_in_the_same_key()
@@ -148,7 +152,7 @@ func _camera_reach(player: Node3D) -> float:
 func _check_the_mix_is_ordered() -> void:
 	var rungs: Array[Array] = [
 		[&"ui_click", &"surf"],
-		[&"surf", &"step_sand"],
+		[&"step_sand", &"surf"],
 		[&"step_sand", &"whiff"],
 		[&"step_water", &"whiff"],
 		[&"roll", &"whiff"],
@@ -229,16 +233,17 @@ func _check_the_recordings_are_where_the_mix_thinks() -> void:
 
 ## **Where the player actually hears them from.** A level at the source says nothing on its own: two
 ## sounds an octave apart in the table can arrive level if one of them carries further, and the two
-## that matter most here — a farmer shouting and the wind-up that must never be buried — are exactly
-## that pair.
-func _check_a_voice_stays_under_a_wind_up_at_every_range() -> void:
+## that matter most here — a farmer shouting and the wind-up he is announcing — are exactly that
+## pair. They do not carry alike: the voice has the narrower unit size, so the gap between them
+## changes with every metre and is only worth asserting where the player stands.
+func _check_a_voice_stays_beside_a_wind_up_at_every_range() -> void:
 	var warning := linear_to_db(AudioManager.level_of(&"telegraph"))
 	var shout := linear_to_db(AudioManager.gain_of_voice(&"farmer")) + MixTable.FARMER_AS_RECORDED
 	var floor_level := _heard(&"surf")
 	for metres: float in RANGES:
 		var heard := shout + _carries(AudioManager.VOICE_UNIT, metres)
 		var over := warning + _carries(AudioManager.POSITIONAL_UNIT, metres)
-		if heard > over - UNDER_A_WIND_UP:
+		if absf(heard - over) > BESIDE_A_WIND_UP:
 			_fail("at %.0f m a farmer is %.1f dB against a wind-up at %.1f" % [metres, heard, over])
 		# And the other side of it: a voice under the sea is a voice nobody hears, which is the
 		# complaint this whole pass started from.
