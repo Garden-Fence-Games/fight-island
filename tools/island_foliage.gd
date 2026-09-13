@@ -28,6 +28,43 @@ extends RefCounted
 ## Clumps are deliberately few — ninety bushes over twenty-four clumps is about four each, and four
 ## is the smallest number that reads as one thing rather than as four things.
 
+## Grass is short and quick: it ripples every few metres, and a lawn does not sway on the same clock
+## as a five-metre palm, so it overrides the palm-scale wind the shader ships with.
+##
+## `bend_height` is the tall band's own height rather than a figure of its own, and that is what
+## makes one wind serve grass of two lengths: bend is the fraction of that height a vertex stands
+## at, so a long blade leans over and a short tuft beside it barely stirs — from the same numbers,
+## with nothing to keep in step.
+const WIND: Dictionary = {
+	"wind_strength": 0.2,
+	"wind_speed": 2.6,
+	"wave_length": 9.0,
+	"bend_height": GRASS_TALL.y,
+	"bend_power": 1.4,
+	"gust_length": 42.0,
+}
+
+## How many tufts are asked for. A target, not a promise: the scatter gives up after so many
+## throws, so the island lays down rather fewer.
+const TUFTS: int = 24000
+## The two models, and what each measures as it ships so the scatter can go on thinking in metres.
+## A tuft is a splay of flat leaves and comes out wider than it is high, so it takes both figures —
+## scaled as one piece, tall grass would be a bush.
+const GRASS_MODEL: String = "res://assets/models/nature/grass_tuft.glb"
+const BUSH_MODEL: String = "res://assets/models/nature/bush.glb"
+const GRASS_MODEL_WIDTH: float = 0.94
+const GRASS_MODEL_HEIGHT: float = 1.246
+const BUSH_MODEL_WIDTH: float = 1.9
+const BUSH_MODEL_HEIGHT: float = 1.2435
+## Past this a tuft is a few pixels.
+const GRASS_FADE: float = 55.0
+## A bush carries the same range as the grass it stands in — deliberately, not by reuse. It is by
+## far the heaviest thing scattered on this island, so it is the one prop whose range would pay if
+## it were shortened; what stops that is size, not cost. A waist-high shrub winking out at
+## conversational distance is the most visible pop there is, where a tuft at the same distance is a
+## few pixels. Decimate the model first; then this can come down.
+const BUSH_FADE: float = GRASS_FADE
+
 ## How tall a tuft stands. Two bands, because what read as a green carpet was not the amount of
 ## grass — it was that every blade was the same length. Cover with two lengths has a near and a far.
 ##
