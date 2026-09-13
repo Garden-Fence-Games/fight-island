@@ -20,40 +20,43 @@ extends Object
 # a buffer — sat at a footstep's loudness before the distance to him was even applied. A mix nobody
 # could hear was not a mix tuned badly. It was a table measured in the wrong unit.
 #
-# The order is the design: quietest is the body the player already controls, loudest is the thing
-# about to hit him.
-## The one sound that has to be heard over everything else, so it is the loudest thing in the game —
-## above a landed blow, which is the loudest thing the player causes.
-const TELEGRAPH_LEVEL: float = -15.0
+# The order is the design: quietest is the body the player already controls, loudest is what the
+# island is doing to him. **The figures below were set by ear at the desk, in a fight, and then
+# written down** — which is why a few of them sit where no rule would have put them.
+## The one sound that has to be heard over everything else, and the loudest thing the player himself
+## ever causes is still well under it.
+const TELEGRAPH_LEVEL: float = -15.5
 ## A wave passing is the only sound in the game the player is allowed to sit and enjoy.
-const STING_LEVEL: float = -17.0
+const STING_LEVEL: float = -16.5
 ## A landed blow, a shot, a parry. The loudest thing the player himself causes, and under the one
 ## thing he has to hear coming.
 const IMPACT_LEVEL: float = -22.0
-## What a body's own voice is worth. **Under a wind-up, and well under it.** A farmer shouting is
-## flavour; a farmer committing is the one sound the whole game is built around being able to hear,
-## and a voice that competed with it would be taking away the thing it is decorating.
-const FARMER_LEVEL: float = -23.0
+## What a body's own voice is worth. **Beside a wind-up rather than under it**, which is a decision
+## and not a drift: a farmer shouting used to be flavour nobody could hear, and the level that made
+## him audible in a fight is the level that puts him alongside the cue he is announcing. He is two
+## decibels over it inside four metres and two under it beyond — `verify_mix` holds him in that band
+## in both directions, which is what the old one-sided rule could never do.
+const FARMER_LEVEL: float = -13.5
 ## A reload, a dry trigger, a body going down: moments worth hearing and never worth listening for.
-const INCIDENTAL_LEVEL: float = -25.0
+const INCIDENTAL_LEVEL: float = -35.25
 ## What a music track comes out at. Above the bed's own layers, which is what "the bed sits under
 ## the music" means in figures — and still **under everything that tells the player something**: a
 ## soundtrack is the one sound the player may switch off, so it can never be why a wind-up was
 ## missed.
-const TRACK_LEVEL: float = -26.0
+const TRACK_LEVEL: float = -36.75
 ## A miss is the least interesting thing that happens in a fight. Under a hit by enough to be heard
 ## as the lesser of the two.
-const WHIFF_LEVEL: float = -27.0
-## A gull is weather. It is the only voice in the game that says nothing, so it sits six decibels
+const WHIFF_LEVEL: float = -41.75
+## A gull is weather. It is the only voice in the game that says nothing, so it sits eight decibels
 ## under the one that does.
-const GULL_LEVEL: float = -29.0
+const GULL_LEVEL: float = -21.5
 ## The bed's own layers, under a track by the margin that makes "the bed sits under the music" a
 ## figure rather than a hope.
-const LAYER_LEVEL: float = -29.0
-## What the player's own body is worth. A footfall is confirmation, not information, and it happens
-## twice a second for the whole run — so it is graded against the sea it is walking beside rather
-## than against the blows it is landing.
-const FOOTFALL_LEVEL: float = -36.0
+const LAYER_LEVEL: float = -40.0
+## **The quietest thing in the game.** A footfall is confirmation, not information, and it happens
+## twice a second for the whole run, so it is the one sound that can tire an ear out on its own. It
+## now sits under the sea it is walking beside rather than over it.
+const FOOTFALL_LEVEL: float = -47.75
 ## What **one stretch of the coast** comes out at, which is the one figure in this table that is not
 ## what the player hears: the sea is a ring of sources now, so what reaches the ear is the sum of
 ## them at whatever distance the player is standing. `SurfBed` owns that arithmetic and
@@ -63,10 +66,10 @@ const FOOTFALL_LEVEL: float = -36.0
 ## continuous, and that is why it is this far down**: everything else in this table is something
 ## that happens, and this is something that is always there.
 const SURF_LEVEL: float = -32.0
-## **The quietest thing in the game**, under even a footfall: it confirms that the machine heard you
-## and carries nothing else. A menu has no other sound in it, so a click anywhere near a hit would
-## be the loudest thing a player ever hears — and they hear it forty times before the island.
-const CLICK_LEVEL: float = -42.0
+## It confirms that the machine heard you and carries nothing else. A menu has no other sound in it,
+## so a click anywhere near a hit would be the loudest thing a player ever hears — and they hear it
+## forty times before the island.
+const CLICK_LEVEL: float = -40.75
 ## How far the whole table sits below where it is written, and the only figure that moves the mix as
 ## a whole rather than changing its shape.
 ##
