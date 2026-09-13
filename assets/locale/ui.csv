@@ -14,6 +14,7 @@ HUD_ROUNDS,+%d ammo
 HUD_FEED_FOUND,%s found
 HUD_FEED_UPGRADE,%s upgraded
 HUD_WEAPON_WAVE,W%d
+HUD_FEED_COCONUT,Coconut +%d health
 PHASE_DAWN,Dawn
 PHASE_DAY,Day
 PHASE_DUSK,Dusk

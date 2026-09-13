@@ -6,6 +6,14 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Fixed
+
+- **The itch.io publish had the wrong account.** `ITCH_USER` was the repository owner, and the page
+  lives at `garden-fence/fight-island`. The 0.1.0 tag exported both platforms and attached them to
+  the GitHub release before failing on `/wharf/builds: invalid target (bad user)` — everything up to
+  the last step was fine, which is why nothing caught it earlier: it is the one part of the chain
+  that cannot be checked without a key.
+
 ### Added
 
 - **The HUD says what is in hand and what is in the bag.** The three weapons sit bottom right in the

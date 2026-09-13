@@ -37,6 +37,7 @@ func _ready() -> void:
 	GameState.upgrade_purchased.connect(_on_upgrade_purchased)
 	EventBus.rounds_scavenged.connect(_on_rounds_scavenged)
 	EventBus.weapon_found.connect(_on_weapon_found)
+	EventBus.coconut_taken.connect(_on_coconut_taken)
 
 
 ## Only money arriving. A purchase is a line the merchant screen already spells out in full, and a
@@ -54,6 +55,12 @@ func _on_weapon_found(id: StringName) -> void:
 	var weapon := Arsenal.find(id)
 	if weapon != null:
 		_announce(tr("HUD_FEED_FOUND") % tr(weapon.display_name))
+
+
+## Its own line rather than a running total. Coconuts arrive one at a time, minutes apart, and a
+## counter that said "+50" after the second would be reporting a haul the player never had.
+func _on_coconut_taken(healed: float) -> void:
+	_announce(tr("HUD_FEED_COCONUT") % roundi(healed))
 
 
 func _on_upgrade_purchased(track: UpgradeTrack, _level: int) -> void:

@@ -18,6 +18,10 @@ const DATA: String = "res://data/pickups/coconut.tres"
 ## Trees tried before giving up on this attempt. The grove has three hundred and eighty in it, so
 ## failing this many times means the player is somewhere with no palms rather than unlucky.
 const ATTEMPTS: int = 24
+## The height the camera is asked about, which is where the coconut ends up rather than the foot of
+## the tree. The two differ exactly at the bottom edge of the shot, which is the blind side — asking
+## about the ground accepts a spot the coconut itself is not visible on.
+const SEEN_AT: float = 0.25
 
 @export var data: CoconutData = null
 
@@ -58,16 +62,19 @@ func drop() -> Coconut:
 	var player := get_tree().get_first_node_in_group(&"player") as Node3D
 	if player == null or data == null or _grove.is_empty():
 		return null
-	var palm := _a_palm_near(player)
-	if palm == Transform3D.IDENTITY:
-		return null
-	var sand := _sand_under(palm, player)
-	if sand == Vector3.INF:
+	var found := _somewhere_a_coconut_can_be_seen(player)
+	var palm: Transform3D = found[0]
+	var sand: Vector3 = found[1]
+	if palm == Transform3D.IDENTITY or sand == Vector3.INF:
 		return null
 	var coconut := (load(COCONUT_SCENE) as PackedScene).instantiate() as Coconut
 	coconut.data = data
-	coconut.drop_from(palm, sand)
+	# **Added before it is placed.** `global_position` on a node outside the tree does nothing and
+	# says so — the engine prints `Condition "!is_inside_tree()" is true` and the write is dropped,
+	# which left coconuts at the origin until something else moved them. Both happen inside one
+	# frame, so nothing is ever drawn at the wrong place.
 	add_child(coconut)
+	coconut.drop_from(palm, sand)
 	return coconut
 
 
@@ -86,9 +93,42 @@ func grove_size() -> int:
 	return _grove.size()
 
 
-## A palm inside the band, chosen at random among the ones that qualify rather than nearest — the
-## nearest palm to a player who has not moved is the same palm every time, and a supply that always
-## arrives from one direction is a supply the player stops looking around for.
+## **A tree and a landing spot together, judged where the coconut ends up.**
+##
+## Asking whether the *palm* is in frame is the wrong question by a metre and a half: the coconut
+## lands anywhere inside `lands_within` of the foot and is then snapped to walkable ground, which
+## moves it again. Judged at the palm, half the drops still landed outside the shot. So a pair is
+## tried, the landing spot is what the camera is asked about, and the first pair that works wins.
+##
+## The fallback is deliberate and it is the last pair tried rather than nothing: a coconut behind
+## the camera still beats no coconut at all.
+func _somewhere_a_coconut_can_be_seen(player: Node3D) -> Array:
+	var camera := get_viewport().get_camera_3d()
+	var fallback: Array = [Transform3D.IDENTITY, Vector3.INF]
+	for _attempt: int in ATTEMPTS:
+		var palm := _a_palm_near(player)
+		if palm == Transform3D.IDENTITY:
+			return fallback
+		var sand := _sand_under(palm, player)
+		if sand == Vector3.INF:
+			continue
+		fallback = [palm, sand]
+		if camera == null or camera.is_position_in_frustum(sand + Vector3.UP * SEEN_AT):
+			return [palm, sand]
+	return fallback
+
+
+## A palm inside the band, chosen at random among the ones that qualify — the nearest palm to a
+## player who has not moved is the same palm every time, and a supply that always arrives from one
+## direction is a supply the player stops looking around for.
+##
+## **And one the camera can see, when there is one.** The first version picked any palm in range,
+## on the reasoning that a coconut nobody watched fall is just a coconut lying under a tree. That
+## was wrong in the way only a real frame shows: the camera is fixed and narrow, so **four of six**
+## drops landed outside it — and at a ceiling of two on an early wave, the likeliest number of
+## coconuts a player ever sees is none. The weapon pickups already had the right rule for the same
+## reason; this is the same rule, with a fallback because a coconut behind the camera still beats no
+## coconut at all.
 ##
 ## **Filtered rather than sampled.** The first version drew palms at random and gave up after a
 ## couple of dozen misses, which is a coin toss dressed as a search: `run_seed` is randomised every
@@ -98,16 +138,22 @@ func grove_size() -> int:
 func _a_palm_near(player: Node3D) -> Transform3D:
 	var near := data.nearest * data.nearest
 	var far := data.furthest * data.furthest
+	var camera := get_viewport().get_camera_3d()
 	var eligible: Array[Transform3D] = []
+	var in_shot: Array[Transform3D] = []
 	for palm: Transform3D in _grove:
 		var away := palm.origin - player.global_position
 		away.y = 0.0
 		var span := away.length_squared()
-		if span >= near and span <= far:
-			eligible.append(palm)
-	if eligible.is_empty():
+		if span < near or span > far:
+			continue
+		eligible.append(palm)
+		if camera != null and camera.is_position_in_frustum(palm.origin + Vector3.UP * SEEN_AT):
+			in_shot.append(palm)
+	var choices := in_shot if not in_shot.is_empty() else eligible
+	if choices.is_empty():
 		return Transform3D.IDENTITY
-	return eligible[_rng.randi_range(0, eligible.size() - 1)]
+	return choices[_rng.randi_range(0, choices.size() - 1)]
 
 
 ## Ground at the foot of the tree it fell out of, and ground the player can actually walk to. The
