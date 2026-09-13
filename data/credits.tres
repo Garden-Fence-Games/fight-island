@@ -169,17 +169,32 @@ licence = "CC0 1.0"
 
 [sub_resource type="Resource" id="Resource_tic2b"]
 script = ExtResource("1_2q5yg")
+subject = "Pepito2t"
+licence = "Developer"
+
+[sub_resource type="Resource" id="Resource_7afkf"]
+script = ExtResource("1_2q5yg")
+subject = "BurningSun"
+licence = "3D and VFX"
+
+[sub_resource type="Resource" id="Resource_hvr3g"]
+script = ExtResource("1_2q5yg")
+subject = "DabitheSheep"
+licence = "Audio"
+
+[sub_resource type="Resource" id="Resource_hf1qk"]
+script = ExtResource("1_2q5yg")
 subject = "Godot Engine 4.7.2"
 source_url = "https://godotengine.org"
 licence = "MIT"
 
-[sub_resource type="Resource" id="Resource_7afkf"]
+[sub_resource type="Resource" id="Resource_y7p2x"]
 script = ExtResource("1_2q5yg")
 subject = "Jolt Physics"
 source_url = "https://github.com/jrouwe/JoltPhysics"
 licence = "MIT"
 
-[sub_resource type="Resource" id="Resource_hvr3g"]
+[sub_resource type="Resource" id="Resource_lm7sm"]
 script = ExtResource("1_2q5yg")
 subject = "gdUnit4 6.2.1, vendored in addons/gdUnit4"
 source_url = "https://github.com/MikeSchulze/gdUnit4"
@@ -187,5 +202,6 @@ licence = "MIT"
 
 [resource]
 script = ExtResource("2_ptgt7")
+people = Array[ExtResource("1_2q5yg")]([SubResource("Resource_tic2b"), SubResource("Resource_7afkf"), SubResource("Resource_hvr3g")])
 assets = Array[ExtResource("1_2q5yg")]([SubResource("Resource_nsrer"), SubResource("Resource_vhv8o"), SubResource("Resource_btpt5"), SubResource("Resource_q8wms"), SubResource("Resource_p5aey"), SubResource("Resource_56av3"), SubResource("Resource_xxy2o"), SubResource("Resource_8eb3d"), SubResource("Resource_j4xby"), SubResource("Resource_t6bex"), SubResource("Resource_xfmof"), SubResource("Resource_yk254"), SubResource("Resource_rk4m6"), SubResource("Resource_4lkwu"), SubResource("Resource_tgv8e"), SubResource("Resource_o5woe"), SubResource("Resource_e6gsf"), SubResource("Resource_jfifh"), SubResource("Resource_eaha6"), SubResource("Resource_52eap"), SubResource("Resource_vjvk4"), SubResource("Resource_kfdfc")])
-tools = Array[ExtResource("1_2q5yg")]([SubResource("Resource_tic2b"), SubResource("Resource_7afkf"), SubResource("Resource_hvr3g")])
+tools = Array[ExtResource("1_2q5yg")]([SubResource("Resource_hf1qk"), SubResource("Resource_y7p2x"), SubResource("Resource_lm7sm")])

@@ -12,7 +12,9 @@ extends Node
 const TITLE: String = "res://scenes/ui/title_screen.tscn"
 const PAUSE: String = "res://scenes/ui/pause_menu.tscn"
 const PROMPT: String = "res://scenes/ui/tutorial_prompt.tscn"
-const OPTIONS: String = "res://scenes/ui/options_screen.tscn"
+## Fewer hints than this means the search stopped finding scenes rather than that the game stopped
+## having hints.
+const HINTS_AT_LEAST: int = 6
 const TUTORIAL_STEPS: PackedStringArray = [
 	"01_move", "02_attack", "03_chain", "04_perfect", "05_dodge", "06_parry", "07_sprint"
 ]
@@ -269,7 +271,39 @@ func _walk_scenes(directory: String, bracket: RegEx) -> void:
 ## found neither a glyph nor a translation prints an empty string, and an empty hint bar looks
 ## exactly like a hint bar nobody wrote.
 func _check_a_hint_says_a_key_and_a_word() -> void:
-	var screen := (load(OPTIONS) as PackedScene).instantiate() as Control
+	var hints := 0
+	for path: String in _scenes_with_hints():
+		hints += await _check_the_hints_of(path)
+	if hints < HINTS_AT_LEAST:
+		_fail("only %d hint labels were found, which is fewer than there are" % hints)
+
+
+## Every scene that carries one, found rather than listed. The first version asked the options
+## screen alone and passed while the credits screen shipped a hint reading "SCROLL" with no key in
+## front of it — the arrow keys described to an empty string, which is not `UNBOUND`, so nothing
+## anywhere noticed.
+func _scenes_with_hints() -> PackedStringArray:
+	var found := PackedStringArray()
+	_look_for_hints("res://scenes", found)
+	return found
+
+
+func _look_for_hints(directory: String, found: PackedStringArray) -> void:
+	for name: String in DirAccess.get_directories_at(directory):
+		_look_for_hints("%s/%s" % [directory, name], found)
+	for name: String in DirAccess.get_files_at(directory):
+		if not name.ends_with(".tscn"):
+			continue
+		var path := "%s/%s" % [directory, name.trim_suffix(".remap")]
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file != null and file.get_as_text().contains("hint_label.gd"):
+			found.append(path)
+
+
+func _check_the_hints_of(path: String) -> int:
+	var screen := (load(path) as PackedScene).instantiate() as Control
+	if screen == null:
+		return 0
 	add_child(screen)
 	await get_tree().process_frame
 	var hints := 0
@@ -278,16 +312,16 @@ func _check_a_hint_says_a_key_and_a_word() -> void:
 		if hint == null:
 			continue
 		hints += 1
+		var names := hint.action if not hint.action.is_empty() else ", ".join(hint.actions)
 		if hint.text.strip_edges().is_empty():
-			_fail("a hint for %s came out empty" % hint.action)
+			_fail("a hint for %s in %s came out empty" % [names, path.get_file()])
 		elif not hint.text.contains("["):
-			_fail('the hint "%s" has no glyph in it' % hint.text)
+			_fail('%s reads "%s" with no key in front of it' % [path.get_file(), hint.text])
 		elif hint.text.contains(hint.label_key):
-			_fail('the hint for %s prints its own key: "%s"' % [hint.action, hint.text])
-	if hints == 0:
-		_fail("the options screen has no hint labels, so nothing about them was tested")
+			_fail('%s prints its own key: "%s"' % [path.get_file(), hint.text])
 	screen.queue_free()
 	await get_tree().process_frame
+	return hints
 
 
 func _every_child(node: Node) -> Array[Node]:

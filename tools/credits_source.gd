@@ -13,12 +13,19 @@ extends RefCounted
 const DOCUMENT: String = "res://docs/credits.md"
 ## The headings the two tables live under. A table under any other heading is prose furniture and is
 ## left alone.
+## Who made the game. First in the document and first on the screen, because it is the answer the
+## player is owed — the asset ledger below it answers a different question, which is where each file
+## came from and under what licence.
+const PEOPLE_HEADING: String = "## The people"
 const ASSET_HEADING: String = "## Assets"
 const TOOL_HEADING: String = "## Engine and tools"
 ## Cells in the assets table. The date a row was added is bookkeeping for the repository and means
 ## nothing to a player, so it is read and dropped rather than shown.
 const ASSET_CELLS: int = 5
 const TOOL_CELLS: int = 2
+## A name and what they did, and nothing else. A role that needed a third column would be a job
+## description rather than a credit.
+const PEOPLE_CELLS: int = 2
 
 
 static func parse(path: String = DOCUMENT) -> CreditsRoll:
@@ -38,7 +45,9 @@ static func parse(path: String = DOCUMENT) -> CreditsRoll:
 		var cells := _cells(line)
 		if _is_furniture(cells):
 			continue
-		if heading == ASSET_HEADING and cells.size() == ASSET_CELLS:
+		if heading == PEOPLE_HEADING and cells.size() == PEOPLE_CELLS:
+			roll.people.append(_person_row(cells))
+		elif heading == ASSET_HEADING and cells.size() == ASSET_CELLS:
 			roll.assets.append(_asset_row(cells))
 		elif heading == TOOL_HEADING and cells.size() == TOOL_CELLS:
 			roll.tools.append(_tool_row(cells))
@@ -74,6 +83,16 @@ static func _asset_row(cells: PackedStringArray) -> CreditEntry:
 	entry.source_url = _link(cells[1])
 	entry.author = _plain(cells[2])
 	entry.licence = _plain(cells[3])
+	return entry
+
+
+## A person, in the same shape as everything else so one screen can draw all three tables. The name
+## goes in `subject` because that is the column the screen puts first, and what they did goes where
+## a licence would — it is the same sentence: *this is theirs, and this is how*.
+static func _person_row(cells: PackedStringArray) -> CreditEntry:
+	var entry := CreditEntry.new()
+	entry.subject = _plain(cells[0])
+	entry.licence = _plain(cells[1])
 	return entry
 
 

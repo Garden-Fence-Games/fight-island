@@ -77,3 +77,7 @@ scripts/autoload/audio_manager.gd|const HEADROOM: float = 0.5|const HEADROOM: fl
 scripts/autoload/audio_manager.gd|&"music_edge": {"root": 220.0, "voices": 3|&"music_edge": {"root": 220.0, "voices": 4|verify_mix
 # B flat, not B natural — B is in A minor and the first version of this line claimed otherwise.
 scripts/autoload/audio_manager.gd|const C: float = 523.25|const C: float = 466.16|verify_mix
+
+# A key bound by logical keycode rather than physical describes to an empty string, which is not
+# UNBOUND — so a hint prints a word with no key in front of it and nothing notices.
+scripts/systems/input_bindings.gd|		if code == KEY_NONE:|		if false:|verify_glyphs

@@ -124,17 +124,33 @@ func _shapes() -> RegEx:
 	return expression
 
 
-## The half the player sees. A key with no row resolves to itself, so the screen reads the key.
+## The half the player sees, asked of `tr()` itself rather than of the CSV.
+##
+## **The CSV is not what the game reads.** Godot compiles it to `ui.en.translation` on import, and a
+## row added without a re-import is a row `tr()` has never heard of — the credits screen printed
+## `CREDITS_PEOPLE` at full size while this check reported every key present and answered. So the
+## question asked here is the one the screen asks: does `tr(key)` come back as something other than
+## the key.
 func _check_every_key_asked_for_resolves() -> void:
 	for key: String in _asked:
-		if _keys.has(key):
-			continue
-		_fail(
-			(
-				'%s asks for "%s" and %s has no row for it — the screen will read the key'
-				% [String(_asked[key]).get_file(), key, CSV.get_file()]
+		if not _keys.has(key):
+			_fail(
+				(
+					'%s asks for "%s" and %s has no row for it — the screen will read the key'
+					% [String(_asked[key]).get_file(), key, CSV.get_file()]
+				)
 			)
-		)
+			continue
+		if tr(key) == key:
+			_fail(
+				(
+					(
+						'"%s" has a row and `tr` still answers with the key — the compiled translation '
+						+ "is behind the document it was built from"
+					)
+					% key
+				)
+			)
 
 
 ## And the half nobody sees. A row nothing asks for is a string somebody will one day pay to have
