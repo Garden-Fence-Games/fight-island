@@ -21,6 +21,14 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- **`verify_waves` failed on a distance it measured too late** — "something spawned 11.49 m from
+  the player", on a rule of twelve that nothing had broken (#216). `SpawnDirector` measures the
+  distance against where the player stands when it places the body; the check measured it again
+  afterwards, and in between the arriving wave shoves him. The half-metre of slack the check carried
+  for this — added in #167 for the same symptom — was a number chase: CI produced 0.51 m of drift.
+  The distance is now judged in `_on_enemy_spawned`, at the instant the body arrives, the way the
+  camera half of the same check already was. Same measurement as the rule, and no slack to excuse.
+
 - **`verify_corpses` was a coin toss** — four runs in five on `main`, and it blocked every pull
   request behind it including the release. Three assertions flaked, and none of them was a bug in
   the game (#207).
