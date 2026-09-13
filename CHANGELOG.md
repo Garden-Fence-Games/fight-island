@@ -8,6 +8,18 @@ All notable changes to this project are documented here, following
 
 ### Fixed
 
+- **A sound still in flight when the engine tears down leaked an object** (#145). `AudioManager` is
+  now quiet headless — there is nobody to hear it — and a headless *check* says so explicitly,
+  because "nobody is listening" is exactly false when a check is about to ask which voice is
+  carrying which waveform. Measured: three boots of `main.tscn` in five warned before, none in five
+  after.
+- The first attempt at this released every voice in `_exit_tree` instead, and **did not work** —
+  stopping at teardown is too late, because the audio server releases a playback on its own
+  iteration and at quit there is no next one. The release is kept as `AudioManager.silence()`,
+  which is a real thing to want, but it is not what fixes the leak.
+
+### Fixed
+
 - **The hint bar lied after a rebind.** Nine labels across seven screens wrote both the glyph and
   the word out by hand — `[B / ESC] BACK`, and the same again. A player who rebound *back* still
   read `[B / ESC]`, and a player reading anything but English read English. `HintLabel` names the

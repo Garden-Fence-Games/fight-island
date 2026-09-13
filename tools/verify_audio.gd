@@ -128,6 +128,12 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	# The one listener there is. `AudioManager` stays quiet headless because a one-shot still in
+	# flight at teardown is an object the engine reports as leaked (#145) — and "there is nobody to
+	# hear it" is exactly false here, because this check is about to ask which voice is carrying
+	# which waveform.
+	_check_a_headless_game_is_silent_until_something_listens()
+	AudioManager.audible = true
 	_check_every_sound_exists()
 	_check_none_of_them_is_another()
 	_check_the_perfect_hit_rings_longer()
@@ -624,6 +630,24 @@ func _voice_playing(id: StringName) -> AudioStreamPlayer:
 		if voice != null and voice.playing and voice.stream == wanted:
 			return voice
 	return null
+
+
+## The guard on the guard. `audible` defaults to false headless and that is the whole of the fix for
+## #145; a default flipped back would put the leak straight back, and it is a leak **CI cannot see**
+## — the boot gate greps every boot for a warning and the Linux runner does not reproduce this one.
+## It was green while a developer on the same commit was not, which is the part that rots.
+##
+## Read before the check turns it on, because after that it says nothing.
+func _check_a_headless_game_is_silent_until_something_listens() -> void:
+	if DisplayServer.get_name() != "headless":
+		return
+	if AudioManager.audible:
+		_fail(
+			(
+				"a headless game starts audible — a one-shot in flight at teardown leaks, and no "
+				+ "runner this project uses would report it"
+			)
+		)
 
 
 ## An `AttackData` standing in for a round, built rather than loaded: what the sound branches on is
