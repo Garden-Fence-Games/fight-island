@@ -6,6 +6,19 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Changed
+
+- **The merchant sells what you carry.** A weapon's upgrade track is refused until the weapon is in
+  the bag — the stick is found in wave 2 and the gun in wave 4, and fifteen per cent more damage on
+  something the player cannot swing yet is money spent on nothing they would only discover was
+  worthless two waves later.
+  - The card **stays on the shelf and says where the weapon turns up**, rather than disappearing.
+    The screen already held that line — *a card nobody can read is a card nobody can want* — and a
+    player who can see the gun track has a reason to save for the wave it arrives in.
+  - The gate is on `can_buy`, not on the button. A card is one of two ways to reach a purchase and
+    `buy()` is the other, so greying out a button that `buy()` would still honour is not a gate —
+    which `verify_merchant` now proves by calling `buy()` directly with an empty bag.
+
 ### Fixed
 
 - **`verify_waves` failed on a distance it measured too late** — "something spawned 11.49 m from
