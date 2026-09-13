@@ -8,7 +8,7 @@ All notable changes to this project are documented here, following
 
 ### Added
 
-- **The people are in the credits.** Pepito2t on development, BurningSun on 3D and VFX,
+- **The people are in the credits.** Pepito2t on development, Purple-Sigil on 3D and VFX,
   DabitheSheep on audio — first in the document and first on the screen, because who made the game
   is the credit a player is actually owed and the asset ledger answers a different question.
 
