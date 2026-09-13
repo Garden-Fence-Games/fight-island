@@ -258,6 +258,13 @@ jobs:
       - name: Verify day and night
         run: tools/run-check.sh res://tools/verify_day_night.tscn
 
+      # A path lookup in a hot body is a silent dependency on a scene's shape, and the day it
+      # returns null it does so sixty times a second in the middle of a fight. Read off the source,
+      # because what is being held is "nobody wrote this" and a profiler cannot tell a lookup that
+      # ran from one waiting behind a branch.
+      - name: Verify nothing walks the tree per frame
+        run: tools/run-check.sh res://tools/verify_lookups.tscn
+
       # The bed is the only pacing tool the game has between waves, and the one sound a player is
       # free to switch off. Both are promises: it has to do something, and muting it has to cost
       # atmosphere rather than information.

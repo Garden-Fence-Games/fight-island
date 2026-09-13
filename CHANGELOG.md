@@ -8,6 +8,16 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- `tools/verify_lookups.tscn`, which closes the last line of #31 that nobody had ever audited: **no
+  path lookup in any body that runs every frame**. It reads the source — `_process`,
+  `_physics_process` and the states' own `physics_update` and `update`, plus every private helper
+  those call in the same file. 807 lines across 42 bodies, and none of them walks the tree.
+- The four group queries that *do* run per frame, measured rather than assumed: 2.9 µs of a
+  16 667 µs frame at thirty bodies, which is 0.017% of the budget. No cache, for the same reason the
+  spatial grid was written and thrown away.
+
+### Added
+
 - `tools/verify_bus.tscn` — every signal on the bus has to be raised by something **and** heard by
   something. It is the same shape as a settings row that reaches nothing, one layer down, and it is
   the worst kind of dead code: declared, documented, emitted at exactly the right moment, and

@@ -59,3 +59,8 @@ scripts/autoload/audio_manager.gd|const LAST_ROUNDS: int = 1|const LAST_ROUNDS: 
 scripts/systems/music_bed.gd|const DUCK_DB: float = -14.0|const DUCK_DB: float = -0.5|verify_music
 scripts/systems/music_bed.gd|const HOLD: float = 0.55|const HOLD: float = 600.0|verify_music
 scripts/autoload/audio_manager.gd|&"music_ground": {"root": 55.0, "voices": 2, "from": 0.0|&"music_ground": {"root": 55.0, "voices": 2, "from": 0.3|verify_music
+
+# The parser inside verify_lookups. A check that reads source can return nothing and say it passed,
+# which is how this one shipped its first draft — forty-two per-frame bodies, every one of them
+# empty, because a PackedStringArray is a value and `bodies[name].append(line)` appends to a copy.
+tools/verify_lookups.gd|bodies[name] = [] as Array[String]|bodies[name] = PackedStringArray()|verify_lookups
