@@ -8,6 +8,28 @@ All notable changes to this project are documented here, following
 
 ### Added
 
+- **The stick is in hand.** The clips arrived last; this is them reaching the game.
+  - `idle_stick`, `walk_stick` and `dodge_roll_stick` play, off one line in
+    `data/weapons/stick.tres` — `clip_suffix = &"_stick"` — and no code at all. That is what the
+    suffix was built for, and `verify_clips` now equips the stick and reads the clip that comes out
+    of the component, so clearing that line fails the build instead of quietly walking the player
+    around empty-handed with a stick in his fist.
+  - **The second and third swings move.** The rig carries the backhand and only the backhand, so the
+    return and the finisher are that swing again, stretched to their own windows and lent by
+    `char_player_stand_ins.tres`. Before this they played nothing: the arm held the last pose of the
+    first swing through both of them while the damage went out.
+  - Stretched from the clip's own keys rather than posed like the gun's stand-ins, which is what
+    keeps the stick in the hand — `attack_stick_1` keys `Stick` and `StickTrail` frame by frame, and
+    a posed stand-in would have swung an empty fist.
+  - Not reversed, which was the obvious thing to try. The authored swing opens and closes on the
+    grip, nought degrees apart, so playing it backwards travels the same arc and only moves where
+    the fast part of it lands — a guess about somebody else's timing. That the swing opens and
+    closes on the grip is what lets it be repeated at all, so the check holds each join to half a
+    degree.
+  - The inventory in `docs/asset-pipeline.md` is now **empty**: every clip either actor asks for
+    exists or is lent. The section stays, and `verify_clips` reads the section rather than its rows,
+    so the next gap has somewhere to be written down.
+
 - **The stick swings, and the pirate is on the shelf.** Purple-Sigil's clips that had been sitting
   outside the project are in it now, exported and imported, and wired to nothing that was not
   already asking for them:

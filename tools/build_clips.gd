@@ -60,6 +60,28 @@ const SHOTS: Dictionary[String, float] = {
 	"res://data/attacks/gun_charged.tres": 1.55,
 }
 
+## The stick's other two swings. The rig carries the backhand and only the backhand, so the return
+## and the finisher are that same swing again over their own windows — stretched, not re-posed.
+##
+## **Stretched rather than re-posed because of the stick itself.** `attack_stick_1` keys `Stick` and
+## `StickTrail` frame by frame; a stand-in built the way the gun's are, by turning two joints of a
+## held pose, would swing an empty hand. Taking the clip's own keys takes the stick and its smear
+## with them.
+##
+## **And it repeats rather than reverses.** The authored swing opens and closes on the grip — the
+## arm is in the same place at both ends, measured at nought degrees — so playing it backwards
+## travels the same arc and only moves where the fast part of it lands. That is a guess about the
+## artist's timing, and a stand-in has no business making one.
+##
+## They are stand-ins on the same terms as the shots: the day Purple-Sigil exports a real
+## `attack_stick_2` the rig's own wins and this file is never read for it again.
+const SWINGS: Array[String] = [
+	"res://data/attacks/stick_return.tres",
+	"res://data/attacks/stick_overhead.tres",
+]
+## The swing the other two are made of.
+const SWING_CLIP: String = "attack_stick_1"
+
 ## The bone the skinned gun hangs off, and the two joints above it. Named rather than discovered,
 ## because a rig that renamed them has changed enough that a stand-in built from guesses would be
 ## worse than none.
@@ -142,6 +164,9 @@ func _player_stand_ins() -> bool:
 	var standing := _pose(RIG, STANDING_CLIP)
 	if carry == null or standing == null:
 		return false
+	var swinging := _pose(RIG, SWING_CLIP)
+	if swinging == null:
+		return false
 	var library := AnimationLibrary.new()
 	for path: String in SHOTS:
 		var attack := load(path) as AttackData
@@ -149,6 +174,12 @@ func _player_stand_ins() -> bool:
 			printerr("clips: %s is not an AttackData that names an animation" % path)
 			return false
 		library.add_animation(attack.animation, _shot_clip(carry, attack, SHOTS[path]))
+	for path: String in SWINGS:
+		var attack := load(path) as AttackData
+		if attack == null or attack.animation == &"":
+			printerr("clips: %s is not an AttackData that names an animation" % path)
+			return false
+		library.add_animation(attack.animation, _retimed(swinging, attack.total_duration()))
 	library.add_animation(GUARD_CLIP, _guard_clip(standing))
 	return _save(library, OUTPUT)
 
@@ -342,6 +373,36 @@ func _key_path(clip: Animation, bone: String, times: Array, turns: Array) -> voi
 		var turn: Variant = turns[index]
 		var pose: Quaternion = standing if turn == null else standing * (turn as Quaternion)
 		clip.rotation_track_insert_key(track, times[index] as float, pose)
+
+
+## One of the rig's own clips over a different window.
+##
+## Every key is kept, at its own share of the clip rather than at its own second, so the swing that
+## was authored over half a second reads the same over the finisher's one-and-a-quarter — and the
+## stick and its trail, which the source clip keys frame by frame, come along with the arm.
+func _retimed(source: Animation, seconds: float) -> Animation:
+	var clip := Animation.new()
+	clip.length = seconds
+	clip.loop_mode = Animation.LOOP_NONE
+	var span := maxf(source.length, 0.001)
+	for track: int in source.get_track_count():
+		var kind := source.track_get_type(track)
+		var made := clip.add_track(kind)
+		clip.track_set_path(made, source.track_get_path(track))
+		for key: int in source.track_get_key_count(track):
+			var share := clampf(source.track_get_key_time(track, key) / span, 0.0, 1.0)
+			_insert(clip, made, kind, share * seconds, source.track_get_key_value(track, key))
+	return clip
+
+
+func _insert(clip: Animation, track: int, kind: int, when: float, value: Variant) -> void:
+	match kind:
+		Animation.TYPE_POSITION_3D:
+			clip.position_track_insert_key(track, when, value as Vector3)
+		Animation.TYPE_ROTATION_3D:
+			clip.rotation_track_insert_key(track, when, value as Quaternion)
+		Animation.TYPE_SCALE_3D:
+			clip.scale_track_insert_key(track, when, value as Vector3)
 
 
 func _copy_pose_track(carry: Animation, track: int, clip: Animation) -> void:

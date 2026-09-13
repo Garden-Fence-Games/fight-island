@@ -353,11 +353,12 @@ at its defaults, so `Stick` and `StickTrail` get their thousandth written back i
 file's rest scale.
 
 **The `_gun` ending is a suffix the code appends, not a separate table.** `WeaponData.clip_suffix`
-carries it — `_gun` on the gun, empty on the fists and, for now, the stick — and
-`AnimationComponent` tries `<clip><suffix>` before falling back to `<clip>`. `walk_stick`,
-`idle_stick` and `dodge_roll_stick` are authored, so setting `clip_suffix = &"_stick"` is the whole
-job left, and a set that is only half authored degrades one clip at a time instead of leaving a
-state with nothing to play.
+carries it — `_gun` on the gun, `_stick` on the stick, empty on the fists — and `AnimationComponent`
+tries `<clip><suffix>` before falling back to `<clip>`. So `idle_stick`, `walk_stick` and
+`dodge_roll_stick` reached the game as a one-line change to `data/weapons/stick.tres` and no code at
+all, which is what the suffix exists for. A set that is only half authored degrades one clip at a
+time instead of leaving a state with nothing to play — which is what the stick does: it has its own
+idle, walk and roll, and every other state falls back to the empty-handed clip.
 
 **Farmer (shared by all three):** `idle`, `walk`, `chase`, `strafe_l`, `strafe_r`, `stagger`,
 `death`, plus one attack set per archetype — `windup_punch` / `attack_punch`,
@@ -403,14 +404,33 @@ that is never wrong about anything is one nobody reads.
 
 | Clip | Rig | Where it bites |
 |---|---|---|
-| `attack_stick_2` | player | The second swing of the chain moves nothing, and the stick stays hidden for it: only a clip that keys `Stick` shows it. |
-| `attack_stick_3` | player | As above. |
 
-**The gun's three shots, the parry, and all three farmer blows are not on this list and are not
-authored either.** They are lent by `assets/models/char_player_stand_ins.tres` and
+**The list is empty, and that is a state it is allowed to be in.** Every clip either actor asks for
+now either exists on a rig or is lent by a stand-in. The heading stays whatever the table holds —
+the check reads the section, not the rows, so the next clip the game learns to ask for has a place
+to be written down rather than a section to re-invent.
+
+**The gun's three shots, the stick's second and third swings, the parry, and all three farmer blows
+are lent rather than authored.** They come from `assets/models/char_player_stand_ins.tres` and
 `assets/models/char_farmer_stand_ins.tres`, built by `tools/build_clips.tscn` from each rig's own
-poses — `idle_gun` for the shots, `idle` for the guard and for every farmer clip. The body is the
-one Purple-Sigil posed and only the movement is generated.
+poses — `idle_gun` for the shots, `idle` for the guard and for every farmer clip, and the authored
+`attack_stick_1` for the other two swings. The body is the one Purple-Sigil posed and only the
+movement is generated.
+
+The stick's chain is **revers, retour, assommoir**, and the rig carries the first of the three. The
+other two are that same swing again, stretched to their own windows — a repeat, and it is meant to
+read as one. Playing it backwards was the obvious alternative and it is not honest: the authored
+swing opens and closes on the grip, at nought degrees apart, so reversing travels the same arc and
+only moves where the fast part of it lands. That is a guess about somebody else's timing.
+
+Opening and closing on the grip is also what lets the swing be repeated at all, so `verify_clips`
+holds it: each swing has to start within half a degree of where the one before it ended. A
+re-authored swing that stopped on its follow-through would pass every other check and still snap
+the arm back between hits.
+
+Taking the clip's own keys rather than posing the bones is what keeps the stick in the hand.
+`attack_stick_1` keys `Stick` and `StickTrail` frame by frame; a stand-in built the way the gun's
+are, by turning two joints of a held pose, would swing an empty hand.
 
 The farmer gets **six**, in draw-and-blow pairs: `windup_punch` / `attack_punch`,
 `windup_sweep` / `attack_scythe`, `windup_throw` / `attack_throw`. The pair is the point. A blow
