@@ -46,13 +46,12 @@ scripts/world/ground.gd|const SNAP_TOLERANCE: float = 1.0|const SNAP_TOLERANCE: 
 scripts/systems/devices.gd|const STICK_WAKE: float = 0.5|const STICK_WAKE: float = 0.001|verify_glyphs
 
 # Audio
-scripts/autoload/audio_manager.gd|const PEAK: float = 0.9|const PEAK: float = 0.02|verify_audio
+scripts/systems/sound_bank.gd|const PEAK: float = 0.9|const PEAK: float = 0.02|verify_audio
 scripts/autoload/audio_manager.gd|const PERFECT_PARTIAL: float = 1320.0|const PERFECT_PARTIAL: float = 150.0|verify_audio
 # The whole row, not just the pitch. A stick at the fist's pitch with the stick's own envelope
 # still measures as a different body, and it is — the first version of this line claimed
 # otherwise and survived, which is exactly what a line nobody ran in the broken state does.
 scripts/autoload/audio_manager.gd|&"stick": {"hertz": 240.0, "decay": 0.075, "contact": 0.72, "snap": 0.010|&"stick": {"hertz": 150.0, "decay": 0.035, "contact": 0.5, "snap": 0.018|verify_audio
-scripts/autoload/audio_manager.gd|&"thrower": {"from": 520.0, "to": 1240.0|&"thrower": {"from": 300.0, "to": 500.0|verify_audio
 scripts/autoload/audio_manager.gd|const LAST_ROUNDS: int = 1|const LAST_ROUNDS: int = 4|verify_audio
 
 # The music bed: a duck that never lifts, a lowest layer that leaves a fight starting in silence
@@ -73,7 +72,7 @@ scripts/ui/hint_label.gd|	var glyph := _glyph()|	var glyph := ""|verify_glyphs
 scripts/autoload/audio_manager.gd|var audible: bool = DisplayServer.get_name() != "headless"|var audible: bool = true|verify_audio
 
 # The mix: a ceiling that lets a night wave clip, and a bed that wanders out of the home key.
-scripts/autoload/audio_manager.gd|const HEADROOM: float = 0.5|const HEADROOM: float = 1.0|verify_mix
+scripts/systems/mix_table.gd|const HEADROOM_DB: float = -2.0|const HEADROOM_DB: float = 6.0|verify_mix
 scripts/autoload/audio_manager.gd|&"music_edge": {"root": 220.0, "voices": 3|&"music_edge": {"root": 220.0, "voices": 4|verify_mix
 # B flat, not B natural — B is in A minor and the first version of this line claimed otherwise.
 scripts/autoload/audio_manager.gd|const C: float = 523.25|const C: float = 466.16|verify_mix

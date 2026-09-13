@@ -67,6 +67,19 @@ All notable changes to this project are documented here, following
   moved with it. `Tab` is free again — it had been sharing with `ui_focus_next`.
   - On a pad nothing moved: the swap has been **RB** and **LB** all along.
 
+### Fixed
+
+- **Three of the mutations pointed at code that had moved, so `mutate.sh` could not run.** The table
+  breaks the game on purpose one constant at a time and reports which breakages no check notices; an
+  entry whose original text is no longer in the file is reported `STALE` and counted as a survivor,
+  which fails the whole run. `PEAK` had moved from `AudioManager` to `SoundBank`, `HEADROOM` had
+  become `MixTable.HEADROOM_DB` and changed units with it, and one entry still broke the thrower's
+  telegraph. Both survivors are repointed and proved — the peak mutation makes `verify_audio` report
+  two sounds twenty decibels under what they declared, and the headroom mutation makes `verify_mix`
+  say in as many words that a night wave clips. Nothing warned about it, because `mutate.sh` is not
+  in CI: it costs about a minute a mutation, so it is run by hand, and a table that rots between
+  runs is what that buys.
+
 ### Removed
 
 - **Fifteen methods nothing called.** A sweep of every `func` in `scripts/` against every call site
