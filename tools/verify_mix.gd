@@ -8,6 +8,11 @@ extends Node
 ## Run: godot --headless --path . res://tools/verify_mix.tscn
 
 const MANAGER: String = "res://scripts/autoload/audio_manager.gd"
+const ARENA: String = "res://scenes/world/arena.tscn"
+## Frames for the arena to settle and the camera rig to take its place.
+const SETTLE_FRAMES: int = 20
+## How far the ear may sit from the body it belongs to. Head height off the feet, and no further.
+const EAR_ON_THE_BODY: float = 2.0
 ## How many loud sounds a night wave really puts in the air at once. Written out rather than taken
 ## from `VOICES`: twelve voices can all be busy, but holding the mix to twelve simultaneous
 ## telegraphs would make the game inaudible to protect against something that never happens.
@@ -45,10 +50,64 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	await _check_the_ear_is_the_player()
 	_check_the_mix_is_ordered()
 	_check_a_busy_fight_does_not_clip()
 	_check_everything_tonal_is_in_the_same_key()
 	_report()
+
+
+## **Where the game is heard from**, which turns out to be most of the mix.
+##
+## Without an `AudioListener3D` the listener is the current camera, and this camera sits 17.9 m
+## behind and above the player and never moves. Everything positional was therefore measured from a
+## point two thirds of the way to the horizon: a farmer shouting in the player's face came out at
+## −27.9 dB against a hit at −6.9, and half the gull flock was past `REACH` and cut outright. It was
+## not that the voices were too quiet — it was that the ear was in the wrong place, and every
+## positional sound in the game paid for it.
+##
+## Asserted as a distance rather than as the presence of a node: what matters is that the ear is on
+## the body, and a listener parented to the camera would satisfy a node check perfectly.
+func _check_the_ear_is_the_player() -> void:
+	var arena := (load(ARENA) as PackedScene).instantiate() as Node3D
+	add_child(arena)
+	var tutorial := arena.get_node_or_null(^"TutorialDirector") as TutorialDirector
+	if tutorial != null:
+		tutorial.stand_down()
+	for _index: int in SETTLE_FRAMES:
+		await get_tree().process_frame
+	var player := arena.get_node_or_null("Player") as Node3D
+	if player == null:
+		_fail("the arena has no player to listen from")
+		arena.queue_free()
+		return
+	var ear: AudioListener3D = null
+	for node: Node in player.find_children("*", "AudioListener3D", true, false):
+		var found := node as AudioListener3D
+		if found != null and found.current:
+			ear = found
+			break
+	if ear == null:
+		_fail(
+			(
+				(
+					"nothing on the player is listening, so the camera is — and the camera is %.0f m "
+					+ "away, which is where every positional sound is measured from"
+				)
+				% _camera_reach(player)
+			)
+		)
+		arena.queue_free()
+		return
+	var off := ear.global_position.distance_to(player.global_position)
+	if off > EAR_ON_THE_BODY:
+		_fail("the ear is %.1f m from the player, and it belongs on him" % off)
+	arena.queue_free()
+
+
+func _camera_reach(player: Node3D) -> float:
+	var cam := get_viewport().get_camera_3d()
+	return cam.global_position.distance_to(player.global_position) if cam != null else 0.0
 
 
 ## **The mix, as an ordering rather than as a set of numbers somebody liked once.**
@@ -192,8 +251,8 @@ func _report() -> void:
 	if _failures.is_empty():
 		print(
 			(
-				"mix OK — quiet things stay under loud ones, four at once fit inside full scale, "
-				+ "and everything with a pitch is in the same key"
+				"mix OK — the ear is on the player, quiet things stay under loud ones, four at "
+				+ "once fit inside full scale, and everything with a pitch is in the same key"
 			)
 		)
 		get_tree().quit(0)

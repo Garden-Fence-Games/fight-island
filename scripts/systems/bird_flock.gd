@@ -16,8 +16,13 @@ extends Node
 @export var bird_scene: PackedScene = null
 @export var on_the_ground: int = 10
 @export var in_the_sky: int = 4
-## Where they are put: far enough to be out of shot when they appear, near enough to be worth it.
-@export var spawn_ring: Vector2 = Vector2(22.0, 34.0)
+## Where they are put: far enough not to land under the player's nose, near enough to be heard.
+##
+## It was 22–34 m, which is outside the ear's useful range: a gull at 22 m comes out near −29 dB,
+## and one at 34 m is past `AudioManager.REACH` and cut outright. A shore nobody can hear is a
+## texture. The near edge sits just outside `startle_radius`, so a bird still has somewhere to
+## stand before the player walks into it and puts it up.
+@export var spawn_ring: Vector2 = Vector2(9.0, 26.0)
 ## Walk inside this and the ground birds go up. Roughly the distance at which a real one decides you
 ## are a problem, and comfortably outside a punch.
 @export var startle_radius: float = 7.0
