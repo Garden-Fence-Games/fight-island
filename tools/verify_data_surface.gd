@@ -41,6 +41,7 @@ const CLASSES: Dictionary = {
 	"EliteRank": "res://scripts/resources/elite_rank.gd",
 	"TutorialStep": "res://scripts/resources/tutorial_step.gd",
 	"ArchetypeShare": "res://scripts/resources/archetype_share.gd",
+	"KnockdownData": "res://scripts/resources/knockdown_data.gd",
 }
 
 var _failures: PackedStringArray = []

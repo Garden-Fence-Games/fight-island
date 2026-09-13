@@ -139,6 +139,12 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
 - **`DayCycle`** — `phases: Array[DayPhase]`, in order. Their seconds add up to **one wave**. It
   answers three questions off the same array: whose *rules* are in force this far into the wave,
   what the *clock* reads, and how far the *sky* has turned toward the next phase.
+- **`KnockdownData`** — `knock_speed`, `broken_poise_push`, `fall_ceiling`. What turns an
+  `AttackData`'s stagger figure into a knockdown: the metres per second each point of it is worth,
+  what breaking poise multiplies that by, and how many times the attack's own figure a man may stay
+  down before he is taken back regardless. **One instance, preloaded rather than exported** — the
+  per-blow difference is already the stagger figure, so there is nothing here for a scene to
+  choose, and nothing for a pooled body to carry a stale copy of.
 - **`EliteRank`** — what being an elite is worth: the health, damage and money multipliers, and the
   mesh scale and emission that make it legible. One instance on `WaveConfig`, shared by every body
   that rolls it, because an elite is the *same scene* — multipliers rather than a second archetype
