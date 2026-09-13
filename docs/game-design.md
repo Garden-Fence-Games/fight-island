@@ -566,11 +566,15 @@ you are:
 |---|---|---|
 | Wading | 0 – 1.1 m | costs speed, down to 35 % at the limit |
 | Out of your depth | 1.1 – 1.6 m | the bar comes down, 0 to **20 health a second** |
-| Drowned | — | 0 HP ends the run, the same as any other death |
+| Forcing | out of your depth, heading out to sea | that drain **doubles every second** of forcing, up to **×10** |
+| Drowned | — | 0 HP ends the run; the body struggles and sinks **1.6 m** at **0.45 m/s** |
 
-A walk out against the push stalls at about 1.4 m and a sprint at about 1.6, so five to eight
-seconds of insisting is what it costs to drown. **Every point of it is reversible**: stop pushing
-outward and the sea carries you back in. There is no line you cross and no threshold that kills —
+**Insisting is exponential.** Forcing is walking out against the push — heading out to sea, within
+a 0.3 dot of straight out, in the water that shoves back. Its clock resets the moment the player
+stands still, walks along the shore or turns back, so the sea is only merciless to somebody fighting
+it: a player drifting out of their depth loses the bar at the ordinary rate, one who keeps pushing
+loses it in about three seconds. **Every point of it is still reversible**: stop pushing outward and
+the sea carries you back in. There is no line you cross and no threshold that kills —
 a threshold is unreadable, the player is fine and then the run is over, while a bar coming down is
 on the screen they already watch and it tells them how long they have.
 

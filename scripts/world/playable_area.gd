@@ -28,6 +28,9 @@ var _player: CharacterBody3D = null
 ## second is a silent dependency on a scene's shape, and the day it returns null it does so sixty
 ## times a second in the middle of a fight.
 var _lungs: HealthComponent = null
+## How long the player has been walking out against the push, without a break. See
+## `TideData.forcing_multiplier`.
+var _forcing_seconds: float = 0.0
 
 
 func _ready() -> void:
@@ -43,12 +46,17 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if _player == null or not is_instance_valid(_player):
 		return
-	_take_a_breath(delta)
-	var limit := _water_level - wade_depth
-	if _player.global_position.y >= limit:
+	# A drowned player stays where the sea took them, struggling; carried back to the sand under the
+	# summary, the last thing seen would be a dead man gliding up the beach.
+	if _player.has_method("is_alive") and not bool(_player.call("is_alive")):
 		return
+	var limit := _water_level - wade_depth
 	var inward := global_position - _player.global_position
 	inward.y = 0.0
+	_forcing_seconds = (_forcing_seconds + delta) if _is_forcing(limit, inward) else 0.0
+	_take_a_breath(delta)
+	if _player.global_position.y >= limit:
+		return
 	if inward.is_zero_approx():
 		return
 	var deeper := clampf((limit - _player.global_position.y) / wade_depth, 0.2, 1.5)
@@ -59,10 +67,9 @@ func _physics_process(delta: float) -> void:
 
 ## The bar, while they are out there. Drained rather than damaged: see `HealthComponent.drain`.
 ##
-## **There is no drowning clip and this does not fake one.** The body sinking is the terrain falling
-## away under it, which is free and already true, and the read is the bar. When the clip lands, it
-## plays where every other death animation does — this state ends the run through the same
-## `died` signal and nothing here has to change.
+## The body sinking is the terrain falling away under it, which is free and already true, and the
+## read is the bar. The death itself is `PlayerDead`'s: the run ends through the same `died` signal
+## as any other, and a player who dies out of depth plays the `drowning` loop there.
 func _take_a_breath(delta: float) -> void:
 	if tide == null:
 		return
@@ -70,4 +77,23 @@ func _take_a_breath(delta: float) -> void:
 		return
 	var taken := tide.draining_at(_player.global_position.y, _water_level)
 	if taken > 0.0:
-		_lungs.drain(taken * delta)
+		_lungs.drain(taken * tide.forcing_multiplier(_forcing_seconds) * delta)
+
+
+## How long the current push out to sea has lasted, for the headless check.
+func forcing_seconds() -> float:
+	return _forcing_seconds
+
+
+## Walking out against the push: in the water the sea shoves back from, and heading out to sea
+## rather than along the shore or back in.
+func _is_forcing(limit: float, inward: Vector3) -> bool:
+	if tide == null or _player.global_position.y >= limit or inward.is_zero_approx():
+		return false
+	if not _player.has_method("move_direction"):
+		return false
+	var heading := _player.call("move_direction") as Vector3
+	heading.y = 0.0
+	if heading.is_zero_approx():
+		return false
+	return heading.normalized().dot(-inward.normalized()) >= tide.forcing_alignment

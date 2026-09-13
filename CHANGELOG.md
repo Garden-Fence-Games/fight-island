@@ -6,6 +6,17 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **A drowned player struggles and goes under.** Dying out of their depth no longer hands the body
+  to the ragdoll, which had nothing true to do in the water: the player plays `drowning`,
+  Purple-Sigil's looping struggle with a strong bob, and sinks while it loops. The summary waits
+  until the body is all the way under, and the sea stops carrying it back to the sand. A death on
+  land, or in the shallows, still falls the way the blow threw it.
+- **Forcing against the sea is exponential.** Walking out against the push doubles the drain every
+  second it goes on, up to a cap, and resets the moment the player stops heading out — drifting out
+  of depth still costs the ordinary rate. Figures in `data/combat/tide.tres`.
+
 ### Removed
 
 - **The thrower is gone, and nothing stands in for him.** He was never wanted: issue #9 asked for a
