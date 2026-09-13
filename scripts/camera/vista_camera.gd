@@ -29,6 +29,8 @@ func _ready() -> void:
 		look_at(looks_at)
 	_origin = transform
 	current = true
+	# The title shows the island the way the game will, pixels and all.
+	PixelLook.attach(self)
 
 
 func _process(delta: float) -> void:
