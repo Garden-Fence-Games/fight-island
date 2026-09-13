@@ -27,8 +27,7 @@ func _ready() -> void:
 	EventBus.bindings_changed.connect(_rewrite)
 
 
-## Idempotent on purpose: the director calls this every frame the step is open, and a line already
-## up must not restart its fade.
+## Idempotent on purpose: a line already up must not restart its fade.
 func show_line(key: String, actions: PackedStringArray = PackedStringArray()) -> void:
 	if key.is_empty() or _key == key:
 		return
@@ -58,12 +57,15 @@ func text() -> String:
 	return line.text
 
 
-## A lesson about timing names no button, so a string with no `{0}` is left exactly as written
-## rather than having an empty glyph appended to it.
+## One glyph per action, each in its own placeholder: "{0} to punch and {1} to dodge". A line that
+## names no button has no placeholder and is left exactly as written.
 func _rewrite() -> void:
 	if _key.is_empty():
 		return
-	line.text = tr(_key).format([Devices.glyphs(_actions)])
+	var glyphs: Array[String] = []
+	for action: String in _actions:
+		glyphs.append(Devices.glyph(action))
+	line.text = tr(_key).format(glyphs)
 
 
 func _on_input_device_changed(_device: int) -> void:

@@ -39,9 +39,9 @@ signal footstep_taken(wading: bool)
 ## wind-up the player cannot see is the one they most need to hear, so this is the one sound in the
 ## game that has to arrive from a direction. It carries a point rather than the body, because by the
 ## time a listener acts on it the only thing it needs is where to put the voice.
-## The archetype rides along for the same reason. A reaper's wind-up and a thrower's must not sound
-## alike: the thrower is the one the player cannot see coming, and sound is the only warning the
-## design gives them.
+## The archetype rides along for the same reason. A reaper's wind-up and a pirate's must not sound
+## alike: the pirate is the one that hurts most, and sound is half the warning the design gives
+## them.
 ## A coconut was walked over, and how much of the bar it gave back.
 signal coconut_taken(healed: float)
 signal telegraph_began(where: Vector3, archetype: EnemyData)
@@ -90,12 +90,8 @@ signal weapon_reloaded
 ## cracks twice — and separate from `attack_landed` because a gun that only makes a noise when it
 ## hits is a gun the player cannot tell they fired.
 signal weapon_fired(attack: AttackData)
-## A blow arrived while the player was rolling through it. Distinct from a dodge that merely
-## happened: the lesson is not the button, it is the moment — and only this says the moment was
-## right.
-signal dodge_evaded
 ## The player's state machine moved. Cross-cutting because a sprint, a roll and a death are each
-## something audio and the tutorial want to know about without holding the player.
+## something audio wants to know about without holding the player.
 signal player_state_changed(state: StringName)
 ## The hand moved from the keyboard to the pad or back. Everything that prints a glyph listens, so
 ## a player who picks up a controller mid-menu never reads the word "mouse".

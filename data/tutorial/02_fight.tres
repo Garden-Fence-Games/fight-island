@@ -4,11 +4,7 @@
 
 [resource]
 script = ExtResource("1")
-id = &"perfect"
-prompt_key = "TUTORIAL_PERFECT"
-trigger = 1
-condition = 1
-enemies = 1
-passive = true
-health_multiplier = 4.0
-windup_multiplier = 1.6
+id = &"fight"
+prompt_key = "TUTORIAL_FIGHT"
+prompt_actions = PackedStringArray("attack", "dodge")
+seconds = 4.0

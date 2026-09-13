@@ -317,11 +317,10 @@ func _check_a_dimmer_sun_casts_a_lighter_shadow() -> void:
 			)
 
 
-## The hour is not allowed near this one. A farmer arrives between twelve and twenty-six metres out
-## and the thrower already notices at twelve: scale it, and every night is back to a charge from
-## the horizon.
+## The hour is not allowed near this one. A farmer arrives no closer than twelve metres and notices
+## at nine: scale it, and every night is back to a charge from the horizon.
 func _check_nobody_notices_further_at_night() -> void:
-	for path: String in ["farmhand", "reaper", "thrower"]:
+	for path: String in ["farmhand", "reaper", "pirate"]:
 		var data := load("res://data/enemies/%s.tres" % path) as EnemyData
 		if data == null:
 			_fail("there is no %s to check" % path)

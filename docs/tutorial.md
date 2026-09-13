@@ -1,185 +1,62 @@
 # Teaching the game
 
-## The problem
+## The decision: a few lines on a clock, then wave 1
 
-This game's subject is timing. Timing cannot be explained — a player who reads *"press again
-inside the chain window"* has learned a sentence, not a rhythm. Worse, a game whose whole appeal is
-in the hands is the kind people skip the text of fastest.
+A new run opens on the player waking up (`RunIntro`). The moment the camera settles, four lines
+appear one after the other at the bottom of the screen, each for its own few seconds:
 
-So the rule for this project:
+| # | Line | Names |
+|---|---|---|
+| 1 | *You were drunk, now you're angry* | — |
+| 2 | *[attack] to punch and [dodge] to dodge* | `attack`, `dodge` |
+| 3 | *[sprint] to sprint* | `sprint` |
+| 4 | *Now, survive!* | — |
 
-> **Nothing is taught with a wall of text, and nothing is taught outside the fight.**
+When the last one goes, **wave 1 starts at once** — the ordinary wave, off the formula, like every
+wave after it. The island is empty while the lines are up: the wave director is halted, nothing
+spawns, and the player can already walk, swing and roll.
 
-## The decision: wave 1 is the tutorial
+## Why a clock and not the buttons
 
-There is no tutorial mode, no training room, no separate scene to build and maintain. **Wave 1 is
-a hand-authored teaching wave** that happens to also be the first wave of the run.
+The first tutorial was wave 1 itself: seven lessons, each closing when the player performed it —
+walk three metres, land a chained hit, land a perfect one, roll through a swing, parry. It read
+well on paper and broke in play. A lesson waiting for an input is a lesson that can wait for ever,
+and the parry lesson held the whole wave open until a perfect parry landed, which a new player may
+simply not manage.
 
-It differs from waves 2–15 in three ways, and in no others:
+So **nothing waits for the player.** A line gives way when its time is up whatever was or was not
+pressed, and the run always reaches wave 1. The timing lessons — the chain, the perfect window, the
+parry — are left to the fight, where the flash and the hitstop already say them.
 
-1. It spawns enemies **one at a time**, on demand, instead of on the wave formula.
-2. Its farmhands have a **longer telegraph** and, for the first two steps, do not attack at all.
-3. It **does not advance on a timer**. It advances when the player does the thing.
+## The lines
 
-Everything else — the camera, the damage, the stamina, the feel — is the real game from the first
-second. The player is never practising; they are already playing, and the game is choosing what to
-throw at them.
+- **Device-aware.** A line names **actions**, not keys — `prompt_actions` — and each `{n}` in the
+  string is the glyph of the n-th action on the device in hand, re-rendered the moment the hand
+  moves or a binding changes. A player on a pad never reads the word "mouse".
+- **It never blocks.** No modal, no pause. The player has a body the whole time.
+- **After the opening, not over it.** `RunIntro` holds the director still while the camera turns,
+  so the clock starts when the player can act.
 
-## The seven steps
+## Which runs show it
 
-Each step shows **one** prompt, and clears when the player performs the action **once**. Never two
-prompts at a time. Never a prompt for something already demonstrated.
+**Every run begun from the title**, exactly like the opening it follows — `GameState.begin_run(true)`
+sets `tutorial_owed` beside `intro_owed`, and the director spends it. A retry from the summary, a
+restart from the pause menu and a resumed run go straight to the fight: that is the same player
+straight back in. It used to switch its own setting off at the end, which made it a once-per-machine
+tutorial; it no longer touches the setting.
 
-| # | Teaches | Clears when | What the wave does |
-|---|---|---|---|
-| 1 | Move | the player has travelled 3 m | nothing spawns yet |
-| 2 | Attack | the first hit lands | one farmhand spawns, and will not attack |
-| 3 | **Chain** | attack 2 of a chain lands | that farmhand has inflated health so it survives the lesson |
-| 4 | **Perfect** | a perfect hit lands | same farmhand, still passive |
-| 5 | Dodge | a dodge passes through an attack | the farmhand starts attacking |
-| 6 | Parry | a **perfect** parry lands | the farmhand keeps telegraphing, patiently, as long as it takes |
-| 7 | Sprint | the player sprints | a second farmhand spawns further away |
-
-Then the prompts stop for the rest of the run, and wave 2 begins on the normal formula.
-
-### Why this order
-
-Movement first, and **there is no camera lesson** — the camera is fixed and follows on its own, so
-there is nothing to teach. That is one fewer thing standing between the player and the fight, and
-it is the clearest argument for the fixed angle.
-
-Attack before defence, because hitting something is the reward that buys attention for the rest.
-
-**Chain before perfect**, because the perfect window lives inside the chain window — teaching them
-in the other order would mean teaching a timing that does not yet have anything to attach to.
-
-Dodge before parry, because dodge forgives and parry does not. A player who can dodge has a way to
-survive while they learn to parry.
-
-Parry last, and **the wave does not end until it lands**. It is the hardest input in the game and
-the one that makes everything after it work. A player who reaches wave 2 without ever having
-parried will be lost by wave 5.
-
-Sprint last because it is the least important. It is a convenience, not a mechanic.
-
-## The prompts
-
-One line, bottom-centre, with the glyph for the device currently in use. It fades in after a beat
-of silence — never the instant the step opens, because a player who was already doing the right
-thing should never see it.
-
-```
-Press [LMB] again as the flash fades
-```
-
-Rules:
-
-- **Device-aware.** The glyph set swaps the moment the player touches the other device. A player on
-  a pad must never read the word "mouse".
-- **Verb first, no prose.** *"Dodge through the swing"*, not *"You can press Space to perform a
-  dodge roll, which grants brief invulnerability"*.
-- **It names the reward, once.** When the first perfect hit lands, the line becomes
-  *"Perfect"* for a moment. That is the only time the game uses the word; after that the flash and
-  the hitstop carry it.
-- **It never blocks.** No modal, no pause, no "press any key to continue". The fight keeps running
-  underneath.
-- **It never repeats.** A cleared step never shows again in that run.
-
-## A player who already knows
-
-Every step is **satisfied retroactively**. If the player chains three attacks before the chain
-prompt would have appeared, steps 2, 3 and 4 all close silently and the wave moves on.
-
-A player who is good at action games should be able to finish wave 1 **without seeing a single
-prompt**. That is the design target, and it is the honest test of whether the game reads without
-being explained.
-
-## No failure while teaching
-
-During wave 1 the player's health never drops below 1. Silently — the game does not say so, and the
-damage numbers and the flash all behave normally.
-
-The reason: a player who dies during the parry lesson has learned that parrying is dangerous, which
-is the opposite of true. But telling them they are safe removes the tension that makes the lesson
-stick. So they are protected, and they never find out.
-
-This stops at wave 2, with no announcement.
-
-## Second run
-
-Cleared steps persist in `progress.json`. On a second run the whole thing is off: wave 1 spawns on
-the formula like any other wave.
-
-The options menu carries a **Show tutorial prompts** toggle, defaulting to off once the tutorial
-has been completed once. Nobody should have to sit through it twice, and nobody should have to hunt
-for the switch when a friend tries the game on their machine.
-
-Switching it off is also the way out. The parry step holds wave 1 open until a parry lands, so a
-tutorial that carried on unseen would be a wave that never ends and never says why — the director
-hands the island back the moment the toggle goes off, and a run that starts with it off never takes
-the island at all.
-
-## What this is not
-
-- **Not a separate scene.** No `tutorial.tscn` to keep in sync with the arena.
-- **Not a cutscene, and not a voice.** There is no narrator, no character explaining the island.
-- **Not a glossary.** The words "chain window" and "perfect window" appear in this repository and
-  never in the game.
-- **Not skippable by a button**, because there is nothing to skip: a player who performs the actions
-  is already past it.
+**Show tutorial prompts** in the options menu is the player's way to skip it. Turning it off while
+the lines are up skips the rest and starts wave 1 there and then.
 
 ## How it is built
 
-A `TutorialDirector` node lives in the arena and is driven by **`TutorialStep` resources** under
-`data/tutorial/`, so the order and the wording are data like everything else.
+A `TutorialDirector` node in the arena reads **`TutorialStep` resources** under `data/tutorial/` —
+`id`, `prompt_key` (a localisation key, never a literal), `prompt_actions`, and `seconds`, how long
+the line stays. The order, the wording and the timing are data; re-timing a line is an inspector
+edit.
 
-Each `TutorialStep` carries: `id`, `prompt_key` (a localisation key, never a literal), the
-`EventBus` signal that satisfies it, an optional predicate, and what the wave should do while the
-step is open.
+`TutorialPrompt` draws the line and knows nothing about when; the director owns the clock and hands
+the island to `WaveDirector.start_wave(1)` when it runs out.
 
-It listens on the `EventBus` and touches nothing else — `attack_landed` already carries the perfect
-flag, `parry_perfect` already fires, and the player already reports its state transitions. **This
-is what the bus was for**: the tutorial observes the whole fight without a single system knowing
-it exists, and deleting the director cannot break combat.
-
-The hook it needed is in: `SpawnDirector.spawn` and `spawn_at` both take `harmless`, and a harmless
-body is refused the attack token — the one gate every path into `WindUp` goes through. He still
-closes and still circles, so he reads as a threat while being unable to be one. The longer telegraph
-is the `windup` multiplier the wave scaling already used.
-
-Two details worth stating, because they are not obvious from the table:
-
-- **A step says what should be standing, not what to send.** The director tops up, so a farmhand
-  killed during the chain lesson is replaced and the lesson survives being played well — and it also
-  makes the bodies already there match the step, because harmlessness is decided at spawn and the
-  man sent for the attack lesson is the same man the dodge lesson needs to be swung at by.
-- **A chained hit is recognised by the attack that landed**, not by the player's chain window. The
-  window belongs to a swing that has *finished*; starting the next one closes it, so it is shut for
-  the whole of every blow that lands and cannot say whether that blow was the first or the second.
-- **The wave director is halted, not replaced.** When the last lesson closes, the tutorial hands the
-  island back and the ordinary breather runs — so wave 2 arrives exactly like every other wave.
-
-The protection during wave 1 is `HealthComponent.minimum_health`, raised to one and dropped again
-after. Everything else — the flash, the numbers, the stagger — behaves normally.
-
-**The glyph is device-aware.** A step names **actions**, not keys — `prompt_actions` — and the line
-is rendered with whatever those actions are bound to on the device in hand, then re-rendered when
-the hand moves or a binding changes. The string itself carries a `{0}` and nothing else, so a
-translator never has to know what a controller is called.
-
-Movement names all four of its actions and the glyph deduplicates them: `W A S D` on a keyboard, a
-single `L-STICK` on a pad. A stick is one thing to the player even though the engine reports it as
-four half-axes, and a prompt listing all four describes a shape nobody has.
-
-A lesson about **timing** names no action at all — the chain and the perfect window have no button
-to press that the previous lesson did not already teach — so those strings have no `{0}` and are
-shown exactly as written.
-
-## The test
-
-The exit criterion, and it is not negotiable:
-
-> **Three people who have never played reach wave 5 without being told anything.**
-
-If they cannot, the answer is not a longer prompt. It is a slower telegraph, a wider window, or an
-earlier lesson.
+`tools/verify_tutorial.tscn` holds it: it never presses anything, lets time pass, and asks that every
+line gives way after its own time and that wave 1 is running at the end.

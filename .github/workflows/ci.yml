@@ -203,10 +203,9 @@ jobs:
       - name: Verify saving and resuming a run
         run: tools/run-check.sh res://tools/verify_save.tscn
 
-      # The tutorial's whole design target is a player who never sees a prompt, and the only way to
-      # know that still holds is to land a chained perfect hit and assert three lessons closed at
-      # once. Playing it well is exactly the case a human tester never reproduces on purpose.
-      - name: Verify the tutorial wave
+      # The tutorial runs on a clock so no missing input can hold a run: the check presses nothing,
+      # lets time pass, and asserts every line gives way and wave 1 starts.
+      - name: Verify the tutorial
         run: tools/run-check.sh res://tools/verify_tutorial.tscn
 
       # "A player on a pad must never read the word mouse" is a sentence, not a type, and the only
@@ -239,14 +238,6 @@ jobs:
       # corner" in issue #39, done by a machine because nobody walks nineteen thousand of them.
       - name: Verify the playfield
         run: tools/run-check.sh res://tools/verify_playfield.tscn
-
-      # The thrower's half of the same composition question #39 asks, and it is two failures rather
-      # than one: an island with no open ground makes a ranged enemy decoration, and one with no
-      # cover makes him a tax the player eats instead of answers. It casts the ray the stone
-      # actually flies — the `world` layer, chest to chest — rather than a navigation query, so it
-      # cannot drift from what really stops a stone.
-      - name: Verify the thrower's sightlines
-        run: tools/run-check.sh res://tools/verify_sightlines.tscn
 
       # The navigation mesh comes out of the same generator, and nothing about a wrong one is
       # visible in a diff or a screenshot — enemies simply walk into rocks. This walks one of them
