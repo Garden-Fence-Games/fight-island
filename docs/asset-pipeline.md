@@ -334,7 +334,7 @@ Files: `char_player.glb`, **`char_farmer.glb`**, `char_pirate.glb`, `char_mercha
 on the same `MeshInstance3D`. One rig means one animation set, one import to
 maintain, and an elite that is a tint rather than an asset.
 
-Texture direction: the three must be distinguishable **by value and hue at 20 m from a high
+Texture direction: the two must be distinguishable **by value and hue at 20 m from a high
 camera**, not by detail nobody will ever see. Test them greyscale before texturing them properly.
 
 Meshes inside: `<asset>_<part>` — `char_player_body`, `weapon_gun_slide`.
@@ -545,7 +545,7 @@ no flag to flip. The check asserts that from both ends, so the day the rig grows
 
 PNG sources in `art-source/textures/`. Imported as **VRAM Compressed** for 3D albedo and
 **Lossless** for UI. Sizes: 2048² for the island atlas, 2048² for the player, and 2048² shared by
-the farmer rig — the three archetypes are three materials over one UV layout, not three budgets.
+the farmer rig — an archetype is a material over that one UV layout, not a budget of its own.
 Then 1024² for weapons and large props, 512² for small props, 256² for UI icons. Prefer one trim
 sheet per material family over per-object textures.
 

@@ -22,10 +22,6 @@ const REPATH_INTERVAL: float = 0.25
 ## are the same figures for every attack and every archetype in the game, so there is nothing for a
 ## scene to choose and nothing for a pooled body to carry a stale copy of.
 const KNOCKDOWN: KnockdownData = preload("res://data/combat/knockdown.tres")
-## The player's chest, which is what a blow is aimed at. He is 1.8 m and this is where the middle of
-## him is; `verify_sightlines` holds the figure, so a rig that ships at another height fails rather
-## than swinging at a knee.
-const CHEST_HEIGHT: float = 1.0
 ## The rigs are modelled facing the camera and a body's forward is -Z, so every one of them is
 ## turned about. One figure rather than a transform per scene: a rig that disagrees is a pipeline
 ## fault to fix at the export, not a number to override here.

@@ -22,7 +22,7 @@ into 3 → reset spacing.
 
 1. **Timing over inventory.** Variety comes from nine attacks with windows, not from a bigger bag.
 2. **Scarcity of choice.** One purchase per wave. The interesting decision is what you give up.
-3. **Readability.** One player, three farmers and three weapons, all legible from **one fixed
+3. **Readability.** One player, two archetypes and three weapons, all legible from **one fixed
    camera angle**. Every enemy shares a silhouette; only the texture and the behaviour change, and
    the world is only ever seen from one direction.
 
@@ -259,10 +259,9 @@ same toll, so backing into the shallows is a real decision rather than a free es
 
 ## Enemies
 
-Three farmers, **one rig and one mesh, three textures** — and one pirate, who has a model of his own
-and is therefore the only body in the game pooled apart. They are behaviourally distinct — identical
-bodies in different shirts would be decoration, not design — and together they stop any single
-answer from working.
+One farmer on a rig and a mesh of his own, and one pirate, who has a model of his own and is
+therefore the only body in the game pooled apart. They are behaviourally distinct — identical bodies
+in different shirts would be decoration, not design.
 
 | | Farmhand | Pirate |
 |---|---|---|
@@ -440,10 +439,10 @@ off, and re-running it is how the next one starts.
 Waves 1–3 teach. 4–7 add pressure through numbers. 8–11 introduce elites and force weapon
 rotation. 12–15 are an endurance test of the defensive kit.
 
-Measured at the night pool, wave to wave, incoming damage steps by about 11 and 14 per cent through
-the teaching waves, by 17 to 22 through 4–6 where three archetypes arrive, by 5 to 14 through the
-middle, and by under 5 across 12–15 — which is the endurance band doing what it says: nothing new
-to understand, and no let-up.
+Measured at the night pool, wave to wave, incoming damage steps by about 11 and 10 per cent through
+the teaching waves, by 17 where the pirate arrives at wave 4, and by 4 to 9 all the way to fifteen —
+no cliff anywhere, and no let-up either. Every one of those figures comes off
+`tools/measure_waves.tscn` rather than off the formulas.
 
 ## The day and the night
 

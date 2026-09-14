@@ -363,8 +363,8 @@ func _check_every_archetype_announces_itself_differently() -> void:
 	for id: StringName in _every_telegraph():
 		var length := float(_samples(id).size()) / float(AudioManager.MIX_RATE)
 		# Both windows sit past the contact noise. Measured from the first sample, the burst of
-		# hiss at the head reads brighter than any pitch the climb ever reaches, and all three
-		# wind-ups looked like they were falling.
+		# hiss at the head reads brighter than any pitch the climb ever reaches, and every wind-up
+		# looked like it was falling.
 		var opens := _brightness(id, length * 0.35, length * 0.5)
 		var closes := _brightness(id, length * 0.6, length * 0.85)
 		if opens >= closes:

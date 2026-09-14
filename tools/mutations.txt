@@ -46,13 +46,12 @@ scripts/world/ground.gd|const SNAP_TOLERANCE: float = 1.0|const SNAP_TOLERANCE: 
 scripts/systems/devices.gd|const STICK_WAKE: float = 0.5|const STICK_WAKE: float = 0.001|verify_glyphs
 
 # Audio
-scripts/autoload/audio_manager.gd|const PEAK: float = 0.9|const PEAK: float = 0.02|verify_audio
+scripts/systems/sound_bank.gd|const PEAK: float = 0.9|const PEAK: float = 0.02|verify_audio
 scripts/autoload/audio_manager.gd|const PERFECT_PARTIAL: float = 1320.0|const PERFECT_PARTIAL: float = 150.0|verify_audio
 # The whole row, not just the pitch. A stick at the fist's pitch with the stick's own envelope
 # still measures as a different body, and it is — the first version of this line claimed
 # otherwise and survived, which is exactly what a line nobody ran in the broken state does.
 scripts/autoload/audio_manager.gd|&"stick": {"hertz": 240.0, "decay": 0.075, "contact": 0.72, "snap": 0.010|&"stick": {"hertz": 150.0, "decay": 0.035, "contact": 0.5, "snap": 0.018|verify_audio
-scripts/autoload/audio_manager.gd|&"thrower": {"from": 520.0, "to": 1240.0|&"thrower": {"from": 300.0, "to": 500.0|verify_audio
 scripts/autoload/audio_manager.gd|const LAST_ROUNDS: int = 1|const LAST_ROUNDS: int = 4|verify_audio
 
 # The music bed: a duck that never lifts, a lowest layer that leaves a fight starting in silence
@@ -73,7 +72,7 @@ scripts/ui/hint_label.gd|	var glyph := _glyph()|	var glyph := ""|verify_glyphs
 scripts/autoload/audio_manager.gd|var audible: bool = DisplayServer.get_name() != "headless"|var audible: bool = true|verify_audio
 
 # The mix: a ceiling that lets a night wave clip, and a bed that wanders out of the home key.
-scripts/autoload/audio_manager.gd|const HEADROOM: float = 0.5|const HEADROOM: float = 1.0|verify_mix
+scripts/systems/mix_table.gd|const HEADROOM_DB: float = -2.0|const HEADROOM_DB: float = 6.0|verify_mix
 scripts/autoload/audio_manager.gd|&"music_edge": {"root": 220.0, "voices": 3|&"music_edge": {"root": 220.0, "voices": 4|verify_mix
 # B flat, not B natural — B is in A minor and the first version of this line claimed otherwise.
 scripts/autoload/audio_manager.gd|const C: float = 523.25|const C: float = 466.16|verify_mix
@@ -101,8 +100,8 @@ scripts/actors/player/states/player_dead.gd|player.last_hit_push * KNOCKDOWN.kno
 scripts/actors/enemy/states/enemy_stagger.gd|var push: float = float(message.get("push", 0.0)) * Enemy.KNOCKDOWN.knock_speed|var push: float = Enemy.KNOCKDOWN.knock_speed|verify_corpses
 scripts/actors/enemy/states/enemy_idle.gd|const PATIENCE: float = 10.0|const PATIENCE: float = 1000.0|verify_waves
 scripts/systems/spawn_director.gd|const MAX_PLAYER_DISTANCE: float = 18.0|const MAX_PLAYER_DISTANCE: float = 60.0|verify_waves
-scripts/resources/tide_data.gd|@export var drains: float = 20.0|@export var drains: float = 0.0|verify_drowning
-scripts/resources/tide_data.gd|@export var drains_from: float = 1.1|@export var drains_from: float = 0.2|verify_drowning
+data/combat/tide.tres|drains = 20.0|drains = 0.0|verify_drowning
+data/combat/tide.tres|drains_from = 1.1|drains_from = 0.2|verify_drowning
 # The accessibility floor: a switch may take away emphasis and never a signal. A perfect hit is not
 # in this table on purpose — it differs in three ways and `verify_access` asks for two, so no single
 # line can take the difference away. That redundancy is the design, and a mutation that survives it

@@ -14,8 +14,8 @@ const WIDEST_COLLIDER: float = 4.0
 const SPAWN_RADIUS: float = 7.0
 ## Clear space between the surfaces of two blocking props. Measured as a gap rather than as a
 ## distance between centres, because that is the same question for a palm and for a boulder — and
-## it is this, rather than a big empty circle, that stops a pair of props trapping someone against
-## the reaper's 160° sweep. The player is 0.7 m across.
+## it is this, rather than a big empty circle, that stops a pair of props pinning someone inside a
+## swing they cannot step out of. The player is 0.7 m across.
 const MIN_GAP: float = 1.3
 const FLAT_TOLERANCE: float = 0.25
 ## Nothing on the island may rise higher than this. The camera is fixed, so a wall anywhere is a

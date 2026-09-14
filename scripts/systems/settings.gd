@@ -77,15 +77,6 @@ static func set_value(key: StringName, value: Variant) -> void:
 	SaveManager.write_settings(_as_json())
 
 
-static func reset(key: StringName) -> void:
-	set_value(key, DEFAULTS.get(key))
-
-
-static func reset_all() -> void:
-	for key: StringName in DEFAULTS:
-		reset(key)
-
-
 static func apply_all() -> void:
 	_ensure_loaded()
 	for key: StringName in DEFAULTS:

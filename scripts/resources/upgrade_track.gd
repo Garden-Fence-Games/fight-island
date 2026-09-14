@@ -35,7 +35,3 @@ extends Resource
 ## when a wave restocked the gun on its own; now that nothing does, this is the merchant's half of
 ## the supply line and the bodies on the ground are the other.
 @export var rounds: int = 0
-
-
-func touches_body() -> bool:
-	return not is_zero_approx(max_health) or not is_zero_approx(max_stamina)

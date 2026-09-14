@@ -29,6 +29,57 @@ All notable changes to this project are documented here, following
 - **A body that drops rounds drops one, two or three**, each a third of the time and each its own
   piece on the sand. How often a body drops any is unchanged.
 
+- **The mutation sweep runs on every pull request instead of once a week.** It breaks the game on
+  purpose one constant at a time and reports which breakages no check notices — and it was kept off
+  pull requests because it "takes the better part of half an hour". That figure was never measured.
+  Its last sweep finished in **seven minutes nineteen**, which is about what the checks it audits
+  cost, because it runs each of them once and stops at the first that fails.
+  - Weekly is not a cadence this repository has. That green sweep ran on a Sunday morning against a
+    twenty-six line table; ninety-one commits landed in the day after it, ten of them appending to
+    the table, and by the Monday three entries named constants that had been renamed, moved or
+    deleted. A guard that goes quiet is now caught by the change that quietened it.
+  - `.github/workflows/mutation.yml` is gone and the job lives in `ci.yml`, behind the same CI gate
+    as every other job, so a survivor blocks a merge rather than sending a mail on Sunday.
+
+### Fixed
+
+- **Three of the mutations pointed at code that had moved, so `mutate.sh` could not run.** An entry
+  whose original text is no longer in the file it names is reported `STALE` and counted as a
+  survivor, which fails the whole run. `PEAK` had moved from `AudioManager` to `SoundBank`,
+  `HEADROOM` had become `MixTable.HEADROOM_DB` and changed units with it, and one entry still broke
+  the thrower's telegraph. Both survivors are repointed and proved — the peak mutation makes
+  `verify_audio` report two sounds twenty decibels under what they declared, and the headroom
+  mutation makes `verify_mix` say in as many words that a night wave clips.
+  - **And with the table able to run again, two entries turned out to measure nothing.** The tide's
+    `drains` and `drains_from` were mutated on the `@export` default in `tide_data.gd`, which
+    `data/combat/tide.tres` overrides on every load — so the game got the shipped figure whatever
+    the mutation said, and `verify_drowning` was right not to notice. Both now mutate the `.tres`,
+    where the number actually lives, and both are caught. They were the only two of their kind.
+
+### Removed
+
+- **Fifteen methods nothing called.** A sweep of every `func` in `scripts/` against every call site
+  in the project found fifteen with no caller at all, and three of them had been dead since the
+  archetype that used them was taken out. Two carried a docstring claiming a headless check read
+  them — `RunIntro.is_holding` and `SurfBed.on_the_coast` — which no check has ever done; a comment
+  that names a reader who does not exist is worse than no comment, because the next person believes
+  it. `AttackTokens.holds`, `WaveDirector.hand_over` and `WaveDirector.left_to_send` went with the
+  thrower's check and the old tutorial. `AimComponent.device` was the aim's own reading of the last
+  device touched, offered to the button glyphs before `Devices` existed to answer them properly.
+  The rest: `StateMachine.has_state`, `WeaponData.index_of`, `UpgradeTrack.touches_body`,
+  `CameraRig.screen_forward`, `MixTable.family_of`, `Settings.reset` and `reset_all`,
+  `WaveDirector.progress` and `PlayerAttack.charge`. No behaviour changed, and every headless check
+  still passes — which is the point: nothing was reading any of it.
+
+- **Five constants nothing read, and the comments that vouched for them.** `Enemy.CHEST_HEIGHT`
+  named `verify_sightlines` as its keeper, and that check went out with the thrower.
+  `WeaponPickup.LABEL_HEIGHT` was a second home for a height the scene already sets — the same 1.3,
+  written twice. `AudioManager.BODY_DECAY` said it was "the thud both hits share" long after each
+  impact family got a decay of its own. `PosedMesh.PER_VERTEX` was a hard-coded four under a
+  docstring saying the figure is read rather than assumed — which the code does, from the arrays,
+  three lines further down. `Emphasis.NOTHING` was never returned; the decision it was written to
+  record, that an ordinary hit gets no mark at all, moves onto `for_hit`, which is what makes it.
+
 ## [0.2.0] - 2026-09-14
 
 Two archetypes leave the island and nothing replaces them; the sea kills for the first time;
@@ -123,10 +174,6 @@ and the macOS build can be opened, which the 0.1.0 one could not.
   `Retreat` state, the separate ranged token pool, `EnemyData.is_ranged`, `retreat_range` and
   `projectile`, the rule that no wave may open with a ranged body, his telegraph, his clips, his
   locale row, and `verify_sightlines`, which existed to answer a question only he asked.
-  - **The composition closes over him.** The pirate stays a flat ten per cent hazard and the reaper
-    takes the escalation the thrower used to carry: by wave 12 a body on the island is as likely to
-    be a reaper as a farmhand. One new archetype per wave still, the reaper at 3 and the pirate at
-    4, and nothing new after that — the mix simply hardens.
   - **The late game is measurably gentler**, and this is the price rather than a side effect. His
     token was a free one: he queued on a pool nobody else could use, so being shot at cost nothing
     the melee pool was already spending. Measured by `tools/measure_waves.tscn`, wave 15 goes from

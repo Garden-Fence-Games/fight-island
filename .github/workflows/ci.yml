@@ -370,6 +370,54 @@ jobs:
             run.log
           retention-days: 7
 
+  # What the checks above cannot say about themselves: whether any of them can fail at all.
+  #
+  # A check that has gone quiet still prints its pass, so reading for one does not work — three of
+  # the checks in this file were written by people who believed they were holding exactly the thing
+  # they were not. `mutate.sh` breaks the game on purpose, one constant at a time, and a mutation
+  # nothing notices is reported as a survivor.
+  #
+  # **This was a weekly sweep, and weekly is not a cadence this repository has.** It last ran on a
+  # Sunday morning against a twenty-six line table and was green. Ninety-one commits landed in the
+  # day that followed, ten of them appending to the table, and by the Monday three of its entries
+  # named constants that had been renamed, moved or deleted. An entry whose original text is no
+  # longer in the file it names is reported STALE and counted as a survivor, so the table did not
+  # merely lose coverage — it could not run at all, and would have said so six days late.
+  #
+  # The reason it was kept off pull requests was that it "takes the better part of half an hour".
+  # That figure was never measured: the sweep it describes finished in seven minutes nineteen. It is
+  # about as expensive as the checks it is auditing, which is what it should cost — it runs each of
+  # them once and stops at the first that fails.
+  mutations:
+    name: Mutation survivors
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          lfs: true
+
+      - uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: false
+
+      # Twice, for the same reason the validate job does it twice — see the comment there.
+      - name: Import project resources
+        run: |
+          godot --headless --import --path "$GITHUB_WORKSPACE" > /dev/null 2>&1 || true
+          godot --headless --import --path "$GITHUB_WORKSPACE" > /dev/null 2>&1
+
+      # A mutated build that fails its check does so in about the time the check normally takes; a
+      # mutation that makes a script stop parsing hangs instead, and this is what bounds that. Well
+      # above a healthy check and well under the job's own clock, so a hang is reported as the one
+      # mutation it belongs to rather than as a job nobody can read.
+      - name: Every mutation must be caught
+        env:
+          CHECK_SECONDS: "120"
+        run: tools/mutate.sh
+
   guard:
     name: Repository guard rails
     runs-on: ubuntu-24.04
@@ -515,7 +563,7 @@ jobs:
   gate:
     name: CI gate
     runs-on: ubuntu-24.04
-    needs: [lint, validate, guard, pr-hygiene]
+    needs: [lint, validate, mutations, guard, pr-hygiene]
     if: always()
     steps:
       # The single required check in the ruleset, so adding a job never means editing the ruleset.

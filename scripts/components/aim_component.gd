@@ -50,17 +50,13 @@ var _last_direction: Vector3 = Vector3.ZERO
 
 
 ## Whichever device was touched last is the one aiming — the convention every game with both uses.
-## It is also the answer issue #19 needs for its button glyphs, which is why it is readable from
-## outside rather than private.
+## This is the aim's own reading and nobody else's: the glyphs ask `Devices`, which watches every
+## input rather than only the ones that move a cursor.
 func _input(event: InputEvent) -> void:
 	if event is InputEventJoypadMotion or event is InputEventJoypadButton:
 		_device = Device.STICK
 	elif event is InputEventMouseMotion or event is InputEventMouseButton or event is InputEventKey:
 		_device = Device.MOUSE
-
-
-func device() -> Device:
-	return _device
 
 
 ## Flat, normalised, and ZERO when the player is not aiming at anything.
