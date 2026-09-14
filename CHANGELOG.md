@@ -20,6 +20,14 @@ All notable changes to this project are documented here, following
 
 - **One kill in three leaves a round, up from one in eight.** A drop is a single round, so the gun
   can afford to be generous — and a round that has to be walked over is worth more of them.
+- **The gun has no magazine and no reload.** Every round it carries fires, one after another, up to
+  the ceiling of thirty it arrives with; with none left the trigger clicks, and walking over a round
+  makes it fire again at once. The reload state, its `R` / X binding and its sound are gone, the HUD
+  reads rounds against the ceiling, and the gun track hands over six rounds without the extra
+  magazine slot that no longer exists. A save from before carries its magazine and reserve over as
+  one count.
+- **A body that drops rounds drops one, two or three**, each a third of the time and each its own
+  piece on the sand. How often a body drops any is unchanged.
 
 - **The mutation sweep runs on every pull request instead of once a week.** It breaks the game on
   purpose one constant at a time and reports which breakages no check notices — and it was kept off

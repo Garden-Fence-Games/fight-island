@@ -15,5 +15,3 @@ found_at_wave = 1
 clip_suffix = &"_stick"
 chain_lockout = 0.50
 perfect_lockout = 0.22
-magazine = 0
-reload_time = 0.0
