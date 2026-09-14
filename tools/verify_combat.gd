@@ -84,6 +84,7 @@ func _run() -> void:
 	_check_a_roll_outlasts_its_own_invulnerability()
 	await _check_a_sprint_runs_out()
 	await _check_parry_negates()
+	await _check_a_parry_that_missed_is_a_hit_taken()
 	await _check_enemy_closes_and_hits()
 	_check_noticing_is_possible_at_all()
 	await _check_a_farmer_waits_until_he_notices()
@@ -372,6 +373,64 @@ func _check_parry_negates() -> void:
 		_fail("a perfect parry should negate the hit")
 	if not is_equal_approx(health.current_health, before):
 		_fail("a perfect parry should cost no health")
+
+
+## **Only a perfect parry negates.** Late halves the blow, and anything past that takes it whole —
+## so both of those are hits taken, and both have to be written down like any other.
+##
+## What reads them is the fall. `PlayerDead` throws the body along `last_hit_from` at
+## `last_hit_push`, and those are set when a blow lands. A parried-too-late killing blow that never
+## wrote them left the body to fall by whatever hit it last — a jab from the other side of the wave,
+## or on a run where every other blow was parried, by nothing at all: no direction, no push, a man
+## who crumples where he stands after taking a club to the head.
+func _check_a_parry_that_missed_is_a_hit_taken() -> void:
+	_player.machine.current.transition_to(&"Idle")
+	await get_tree().physics_frame
+	_player.health.current_health = _player.health.max_health
+
+	# A blow from an earlier exchange, still on the books. The fall used to read this one.
+	var stale := Vector3.FORWARD
+	_player.last_hit_from = stale
+	_player.last_hit_push = 0.01
+
+	_player.machine.current.transition_to(&"Parry")
+	await get_tree().physics_frame
+	if _player.machine.current_name != &"Parry":
+		_fail("the player should be parrying")
+		return
+	# Past `LATE_END` so the blow is taken whole, and short of `RECOVERY_END` so the player is still
+	# in `Parry` when it lands. Derived from the two constants rather than counted in frames: aim at
+	# the middle and neither of them moving can quietly make this check test the ordinary path.
+	var window := (PlayerParry.LATE_END + PlayerParry.RECOVERY_END) * 0.5
+	var waited := 0.0
+	while waited < window:
+		await get_tree().physics_frame
+		waited += get_physics_process_delta_time()
+	if _player.machine.current_name != &"Parry":
+		_fail("the parry ended before the blow landed, so this check is not testing a parry at all")
+		return
+
+	var info := HitInfo.new(_enemy.data.attack, _enemy, false)
+	var thrown := info.direction
+	var weight := info.stagger
+	_player.hurtbox.take_hit(info)
+	if info.negated:
+		_fail("a parry thrown long before the blow still negated it")
+		return
+	if _player.last_hit_from.is_equal_approx(stale):
+		_fail("a missed parry left the body to fall by a blow from an earlier exchange")
+	if not _player.last_hit_from.is_equal_approx(thrown):
+		_fail("a missed parry wrote down a direction that was not the blow's")
+	if not is_equal_approx(_player.last_hit_push, weight):
+		_fail(
+			(
+				"a missed parry wrote down a push of %.2f for a blow of %.2f"
+				% [_player.last_hit_push, weight]
+			)
+		)
+	_player.machine.current.transition_to(&"Idle")
+	_player.health.current_health = _player.health.max_health
+	await get_tree().physics_frame
 
 
 ## The end-to-end one: left alone, the farmhand crosses the arena, telegraphs, and connects.
