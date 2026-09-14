@@ -13,6 +13,7 @@ const SETTLE_FRAMES: int = 4
 ## Where the volumes live. Written out rather than searched for, so a page that is reordered fails
 ## here rather than quietly measuring whatever ended up fourth.
 const AUDIO_PAGE: int = 3
+const CONTROLS_PAGE: int = 1
 
 var _failures: PackedStringArray = []
 var _screen: OptionsScreen = null
@@ -38,6 +39,7 @@ func _run() -> void:
 	await _check_a_slider_answers_the_mouse()
 	_check_bindings_are_listed()
 	_check_a_rebind_moves_the_map()
+	await _check_a_capture_does_not_outlive_its_row()
 	_restore_settings()
 	_report()
 
@@ -191,6 +193,71 @@ func _check_a_rebind_moves_the_map() -> void:
 	InputBindings.reset_device(InputBindings.Device.KEYBOARD)
 	if InputMap.action_has_event(action, event):
 		_fail("the reset left the rebound key in the map")
+
+
+## A row that is listening for a key and then stops being on screen, or stops being the row the
+## player is on, has to stop listening. Nothing else can: the capture is invisible once the row is,
+## and the only symptom a player gets is an Escape that does nothing — followed by a control they
+## never meant to touch being rewritten by the next key they press.
+##
+## Asked through `is_processing_unhandled_input`, which is the capture's whole footprint on the
+## world: a row that is not processing cannot bind anything.
+func _check_a_capture_does_not_outlive_its_row() -> void:
+	var rows := _keybind_rows()
+	if rows.size() < 2:
+		_fail("the controls page has fewer than two rebindable rows, so this check proves nothing")
+		return
+
+	# Hidden with a capture open: the tab strip is clickable without taking focus, so this is one
+	# mouse click away at any moment.
+	if not await _listening(rows[0]):
+		return
+	_screen.show_page(AUDIO_PAGE)
+	await get_tree().process_frame
+	if rows[0].is_processing_unhandled_input():
+		_fail("a row left listening on a page nobody is looking at would bind the next key pressed")
+	_screen.show_page(CONTROLS_PAGE)
+	await get_tree().process_frame
+
+	# Two rows at once: click one, click the next. Which one gets the key is a coin toss.
+	if not await _listening(rows[0]):
+		return
+	rows[1].grab_focus()
+	await get_tree().process_frame
+	if rows[0].is_processing_unhandled_input():
+		_fail("two rows were listening at once, so the next key would land on whichever won")
+	# And the row that took over has to let go too, when the screen moves on from it.
+	if not await _listening(rows[1]):
+		return
+	rows[1].release_focus()
+	await get_tree().process_frame
+	if rows[1].is_processing_unhandled_input():
+		_fail("a row kept listening after the screen moved on from it")
+
+
+## Puts a row into the listening state and says whether it got there, because every assertion above
+## is worthless if it never started.
+func _listening(row: KeybindRow) -> bool:
+	row.grab_focus()
+	row.pressed.emit()
+	# `_start_capture` arms the listening a frame late on purpose, so the press that opened it is
+	# not the press that closes it.
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if not row.is_processing_unhandled_input():
+		_fail("a row would not start listening at all, so the capture cannot be tested")
+		return false
+	return true
+
+
+func _keybind_rows() -> Array[KeybindRow]:
+	var found: Array[KeybindRow] = []
+	for page: Node in _screen.page_box.get_children():
+		for child: Node in page.get_children():
+			var row := child as KeybindRow
+			if row != null:
+				found.append(row)
+	return found
 
 
 func _find_row(setting: StringName) -> OptionRow:

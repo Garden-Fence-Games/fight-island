@@ -34,6 +34,16 @@ func _ready() -> void:
 	_on_focus_changed()
 
 
+## A row that leaves the screen takes its capture with it.
+##
+## Without this a hidden row keeps listening: it swallows the Escape meant for the options screen,
+## and it binds the next key pressed on a page the player has already moved on to, with nothing on
+## screen to say it happened.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and _capturing and not is_visible_in_tree():
+		_stop_capture()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not _capturing:
 		return
@@ -91,4 +101,9 @@ func _stop_capture() -> void:
 
 
 func _on_focus_changed() -> void:
+	# Focus leaving is the player moving on — to another row, to the tab strip, out of the screen.
+	# A capture that outlives it is a capture nobody can see, and two rows listening at once is a
+	# coin toss over which one the next key lands on.
+	if _capturing and not has_focus():
+		_stop_capture()
 	title.theme_type_variation = &"RowLabelActive" if has_focus() else &"RowLabel"
