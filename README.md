@@ -13,9 +13,9 @@ upgrade, a few more as the run goes on — and a run never affords them all.
 
 ## Status
 
-**Milestone 2 — vertical slice.** A run plays end to end. Three weapons with three attacks each,
-found on the ground and swapped instantly; waves that arrive as turns of the day and pay out when
-they are cleared; the merchant and his five upgrade tracks; title, pause, options and a death
+**1.0.0 — released.** A run plays end to end, fifteen waves of it. Three weapons with three attacks
+each, found on the ground and swapped instantly; waves that arrive as turns of the day and pay out
+when they are cleared; the merchant and his upgrade tracks; title, pause, options and a death
 screen, all navigable on a pad. The island is generated, navigable, and dressed.
 
 **The primitives are going away one at a time, not all at once.** The player, the farmer and the
