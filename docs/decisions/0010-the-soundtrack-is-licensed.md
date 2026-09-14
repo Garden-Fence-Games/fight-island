@@ -36,10 +36,11 @@ better than a library would have; the music was, because nothing else would have
   is an edit rather than a search through a sound pack. Nothing in the game distinguishes itself by
   volume alone — the first thing a player turns down and the first thing a loud fight buries.
 - No audio files in Git LFS for effects, and no licence to track for them.
-- **The soundtrack is the one thing in `docs/credits.md` that still has to be cleared.** A
-  subscription licence is granted to a subscriber for a use, not to a file for ever, and the use
-  here is a commercial game on itch.io and then on Steam. That has to be confirmed against the
-  actual terms before release — cheap to check now, expensive to discover afterwards.
+- **The soundtrack is the only thing in `docs/credits.md` with a term attached.** The game is given
+  away, so nothing is cleared for sale and no revenue term applies. What remains is that a
+  subscription licence is granted to a subscriber for a use rather than to a file for ever, and that
+  these tracks travel inside a downloadable build — worth confirming against the actual subscription
+  before release rather than assuming that royalty-free means unencumbered.
 - Replacing the soundtrack later costs five rows in a document and five files. Replacing the effects
   would cost the tuning, which is why they are the half that was not bought.
 

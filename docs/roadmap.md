@@ -121,6 +121,11 @@ cut from real footage.
 
 **Goal:** people can play it.
 
+**The game is free.** Nothing is sold and there are no in-app purchases, which is what makes the
+Steam hundred a flat expense rather than an advance — it is owed for a free title too, and the
+thousand dollars of revenue that would make it recoverable is not coming. It also narrows what the
+soundtrack licence has to answer for; see [credits.md](credits.md).
+
 - itch.io release: page, capsule art, description, both builds published by `butler` on tag
 - macOS notarisation resolved, or the limitation documented for players
 - **Then, if the 100 USD is spent:** Steamworks account, App ID, depots, a manual `steamcmd`
