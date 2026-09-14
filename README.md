@@ -73,7 +73,7 @@ licensed tracks and the farmer's recorded lines. See [docs/roadmap.md](docs/road
 ## Running the project
 
 ```bash
-git clone git@github.com:pepito2t/fight-island.git
+git clone git@github.com:Garden-Fence-Games/fight-island.git
 cd fight-island
 git lfs install
 open -a Godot project.godot   # or open the folder from the Godot project manager
