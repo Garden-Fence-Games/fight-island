@@ -369,8 +369,8 @@ emptied.
 
 ```
 enemy_count(n)   = 16 + floor(n * 1.2)                   # w1=17  w5=22  w10=28  w15=34
-max_alive(n)     = clamp(4 + floor(n * 0.8), 4, 14)
-hp_mult(n)       = 1.0 + 0.18 * (n - 1)                  # w15 = 3.52
+max_alive(n)     = clamp(4 + floor(n * 0.8), 4, 16)
+hp_mult(n)       = 1.0 + 0.13 * (n - 1)                  # w15 = 2.82
 dmg_mult(n)      = 1.0 + 0.10 * (n - 1)                  # w15 = 2.40
 speed_mult(n)    = min(1.0 + 0.03 * (n - 1), 1.35)
 windup_mult(n)   = max(1.0 - 0.02 * (n - 1), 0.75)
@@ -394,6 +394,15 @@ the pool's, and what the crowd adds is bodies to walk through, to see past, and 
 Both matter and they are not the same lever: incoming damage is carried by `dmg_mult` and by the
 mix below, and the crowd is what makes waves twelve to fifteen an endurance test rather than a
 harder version of wave six.
+
+**Health is raced against the weapon tracks, and it used to win.** `hp_mult` was `0.18` and the
+ceiling on `max_alive` was `14`, so the crowd stopped growing three waves before the run ended and a
+body took well over twice as long to fell at fifteen as at one. That is the same wave, slower —
+and the roster went on climbing past anything a player could physically reach, which is a budget
+written down and never spent. What the player puts out grows on a weapon track, a level at a time
+and only as far as a run affords, so health has to grow slower than the crowd does: the crowd is
+what the last waves are made of. The ceiling now sits where the formula lands on the final wave,
+which makes it a backstop rather than a brake.
 
 ### Composition
 
@@ -565,8 +574,8 @@ enough to be worth aiming for, not enough to make finishing every body the only 
 Fifteen waves with no flawless bonus earn **2 010** in wave rewards. Maxing a single track costs
 **795**, so the rewards alone afford two full tracks and change. That gap is the design.
 
-**The bodies pay for a third.** About twenty-four a wave are felled at two apiece, which is another
-**680** or so across a run and takes it to roughly three and a half tracks out of five — measured by
+**The bodies pay for a third.** About twenty-five a wave are felled at two apiece, which is another
+**750** or so across a run and takes it to roughly three and a half tracks out of five — measured by
 `tools/measure_waves.tscn`, which counts what can physically be killed rather than what is sent.
 `verify_waves` asserts the reward curve and not this total, because how many bodies a player fells
 is a fact about the player; the guard rail holds the *shape* — rewards flat, costs geometric — and
