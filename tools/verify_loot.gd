@@ -117,10 +117,18 @@ func _check_a_kill_throws_its_pay() -> void:
 	_clear()
 	GameState.loadout.find_weapon(&"gun")
 	var chance := Arsenal.find(&"gun").scavenge_chance
-	_director.spray(_player.global_position + AWAY, 2, chance * 0.5)
-	if _pieces(Loot.Kind.ROUND).size() != 1:
-		_fail("a roll inside the chance, with the gun carried, threw no round")
-	_clear()
+	# A body that drops rounds throws one, two or three of them, each its own piece on the sand.
+	for pair: Array in [[0.1, 1], [0.5, 2], [0.9, 3]]:
+		_director.spray(_player.global_position + AWAY, 2, chance * 0.5, pair[0])
+		if _pieces(Loot.Kind.ROUND).size() != pair[1]:
+			_fail(
+				(
+					"a count roll of %.1f threw %d rounds, expected %d"
+					% [pair[0], _pieces(Loot.Kind.ROUND).size(), pair[1]]
+				)
+			)
+		_clear()
+		await get_tree().process_frame
 	_director.spray(_player.global_position + AWAY, 2, 1.0)
 	if not _pieces(Loot.Kind.ROUND).is_empty():
 		_fail("a roll past the chance threw a round anyway")
@@ -209,10 +217,10 @@ func _check_a_full_pocket_refuses_a_round() -> void:
 	GameState.loadout = Loadout.new()
 	GameState.loadout.find_weapon(&"gun")
 	var gun := Arsenal.find(&"gun")
-	GameState.loadout.reserve = gun.ammo_cap - GameState.loadout.magazine
-	var pieces := _director.spray(_player.global_position + AWAY, 0, 0.0)
+	GameState.loadout.rounds = gun.ammo_cap
+	var pieces := _director.spray(_player.global_position + AWAY, 0, 0.0, 0.0)
 	if pieces.size() != 1:
-		_fail("a roll of nothing, with the gun carried, did not throw exactly one round")
+		_fail("a roll of nothing, and a count roll of nothing, did not throw exactly one round")
 		_clear()
 		return
 	var shell := pieces[0]
@@ -224,7 +232,7 @@ func _check_a_full_pocket_refuses_a_round() -> void:
 	if not is_instance_valid(shell) or shell.is_queued_for_deletion():
 		_fail("a full pocket took a round")
 		return
-	GameState.loadout.reserve -= 1
+	GameState.loadout.rounds -= 1
 	for _frame: int in 6:
 		await get_tree().physics_frame
 	if is_instance_valid(shell) and not shell.is_queued_for_deletion():

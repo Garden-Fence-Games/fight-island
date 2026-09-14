@@ -105,12 +105,6 @@ func _physics_process(delta: float) -> void:
 		_go_positional(coast)
 
 
-## Whether the sea is coming from the coast rather than from nowhere, for a check that wants to know
-## without listening.
-func on_the_coast() -> bool:
-	return _mapped
-
-
 ## Where the ring ended up. Empty until an island has been found.
 func coastline() -> PackedVector3Array:
 	var found := PackedVector3Array()

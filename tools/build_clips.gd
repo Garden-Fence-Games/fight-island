@@ -327,7 +327,7 @@ func _swinging_arm(depth: float, drawn: bool) -> Array:
 	var forearm := DRAW_FOREARM_LIFT if drawn else SWING_FOREARM_LIFT
 	# Depth reaches the upper arm and the shoulder, never the elbow. How far a blow travels is how
 	# far the arm comes round; multiplying the elbow as well would bend it past where an elbow goes
-	# and the reaper would swing on a broken arm.
+	# and a body would swing on a broken arm.
 	return [
 		["mixamorig_RightArm", _turn(lift * depth, reach * depth)],
 		["mixamorig_RightForeArm", _turn(forearm, 0.0)],

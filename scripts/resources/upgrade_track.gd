@@ -31,12 +31,7 @@ extends Resource
 @export var damage: float = 0.0
 @export var stamina_cost: float = 0.0
 @export var reach: float = 0.0
-@export var magazine: int = 0
 ## Rounds the purchase itself hands over, once. It used to be added to every cleared wave, back
 ## when a wave restocked the gun on its own; now that nothing does, this is the merchant's half of
 ## the supply line and the bodies on the ground are the other.
-@export var reserve: int = 0
-
-
-func touches_body() -> bool:
-	return not is_zero_approx(max_health) or not is_zero_approx(max_stamina)
+@export var rounds: int = 0

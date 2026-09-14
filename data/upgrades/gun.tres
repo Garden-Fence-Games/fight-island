@@ -9,5 +9,4 @@ display_name = "UPGRADE_GUN"
 next_level_key = "MERCHANT_GUN"
 weapon = &"gun"
 damage = 0.15
-magazine = 1
-reserve = 6
+rounds = 6

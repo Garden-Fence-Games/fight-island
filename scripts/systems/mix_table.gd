@@ -171,10 +171,6 @@ static func assign(id: StringName, family: StringName) -> void:
 	_family_of[id] = family
 
 
-static func family_of(id: StringName) -> StringName:
-	return _family_of.get(id, &"")
-
-
 ## Every id the desk would move by touching one fader, so it can audition the family it is about to
 ## change rather than making the user find a farmer.
 static func sounds_of(family: StringName) -> Array[StringName]:

@@ -44,8 +44,8 @@ var _pulsing: Dictionary[Control, Tween] = {}
 @onready var stamina_bar: ProgressBar = $Root/BottomLeft/Stamina/Bar
 @onready var stamina_value: Label = $Root/BottomLeft/Stamina/Row/Value
 @onready var ammo: PanelContainer = $Root/BottomRight/Ammo
-@onready var ammo_magazine: Label = $Root/BottomRight/Ammo/Rows/Row/Magazine
-@onready var ammo_reserve: Label = $Root/BottomRight/Ammo/Rows/Row/Reserve
+@onready var ammo_rounds: Label = $Root/BottomRight/Ammo/Rows/Row/Rounds
+@onready var ammo_cap: Label = $Root/BottomRight/Ammo/Rows/Row/Cap
 @onready var numbers: Control = $Root/Numbers
 @onready var captions: Array[Label] = [
 	$Root/BottomLeft/Health/Row/Name,
@@ -75,7 +75,7 @@ func _ready() -> void:
 	# the arena is swapped in. Listening alone left a gun the player was carrying with no counter
 	# at all for the rest of the run.
 	_on_weapon_equipped(GameState.loadout.weapon())
-	_on_ammo_changed(GameState.loadout.magazine, GameState.loadout.reserve)
+	_on_ammo_changed(GameState.loadout.rounds)
 
 
 ## Polled rather than signalled: the hour moves every frame that a farmer is falling over, and a
@@ -108,8 +108,8 @@ func _on_money_changed(balance: int, delta: int) -> void:
 
 ## Rounds arrive off bodies, one at a time, in the middle of the fight that dropped them — which is
 ## exactly the moment a counter in the corner goes unread. Same answer as the money chip, for the
-## same reason, and arriving is the only thing ammunition ever announces: spending and reloading are
-## things the player did on purpose.
+## same reason, and arriving is the only thing ammunition ever announces: spending is something the
+## player did on purpose.
 ##
 ## It floats off the body too, for the reason the payout does — a round *is* the second thing a kill
 ## pays — so it answers the same setting. Nothing floats for the merchant's rounds: those were
@@ -164,14 +164,17 @@ func _on_wave_cleared(index: int, _reward: int) -> void:
 
 
 ## Ammo is the one panel that comes and goes, and the weapon decides — a melee player never sees
-## a magazine of zero.
+## a count of zero.
 func _on_weapon_equipped(weapon: WeaponData) -> void:
 	ammo.visible = weapon != null and weapon.is_ranged
+	_on_ammo_changed(GameState.loadout.rounds)
 
 
-func _on_ammo_changed(magazine: int, reserve: int) -> void:
-	ammo_magazine.text = "%02d" % magazine
-	ammo_reserve.text = str(reserve)
+## The rounds the gun has, against the most it can hold. No magazine: every one of them fires.
+func _on_ammo_changed(rounds: int) -> void:
+	ammo_rounds.text = "%02d" % rounds
+	var gun := Arsenal.find(&"gun")
+	ammo_cap.text = str(gun.ammo_cap) if gun != null else ""
 
 
 func _on_attack_landed(target: Node3D, damage: float, perfect: bool, _attack: AttackData) -> void:

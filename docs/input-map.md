@@ -28,7 +28,6 @@ bindings.
 | `parry` | Right mouse | LT | **0.5** |
 | `dodge` | `Space` | A | 0.2 |
 | `sprint` | `Shift` | L3 | 0.2 |
-| `reload` | `R` | X | 0.2 |
 | `interact` | `F` | Y | 0.2 |
 | `weapon_next` | `E` | RB, D-pad right | 0.2 |
 | `weapon_prev` | — | LB, D-pad left | 0.2 |

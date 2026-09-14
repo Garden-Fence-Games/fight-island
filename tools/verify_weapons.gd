@@ -6,9 +6,9 @@ extends Node
 ## the thing no diff shows: the arc is a number in a `.tres` and the sweep is geometry, so the only
 ## way to know 120° still means 120° is to stand two farmers inside it.
 ##
-## **The gun's rhythm is the magazine and the reserve.** Running dry mid-wave is designed, so the
-## checks here are about *when* it happens — a shot the magazine cannot pay for, a reserve that
-## grows on a cleared wave and at no other moment.
+## **The gun's rhythm is its rounds.** One count, no magazine and no reload: every round fires, and
+## running dry mid-wave is designed — so the checks here are about *when* it happens, a shot the
+## rounds cannot pay for, and a count that nothing refills on a clock.
 ##
 ## **Nothing carries between weapons.** A chain is a set of windows belonging to one weapon; a swap
 ## has to close it rather than hand it over.
@@ -49,8 +49,8 @@ func _run() -> void:
 	_check_the_double_tap_needs_two()
 	_check_a_cleared_wave_hands_over_no_rounds()
 	_check_the_pocket_stops_at_the_ceiling()
-	_check_a_body_in_three_leaves_a_round()
-	await _check_reloading_takes_from_the_pocket()
+	_check_a_body_in_three_leaves_rounds()
+	await _check_there_is_no_reload()
 	_check_the_wheel_only_offers_what_was_found()
 	await _check_a_swap_drops_the_chain()
 	await _check_a_pickup_hands_the_weapon_over()
@@ -78,17 +78,17 @@ func _check_the_tables_match() -> void:
 	_expect(gun.attack_at(0).damage, 22.0, "gun single shot damage")
 	_expect(gun.attack_at(1).damage, 16.0, "gun double tap damage per round")
 	_expect(gun.attack_at(2).damage, 55.0, "gun charged shot damage")
-	if gun.magazine != 6 or not is_equal_approx(gun.reload_time, 1.6):
-		_fail("the magazine is %d and the reload %.2f s" % [gun.magazine, gun.reload_time])
-	if gun.reserve_start != 24 or gun.ammo_cap != 30:
-		_fail("the pocket starts at %d and caps at %d" % [gun.reserve_start, gun.ammo_cap])
+	if gun.rounds_start != 30 or gun.ammo_cap != 30:
+		_fail("the gun arrives with %d rounds and caps at %d" % [gun.rounds_start, gun.ammo_cap])
 	if not is_equal_approx(gun.scavenge_chance, 0.333):
-		_fail("a body leaves a round %.3f of the time, expected one in three" % gun.scavenge_chance)
-	if gun.reserve_start + gun.magazine > gun.ammo_cap:
+		_fail("a body leaves rounds %.3f of the time, expected one in three" % gun.scavenge_chance)
+	if gun.scavenge_most != 3:
+		_fail("a body that drops rounds drops up to %d, expected 3" % gun.scavenge_most)
+	if gun.rounds_start > gun.ammo_cap:
 		_fail(
 			(
 				"the gun arrives carrying %d rounds against a ceiling of %d"
-				% [gun.reserve_start + gun.magazine, gun.ammo_cap]
+				% [gun.rounds_start, gun.ammo_cap]
 			)
 		)
 	if gun.attack_at(1).ammo_cost != 2:
@@ -144,10 +144,8 @@ func _check_the_gun_comes_loaded() -> void:
 	var bag := GameState.loadout
 	bag.find_weapon(&"gun")
 	var gun := Arsenal.find(&"gun")
-	if bag.magazine != gun.magazine:
-		_fail("the gun arrived with %d rounds in it, expected %d" % [bag.magazine, gun.magazine])
-	if bag.reserve != gun.reserve_start:
-		_fail("the pocket started at %d, expected %d" % [bag.reserve, gun.reserve_start])
+	if bag.rounds != gun.rounds_start:
+		_fail("the gun arrived with %d rounds, expected %d" % [bag.rounds, gun.rounds_start])
 	if bag.equipped != &"gun":
 		_fail("picking the gun up did not put it in hand")
 
@@ -162,88 +160,101 @@ func _check_a_shot_needs_a_round() -> void:
 	await get_tree().physics_frame
 	var bag := GameState.loadout
 	var before := target.health.current_health
-	var rounds := bag.magazine
+	var rounds := bag.rounds
 	_player.hitscan.fire(_player.weapon.attack_at(0), _player, false, 1.0)
 	await get_tree().physics_frame
 	if target.health.current_health >= before:
 		_fail("a shot at a farmer six metres away missed")
-	bag.magazine = 0
+	bag.rounds = 0
 	_player.close_chain()
 	_player.machine.current.transition_to(&"Attack", {"index": 0, "perfect": false})
 	await get_tree().physics_frame
 	if _player.machine.current is PlayerAttack:
-		_fail("the trigger fired on an empty magazine")
-	bag.magazine = rounds
+		_fail("the trigger fired with no rounds left")
+	bag.rounds = rounds
 	target.retire()
 	await get_tree().physics_frame
 
 
 func _check_the_double_tap_needs_two() -> void:
 	var bag := GameState.loadout
-	bag.magazine = 1
+	bag.rounds = 1
 	if bag.spend(2):
-		_fail("the double tap fired with one round in the magazine")
-	bag.magazine = 2
+		_fail("the double tap fired with one round left")
+	bag.rounds = 2
 	if not bag.spend(2):
-		_fail("the double tap was refused with two rounds in the magazine")
-	if bag.magazine != 0:
-		_fail("the double tap left %d rounds behind" % bag.magazine)
+		_fail("the double tap was refused with two rounds left")
+	if bag.rounds != 0:
+		_fail("the double tap left %d rounds behind" % bag.rounds)
 
 
 ## The gun's rhythm, stated as a check: **nothing refills on a clock.** A cleared wave pays money
-## and nothing else, and the pocket is exactly where the last fight left it.
+## and nothing else, and the gun is exactly where the last fight left it.
 func _check_a_cleared_wave_hands_over_no_rounds() -> void:
 	var bag := GameState.loadout
-	bag.magazine = 0
-	bag.reserve = 0
+	bag.rounds = 0
 	EventBus.wave_cleared.emit(3, 0)
 	if bag.carried() != 0:
 		_fail("a cleared wave handed over %d rounds; nothing should" % bag.carried())
 
 
-## The ceiling, and the fact that it counts the magazine. A bag that could be topped up past it
-## would make the number on the panel a suggestion.
+## The ceiling. A bag that could be topped up past it would make the number on the panel a
+## suggestion.
 func _check_the_pocket_stops_at_the_ceiling() -> void:
 	var bag := GameState.loadout
 	var gun := Arsenal.find(&"gun")
-	bag.magazine = gun.magazine
-	bag.reserve = 0
+	bag.rounds = 0
 	var taken := bag.take(gun.ammo_cap * 2)
 	if bag.carried() != gun.ammo_cap:
 		_fail("the bag holds %d rounds against a ceiling of %d" % [bag.carried(), gun.ammo_cap])
-	if taken != gun.ammo_cap - gun.magazine:
-		_fail("a full top-up reported %d rounds taken, expected %d" % [taken, bag.room()])
+	if taken != gun.ammo_cap:
+		_fail("a full top-up reported %d rounds taken, expected %d" % [taken, gun.ammo_cap])
 	if bag.take(1) != 0:
 		_fail("a full bag took another round")
 
 
-## One body in three leaves a round. The roll is handed in rather than made, so this asks the
-## question with a known answer instead of firing ten thousand kills and squinting at the total. The
-## round lands on the sand rather than in the bag — `verify_loot` holds the walking over it.
-func _check_a_body_in_three_leaves_a_round() -> void:
+## One body in three leaves rounds, and one that does leaves one, two or three, each a third of the
+## time. The rolls are handed in rather than made, so this asks the question with known answers
+## instead of firing ten thousand kills. The rounds land on the sand — `verify_loot` holds the rest.
+func _check_a_body_in_three_leaves_rounds() -> void:
 	var bag := GameState.loadout
 	var chance := Arsenal.find(&"gun").scavenge_chance
-	if not bag.rolls_a_round(chance * 0.5):
+	if bag.rounds_dropped(chance * 0.5, 0.0) == 0:
 		_fail("a roll inside the chance left nothing behind")
-	if bag.rolls_a_round(chance):
-		_fail("a roll on the chance itself left a round behind")
-	if bag.rolls_a_round(1.0):
-		_fail("a roll past the chance left a round behind")
+	if bag.rounds_dropped(chance, 0.0) != 0:
+		_fail("a roll on the chance itself left rounds behind")
+	if bag.rounds_dropped(1.0, 0.5) != 0:
+		_fail("a roll past the chance left rounds behind")
+	# The count splits the unit into three equal thirds: one, two, three.
+	var inside := chance * 0.5
+	for pair: Array in [[0.0, 1], [0.32, 1], [0.34, 2], [0.65, 2], [0.67, 3], [0.999, 3], [1.0, 3]]:
+		var dropped := bag.rounds_dropped(inside, pair[0])
+		if dropped != pair[1]:
+			_fail(
+				"a count roll of %.3f dropped %d rounds, expected %d" % [pair[0], dropped, pair[1]]
+			)
 
 
-func _check_reloading_takes_from_the_pocket() -> void:
+## The magazine and the reload are gone together: there is no `Reload` state, no `reload` action,
+## and a gun with rounds fires every one of them in a row without stopping.
+func _check_there_is_no_reload() -> void:
+	if _player.machine.get_node_or_null(^"Reload") != null:
+		_fail("the player still has a Reload state")
+	if InputMap.has_action(&"reload"):
+		_fail("the reload action is still bound")
 	var bag := GameState.loadout
-	bag.magazine = 1
-	bag.reserve = 10
-	_player.machine.current.transition_to(&"Reload")
-	await _wait(_player.weapon.reload_time + 0.15)
-	if bag.magazine != Arsenal.find(&"gun").magazine:
-		_fail("the reload left %d rounds in the magazine" % bag.magazine)
-	if bag.reserve != 5:
-		_fail("the reload took the wrong number out of the pocket, leaving %d" % bag.reserve)
-	# Nothing to gain, nothing to start: a full magazine is not a reload.
-	if bag.can_reload():
-		_fail("a full magazine still offered a reload")
+	var gun := Arsenal.find(&"gun")
+	bag.rounds = gun.ammo_cap
+	var single := gun.attack_at(0)
+	var fired := 0
+	while bag.spend(single.ammo_cost):
+		fired += 1
+		if fired > gun.ammo_cap:
+			break
+	if fired != gun.ammo_cap:
+		_fail("a full gun fired %d single shots in a row, expected all %d" % [fired, gun.ammo_cap])
+	bag.rounds = gun.ammo_cap
+	await get_tree().physics_frame
 
 
 func _check_the_wheel_only_offers_what_was_found() -> void:

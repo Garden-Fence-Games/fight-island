@@ -148,16 +148,6 @@ func level_of(track: UpgradeTrack) -> int:
 	return int(upgrade_levels.get(track.id, 0)) if track != null else 0
 
 
-## The extra rounds the gun track has bought. Recomputed from the level rather than kept as a
-## number, which is the same rule the body follows for health and damage: levels are the only thing
-## stored, and everything else is a sum done fresh.
-func magazine_bonus() -> int:
-	var track := Upgrades.find(&"gun")
-	if track == null or track.weapon != loadout.equipped:
-		return 0
-	return track.magazine * level_of(track)
-
-
 ## What the next level of a track costs, or zero when there is no next level.
 func price_of(track: UpgradeTrack) -> int:
 	return Economy.upgrade_cost(level_of(track))
@@ -188,7 +178,7 @@ func buy(track: UpgradeTrack) -> bool:
 	_bought_in_wave = wave
 	# The rounds land now rather than growing a per-wave grant, because there is no longer a
 	# per-wave grant to grow. The merchant is one of the two ways ammunition enters a run.
-	var handed := loadout.take(track.reserve)
+	var handed := loadout.take(track.rounds)
 	if handed > 0:
 		EventBus.rounds_scavenged.emit(handed, null)
 	upgrade_purchased.emit(track, level)

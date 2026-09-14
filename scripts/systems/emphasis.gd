@@ -54,15 +54,13 @@ const PARRY_FRAMES: int = MOST_FRAMES
 ## All camera and no clock: a stop here would take away the moment they need to recover in.
 const HURT_SHAKE: float = 1.0
 
-## Nothing at all, and it is a decision rather than an omission. A hit that only lands happens
-## dozens of times a wave, and marking it would cost every mark that matters — the flash on the body
-## already says it landed. A wave ending is the same: the banner carries it, and shaking a screen
-## with nothing left to fight tells the player something untrue.
-const NOTHING: Dictionary = {"seconds": 0.0, "shake": 0.0}
-
 
 ## One blow's whole emphasis. `stop` is the attack's own figure, spent only on a perfect hit; the
 ## rest is this table. Three things can be true of the same blow and it is still one blow.
+##
+## An ordinary hit comes back at nothing at all, and that is a decision rather than an omission: it
+## happens dozens of times a wave, the flash on the body already says it landed, and marking it
+## would cost every mark that matters.
 static func for_hit(perfect: bool, finisher: bool, killed: bool, stop: float) -> Dictionary:
 	var seconds := stop if perfect else 0.0
 	var shake := 0.0

@@ -27,8 +27,8 @@ extends Resource
 @export var rouse_radius: float = 7.0
 @export var attack_range: float = 1.6
 ## Which wind-up this archetype announces itself with. Empty falls back to the generic one, and that
-## is a fallback rather than a default: three archetypes that sound alike are one warning wearing
-## three coats.
+## is a fallback rather than a default: two archetypes that sound alike are one warning wearing two
+## coats.
 @export var telegraph_sound: StringName = &""
 ## How far the archetype wants to stay from the player. Every archetype closes to attack_range.
 @export var preferred_range: float = 1.4
