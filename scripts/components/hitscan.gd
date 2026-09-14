@@ -19,7 +19,7 @@ const MUZZLE_HEIGHT: float = 1.1
 ## What the ray may hit. The same mask the hitbox beside it carries — enemy hurtboxes, and nothing
 ## else. **Terrain is deliberately not in it**: see `docs/game-design.md` on what a boulder does to
 ## a shot, which is currently nothing.
-@export_flags_3d_physics var mask: int = 64
+@export_flags_3d_physics var mask: int = PhysicsLayers.BIT_ENEMY_HURTBOX
 
 
 ## The body that was hit, or null for a miss. One ray, one answer: the double tap fires twice and
