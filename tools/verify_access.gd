@@ -56,7 +56,7 @@ func _run() -> void:
 	_arena = main.get_node_or_null(^"Arena") as Node3D
 	if _arena == null:
 		_fail("the game has no arena")
-		_put_the_run_back()
+		_leave_the_machine_as_it_was()
 		_report()
 		return
 	_stand_everything_down()
@@ -65,7 +65,7 @@ func _run() -> void:
 	_pool = _arena.get_node_or_null("Effects") as EffectPool
 	if _pool == null:
 		_fail("the arena has no effect pool")
-		_put_the_switches_back()
+		_leave_the_machine_as_it_was()
 		_report()
 		return
 
@@ -196,6 +196,15 @@ func _turn_everything_down() -> void:
 	Settings.set_value(&"access_hitstop", false)
 	Settings.set_value(&"access_hold_to_confirm", true)
 	Settings.set_value(&"access_reduce_flashing", true)
+
+
+## Both halves, from one place. Each early return used to undo one of them and not the other, and
+## the expensive one is the run: `begin_run()` has already written a fresh `run.json` by the time
+## either branch is reached, so bailing out without putting it back **deletes the player's saved
+## game** — a check that eats a run is worse than no check.
+func _leave_the_machine_as_it_was() -> void:
+	_put_the_switches_back()
+	_put_the_run_back()
 
 
 func _put_the_run_back() -> void:
