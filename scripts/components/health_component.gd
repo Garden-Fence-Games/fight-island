@@ -16,6 +16,10 @@ signal died
 @export var minimum_health: float = 0.0
 
 var current_health: float = 0.0
+## Invulnerable for as long as this is set, rather than for a window that runs out: the rainbow
+## bird's power is ended by its own clock or by the wave, and a window could not be taken back
+## early. Like every other invulnerability, the sea ignores it — see `drain`.
+var shielded: bool = false
 
 var _invulnerable_for: float = 0.0
 
@@ -35,7 +39,7 @@ func is_alive() -> bool:
 
 
 func is_invulnerable() -> bool:
-	return _invulnerable_for > 0.0
+	return shielded or _invulnerable_for > 0.0
 
 
 func make_invulnerable(duration: float) -> void:

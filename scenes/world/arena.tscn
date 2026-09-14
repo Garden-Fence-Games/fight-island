@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3]
+[gd_scene load_steps=34 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/actors/player.tscn" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/actors/enemy.tscn" id="2"]
@@ -32,6 +32,8 @@
 [ext_resource type="Script" path="res://scripts/world/sun_glint.gd" id="32"]
 [ext_resource type="Script" path="res://scripts/systems/loot_director.gd" id="33"]
 [ext_resource type="Resource" path="res://data/pickups/loot.tres" id="34"]
+[ext_resource type="Script" path="res://scripts/systems/frenzy_director.gd" id="35"]
+[ext_resource type="Resource" path="res://data/pickups/rainbow_bird.tres" id="36"]
 
 [node name="Arena" type="Node3D"]
 
@@ -99,6 +101,10 @@ data = ExtResource("31")
 [node name="LootDirector" type="Node" parent="."]
 script = ExtResource("33")
 data = ExtResource("34")
+
+[node name="FrenzyDirector" type="Node" parent="."]
+script = ExtResource("35")
+data = ExtResource("36")
 
 [node name="SunGlint" type="CanvasLayer" parent="."]
 script = ExtResource("32")

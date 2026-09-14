@@ -15,6 +15,7 @@ HUD_FEED_FOUND,%s found
 HUD_FEED_UPGRADE,%s upgraded
 HUD_WEAPON_WAVE,W%d
 HUD_FEED_COCONUT,Coconut +%d health
+HUD_FEED_RAINBOW,Rainbow bird! Invincible for %d s
 PHASE_DAWN,Dawn
 PHASE_DAY,Day
 PHASE_DUSK,Dusk
