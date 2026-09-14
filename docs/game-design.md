@@ -636,7 +636,9 @@ than disappearing. The gate is on the purchase itself, not on the button — gre
 A run is 15 waves; clearing wave 15 is a **victory** and unlocks an endless mode that continues
 the same formulas past `n = 15`. Reaching 0 HP ends the run immediately — there is no revive.
 
-The run is saved between waves. Forty minutes is too long to lose to a closed laptop.
+The run is saved between waves. Fifteen waves is too long to lose to a closed laptop — and the
+figure is written in waves rather than in minutes on purpose: a wave's length lives in the data and
+has already been cut once, so any duration repeated in prose is a sentence waiting to go stale.
 
 ## Feel and feedback budget
 
