@@ -129,7 +129,7 @@ TUTORIAL_FIGHT,{0} to punch and {1} to dodge
 TUTORIAL_SPRINT,{0} to sprint
 TUTORIAL_SURVIVE,"Now, survive!"
 TUTORIAL_STICK,{0} to swing it — {1} to switch weapons
-TUTORIAL_GUN,{0} to fire — {1} to reload
+TUTORIAL_GUN,{0} to fire — walk over rounds to get more
 PICKUP_TAKE,{0} Take it
 WEAPON_FISTS,Fists
 WEAPON_STICK,Stick

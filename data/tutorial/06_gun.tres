@@ -6,5 +6,5 @@
 script = ExtResource("1")
 id = &"gun"
 prompt_key = "TUTORIAL_GUN"
-prompt_actions = PackedStringArray("attack", "reload")
+prompt_actions = PackedStringArray("attack")
 seconds = 4.5

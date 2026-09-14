@@ -83,8 +83,8 @@ All notable changes to this project are documented here, following
 - **Every weapon explains itself when it reaches the hand.** There was one line, shown once a run,
   for whichever weapon happened to be found first — so the gun taught nothing at all, and a stick
   found second would have taught the gun's lesson. Now the stick says *[attack] to swing it —
-  [weapon_next] to switch weapons* and the gun says *[attack] to fire — [reload] to reload*, each
-  the first time that weapon goes in the bag.
+  [weapon_next] to switch weapons* and the gun says *[attack] to fire — walk over rounds to get
+  more*, each the first time that weapon goes in the bag.
   - **The stick carries the swap key** because it is the first thing the bag has to switch between.
     Nothing else in the game names that key, so `verify_tutorial` asserts the stick's line still
     does rather than trusting the copy to stay right.

@@ -23,10 +23,10 @@ spawns, and the player can already walk, swing and roll.
 | Weapon | Line |
 |---|---|
 | Stick | *[attack] to swing it — [weapon_next] to switch weapons* |
-| Gun | *[attack] to fire — [reload] to reload* |
+| Gun | *[attack] to fire — walk over rounds to get more* |
 
 The lesson arrives with the thing it is about. A weapon the player is not holding is a weapon they
-cannot practise on: naming the reload key in the opening, while the player has nothing but fists and
+cannot practise on: naming the fire key in the opening, while the player has nothing but fists and
 no gun exists anywhere on the island, is a sentence with nothing to attach to.
 
 **The stick carries the switch**, because it is the first thing the bag has to switch between: until
