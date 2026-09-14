@@ -56,7 +56,7 @@ menus were built — and the word was English in every language. `HintLabel` is 
 Three entries, in this order: **Play · Options · Quit**.
 
 Play starts a run immediately. There is no character select, no difficulty select, no save-slot
-list — a run is forty minutes and the game has one difficulty, so anything between the button and
+list — a run is fifteen waves and the game has one difficulty, so anything between the button and
 the fight is furniture.
 
 Credits are not a title entry: the layout holds three rows without crowding the logo, and a fourth
@@ -113,7 +113,7 @@ behind a pause menu feels broken even though nothing is wrong. They inherit it f
 neither has to be told.
 
 **Resume · Options · Restart run · Quit to title.** Restart and Quit both confirm, because both
-throw away up to forty minutes. Nothing else in the game confirms anything.
+throw away a whole run. Nothing else in the game confirms anything.
 
 **The world behind it is blurred, not hidden.** The player is meant to remember what they are going
 back to. It is the screen's own mipmaps read at a level, so the cost does not grow with the radius.
