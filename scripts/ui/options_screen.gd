@@ -51,6 +51,11 @@ const PAGES: Array = [
 				"label": "OPT_CREDIT_NUMBERS",
 				"kind": OptionRow.Kind.TOGGLE,
 			},
+			{
+				"setting": &"gameplay_update_check",
+				"label": "OPT_UPDATE_CHECK",
+				"kind": OptionRow.Kind.TOGGLE,
+			},
 		],
 	},
 	{

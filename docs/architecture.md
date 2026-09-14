@@ -932,6 +932,34 @@ starts, so the row is still open when `upgrade_purchased` arrives.
 The file is appended with `FileAccess` and read back by nobody — not even to decide whether the
 header is owed, which is a question about existence rather than about contents.
 
+## The one request that leaves the machine
+
+`UpdateCheck` asks itch.io whether a newer build has been published, and that is the whole of the
+game's networking. It lives on the title screen, it is created there rather than being an autoload —
+nothing outside that screen has any business asking — and its settings live in
+`data/update_check.tres`.
+
+The endpoint is itch.io's own wharf `latest`, which needs no API key and answers `{"latest":"1.0.0"}`
+with exactly the version `butler` was given at release. It tracks releases with nothing to maintain.
+**Not GitHub's releases API**, which would work and would tie a player-facing feature to where the
+source happens to live.
+
+Three properties make it safe to ship, and all three are asserted by
+`tools/verify_update_check.tscn`:
+
+- **It never blocks.** The title is up and playable before the request is sent. Offline, a timeout,
+  a captive portal answering HTML, a `latest` field of the wrong type: the footer stays as it was
+  and the player is told nothing. There is no error path a player can reach.
+- **It never downloads.** A binary that replaces itself fights Gatekeeper, signing and antivirus,
+  and the macOS bundle is *sealed* — modifying it breaks the seal and brings back the "is damaged"
+  refusal. The notice names the version; the player opens the page.
+- **It never runs headless.** The suite in `tools/` drives the title screen, and a suite that
+  reaches the network is a suite that fails when a café's wifi does.
+
+Versions are compared field by field as integers. `1.10.0` is ahead of `1.9.0`, and a string
+comparison says the opposite. Anything that does not parse is **not** newer, so an unreadable reply
+can never put a notice in front of a player.
+
 ## Performance budget
 
 60 fps at 1080p on an Apple M-series and a GTX 1060. At most 30 enemies on screen, pooled, with

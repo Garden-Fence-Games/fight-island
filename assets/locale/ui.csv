@@ -1,4 +1,5 @@
 keys,en
+UI_UPDATE_AVAILABLE,{0} is out on itch.io
 UI_PLAY,Play
 UI_CONTINUE,Continue
 UI_NEW_RUN,New run
@@ -38,6 +39,7 @@ OPT_AIM_STRONG,Strong
 OPT_TUTORIAL_PROMPTS,Tutorial prompts
 OPT_DAMAGE_NUMBERS,Damage numbers
 OPT_CREDIT_NUMBERS,Credit numbers
+OPT_UPDATE_CHECK,Check for updates
 OPT_WINDOW_MODE,Window mode
 OPT_WINDOWED,Windowed
 OPT_BORDERLESS,Borderless

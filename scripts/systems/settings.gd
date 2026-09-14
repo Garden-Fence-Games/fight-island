@@ -21,6 +21,10 @@ const DEFAULTS: Dictionary = {
 	## On, where damage numbers are off: a kill paying is a rule the player has to learn, and it is
 	## one number per body rather than one per hit.
 	&"gameplay_credit_numbers": true,
+	## The one network request the game makes: asking itch.io whether a newer build exists. On by
+	## default because a player holding a zip has no other way to find out, and off in one press
+	## because a game that is otherwise entirely offline should say so and mean it.
+	&"gameplay_update_check": true,
 	&"video_window_mode": "windowed",
 	&"video_resolution": "1920x1080",
 	&"video_vsync": "on",

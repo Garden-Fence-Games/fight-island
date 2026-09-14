@@ -299,6 +299,12 @@ jobs:
       - name: Verify every key resolves
         run: tools/run-check.sh res://tools/verify_strings.tscn
 
+      # The update notice decides what a player is told about a reply from the internet. The check
+      # never reaches the network - it feeds the decision the shapes a live endpoint cannot be asked
+      # for on demand, and asserts that headless never asks at all.
+      - name: Verify the update notice
+        run: tools/run-check.sh res://tools/verify_update_check.tscn
+
       # A path lookup in a hot body is a silent dependency on a scene's shape, and the day it
       # returns null it does so sixty times a second in the middle of a fight. Read off the source,
       # because what is being held is "nobody wrote this" and a profiler cannot tell a lookup that

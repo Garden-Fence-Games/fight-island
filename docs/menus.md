@@ -163,6 +163,7 @@ will set it and believe they are covered.
 | Aim assist | soft | The gun is unplayable on a stick without it, and unsatisfying with too much. `soft` takes half the error off, `strong` takes all of it, and neither reaches outside a 12° cone or past what the weapon in hand can hit — a wider one starts choosing targets, which is worse than missing |
 | Show tutorial prompts | on | Off skips the lines before wave 1 on a new run — see [tutorial.md](tutorial.md) |
 | Damage numbers | **off** | The design says the hit should be felt; the numbers are a debugging comfort |
+| Check for updates | **on** | A player holding a zip has no other way to learn that a new version exists — the itch.io app updates itself, a download does not. It is also the **only** network request the game makes, which is why it is one press to stop |
 | Credit numbers | **on** | The opposite default, and for the opposite reason: that a kill pays is a rule the player has to learn, and it is one number per body rather than one per hit |
 
 ### Controls
