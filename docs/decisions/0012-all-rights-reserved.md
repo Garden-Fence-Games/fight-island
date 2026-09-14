@@ -1,4 +1,4 @@
-# 0008 — All rights reserved, with third-party assets under their own terms
+# 0012 — All rights reserved, with third-party assets under their own terms
 
 **Status:** Accepted
 **Date:** 2026-09-14
