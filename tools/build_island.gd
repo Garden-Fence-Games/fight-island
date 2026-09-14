@@ -105,7 +105,7 @@ const RELIEF_CEILING: float = 2.6
 
 # --- Scatter -----------------------------------------------------------------------------------
 ## Obstacles keep out of the spawn pad and nothing else. What actually stops a pair of props
-## trapping someone against the reaper's 160° sweep is OBSTACLE_SPACING, everywhere on the island —
+## pinning someone inside a swing is OBSTACLE_SPACING, everywhere on the island —
 ## not one big empty circle in a place the player will leave in ten seconds.
 const CLEAR_RADIUS: float = 7.0
 ## Clear space between the surfaces of two blocking props, anywhere on the island. Measuring the

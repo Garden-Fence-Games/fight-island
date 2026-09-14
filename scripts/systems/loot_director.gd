@@ -28,15 +28,17 @@ func _ready() -> void:
 
 
 ## Throws what a body worth `money` pays, from where it fell. Public so the headless checks can drop
-## a known shower without killing anybody. `round_roll` is handed in for the same reason the bag's
-## roll always was: a chance that rolls its own dice can only be checked ten thousand times over.
-func spray(from: Vector3, money: int, round_roll: float) -> Array[Loot]:
+## a known shower without killing anybody. The rolls are handed in for the same reason the bag's
+## always were: a chance that rolls its own dice can only be checked ten thousand times over.
+## `round_roll` decides whether rounds drop at all, `count_roll` how many — each its own piece, so a
+## body that drops three throws three.
+func spray(from: Vector3, money: int, round_roll: float, count_roll: float = 0.0) -> Array[Loot]:
 	var thrown: Array[Loot] = []
 	if data == null:
 		return thrown
 	for value: int in data.coin_values(money):
 		thrown.append(_throw(Loot.Kind.COIN, value, from))
-	if GameState.loadout.rolls_a_round(round_roll):
+	for _round: int in GameState.loadout.rounds_dropped(round_roll, count_roll):
 		thrown.append(_throw(Loot.Kind.ROUND, 1, from))
 	return thrown
 
@@ -51,8 +53,8 @@ func lying_about() -> Array[Loot]:
 	return found
 
 
-## Into the bag, all of it. A round the bag has no room for stays lost with the wave: the pocket was
-## full, and a pocket that could be overfilled at the bell would not have a ceiling.
+## Into the bag, all of it. A round the bag has no room for stays lost with the wave: the gun was
+## full, and a gun that could be overfilled at the bell would not have a ceiling.
 func sweep() -> void:
 	for piece: Loot in lying_about():
 		if not piece.collect():
@@ -75,7 +77,7 @@ func _throw(kind: Loot.Kind, amount: int, from: Vector3) -> Loot:
 func _on_enemy_died(enemy: Node3D, _archetype: StringName, money: int) -> void:
 	if enemy == null or not is_instance_valid(enemy):
 		return
-	spray(enemy.global_position, money, _rng.randf())
+	spray(enemy.global_position, money, _rng.randf(), _rng.randf())
 
 
 func _on_wave_cleared(_wave: int, _reward: int) -> void:

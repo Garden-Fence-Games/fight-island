@@ -74,9 +74,10 @@ signal weapon_equipped(weapon: WeaponData)
 ## A weapon was picked up for the first time. Distinct from equipping it, because finding the gun is
 ## a moment and putting it back in your hands is not.
 signal weapon_found(id: StringName)
-signal ammo_changed(magazine: int, reserve: int)
-## A body left a round behind. Separate from `ammo_changed` because that one fires for spending and
-## reloading too, and the HUD only has something to announce when ammunition *arrives*.
+## The rounds the gun has now. There is no magazine: this one count is everything that can be fired.
+signal ammo_changed(rounds: int)
+## A body left a round behind. Separate from `ammo_changed` because that one fires for spending
+## too, and the HUD only has something to announce when ammunition *arrives*.
 ##
 ## `body` is what dropped them, so the number can be shown over the thing that paid it. It is null
 ## when the rounds came from the merchant, which is a counter and not a place on the island.
@@ -84,11 +85,10 @@ signal rounds_scavenged(rounds: int, body: Node3D)
 ## A coin thrown out of a body was walked over. `piece` is where it was taken, so the amount can be
 ## shown over it; the purse itself hears about it through `GameState.money_changed`.
 signal coins_collected(amount: int, piece: Node3D)
-## The trigger was pulled on an empty magazine. It exists so the moment is **audible**: a press that
+## The trigger was pulled with no rounds left. It exists so the moment is **audible**: a press that
 ## does nothing at all reads as a dropped input, and the player blames the game rather than their
 ## own ammunition.
 signal weapon_dry_fired
-signal weapon_reloaded
 ## A round left the barrel, whether or not it found anybody. Fired **per round**, so the double tap
 ## cracks twice — and separate from `attack_landed` because a gun that only makes a noise when it
 ## hits is a gun the player cannot tell they fired.

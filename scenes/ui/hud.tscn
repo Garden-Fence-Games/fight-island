@@ -218,7 +218,7 @@ mouse_filter = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Magazine" type="Label" parent="Root/BottomRight/Ammo/Rows/Row"]
+[node name="Rounds" type="Label" parent="Root/BottomRight/Ammo/Rows/Row"]
 layout_mode = 2
 size_flags_vertical = 8
 mouse_filter = 2
@@ -234,7 +234,7 @@ theme_type_variation = &"AmmoSlash"
 text = "/"
 auto_translate_mode = 2
 
-[node name="Reserve" type="Label" parent="Root/BottomRight/Ammo/Rows/Row"]
+[node name="Cap" type="Label" parent="Root/BottomRight/Ammo/Rows/Row"]
 layout_mode = 2
 size_flags_vertical = 8
 mouse_filter = 2

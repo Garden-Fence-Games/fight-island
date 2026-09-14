@@ -79,7 +79,7 @@ Chosen over an enum- or resource-based FSM because states are visible and re-ord
 editor, can carry `@export` tuning per instance, and are reused across actors by composing the
 machine rather than inheriting the actor.
 
-- **Player:** `Idle`, `Move`, `Sprint`, `Dodge`, `Parry`, `Attack`, `Reload`, `Hurt`, `Dead`.
+- **Player:** `Idle`, `Move`, `Sprint`, `Dodge`, `Parry`, `Attack`, `Hurt`, `Dead`.
 - **Enemy:** `Spawn`, `Idle`, `Chase`, `Strafe`, `WindUp`, `Attack`, `Recover`, `Stagger`, `Dead`.
 
 `WindUp` carries the telegraph, and since #122 took the ring off the ground it carries it **on the
@@ -120,13 +120,12 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   **There is no damage here** — a farmer's damage belongs to the swing he throws, so it lives on
   the `AttackData` and the wave scales it per body.
 - **`WeaponData`** — `id`, `display_name`, `attacks: Array[AttackData]`, `is_ranged`,
-  `found_at_wave`, `clip_suffix`, `chain_lockout`, `perfect_lockout`, `magazine`, `reload_time`,
-  `reserve_start`, `ammo_cap`, `scavenge_chance`.
+  `found_at_wave`, `clip_suffix`, `chain_lockout`, `perfect_lockout`, `rounds_start`, `ammo_cap`,
+  `scavenge_chance`, `scavenge_most`.
   `clip_suffix` is the ending appended to a locomotion clip while this weapon is held, so "walk"
   becomes "walk_gun" without the animation component ever learning what a weapon is.
 - **`UpgradeTrack`** — `id`, `display_name`, `next_level_key`, `max_health`, `heals_on_purchase`,
-  `max_stamina`, `stamina_regen`, `weapon`, `damage`, `stamina_cost`, `reach`, `magazine`,
-  `reserve`.
+  `max_stamina`, `stamina_regen`, `weapon`, `damage`, `stamina_cost`, `reach`, `rounds`.
   **Flat fields, not a list of levels.** Every track carries what one level of it is worth and the
   body computes `base + level × step`, so a track is a step size rather than a table — which is
   what keeps re-applying an upgrade from drifting, and what makes the level the only thing saved.
@@ -185,7 +184,7 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   because all but one of them answer a bus signal.
 
   Three tiers, and the division is what keeps the mix legible. **The player's own body** —
-  footfalls, a roll, a reload, a dry trigger — is flat, on the `SFX` bus, and deliberately the
+  footfalls, a roll, a dry trigger — is flat, on the `SFX` bus, and deliberately the
   quietest thing in the game: it is confirmation, not information. **The world** — a farmer
   committing, a body going down — is *positional*, on a pool of `AudioStreamPlayer3D`, because a
   wind-up the player cannot see is the one they most need to hear and a direction is the only thing
@@ -244,15 +243,15 @@ The rules worth stating, because each is a thing a player would notice going wro
 
 - **A weapon that has not been found cannot be equipped**, so the wheel is honest about what is in
   the bag and cannot cycle onto an empty hand.
-- **The magazine is the gate on a shot, not the reserve.** A shot the magazine cannot pay for is a
-  reload the player has to choose to make.
-- **Nothing refills the pocket on a clock, and it never holds more than its ceiling — magazine
-  included.** Rounds enter a run off the bodies of the dead and across the merchant's counter, and
-  a bag already at the ceiling takes none of either. That is the gun's rhythm; see
-  `docs/game-design.md`.
-- **The scavenge roll arrives rather than being made in the bag.** A one-in-eight that rolls its
-  own dice can only be checked by firing it ten thousand times and squinting at the total; one that
-  is handed a number can be asked the question with a known answer.
+- **One count of rounds, no magazine and no reload.** Every round carried can be fired in a row; a
+  shot the rounds cannot pay for is refused whole, with a dry click. A save from before the magazine
+  was taken out comes back with its magazine and reserve added together.
+- **Nothing refills the gun on a clock, and it never holds more than its ceiling.** Rounds enter a
+  run off the bodies of the dead and across the merchant's counter, and a bag already at the ceiling
+  takes none of either. That is the gun's rhythm; see `docs/game-design.md`.
+- **The scavenge rolls arrive rather than being made in the bag** — whether a body drops rounds, and
+  how many. A chance that rolls its own dice can only be checked by firing it ten thousand times and
+  squinting at the total; one that is handed numbers can be asked the question with known answers.
 - **A pickup already in the bag does nothing.** Walking over the gun twice must not re-arm one the
   player has half emptied.
 
@@ -285,7 +284,7 @@ Named as a past-tense fact, never as a command and never `on_*`:
 
 `wave_started(index)` · `wave_cleared(index, reward)` · `enemy_spawned(enemy)` ·
 `enemy_died(enemy, archetype, money)` · `player_damaged(current, max)` · `player_died()` ·
-`stamina_changed(current, max)` · `weapon_equipped(data)` · `ammo_changed(mag, reserve)` ·
+`stamina_changed(current, max)` · `weapon_equipped(data)` · `ammo_changed(rounds)` ·
 `rounds_scavenged(rounds, body)` ·
 `attack_landed(target, damage, perfect, attack)` · `corpse_struck(where, direction, perfect)` ·
 `parry_perfect()` ·
@@ -388,8 +387,7 @@ components and listeners alike and none of them should hold a path to it. Each s
 **one batch the first time it is wanted**; every instance after that has already been used. Thirty
 enemies on screen is the budget and an effect instanced per hit is the easiest way to lose it —
 a `PackedScene` unpacked and a particle system configured inside the frame the player is meant to be
-feeling. An effect hands itself back with a `spent` signal, the same shape as `Projectile` and the
-enemy pool.
+feeling. An effect hands itself back with a `spent` signal, the same shape the enemy pool uses.
 
 **`AttackData.vfx` names the effect a landed hit plays**, and it is played from
 `PlayerAttack._on_landed` — the one place that knows the attack, the body and whether the timing was
@@ -503,8 +501,8 @@ fitted its capsules to those vertices, the animation found that skeleton, the he
 modifier on it — so swapping a pirate into a farmer at revive would mean rebuilding every component
 that ever looked at the rig. `EnemyPool.bodies` maps an `EnemyData.id` to a scene of its own and
 `lease(id)` picks the shelf; everything absent from that map is made from `enemy_scene`, which is
-how the three farmers go on sharing one rig. The shared shelf holds thirty-two and each extra holds
-sixteen — `max_alive` tops out at twelve, so sixteen covers a wave that rolled nothing else and
+how anything on the farmer rig is made. The shared shelf holds thirty-two and each extra holds
+sixteen — `max_alive` tops out at fourteen, so sixteen covers a wave that rolled nothing else and
 still has bodies going into the ground.
 
 `WaveDirector.start_wave(n)` reads `WaveConfig`, emits `wave_started`, then **drip-feeds**: the

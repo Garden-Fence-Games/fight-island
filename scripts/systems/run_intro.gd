@@ -85,11 +85,6 @@ func _process(delta: float) -> void:
 		_give_the_body_back()
 
 
-## Whether the player still has no body. Read by the headless check.
-func is_holding() -> bool:
-	return not _released
-
-
 func _take_the_body() -> void:
 	_player.machine.process_mode = Node.PROCESS_MODE_DISABLED
 	_player.set_process_unhandled_input(false)

@@ -18,15 +18,15 @@ found on the ground and swapped instantly; waves that arrive as turns of the day
 they are cleared; the merchant and his five upgrade tracks; title, pause, options and a death
 screen, all navigable on a pad. The island is generated, navigable, and dressed.
 
-**The primitives are going away one at a time, not all at once.** The player is a rigged mesh and
-the island wears two CC0 model packs. The enemies are still capsules and a weapon lying on the
-ground is still a box, because art follows the answer to "does the timing feel good" rather than
-waiting on it.
+**The primitives are going away one at a time, not all at once.** The player, the farmer and the
+pirate are rigged meshes and the island wears two CC0 model packs. What is still borrowed or boxy
+is written down in [docs/asset-pipeline.md](docs/asset-pipeline.md), because art follows the answer
+to "does the timing feel good" rather than waiting on it.
 
-The fight is audible: five hit-and-parry signatures are **synthesised at startup**, so a perfect
-window is recognisable with the screen off and the repository still ships no audio file. Left before
-the slice closes: the rest of that first pass — music, ambience, and anything the enemies or the
-menus should sound like. See [docs/roadmap.md](docs/roadmap.md).
+The fight is audible, and almost none of it is a file: five hit-and-parry signatures, every
+footfall, the wind-ups and the surf are **synthesised at startup**, so a perfect window is
+recognisable with the screen off. What does ship as audio is the part that cannot be computed — five
+licensed tracks and the farmer's recorded lines. See [docs/roadmap.md](docs/roadmap.md).
 
 ## Features
 

@@ -37,9 +37,5 @@ func release(holder: Node) -> void:
 	_melee.erase(holder.get_instance_id())
 
 
-func holds(holder: Node) -> bool:
-	return _melee.has(holder.get_instance_id())
-
-
 func _on_day_phase_changed(phase: DayPhase) -> void:
 	melee_tokens = phase.melee_tokens if phase != null else _by_day

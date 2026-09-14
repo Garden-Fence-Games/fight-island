@@ -166,12 +166,6 @@ func _shudder(delta: float) -> void:
 	)
 
 
-## The ground direction the player reads as "up the screen". Movement stays camera-relative even
-## though the camera never turns, so W always means away from the viewer.
-func screen_forward() -> Vector3:
-	return Vector3(-global_transform.basis.z.x, 0.0, -global_transform.basis.z.z).normalized()
-
-
 func _follow(delta: float) -> void:
 	if target == null:
 		return

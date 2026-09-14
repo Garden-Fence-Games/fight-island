@@ -112,29 +112,8 @@ func _exit_tree() -> void:
 	GameState.fighting = false
 
 
-## Takes the island back from whatever drove a wave by hand — the tutorial today, scripted waves
-## later. The breather runs as usual afterwards, so the next wave arrives exactly like every other.
-func hand_over(after_wave: int) -> void:
-	wave = after_wave
-	_running = false
-	_left_to_send = 0
-	_next_wave_in = breather
-
-
 func is_running() -> bool:
 	return _running
-
-
-func left_to_send() -> int:
-	return _left_to_send
-
-
-## How much of this wave is behind the player, nought to one — the share of its day that has run.
-func progress() -> float:
-	var length := _wave_length()
-	if length <= 0.0 or not _running:
-		return 0.0
-	return clampf(_elapsed / length, 0.0, 1.0)
 
 
 func _send_one() -> void:

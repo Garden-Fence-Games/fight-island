@@ -36,7 +36,7 @@ func enter(message: Dictionary) -> void:
 	if _attack == null:
 		transition_to(&"Idle")
 		return
-	# Rounds before stamina: a trigger pulled on an empty magazine must not also cost breath.
+	# Rounds before stamina: a trigger pulled on an empty gun must not also cost breath.
 	if not _take_ammo():
 		transition_to(&"Idle")
 		return
@@ -67,14 +67,6 @@ func clip_name() -> StringName:
 ## than roughly around them. Returning zero leaves the clip at its authored speed.
 func clip_duration() -> float:
 	return _attack.total_duration() if _attack != null else 0.0
-
-
-## How far a charge has come, nought to one, for whatever wants to draw it. Zero for every attack
-## that does not charge, which is eight of the nine.
-func charge() -> float:
-	if _attack == null or not _attack.charges or _phase != Phase.WINDUP:
-		return 0.0
-	return clampf(_elapsed / maxf(_attack.windup, 0.001), 0.0, 1.0)
 
 
 func exit() -> void:
@@ -175,7 +167,7 @@ func _begin_recovery() -> void:
 	player.open_chain(_attack, _index)
 
 
-## Whether there was anything to fire. An empty magazine says so on the bus rather than silently
+## Whether there was anything to fire. An empty gun says so on the bus rather than silently
 ## refusing, because a press that produces nothing at all is a press the player thinks was lost.
 func _take_ammo() -> bool:
 	if _attack.ammo_cost <= 0:

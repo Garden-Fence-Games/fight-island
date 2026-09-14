@@ -74,7 +74,6 @@ OPT_BIND_ATTACK,Attack
 OPT_BIND_PARRY,Parry
 OPT_BIND_DODGE,Dodge
 OPT_BIND_SPRINT,Sprint
-OPT_BIND_RELOAD,Reload
 OPT_BIND_INTERACT,Interact
 OPT_BIND_WEAPON_NEXT,Next weapon
 OPT_BIND_WEAPON_PREV,Previous weapon
@@ -108,7 +107,7 @@ MERCHANT_HEALTH,"Twenty more hit points, and a full heal the moment you buy it."
 MERCHANT_STAMINA,"Fifteen more stamina, and two more a second coming back."
 MERCHANT_FISTS,"Fifteen per cent more damage, and five per cent less stamina a swing."
 MERCHANT_STICK,"Fifteen per cent more damage, and five per cent more reach and arc."
-MERCHANT_GUN,"Fifteen per cent more damage, one more round in the magazine and six in reserve."
+MERCHANT_GUN,"Fifteen per cent more damage, and six more rounds handed over."
 SUMMARY_DEFEAT,Wave %d — defeated
 SUMMARY_VICTORY,Wave %d — victory
 SUMMARY_COMBAT,Combat

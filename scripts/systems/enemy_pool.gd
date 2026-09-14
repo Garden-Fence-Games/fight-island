@@ -24,7 +24,7 @@ const RESERVE: int = 16
 
 @export var enemy_scene: PackedScene = null
 ## The bodies that are not the shared one, by `EnemyData.id`. Everything absent from here is made
-## from `enemy_scene`, which is how three archetypes go on sharing one rig and one scene.
+## from `enemy_scene`, which is how anything on the farmer rig is made.
 @export var bodies: Dictionary[StringName, PackedScene] = {}
 
 var _idle: Dictionary[PackedScene, Array] = {}

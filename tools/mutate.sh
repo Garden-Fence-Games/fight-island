@@ -15,7 +15,10 @@
 # Each line of the table: <file>|<original text>|<replacement>|<check,check,...>
 # Blank lines and lines starting with # are ignored.
 #
-# Needs GODOT on the PATH, like every other tool here. Expect a minute per mutation.
+# Needs GODOT on the PATH, like every other tool here. CI runs the whole table on every pull
+# request — a mutated check fails about as fast as a healthy one passes, so the table costs roughly
+# what the checks themselves cost. A run on a desktop is slower than that and is still worth doing
+# before adding an entry: a mutation is only worth its line once it has been seen to be caught.
 set -uo pipefail
 
 table="${1:-tools/mutations.txt}"

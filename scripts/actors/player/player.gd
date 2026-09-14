@@ -109,8 +109,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		press_attack()
 	if event.is_action_pressed(&"sprint"):
 		_on_sprint_pressed(InputBindings.device_of(event) == InputBindings.Device.GAMEPAD)
-	if event.is_action_pressed(&"reload"):
-		_begin_reload()
 	_read_weapon_input(event)
 
 
@@ -376,16 +374,6 @@ func _read_weapon_input(event: InputEvent) -> void:
 		bag.equip(Arsenal.next_owned(bag.equipped, bag.found, 1))
 	elif event.is_action_pressed(&"weapon_prev"):
 		bag.equip(Arsenal.next_owned(bag.equipped, bag.found, -1))
-
-
-## Nothing happens on a weapon that does not reload or a magazine already full, and that includes
-## not leaving whatever state the player is in.
-func _begin_reload() -> void:
-	if machine == null or not GameState.loadout.can_reload(GameState.magazine_bonus()):
-		return
-	if machine.current is PlayerDead or machine.current is PlayerAttack:
-		return
-	machine.current.transition_to(&"Reload")
 
 
 ## The only thing a swap costs is the chain, which cannot be carried to a different weapon because

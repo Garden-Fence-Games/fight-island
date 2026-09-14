@@ -40,10 +40,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		current.handle_input(event)
 
 
-func has_state(state_name: StringName) -> bool:
-	return get_node_or_null(NodePath(String(state_name))) != null
-
-
 func _on_transition_requested(to: StringName, message: Dictionary) -> void:
 	var next := get_node_or_null(NodePath(String(to))) as State
 	if next == null:
