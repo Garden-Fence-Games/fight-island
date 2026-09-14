@@ -19,6 +19,10 @@ All notable changes to this project are documented here, following
   fly to the player. Whatever is left when a wave is cleared flies in before the merchant opens, so
   no money is lost; a round the pocket has no room for waits on the sand. The `+$` number now rises
   as a coin is taken. Figures in `data/pickups/loot.tres`; held by `tools/verify_loot.tscn`.
+- **The rainbow bird.** One wave in three from wave 2, a shining bird lands on the sand and stays
+  put. Walking over it gives 15 seconds of invincibility, double speed, fists only and punches that
+  kill and throw every body like a finisher, with the player wearing its rainbow. It does not stack,
+  and it ends with the wave.
 
 ### Changed
 
