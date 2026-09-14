@@ -17,10 +17,10 @@ extends Node
 ## one.
 
 const SIZE: int = 32
-## And for a body only a fraction of a wave is made of. Twelve is what `max_alive` tops out at, so
-## sixteen covers a wave that happened to roll nothing else and still has bodies going into the
-## ground.
-const RESERVE: int = 16
+## And for a body only a fraction of a wave is made of. The shelf covers what `max_alive` tops out
+## at with room over, so a wave that happened to roll nothing else still has bodies going into the
+## ground without the shelf growing.
+const RESERVE: int = 20
 
 @export var enemy_scene: PackedScene = null
 ## The bodies that are not the shared one, by `EnemyData.id`. Everything absent from here is made

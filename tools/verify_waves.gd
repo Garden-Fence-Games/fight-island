@@ -293,10 +293,10 @@ func _check_the_formulas_match_the_table() -> void:
 			_fail("wave %d should send %d enemies, sends %d" % [pair[0], pair[1], got])
 	if config.max_alive(1) != 4:
 		_fail("wave 1 should hold 4 alive, holds %d" % config.max_alive(1))
-	if config.max_alive(15) != 14:
-		_fail("max_alive should cap at 14, wave 15 holds %d" % config.max_alive(15))
-	if not is_equal_approx(config.health_multiplier(15), 3.52):
-		_fail("wave 15 health should be x3.52, is x%.2f" % config.health_multiplier(15))
+	if config.max_alive(15) != 16:
+		_fail("the last wave should hold 16 alive, holds %d" % config.max_alive(15))
+	if not is_equal_approx(config.health_multiplier(15), 2.82):
+		_fail("wave 15 health should be x2.82, is x%.2f" % config.health_multiplier(15))
 	if not is_equal_approx(config.damage_multiplier(15), 2.40):
 		_fail("wave 15 damage should be x2.40, is x%.2f" % config.damage_multiplier(15))
 	# Floors and ceilings, which are the part a tuning pass is most likely to break.
