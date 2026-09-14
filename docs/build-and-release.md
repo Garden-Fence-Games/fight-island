@@ -184,6 +184,21 @@ cloud HSM, so a `.pfx` in a repository secret is no longer possible. **Ship Wind
 first.** On Steam the client launches the game, so the SmartScreen friction of a direct download
 largely does not apply. Revisit with Azure Trusted Signing once there is revenue.
 
+## Who can release
+
+Two locks, because a tag and a manual run are two different doors.
+
+**Only an organisation owner can create a `v*` tag.** The `release tags` ruleset says so, and
+`release.yml` triggers on a tag push, so that alone closes the normal path.
+
+**And the itch.io publish waits for a human.** The job names the `release` environment, whose
+required reviewer has to approve before `butler` runs. This covers the door the ruleset cannot:
+`workflow_dispatch` aimed at an existing tag, which anybody with write access could otherwise fire.
+
+Everything before that step — the exports, the macOS re-seal, the **draft** GitHub release — runs
+unattended, because none of it reaches a player. The approval sits exactly where the action stops
+being reversible: a build on itch.io has been downloaded by the time anybody notices it was wrong.
+
 ## Release checklist
 
 - [ ] Version bumped in `project.godot`, `tools/assemble-changelog.sh` run and its deletions committed
@@ -191,5 +206,6 @@ largely does not apply. Revisit with Azure Trusted Signing once there is revenue
 - [ ] Both platforms launched from a **clean** machine
 - [ ] Save migration tested from the previous version
 - [ ] Tag pushed, CI green, draft release reviewed
+- [ ] **The itch.io publish approved** — it waits on the `release` environment
 - [ ] itch.io channels updated
 - [ ] If Steam: uploaded to `beta`, smoke-tested, then promoted to `default`

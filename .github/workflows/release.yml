@@ -132,6 +132,11 @@ jobs:
     runs-on: ubuntu-24.04
     needs: sign-macos
     if: startsWith(github.ref, 'refs/tags/v')
+    # The one step that cannot be taken back: a build on itch.io has been downloaded by the time
+    # anybody notices it was wrong. The `release` environment names a required reviewer, so this
+    # job waits for a human however it was reached - a tag push, or a `workflow_dispatch` aimed at
+    # a tag, which is the door the tag ruleset cannot close on its own.
+    environment: release
     steps:
       - uses: actions/download-artifact@v4
         with:
