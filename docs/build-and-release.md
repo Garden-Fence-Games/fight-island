@@ -21,8 +21,18 @@ yourself. They are not installed today, and nothing is blocked by that.
 ## Versioning
 
 `application/config/version` in `project.godot` is the source of truth. `0.MAJOR.MINOR` until
-release, `1.0.0` at launch. Git tags are `v0.3.0`. `CHANGELOG.md` follows Keep a Changelog and is
-updated in the release pull request.
+release, `1.0.0` at launch. Git tags are `v0.3.0`.
+
+`CHANGELOG.md` follows Keep a Changelog and holds released versions only. The entries for the next
+release sit one per file in `changelog.d/`, and the release pull request runs
+
+```bash
+tools/assemble-changelog.sh 0.3.0
+```
+
+which writes the section, adds the compare link and deletes the fragments. Commit that deletion with
+the release — it is the whole point of the mechanism, and a fragment left behind ships twice.
+`--preview` prints the section without touching anything.
 
 ## Export presets
 
@@ -176,7 +186,7 @@ largely does not apply. Revisit with Azure Trusted Signing once there is revenue
 
 ## Release checklist
 
-- [ ] Version bumped in `project.godot`, changelog written
+- [ ] Version bumped in `project.godot`, `tools/assemble-changelog.sh` run and its deletions committed
 - [ ] No debug actions in the release build, no `print` in hot paths
 - [ ] Both platforms launched from a **clean** machine
 - [ ] Save migration tested from the previous version

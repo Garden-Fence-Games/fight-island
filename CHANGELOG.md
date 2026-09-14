@@ -4,111 +4,9 @@ All notable changes to this project are documented here, following
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Added
-
-- **A kill's coins and rounds spray out of the body.** They were paid into the corner the instant a
-  body fell. Now they are thrown — gold coins adding up to exactly what the body was worth, and a
-  silver round — on a high arc so the player sees where they land, then spin and glint on the sand
-  with a small constant flare that twinkles. Walking near is enough: inside a generous radius they
-  fly to the player. Whatever is left when a wave is cleared flies in before the merchant opens, so
-  no money is lost; a round the pocket has no room for waits on the sand. The `+$` number now rises
-  as a coin is taken. Figures in `data/pickups/loot.tres`; held by `tools/verify_loot.tscn`.
-
-### Changed
-
-- **The launcher wears the logo.** `icon.svg` was still Godot's own placeholder, so the dock, the
-  taskbar and the itch launcher all announced the game with a picture of the engine's robot. The
-  icon is now the mark on the menu's dark ground, a 1024 square with the corner radius Apple's grid
-  uses. `tools/build_icon.gd` renders it from `fight_island_logo_1.svg` rather than keeping a second
-  copy of the mark, and both export presets point at it, so the macOS `.icns` and the Windows `.ico`
-  are built from the same square. The placeholder is gone, and its credit row with it.
-
-- **The last waves are a crowd again rather than a slower one.** Enemy health grew faster than any
-  weapon track a run can afford, so a body at wave fifteen took well over twice as long to fell as
-  one at wave one, and the crowd stopped growing three waves before the run ended — the island went
-  on promising bodies nobody could reach, up to seven a wave that were never met. Health now climbs
-  more gently and the crowd climbs to the final wave, which is where an endurance test belongs.
-  What the player takes is unchanged: the attack-token pool is the damage dial and it did not move.
-  Measured by `tools/measure_waves.tscn`, held by `tools/verify_waves.tscn`.
-
-- **One kill in three leaves a round, up from one in eight.** A drop is a single round, so the gun
-  can afford to be generous — and a round that has to be walked over is worth more of them.
-- **The gun has no magazine and no reload.** Every round it carries fires, one after another, up to
-  the ceiling of thirty it arrives with; with none left the trigger clicks, and walking over a round
-  makes it fire again at once. The reload state, its `R` / X binding and its sound are gone, the HUD
-  reads rounds against the ceiling, and the gun track hands over six rounds without the extra
-  magazine slot that no longer exists. A save from before carries its magazine and reserve over as
-  one count.
-- **A body that drops rounds drops one, two or three**, each a third of the time and each its own
-  piece on the sand. How often a body drops any is unchanged.
-
-- **The mutation sweep runs on every pull request instead of once a week.** It breaks the game on
-  purpose one constant at a time and reports which breakages no check notices — and it was kept off
-  pull requests because it "takes the better part of half an hour". That figure was never measured.
-  Its last sweep finished in **seven minutes nineteen**, which is about what the checks it audits
-  cost, because it runs each of them once and stops at the first that fails.
-  - Weekly is not a cadence this repository has. That green sweep ran on a Sunday morning against a
-    twenty-six line table; ninety-one commits landed in the day after it, ten of them appending to
-    the table, and by the Monday three entries named constants that had been renamed, moved or
-    deleted. A guard that goes quiet is now caught by the change that quietened it.
-  - `.github/workflows/mutation.yml` is gone and the job lives in `ci.yml`, behind the same CI gate
-    as every other job, so a survivor blocks a merge rather than sending a mail on Sunday.
-
-### Fixed
-
-- **Three of the mutations pointed at code that had moved, so `mutate.sh` could not run.** An entry
-  whose original text is no longer in the file it names is reported `STALE` and counted as a
-  survivor, which fails the whole run. `PEAK` had moved from `AudioManager` to `SoundBank`,
-  `HEADROOM` had become `MixTable.HEADROOM_DB` and changed units with it, and one entry still broke
-  the thrower's telegraph. Both survivors are repointed and proved — the peak mutation makes
-  `verify_audio` report two sounds twenty decibels under what they declared, and the headroom
-  mutation makes `verify_mix` say in as many words that a night wave clips.
-  - **And with the table able to run again, two entries turned out to measure nothing.** The tide's
-    `drains` and `drains_from` were mutated on the `@export` default in `tide_data.gd`, which
-    `data/combat/tide.tres` overrides on every load — so the game got the shipped figure whatever
-    the mutation said, and `verify_drowning` was right not to notice. Both now mutate the `.tres`,
-    where the number actually lives, and both are caught. They were the only two of their kind.
-
-### Removed
-
-- **Fifteen methods nothing called.** A sweep of every `func` in `scripts/` against every call site
-  in the project found fifteen with no caller at all, and three of them had been dead since the
-  archetype that used them was taken out. Two carried a docstring claiming a headless check read
-  them — `RunIntro.is_holding` and `SurfBed.on_the_coast` — which no check has ever done; a comment
-  that names a reader who does not exist is worse than no comment, because the next person believes
-  it. `AttackTokens.holds`, `WaveDirector.hand_over` and `WaveDirector.left_to_send` went with the
-  thrower's check and the old tutorial. `AimComponent.device` was the aim's own reading of the last
-  device touched, offered to the button glyphs before `Devices` existed to answer them properly.
-  The rest: `StateMachine.has_state`, `WeaponData.index_of`, `UpgradeTrack.touches_body`,
-  `CameraRig.screen_forward`, `MixTable.family_of`, `Settings.reset` and `reset_all`,
-  `WaveDirector.progress` and `PlayerAttack.charge`. No behaviour changed, and every headless check
-  still passes — which is the point: nothing was reading any of it.
-
-- **Five constants nothing read, and the comments that vouched for them.** `Enemy.CHEST_HEIGHT`
-  named `verify_sightlines` as its keeper, and that check went out with the thrower.
-  `WeaponPickup.LABEL_HEIGHT` was a second home for a height the scene already sets — the same 1.3,
-  written twice. `AudioManager.BODY_DECAY` said it was "the thud both hits share" long after each
-  impact family got a decay of its own. `PosedMesh.PER_VERTEX` was a hard-coded four under a
-  docstring saying the figure is read rather than assumed — which the code does, from the arrays,
-  three lines further down. `Emphasis.NOTHING` was never returned; the decision it was written to
-  record, that an ordinary hit gets no mark at all, moves onto `for_hit`, which is what makes it.
-
-- **Every weapon explains itself when it reaches the hand.** There was one line, shown once a run,
-  for whichever weapon happened to be found first — so the gun taught nothing at all, and a stick
-  found second would have taught the gun's lesson. Now the stick says *[attack] to swing it —
-  [weapon_next] to switch weapons* and the gun says *[attack] to fire — walk over rounds to get
-  more*, each the first time that weapon goes in the bag.
-  - **The stick carries the swap key** because it is the first thing the bag has to switch between.
-    Nothing else in the game names that key, so `verify_tutorial` asserts the stick's line still
-    does rather than trusting the copy to stay right.
-  - Both weapons drop on wave 1, so two can be found seconds apart: the second **queues** behind the
-    first instead of replacing a line the player is still reading. The check pushes a weapon in
-    halfway through another's line, which is the case a queue filled before the first line was ever
-    shown does not exercise.
-  - The glyph is read off the binding as always, so the swap reads **E** and not the `Tab` the notes
-    for 0.2.0 claimed — that key moved when swapping became `E` and picking up became `F`.
+**Unreleased entries are not in this file.** They are one file per change under
+[`changelog.d/`](changelog.d/), assembled here at release time by
+`tools/assemble-changelog.sh`. Write yours there.
 
 ## [0.2.0] - 2026-09-14
 
@@ -1399,6 +1297,5 @@ still fail.
 - Five input actions that a fixed camera has no use for: `camera_left`, `camera_right`,
   `camera_up`, `camera_down`, `camera_recenter`.
 
-[Unreleased]: https://github.com/pepito2t/fight-island/compare/v0.2.0...main
 [0.2.0]: https://github.com/pepito2t/fight-island/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/pepito2t/fight-island/releases/tag/v0.1.0
