@@ -19,6 +19,11 @@ const SETTLE_FRAMES: int = 8
 const KNOCKDOWN_PATIENCE: float = 6.0
 ## How far a farmer has to have been thrown for the blow to have been a knockdown rather than a
 ## nudge. A body that moves less than this was not sent anywhere.
+## How far the hit volume may sit from the hips while the ragdoll drives, measured on the ground
+## plane. Not zero: the capsule is centred on the hips and the hips swing under a tumbling body, so
+## a little slack is the shape of the thing rather than a defect. A metre is not slack, it is a
+## different place.
+const HURTBOX_DRIFT: float = 0.35
 const SENT_SPRAWLING: float = 0.5
 ## The heaviest stagger figure the fists carry, and the push it buys. Written out rather than loaded
 ## off the uppercut, so a check measuring a knockdown does not quietly stop measuring one the day
@@ -157,9 +162,27 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 		return
 
 	var waited := 0.0
+	# Sampled **during** the tumble, which is the window every other assertion here skips. The body
+	# node is pinned where he was launched from while only the bones travel, so a hurtbox left as an
+	# ordinary child of it is a hit volume sitting metres from the man the player can see.
+	var worst_drift := 0.0
 	while farmer.ragdoll.is_running() and waited < KNOCKDOWN_PATIENCE:
 		await get_tree().physics_frame
 		waited += 1.0 / 60.0
+		if farmer.hurtbox != null:
+			var hips := farmer.ragdoll.settled_position()
+			var box := farmer.hurtbox.global_position
+			worst_drift = maxf(worst_drift, Vector2(hips.x - box.x, hips.z - box.z).length())
+	if worst_drift > HURTBOX_DRIFT:
+		_fail(
+			(
+				(
+					"while he was falling his hurtbox was %.2f m from his hips, and %.2f m is the most "
+					+ "that still lets a player hit the body they are looking at"
+				)
+				% [worst_drift, HURTBOX_DRIFT]
+			)
+		)
 	if farmer.ragdoll.is_running():
 		_fail(
 			(
