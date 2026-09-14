@@ -17,6 +17,9 @@ The tree is not uniformly ours. `docs/credits.md` lists third-party sources unde
 several flagged `prototype only`, and a repository-wide licence that swept them up would be claiming
 rights Garden Fence does not hold.
 
+[0011](0011-the-game-is-free.md) settled the price and deliberately left this question open: the game
+is given away, and free to play says nothing about what the repository is handed out under.
+
 ## Decision
 
 **All rights reserved**, in a `LICENSE` file at the root, covering code **and** assets.
@@ -24,7 +27,7 @@ rights Garden Fence does not hold.
 Third-party assets keep the licences they came with. `docs/credits.md` governs them, `LICENSE` says
 so explicitly, and nothing in `LICENSE` grants a right over an asset Garden Fence does not hold.
 
-Buying or downloading a build grants the right to play it, and nothing more.
+Downloading a build grants the right to play it, and nothing more.
 
 ## Consequences
 
@@ -36,8 +39,8 @@ Buying or downloading a build grants the right to play it, and nothing more.
 
 ## Alternatives rejected
 
-**A permissive open-source licence (MIT, Apache-2.0).** This is a commercial game meant for itch.io
-and possibly Steam, not a library. MIT on the code would also sit awkwardly beside assets that
+**A permissive open-source licence (MIT, Apache-2.0).** This is a game meant for itch.io and
+possibly Steam, not a library. MIT on the code would also sit awkwardly beside assets that
 cannot be MIT, and the mismatch is exactly the thing people get wrong when they copy a repository.
 
 **A source-available licence (BSL, PolyForm).** More precise, and a real option later if the code
