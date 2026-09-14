@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="UpdateCheckData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/update_check_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+endpoint = "https://itch.io/api/1/x/wharf/latest"
+target = "garden-fence/fight-island"
+fallback_channel = "windows"
+channels = {
+"Windows": "windows",
+"macOS": "mac"
+}
+page = "https://garden-fence.itch.io/fight-island"
+timeout_seconds = 5.0

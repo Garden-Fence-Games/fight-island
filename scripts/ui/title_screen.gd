@@ -29,7 +29,8 @@ var _credits_screen: CreditsScreen = null
 
 func _ready() -> void:
 	_raise_the_island()
-	version.text = "v%s" % ProjectSettings.get_setting("application/config/version", "")
+	version.text = "v%s" % UpdateCheck.current_version()
+	_ask_whether_there_is_a_newer_build()
 	_apply_run_state()
 	play.pressed.connect(_on_play_pressed)
 	new_run.pressed.connect(_on_new_run_pressed)
@@ -40,6 +41,25 @@ func _ready() -> void:
 	fade.color.a = 1.0
 	create_tween().tween_property(fade, "color:a", 0.0, FADE_IN)
 	UiSounds.arm(self)
+
+
+## The only network request the game makes, and it is allowed to come to nothing. Nothing here
+## waits on it: the title is up and playable before it is sent, and a failure of any kind — offline,
+## itch down, a reply nobody can parse — leaves the footer exactly as it was.
+func _ask_whether_there_is_a_newer_build() -> void:
+	var check := UpdateCheck.new()
+	check.name = "UpdateCheck"
+	add_child(check)
+	check.newer_version_found.connect(_on_newer_version_found)
+	check.ask()
+
+
+func _on_newer_version_found(published: String) -> void:
+	# Beside the version rather than over the menu. A player who came here to play should not have
+	# to dismiss anything, and one who came here to check will read the footer.
+	version.text = (
+		"v%s — %s" % [UpdateCheck.current_version(), tr("UI_UPDATE_AVAILABLE").format([published])]
+	)
 
 
 func _unhandled_input(event: InputEvent) -> void:
