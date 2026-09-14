@@ -5,11 +5,13 @@
 
 ## Context
 
-The repository shipped without a `LICENSE` file. While it was private that cost nothing, but the
-itch.io release makes the code and the assets readable by whoever unpacks a build, and a repository
-with no licence is not "closed by default" in any way a buyer or a contributor can rely on — it is
-simply silent. `README.md` said *not yet decided*, and `docs/roadmap.md` carried the question in its
-open-decisions table with *all rights reserved on the code* as the default if nobody chose.
+The repository shipped without a `LICENSE` file. #32 framed that as *not urgent, the repository is
+private* — **it is not private, and has not been for some time.** The code and the assets are
+readable on GitHub today, by anyone, with nothing anywhere saying on what terms. A repository with
+no licence is not "closed by default" in any way a reader can rely on; it is simply silent, and
+silence is what people fill in themselves. `README.md` said *not yet decided*, and
+`docs/roadmap.md` carried the question in its open-decisions table with *all rights reserved on the
+code* as the default if nobody chose.
 
 The tree is not uniformly ours. `docs/credits.md` lists third-party sources under their own terms,
 several flagged `prototype only`, and a repository-wide licence that swept them up would be claiming
@@ -42,5 +44,7 @@ cannot be MIT, and the mismatch is exactly the thing people get wrong when they 
 ever wants readers. It buys nothing today: there is no audience asking to read it, and every extra
 clause is a clause to defend.
 
-**Leaving it undecided until the release.** That is what produced this issue. The default was
-already written down; what was missing was a file, and the file costs half an hour.
+**Leaving it undecided until the release.** That is what produced this issue, and the reasoning it
+rested on — *the repository is private, so nothing is urgent* — was already false when it was
+written. The default was written down; what was missing was a file, and the file costs half an
+hour.
