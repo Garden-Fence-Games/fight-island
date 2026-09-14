@@ -18,6 +18,14 @@ All notable changes to this project are documented here, following
 
 ### Changed
 
+- **The last waves are a crowd again rather than a slower one.** Enemy health grew faster than any
+  weapon track a run can afford, so a body at wave fifteen took well over twice as long to fell as
+  one at wave one, and the crowd stopped growing three waves before the run ended — the island went
+  on promising bodies nobody could reach, up to seven a wave that were never met. Health now climbs
+  more gently and the crowd climbs to the final wave, which is where an endurance test belongs.
+  What the player takes is unchanged: the attack-token pool is the damage dial and it did not move.
+  Measured by `tools/measure_waves.tscn`, held by `tools/verify_waves.tscn`.
+
 - **One kill in three leaves a round, up from one in eight.** A drop is a single round, so the gun
   can afford to be generous — and a round that has to be walked over is worth more of them.
 - **The gun has no magazine and no reload.** Every round it carries fires, one after another, up to
