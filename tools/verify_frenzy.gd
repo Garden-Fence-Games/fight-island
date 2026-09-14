@@ -19,6 +19,9 @@ const MOST_SHARE: float = 0.45
 ## How much health the target is given, so the one punch that kills it cannot be an ordinary one.
 const TOUGH: float = 20.0
 const AHEAD: float = 1.0
+## Fixed so a failure reproduces. `FrenzyDirector` seeds its own generator off this, and a run that
+## rolls its seed turns a broken placement into a coin toss nobody can repeat.
+const SEED: int = 20260914
 
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
@@ -27,6 +30,10 @@ var _frenzy: FrenzyComponent = null
 var _director: FrenzyDirector = null
 var _waves: WaveDirector = null
 var _kept_run: Dictionary = {}
+## Where the player starts. Every placement returns it here first: a bird lands a few metres away
+## and these checks walk the player onto it, so left alone the player crosses the island a bird at
+## a time and the last placement finds nothing but sea within reach.
+var _home := Vector3.ZERO
 
 
 func _ready() -> void:
@@ -55,6 +62,8 @@ func _run() -> void:
 
 func _open_the_arena() -> void:
 	GameState.begin_run()
+	# Before the arena is built: FrenzyDirector reads this in its own `_ready`.
+	GameState.run_seed = SEED
 	_arena = (load(ARENA) as PackedScene).instantiate() as Node3D
 	add_child(_arena)
 	await get_tree().physics_frame
@@ -69,6 +78,7 @@ func _open_the_arena() -> void:
 	if _player == null:
 		_fail("the arena holds no player")
 		return
+	_home = _player.global_position
 	_frenzy = _player.frenzy
 	if _frenzy == null:
 		_fail("the player carries no Frenzy component — the bird has nothing to hand its power to")
@@ -129,7 +139,7 @@ func _check_one_wave_in_three_and_never_the_first() -> void:
 
 
 func _check_the_bird_lands_in_view_and_shines() -> void:
-	var bird := _director.place()
+	var bird := await _a_bird()
 	if bird == null:
 		_fail("the director could not land a rainbow bird anywhere")
 		return
@@ -161,7 +171,7 @@ func _check_walking_over_it_gives_the_power() -> void:
 	bag.equip(&"gun")
 	var bird := _director.bird()
 	if bird == null:
-		bird = _director.place()
+		bird = await _a_bird()
 	if bird == null:
 		_fail("no rainbow bird to walk over")
 		return
@@ -218,7 +228,7 @@ func _check_the_hands_hold_fists() -> void:
 func _check_it_does_not_stack() -> void:
 	_frenzy._process(1.0)
 	var left := _frenzy.time_left()
-	var second := _director.place()
+	var second := await _a_bird()
 	if second == null:
 		_fail("could not land a second bird")
 		return
@@ -281,11 +291,11 @@ func _check_it_runs_out() -> void:
 
 
 func _check_the_wave_takes_it_back() -> void:
-	var bird := _director.place()
+	var bird := await _a_bird()
 	if bird == null or not await _walk_onto(bird):
 		_fail("could not take a bird for the end-of-wave check")
 		return
-	var lying := _director.place()
+	var lying := await _a_bird()
 	_director._on_wave_cleared(3, 0)
 	await get_tree().physics_frame
 	if _frenzy.is_active():
@@ -303,6 +313,14 @@ func _check_the_power_is_gone(why: String) -> void:
 		_fail("the player was still shielded after the power %s" % why)
 	if _player.hitbox.overwhelm != null:
 		_fail("punches still overwhelm after the power %s" % why)
+
+
+## A bird placed with the player back at its spawn, so one check's walk cannot strand the next.
+func _a_bird() -> RainbowBird:
+	_player.global_position = _home
+	for _frame: int in SETTLE_FRAMES:
+		await get_tree().physics_frame
+	return _director.place()
 
 
 func _walk_onto(bird: RainbowBird) -> bool:
