@@ -99,6 +99,7 @@ UI_QUIT_BODY,"The run waits for you at the title, but the wave you are in the mi
 UI_QUIT_DANGER,started again
 MERCHANT_TITLE,Prepare for the next wave
 MERCHANT_PURSE,Money
+MERCHANT_LEFT,%d upgrades to buy
 MERCHANT_COST,Upgrade cost
 MERCHANT_LEVEL,LV.%d
 MERCHANT_MAXED,Fully upgraded. Nothing left to buy on this one.

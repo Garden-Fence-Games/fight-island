@@ -126,15 +126,16 @@ func _run() -> void:
 	_report()
 
 
-## Two claims, checked on a body rather than on a table: an elite is worth the trouble, and it is
-## recognisable in under a second. The second one is the hard half — a hue alone would satisfy any
-## check that only compared colours, and would vanish for a colourblind player or a greyscale
-## screenshot, so what is asserted is **luminance**.
+## A runner, checked on a body rather than on a table: it is as tough as the archetype it came from,
+## it never fights, it is slower than the player walks and notices from closer than anybody — and it
+## is recognisable in under a second. That last is the hard half: a hue alone would satisfy any
+## check that only compared colours and vanish for a colourblind player, so what is asserted is
+## **luminance**.
 func _check_an_elite_is_worse_and_obviously_so() -> void:
 	var config := _director.config
 	var data := load(FARMHAND) as EnemyData
 	if config == null or config.elite == null or data == null:
-		_fail("there is no elite to check")
+		_fail("there is no runner to check")
 		return
 	var plain := _director.spawner.spawn_at(data, Vector3.ZERO)
 	var elite := _director.spawner.spawn_at(
@@ -143,14 +144,32 @@ func _check_an_elite_is_worse_and_obviously_so() -> void:
 	if plain == null or elite == null:
 		_fail("the pool would not lease two farmhands")
 		return
-	_same("an elite's health", elite.health.max_health, plain.health.max_health * 2.0)
-	_same("an elite's damage", elite.damage_scale, plain.damage_scale * 1.4)
-	_same("an elite's size", elite.visual.scale.x, 1.15)
+	_same("a runner's health", elite.health.max_health, plain.health.max_health)
+	_same("a runner's size", elite.visual.scale.x, 1.15)
+	if elite.claim_token():
+		_fail("a runner claimed an attack token, so it can swing")
+		elite.release_token()
+	if elite.move_speed() >= Player.MOVE_SPEED:
+		_fail(
+			(
+				"a runner runs at %.2f m/s and the player walks at %.2f — it can never be caught"
+				% [elite.move_speed(), Player.MOVE_SPEED]
+			)
+		)
+	if config.elite.notices_within >= data.notice_radius:
+		_fail(
+			(
+				"a runner notices from %.1f m, no closer than a farmhand's %.1f"
+				% [config.elite.notices_within, data.notice_radius]
+			)
+		)
 	_check_the_elite_reads_in_greyscale(plain, elite)
 	await _check_the_elite_still_reads_after_being_hit(plain, elite)
-	_check_the_elite_pays_triple(plain, elite)
+	_check_the_elite_pays_its_rank(plain, elite)
 	plain.retire()
 	elite.retire()
+	await _check_a_runner_runs_from_the_player()
+	await _check_a_runner_slips_under_the_sea_unpaid()
 
 
 ## The one cue that survives a greyscale screenshot and a colourblind player. Emission is what makes
@@ -222,7 +241,9 @@ func _let_the_flash_finish() -> void:
 		waited += 1.0 / 60.0
 
 
-func _check_the_elite_pays_triple(plain: Enemy, elite: Enemy) -> void:
+## A runner pays the coins its rank names, whatever the archetype was worth; a farmhand pays his
+## own.
+func _check_the_elite_pays_its_rank(plain: Enemy, elite: Enemy) -> void:
 	var paid: Array[int] = []
 	var purse := func(_enemy: Node3D, _archetype: StringName, money: int) -> void:
 		paid.append(money)
@@ -235,19 +256,113 @@ func _check_the_elite_pays_triple(plain: Enemy, elite: Enemy) -> void:
 	if paid.size() != 2:
 		_fail("two dead farmhands should pay twice, paid %d times" % paid.size())
 		return
-	if paid[1] != paid[0] * 3:
-		_fail("an elite should pay %d, paid %d" % [paid[0] * 3, paid[1]])
+	if paid[0] != plain.data.money:
+		_fail("a farmhand should pay %d, paid %d" % [plain.data.money, paid[0]])
+	if paid[1] != 20:
+		_fail("a runner should pay 20, paid %d" % paid[1])
+	await get_tree().physics_frame
 
 
-## Wave four is where they start, and the roll is a coin toss the check would pass by luck a great
-## deal of the time — so it is rolled until the odds of a false pass are nil.
+## Standing still until the player comes close, then away from them — and a crowd noticing the fight
+## beside it does not send it running.
+func _check_a_runner_runs_from_the_player() -> void:
+	var config := _director.config
+	var data := load(FARMHAND) as EnemyData
+	var home := _player.global_position + Vector3(8.0, 0.0, 0.0)
+	var runner := _director.spawner.spawn_at(data, home, 1.0, 1.0, 1.0, 1.0, config.elite)
+	if runner == null:
+		_fail("the pool would not lease a runner")
+		return
+	var start := runner.global_position
+	for _frame: int in 30:
+		await get_tree().physics_frame
+	if runner.machine.current_name != &"Idle":
+		_fail("a runner out of sight left Idle for %s" % runner.machine.current_name)
+	runner.roused = true
+	for _frame: int in 10:
+		await get_tree().physics_frame
+	if runner.machine.current_name != &"Idle":
+		_fail("a runner was sent running by the crowd rather than by the player")
+	_player.global_position = (
+		runner.global_position + Vector3(-config.elite.notices_within * 0.6, 0.0, 0.0)
+	)
+	var before := runner.global_position.distance_to(_player.global_position)
+	for _frame: int in 60:
+		await get_tree().physics_frame
+	if runner.machine.current_name != &"Flee":
+		_fail(
+			"a runner the player walked up to is in %s, not running" % runner.machine.current_name
+		)
+	var after := runner.global_position.distance_to(_player.global_position)
+	if after <= before + 0.5:
+		_fail(
+			"a runner a second into running is %.2f m from the player, was %.2f" % [after, before]
+		)
+	if runner.global_position.distance_to(start) < 0.5:
+		_fail("a runner that was running never moved")
+	runner.retire()
+	await get_tree().physics_frame
+
+
+## Deep enough in the sea, it is gone — back to the pool, and nothing thrown or paid for it.
+func _check_a_runner_slips_under_the_sea_unpaid() -> void:
+	var config := _director.config
+	var data := load(FARMHAND) as EnemyData
+	var runner := _director.spawner.spawn_at(
+		data, Vector3(30.0, 0.0, 0.0), 1.0, 1.0, 1.0, 1.0, config.elite
+	)
+	if runner == null:
+		_fail("the pool would not lease a runner")
+		return
+	var died := [false]
+	var death := func(_enemy: Node3D, _archetype: StringName, _money: int) -> void: died[0] = true
+	EventBus.enemy_died.connect(death)
+	runner.machine.current.transition_to(&"Flee")
+	var frames := int((config.elite.gone_over + 0.5) * 60.0)
+	for _frame: int in frames:
+		runner.global_position.y = Water.level - config.elite.gone_at_depth - 0.2
+		await get_tree().physics_frame
+		if not runner.is_in_group(&"enemies"):
+			break
+	EventBus.enemy_died.disconnect(death)
+	if runner.is_in_group(&"enemies"):
+		_fail("a runner %.1f m under the sea never slipped away" % config.elite.gone_at_depth)
+		runner.retire()
+	if died[0]:
+		_fail("a runner that slipped under the sea died and was paid for")
+
+
+## No runner before its wave. The guaranteed wave owes exactly one and nothing is rolled; after it
+## the chance is flat — rolled until the odds of a false pass are nil.
 func _check_elites_keep_away_from_the_first_waves() -> void:
 	var config := _director.config
 	if config == null:
 		return
 	for wave_index: int in range(1, config.elite_first_wave):
 		if config.elite_chance(wave_index) > 0.0:
-			_fail("wave %d can roll an elite, and elites start at %d" % [wave_index, 4])
+			_fail("wave %d can roll a runner, and the rolls start at %d" % [wave_index, 4])
+	if config.elite_guaranteed_wave != 3:
+		_fail("the guaranteed runner comes on wave %d, expected 3" % config.elite_guaranteed_wave)
+	for pair: Array in [[2, false], [3, true], [4, false]]:
+		_director.start_wave(pair[0])
+		if _director.owes_a_runner() != pair[1]:
+			_fail(
+				(
+					"wave %d owes a runner: %s, expected %s"
+					% [pair[0], _director.owes_a_runner(), pair[1]]
+				)
+			)
+		_director.halt()
+	if (
+		not is_equal_approx(config.elite_chance(4), 0.10)
+		or not is_equal_approx(config.elite_chance(30), 0.10)
+	):
+		_fail(
+			(
+				"a runner's chance is %.2f at wave 4 and %.2f at 30, flat 0.10 expected"
+				% [config.elite_chance(4), config.elite_chance(30)]
+			)
+		)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	var rolled := 0
@@ -255,7 +370,7 @@ func _check_elites_keep_away_from_the_first_waves() -> void:
 		if rng.randf() < config.elite_chance(config.elite_first_wave):
 			rolled += 1
 	if rolled == 0:
-		_fail("no elite came up in %d rolls at wave %d" % [ELITE_ROLLS, config.elite_first_wave])
+		_fail("no runner came up in %d rolls at wave %d" % [ELITE_ROLLS, config.elite_first_wave])
 
 
 func _put_the_run_back() -> void:
@@ -287,16 +402,23 @@ func _check_the_formulas_match_the_table() -> void:
 	if config == null:
 		_fail("there is no wave configuration to check")
 		return
-	for pair: Array in [[1, 17], [5, 22], [10, 28], [15, 34]]:
+	for pair: Array in [[1, 20], [5, 31], [10, 44], [15, 57]]:
 		var got := config.enemy_count(int(pair[0]))
 		if got != int(pair[1]):
 			_fail("wave %d should send %d enemies, sends %d" % [pair[0], pair[1], got])
-	if config.max_alive(1) != 4:
-		_fail("wave 1 should hold 4 alive, holds %d" % config.max_alive(1))
-	if config.max_alive(15) != 16:
-		_fail("the last wave should hold 16 alive, holds %d" % config.max_alive(15))
-	if not is_equal_approx(config.health_multiplier(15), 2.82):
-		_fail("wave 15 health should be x2.82, is x%.2f" % config.health_multiplier(15))
+	if config.max_alive(1) != 5:
+		_fail("wave 1 should hold 5 alive, holds %d" % config.max_alive(1))
+	if config.max_alive(15) != 28:
+		_fail("the last wave should hold 28 alive, holds %d" % config.max_alive(15))
+	# The crowd is the difficulty, not the body: health never grows, on any wave.
+	for wave_index: int in [1, 15, 40]:
+		if not is_equal_approx(config.health_multiplier(wave_index), 1.0):
+			_fail(
+				(
+					"wave %d health should be x1.00, is x%.2f"
+					% [wave_index, config.health_multiplier(wave_index)]
+				)
+			)
 	if not is_equal_approx(config.damage_multiplier(15), 2.40):
 		_fail("wave 15 damage should be x2.40, is x%.2f" % config.damage_multiplier(15))
 	# Floors and ceilings, which are the part a tuning pass is most likely to break.
@@ -570,7 +692,7 @@ func _report() -> void:
 		print(
 			(
 				"waves OK — the table holds, a wave arrives out of shot, clears, pays, "
-				+ "an elite is worse and looks it, and the purse keeps its shape"
+				+ "a runner runs, is caught or slips under, and the purse keeps its shape"
 			)
 		)
 		get_tree().quit(0)

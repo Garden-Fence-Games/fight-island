@@ -70,7 +70,7 @@ func physics_update(delta: float) -> void:
 	_remaining -= delta
 	enemy.apply_motion(Vector3.ZERO, 0.0, delta)
 	if _remaining <= 0.0:
-		transition_to(&"Chase")
+		transition_to(enemy.pursuit_state())
 
 
 ## Nothing while the physics drives, then the get-up for the way he landed.

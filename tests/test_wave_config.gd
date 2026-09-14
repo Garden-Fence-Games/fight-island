@@ -19,6 +19,13 @@ func test_wave_one_scales_nothing() -> void:
 	assert_float(config.windup_multiplier(1)).is_equal_approx(1.0, 0.0001)
 
 
+## The crowd is the difficulty, not the body: no wave, however far, makes a body tougher.
+func test_health_never_grows() -> void:
+	var config := WaveConfig.new()
+	for wave: int in range(1, FAR_PAST_THE_END):
+		assert_float(config.health_multiplier(wave)).is_equal_approx(1.0, 0.0001)
+
+
 func test_a_later_wave_is_never_a_smaller_one() -> void:
 	var config := WaveConfig.new()
 	for wave: int in range(2, FAR_PAST_THE_END):

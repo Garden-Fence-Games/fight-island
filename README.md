@@ -8,8 +8,8 @@
 > matters is not which one, but *when* you swing it.
 
 A 3D PVE wave-survival arena game. One player, one island, three weapons, three attacks each.
-Damage is decided by timing, not by which button you pressed. Every cleared wave pays for
-exactly one upgrade — and a run never affords them all.
+Damage is decided by timing, not by which button you pressed. Every cleared wave buys an
+upgrade, a few more as the run goes on — and a run never affords them all.
 
 ## Status
 
@@ -39,7 +39,7 @@ licensed tracks and the farmer's recorded lines. See [docs/roadmap.md](docs/road
 - **Farmers who want you gone, and a pirate who is worse.** A bare-handed swarm, and a rare heavy
   who hits for nearly three of them and telegraphs for the longest wind-up in the game. One rig for
   the farmer, one of his own for him.
-- **One upgrade per wave.** Health, stamina, fists, stick, gun. You cannot max them all; the
+- **Upgrades between waves.** Health, stamina, fists, stick, gun. You cannot max them all; the
   subject of the game is what you give up.
 - **A full defensive kit.** Dodge with i-frames, sprint, and a tap parry whose perfect window
   staggers the attacker and refunds stamina.

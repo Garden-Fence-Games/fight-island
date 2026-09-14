@@ -49,9 +49,8 @@ var poise_left: float = 0.0
 var damage_scale: float = 1.0
 var speed_scale: float = 1.0
 var windup_scale: float = 1.0
-## What this one rolled, or null for an ordinary farmer. Held rather than flattened into the
-## multipliers because the money and the look need it too, and a body that is worth triple has to
-## still know that when it dies.
+## What this one rolled, or null for an ordinary farmer. Non-null makes it a runner: it never
+## fights, runs from the player instead of towards them, and pays what the rank says when it dies.
 var rank: EliteRank = null
 ## What the last swing to land on this body was worth, which is the one that matters: by the time
 ## the payout happens the swing is over. One rather than zero, so a body killed by anything that is
@@ -138,10 +137,11 @@ func revive(
 	last_hit_worth = 1.0
 	last_hit_from = Vector3.FORWARD
 	last_hit_push = 0.0
-	damage_scale = damage * (rank.damage_multiplier if rank != null else 1.0)
+	damage_scale = damage
 	speed_scale = speed
 	windup_scale = windup
-	passive = harmless
+	# A runner never swings: refused the token, it can never reach WindUp.
+	passive = harmless or rank != null
 	global_position = where
 	velocity = Vector3.ZERO
 	rotation.y = 0.0
@@ -154,14 +154,14 @@ func revive(
 		# has to be able to look at somebody.
 		head_look.resting = false
 	# A body handed back mid-tumble comes out of the pool still tumbling, which is the kind of bug
-	# that only shows up five waves in. Cheap to call when nothing is running, so it is called always.
+	# that only shows up five waves in. Cheap to call when nothing is running, so it is called
+	# always.
 	if ragdoll != null:
 		ragdoll.stop()
 	if data != null:
 		poise_left = data.poise
 		if health != null:
-			var tougher := rank.health_multiplier if rank != null else 1.0
-			health.set_max_health(data.health * health_boost * tougher, true)
+			health.set_max_health(data.health * health_boost, true)
 		_apply_tint()
 	if hurtbox != null:
 		hurtbox.monitorable = true
@@ -219,9 +219,17 @@ func _process(delta: float) -> void:
 			poise_left = data.poise
 
 
-## The wave's numbers applied to the archetype's, so no state has to know a wave exists.
+## The wave's numbers applied to the archetype's, so no state has to know a wave exists. A runner
+## runs at its rank's own speed, which the waves do not touch.
 func move_speed() -> float:
+	if rank != null:
+		return rank.runs_at
 	return (data.move_speed if data != null else 0.0) * speed_scale
+
+
+## Where this body goes once it has noticed the player: at them, or — for a runner — away.
+func pursuit_state() -> StringName:
+	return &"Flee" if rank != null else &"Chase"
 
 
 func windup() -> float:
@@ -256,28 +264,33 @@ func rouse() -> void:
 	var carries := data.rouse_radius * GameState.rouse_scale()
 	for node: Node in get_tree().get_nodes_in_group(&"enemies"):
 		var other := node as Enemy
-		if other == null or other == self or other.roused or not other.is_alive():
+		# A runner is not roused by the crowd: it runs from the player's approach, not from the
+		# noise.
+		if other == null or other == self or other.roused or not other.is_alive() or other.rank:
 			continue
 		if global_position.distance_to(other.global_position) <= carries:
 			other.rouse()
 
 
-## What this body is worth to the wallet: what the archetype pays, what being an elite multiplies it
-## by, and what the swing that finished it was worth. Private because the wallet learns it from the
-## death on the bus, which is the only place it is ever asked.
+## What this body is worth to the wallet: what the archetype pays and what the swing that finished
+## it was worth — or, for a runner, exactly the coins its rank says, since the chase is the price.
+## Private because the wallet learns it from the death on the bus, the only place it is ever asked.
 func _money() -> int:
 	if data == null:
 		return 0
-	var paid := data.money * (rank.money_multiplier if rank != null else 1)
-	return roundi(float(paid) * last_hit_worth)
+	if rank != null:
+		return rank.coins
+	return roundi(float(data.money) * last_hit_worth)
 
 
 ## Whether the player has come close enough to be noticed. Being hit does not go through here —
-## a farmer struck from across the field has noticed, whatever his eyes say.
+## a farmer struck from across the field has noticed, whatever his eyes say. A runner notices from
+## closer than anyone, so it can be walked up on.
 func notices_target() -> bool:
 	if data == null or target == null:
 		return false
-	return distance_to_target() <= data.notice_radius
+	var within := rank.notices_within if rank != null else data.notice_radius
+	return distance_to_target() <= within
 
 
 func distance_to_target() -> float:

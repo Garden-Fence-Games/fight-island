@@ -226,8 +226,9 @@ have been "easy mode" is either a real accessibility setting or it is balance wo
 ## Merchant, between waves
 
 Not a shop with a grid. Five cards — health, stamina, fists, stick, gun — each showing its current
-level, what the next level does **in words**, and its price. One purchase, then the card grid
-closes and the five-second breather starts.
+level, what the next level does **in words**, and its price. The heading says how many purchases
+are left when there is more than one; the card grid closes once they are spent and the five-second
+breather starts.
 
 Money left over is shown, and carries. A card the player cannot afford is dimmed but still
 readable: seeing what you cannot buy is the whole tension of the economy.
@@ -288,7 +289,7 @@ should be felt; the numbers are a debugging comfort, and they live in Options �
 
 **Credit numbers are the one floating number that is on by default**, because they answer a question
 the player cannot answer by feel: whether killing that body was worth anything. They rise off the
-body that died, read the payout the wallet was actually paid — the elite multiplier included, since
+body that died, read the payout the wallet was actually paid — a runner's pay included, since
 both come off the same signal — and a body worth nothing floats nothing.
 
 The money chip answers at the same time, with a short punch. A two-digit number changing in the

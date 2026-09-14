@@ -64,9 +64,11 @@ var loadout: Loadout = Loadout.new()
 
 var debug_overlay_visible: bool = false
 
-## The wave a purchase was last made in. One per wave is the whole economy: the interesting decision
-## is what the player gives up, and it stops being one if they can buy everything.
+## The wave purchases were last made in, and how many. The allowance is small on purpose — the
+## interesting decision is what the player gives up, and it stops being one if they can buy
+## everything — and it grows every few waves, see `Economy.purchases_after`.
 var _bought_in_wave: int = -1
+var _bought_this_wave: int = 0
 var _rng := RandomNumberGenerator.new()
 
 
@@ -111,6 +113,7 @@ func begin_run(with_intro: bool = false) -> void:
 	upgrade_levels = {}
 	loadout = Loadout.new()
 	_bought_in_wave = -1
+	_bought_this_wave = 0
 	money_changed.emit(money, 0)
 	EventBus.weapon_equipped.emit(loadout.weapon())
 	save_run()
@@ -154,7 +157,7 @@ func price_of(track: UpgradeTrack) -> int:
 
 
 func can_buy(track: UpgradeTrack) -> bool:
-	if track == null or _bought_in_wave == wave:
+	if track == null or purchases_left() <= 0:
 		return false
 	if level_of(track) >= Economy.LEVEL_CAP:
 		return false
@@ -175,7 +178,10 @@ func buy(track: UpgradeTrack) -> bool:
 		return false
 	var level := level_of(track) + 1
 	upgrade_levels[track.id] = level
-	_bought_in_wave = wave
+	if _bought_in_wave != wave:
+		_bought_in_wave = wave
+		_bought_this_wave = 0
+	_bought_this_wave += 1
 	# The rounds land now rather than growing a per-wave grant, because there is no longer a
 	# per-wave grant to grow. The merchant is one of the two ways ammunition enters a run.
 	var handed := loadout.take(track.rounds)
@@ -188,7 +194,13 @@ func buy(track: UpgradeTrack) -> bool:
 
 ## Whether the merchant still has something to sell this wave.
 func can_buy_anything() -> bool:
-	return _bought_in_wave != wave
+	return purchases_left() > 0
+
+
+## How many more upgrades the merchant will sell after this wave. See `Economy.purchases_after`.
+func purchases_left() -> int:
+	var made := _bought_this_wave if _bought_in_wave == wave else 0
+	return maxi(Economy.purchases_after(wave) - made, 0)
 
 
 ## The state a resumed run needs, and only that. The clock is in it, so a run picked up tomorrow
@@ -206,6 +218,7 @@ func snapshot() -> Dictionary:
 		"wave_in_progress": wave_in_progress,
 		"money": money,
 		"bought_in_wave": _bought_in_wave,
+		"bought_this_wave": _bought_this_wave,
 		"upgrades": levels,
 		"stats": stats.to_dict(),
 		# Without this a resumed run hands the gun back unfound, which the player would read as
@@ -225,6 +238,9 @@ func restore(data: Dictionary) -> bool:
 	wave_in_progress = bool(data.get("wave_in_progress", false))
 	money = maxi(int(data.get("money", 0)), 0)
 	_bought_in_wave = int(data.get("bought_in_wave", -1))
+	# A save from when one purchase was the whole allowance has no count: that wave's one was spent.
+	var made_default := 1 if _bought_in_wave >= 0 else 0
+	_bought_this_wave = maxi(int(data.get("bought_this_wave", made_default)), 0)
 	upgrade_levels = {}
 	var levels: Variant = data.get("upgrades", {})
 	if levels is Dictionary:

@@ -1,8 +1,9 @@
 class_name MerchantScreen
 extends Control
-## Five cards between waves, and exactly one purchase. It is not a shop: there is no grid, no cart
-## and no confirmation — the interesting decision is what the player gives up, and asking them
-## whether they are sure would turn a choice into a chore.
+## Five cards between waves, and a few purchases — one early in the run, one more every few waves
+## (`Economy.purchases_after`). It is not a shop: there is no grid, no cart and no confirmation —
+## the interesting decision is what the player gives up, and asking them whether they are sure would
+## turn a choice into a chore. It stays open until the allowance is spent or the player leaves.
 ##
 ## Leaving without buying is done by pressing back, and the game does not ask about that either.
 
@@ -18,7 +19,7 @@ var _cards: Array[UpgradeCard] = []
 
 
 func _ready() -> void:
-	heading.text = tr("MERCHANT_TITLE").to_upper()
+	_write_heading()
 	for track: UpgradeTrack in Upgrades.all():
 		var card := (load(CARD_SCENE) as PackedScene).instantiate() as UpgradeCard
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -48,8 +49,21 @@ func _on_card_pressed(card: UpgradeCard) -> void:
 		return
 	for other: UpgradeCard in _cards:
 		other.refresh()
-	# The wave's one purchase is spent, so there is nothing left to stay for.
-	close()
+	# The wave's allowance spent, there is nothing left to stay for; until then the shop stays open.
+	if not GameState.can_buy_anything():
+		close()
+		return
+	_write_heading()
+	_focus_best()
+
+
+## The title, and how many purchases are left when there is more than one to make.
+func _write_heading() -> void:
+	var title := tr("MERCHANT_TITLE")
+	var left := GameState.purchases_left()
+	if left > 1:
+		title = "%s · %s" % [title, tr("MERCHANT_LEFT") % left]
+	heading.text = title.to_upper()
 
 
 func _on_money_changed(balance: int, _delta: int) -> void:

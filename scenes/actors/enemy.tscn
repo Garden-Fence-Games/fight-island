@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/enemy/enemy.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -21,6 +21,7 @@
 [ext_resource type="Script" path="res://scripts/components/body_materials_component.gd" id="20"]
 [ext_resource type="Script" path="res://scripts/components/ragdoll_component.gd" id="21"]
 [ext_resource type="Script" path="res://scripts/components/voice_component.gd" id="22"]
+[ext_resource type="Script" path="res://scripts/actors/enemy/states/enemy_flee.gd" id="24"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 height = 2.21
@@ -105,6 +106,9 @@ script = ExtResource("7")
 
 [node name="Strafe" type="Node" parent="StateMachine"]
 script = ExtResource("8")
+
+[node name="Flee" type="Node" parent="StateMachine"]
+script = ExtResource("24")
 
 [node name="WindUp" type="Node" parent="StateMachine"]
 script = ExtResource("9")

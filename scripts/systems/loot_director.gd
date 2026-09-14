@@ -43,6 +43,21 @@ func spray(from: Vector3, money: int, round_roll: float, count_roll: float = 0.0
 	return thrown
 
 
+## A runner's pay: exactly `coins` coins of one money each and `rounds` rounds, thrown whole. Not
+## split and not capped like an ordinary shower — the size of the pile is the reward for the chase,
+## and the player should see all of it land. The rounds only come once the gun has been found.
+func spray_runner(from: Vector3, coins: int, rounds: int) -> Array[Loot]:
+	var thrown: Array[Loot] = []
+	if data == null:
+		return thrown
+	for _coin: int in maxi(coins, 0):
+		thrown.append(_throw(Loot.Kind.COIN, 1, from))
+	if GameState.loadout.owns(&"gun"):
+		for _round: int in maxi(rounds, 0):
+			thrown.append(_throw(Loot.Kind.ROUND, 1, from))
+	return thrown
+
+
 ## Everything still lying on the island, in the air or on the sand.
 func lying_about() -> Array[Loot]:
 	var found: Array[Loot] = []
@@ -76,6 +91,10 @@ func _throw(kind: Loot.Kind, amount: int, from: Vector3) -> Loot:
 
 func _on_enemy_died(enemy: Node3D, _archetype: StringName, money: int) -> void:
 	if enemy == null or not is_instance_valid(enemy):
+		return
+	var body := enemy as Enemy
+	if body != null and body.rank != null:
+		spray_runner(enemy.global_position, body.rank.coins, body.rank.rounds)
 		return
 	spray(enemy.global_position, money, _rng.randf(), _rng.randf())
 

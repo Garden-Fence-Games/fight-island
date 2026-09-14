@@ -13,6 +13,15 @@ const GROWTH: float = 1.6
 ## Money is read at a glance in the middle of a fight. Prices land on fives so they can be.
 const ROUNDING: int = 5
 const LEVEL_CAP: int = 5
+## Every this many waves, the merchant sells one more upgrade a visit: one on waves one to three,
+## two on four to six, and on through the endless waves. The late crowd is bigger, and so is what
+## the player may bring to it.
+const MORE_PURCHASES_EVERY: int = 3
+
+
+## How many upgrades the merchant sells after `wave`. The same track may be bought more than once.
+static func purchases_after(wave: int) -> int:
+	return 1 + int(floorf(float(maxi(wave, 1) - 1) / float(MORE_PURCHASES_EVERY)))
 
 
 ## What it costs to buy the next level of a track, given how many of it are already owned.

@@ -84,9 +84,15 @@ func _check_a_run_survives_a_round_trip() -> void:
 		_fail("the tally did not come back")
 	if GameState.stats.money_spent != spent_before:
 		_fail("what was spent did not come back, so the summary would understate it")
-	# Buying again in the same wave has to stay refused, or a resume would be a free upgrade.
-	if GameState.can_buy_anything():
-		_fail("a resumed run offered a second purchase in a wave that already had one")
+	# What was bought this wave comes back with it, or a resume would hand the allowance out again.
+	var left := Economy.purchases_after(GameState.wave) - 1
+	if GameState.purchases_left() != left:
+		_fail(
+			(
+				"a resumed run has %d purchases left in a wave that already had one, expected %d"
+				% [GameState.purchases_left(), left]
+			)
+		)
 
 
 func _check_a_missing_file_is_not_a_run() -> void:

@@ -4,9 +4,12 @@
 
 [resource]
 script = ExtResource("1")
-health_multiplier = 2.00
-damage_multiplier = 1.40
-money_multiplier = 3
+notices_within = 5.0
+runs_at = 2.6
+gone_at_depth = 0.6
+gone_over = 1.0
+coins = 20
+rounds = 15
 scale = 1.15
 glow = Color(1, 0.42, 0.16, 1)
 glow_energy = 1.60
