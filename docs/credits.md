@@ -5,6 +5,10 @@ made it, its licence, and when it was added.
 
 **A file with no row does not ship.**
 
+The repository is all rights reserved ([LICENSE](../LICENSE)), and that file defers to this
+one for everything Garden Fence did not make. A missing row therefore claims a right nobody
+holds.
+
 ## The studio
 
 Who the game belongs to, and where to find them. One row, and the address is written as text rather

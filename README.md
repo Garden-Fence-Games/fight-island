@@ -147,5 +147,5 @@ Fight Island is made by **Garden Fence** — [gardenfence.ch](https://gardenfenc
 
 ## License
 
-Code: not yet decided — see [docs/roadmap.md](docs/roadmap.md). Third-party assets keep their
+Code and assets: all rights reserved — see [LICENSE](LICENSE). Third-party assets keep their
 own licences, tracked in [docs/credits.md](docs/credits.md).
