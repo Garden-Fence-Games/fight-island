@@ -47,6 +47,7 @@ func _run() -> void:
 	_check_money_carries()
 	await _check_a_weapon_track_moves_the_swing()
 	await _check_the_summary_reads_the_run()
+	await _check_a_weapon_track_survives_a_reload()
 	# Last, and it puts the bag back: it empties the loadout to ask its question, and every check
 	# above it buys.
 	_check_the_merchant_sells_only_what_is_carried()
@@ -213,6 +214,57 @@ func _check_a_weapon_track_moves_the_swing() -> void:
 		_fail("the fists upgrade did not reach the swing")
 	if _player.stamina_cost_multiplier >= 1.0:
 		_fail("the fists upgrade did not make the swing cheaper")
+
+
+## Quitting to the title and pressing Continue rebuilds the arena around a run that is already in
+## progress. `UpgradeComponent` is a child of the player, so its first `apply_all` runs **before**
+## the player has copied the carried weapon out of the loadout — and a component that priced the
+## weapon tracks against the player's own field would price them against the scene's exported
+## fallback and hand back a gun at base damage the player had already paid to upgrade.
+##
+## **The gun is bought twice on purpose.** Every weapon track carries the same damage per level, so
+## a single purchase lands on exactly the figure the fists track would have produced from the
+## fallback — the wrong answer and the right one are the same number, and the check sees nothing.
+func _check_a_weapon_track_survives_a_reload() -> void:
+	EventBus.wave_started.emit(10, 8)
+	GameState.earn(100000)
+	GameState.loadout.find_weapon(&"gun")
+	GameState.loadout.equip(&"gun")
+	await get_tree().process_frame
+	var gun := Upgrades.find(&"gun")
+	if not GameState.buy(gun) or not GameState.buy(gun):
+		_fail("two gun purchases the player could afford were refused")
+		return
+	await get_tree().process_frame
+	var bought := _player.damage_multiplier
+	var fallback := (
+		1.0 + Upgrades.find(&"fists").damage * float(GameState.level_of(Upgrades.find(&"fists")))
+	)
+	if is_equal_approx(bought, fallback):
+		_fail("the check cannot tell a carried gun from the fallback: both come to %.2f" % bought)
+		return
+
+	# The rebuild, which is what Continue does: a second arena around the same run.
+	var reloaded := (load(ARENA) as PackedScene).instantiate()
+	add_child(reloaded)
+	var tutorial := reloaded.get_node_or_null(^"TutorialDirector") as TutorialDirector
+	if tutorial != null:
+		tutorial.stand_down()
+	await get_tree().physics_frame
+	var player := reloaded.get_node_or_null(^"Player") as Player
+	if player == null:
+		_fail("the reloaded arena holds no player")
+		reloaded.queue_free()
+		return
+	if not is_equal_approx(player.damage_multiplier, bought):
+		_fail(
+			(
+				"a resumed run came back swinging at %.2f, having paid for %.2f"
+				% [player.damage_multiplier, bought]
+			)
+		)
+	reloaded.queue_free()
+	await get_tree().process_frame
 
 
 func _check_the_summary_reads_the_run() -> void:
