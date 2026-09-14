@@ -24,10 +24,19 @@ extends Resource
 ## night, in every wave of the run, so a bigger crowd is more to walk through and more to see past
 ## rather than more damage. It still climbs to the end: waves twelve to fifteen have nothing left
 ## to learn, and what they have instead is somebody always in the way.
-@export var most_alive: int = 14
+##
+## **So the ceiling is a backstop and not a brake.** It sits where the formula lands on the final
+## wave: below that it would flatten the crowd before the run is over, which is the one thing the
+## last waves have, and it would do it quietly.
+@export var most_alive: int = 16
 
 @export_group("Scaling")
-@export var health_per_wave: float = 0.18
+## **Health is the one curve that is raced.** What the player puts out grows on the weapon tracks,
+## a level at a time and only as far as a run affords, so health growing faster than that does not
+## make a late wave harder — it makes the same wave longer, and a body nobody can fell in time is
+## budget the island never gets to spend. `tools/measure_waves.tscn` is where the two are held
+## against each other.
+@export var health_per_wave: float = 0.13
 @export var damage_per_wave: float = 0.10
 @export var speed_per_wave: float = 0.03
 @export var speed_ceiling: float = 1.35

@@ -6,15 +6,6 @@ All notable changes to this project are documented here, following
 
 ## [Unreleased]
 
-### Changed
-
-- **The launcher wears the logo.** `icon.svg` was still Godot's own placeholder, so the dock, the
-  taskbar and the itch launcher all announced the game with a picture of the engine's robot. The
-  icon is now the mark on the menu's dark ground, a 1024 square with the corner radius Apple's grid
-  uses. `tools/build_icon.gd` renders it from `fight_island_logo_1.svg` rather than keeping a second
-  copy of the mark, and both export presets point at it, so the macOS `.icns` and the Windows `.ico`
-  are built from the same square. The placeholder is gone, and its credit row with it.
-
 ### Added
 
 - **A kill's coins and rounds spray out of the body.** They were paid into the corner the instant a
@@ -26,6 +17,21 @@ All notable changes to this project are documented here, following
   as a coin is taken. Figures in `data/pickups/loot.tres`; held by `tools/verify_loot.tscn`.
 
 ### Changed
+
+- **The launcher wears the logo.** `icon.svg` was still Godot's own placeholder, so the dock, the
+  taskbar and the itch launcher all announced the game with a picture of the engine's robot. The
+  icon is now the mark on the menu's dark ground, a 1024 square with the corner radius Apple's grid
+  uses. `tools/build_icon.gd` renders it from `fight_island_logo_1.svg` rather than keeping a second
+  copy of the mark, and both export presets point at it, so the macOS `.icns` and the Windows `.ico`
+  are built from the same square. The placeholder is gone, and its credit row with it.
+
+- **The last waves are a crowd again rather than a slower one.** Enemy health grew faster than any
+  weapon track a run can afford, so a body at wave fifteen took well over twice as long to fell as
+  one at wave one, and the crowd stopped growing three waves before the run ended — the island went
+  on promising bodies nobody could reach, up to seven a wave that were never met. Health now climbs
+  more gently and the crowd climbs to the final wave, which is where an endurance test belongs.
+  What the player takes is unchanged: the attack-token pool is the damage dial and it did not move.
+  Measured by `tools/measure_waves.tscn`, held by `tools/verify_waves.tscn`.
 
 - **One kill in three leaves a round, up from one in eight.** A drop is a single round, so the gun
   can afford to be generous — and a round that has to be walked over is worth more of them.
@@ -88,6 +94,21 @@ All notable changes to this project are documented here, following
   docstring saying the figure is read rather than assumed — which the code does, from the arrays,
   three lines further down. `Emphasis.NOTHING` was never returned; the decision it was written to
   record, that an ordinary hit gets no mark at all, moves onto `for_hit`, which is what makes it.
+
+- **Every weapon explains itself when it reaches the hand.** There was one line, shown once a run,
+  for whichever weapon happened to be found first — so the gun taught nothing at all, and a stick
+  found second would have taught the gun's lesson. Now the stick says *[attack] to swing it —
+  [weapon_next] to switch weapons* and the gun says *[attack] to fire — walk over rounds to get
+  more*, each the first time that weapon goes in the bag.
+  - **The stick carries the swap key** because it is the first thing the bag has to switch between.
+    Nothing else in the game names that key, so `verify_tutorial` asserts the stick's line still
+    does rather than trusting the copy to stay right.
+  - Both weapons drop on wave 1, so two can be found seconds apart: the second **queues** behind the
+    first instead of replacing a line the player is still reading. The check pushes a weapon in
+    halfway through another's line, which is the case a queue filled before the first line was ever
+    shown does not exercise.
+  - The glyph is read off the binding as always, so the swap reads **E** and not the `Tab` the notes
+    for 0.2.0 claimed — that key moved when swapping became `E` and picking up became `F`.
 
 ## [0.2.0] - 2026-09-14
 
