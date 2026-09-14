@@ -41,6 +41,13 @@ mask = the opposing hurtbox layer. Carries `attack_data: AttackData`, `source: N
 **call-method track** switches it on for the active frames and off afterwards. A per-swing
 `_already_hit: Array[int]` of instance IDs stops one swing hitting twice.
 
+**`overwhelm: AttackData`** is null on an ordinary swing. While the rainbow bird's power is on,
+`FrenzyComponent` sets it, and every contact takes that attack's stagger and poise and exactly the
+health the body has left. It is on the hitbox rather than on the attacks, for the reason
+`damage_scale` is: the `AttackData` is shared on disk. The same component sets
+`HealthComponent.shielded`, which holds invulnerability until it is cleared rather than for a window,
+because the power can be ended early by the wave.
+
 The box is resized per swing, to the reach of the attack being thrown — and **a hitbox duplicates
 its shape on `_ready`** because of it. A `.tscn`'s sub-resources are handed to every instance of
 that scene rather than copied, so thirty-two pooled bodies were resizing one box between them: the

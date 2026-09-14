@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FrenzyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/frenzy_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/attacks/fist_uppercut.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+chance_per_wave = 0.3333
+first_wave = 2
+lands_between = Vector2(10, 50)
+nearest = 7.0
+furthest = 14.0
+lasts = 15.0
+speed_multiplier = 2.0
+launches_like = ExtResource("2")
+warns_for = 2.5

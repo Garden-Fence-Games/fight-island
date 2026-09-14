@@ -45,6 +45,14 @@ var chain_index: int = -1
 ## every fist in the game and then save the result.
 var damage_multiplier: float = 1.0
 var stamina_cost_multiplier: float = 1.0
+## What the walk and the sprint are multiplied by. Its own field rather than one of the two above,
+## because the upgrade component rewrites those whenever the bag changes, and the rainbow bird's
+## power must survive a purchase or a swap it did not cause.
+var speed_multiplier: float = 1.0
+
+## What was in hand when the rainbow bird's power began, so it is in hand again when it ends. Empty
+## while the power is off.
+var _held_before_frenzy: StringName = &""
 
 var _body_materials: Array[StandardMaterial3D] = []
 var _stride_walked: float = 0.0
@@ -68,6 +76,7 @@ var visual: WeaponVisualComponent = get_node_or_null("WeaponVisual") as WeaponVi
 @onready var head_look: HeadLookComponent = get_node_or_null("HeadLook") as HeadLookComponent
 @onready var animation: AnimationComponent = get_node_or_null("Animation") as AnimationComponent
 @onready var ragdoll: RagdollComponent = get_node_or_null("Ragdoll") as RagdollComponent
+@onready var frenzy: FrenzyComponent = get_node_or_null("Frenzy") as FrenzyComponent
 
 
 func _ready() -> void:
@@ -81,13 +90,16 @@ func _ready() -> void:
 		stamina.stamina_changed.connect(_on_stamina_changed)
 	if machine != null:
 		machine.transitioned.connect(_on_state_transitioned)
-	# The dust scales with how fast this body goes, so it is told the two speeds rather than reaching
-	# in for them. They are this class's figures and stay here; the component stays ignorant of whose
-	# dust it is kicking up.
+	# The dust scales with how fast this body goes, so it is told the two speeds rather than
+	# reaching in for them. They are this class's figures and stay here; the component stays
+	# ignorant of whose dust it is kicking up.
 	var dust := get_node_or_null(^"FootstepDust") as FootstepDustComponent
 	if dust != null:
 		dust.walking_speed = MOVE_SPEED
 		dust.sprinting_speed = SPRINT_SPEED
+	if frenzy != null:
+		frenzy.started.connect(_on_frenzy_started)
+		frenzy.ended.connect(_on_frenzy_ended)
 	EventBus.weapon_equipped.connect(_on_weapon_equipped)
 	_on_weapon_equipped(GameState.loadout.weapon())
 
@@ -365,6 +377,8 @@ func _on_hurt(info: HitInfo) -> void:
 ## Switching is **free and instant**: no animation, no penalty, no cooldown. The interesting
 ## decision is which weapon suits the moment, not whether the player can afford to find out.
 func _read_weapon_input(event: InputEvent) -> void:
+	if _frenzy_is_on():
+		return
 	var bag := GameState.loadout
 	for carried: WeaponData in Arsenal.all():
 		if event.is_action_pressed(StringName("weapon_%s" % carried.id)):
@@ -379,6 +393,12 @@ func _read_weapon_input(event: InputEvent) -> void:
 ## The only thing a swap costs is the chain, which cannot be carried to a different weapon because
 ## its windows belonged to the old one.
 func _on_weapon_equipped(equipped: WeaponData) -> void:
+	# A weapon found while the power is on still goes in the bag, but the hands stay empty: it is
+	# what comes back when the power ends.
+	if _frenzy_is_on() and equipped != null and equipped.id != Arsenal.STARTING:
+		_held_before_frenzy = equipped.id
+		GameState.loadout.equip.call_deferred(Arsenal.STARTING)
+		return
 	if equipped != null:
 		weapon = equipped
 	close_chain()
@@ -389,6 +409,25 @@ func _on_weapon_equipped(equipped: WeaponData) -> void:
 	# melee weapon with its own cycles is a `.tres` value and not another branch here.
 	if animation != null:
 		animation.clip_suffix = weapon.clip_suffix if weapon != null else &""
+
+
+func _frenzy_is_on() -> bool:
+	return frenzy != null and frenzy.is_active()
+
+
+## Twice as fast, and fists only: whatever was in hand is put away until the power ends.
+func _on_frenzy_started(data: FrenzyData) -> void:
+	speed_multiplier = data.speed_multiplier
+	_held_before_frenzy = GameState.loadout.equipped
+	GameState.loadout.equip(Arsenal.STARTING)
+
+
+func _on_frenzy_ended() -> void:
+	speed_multiplier = 1.0
+	var held := _held_before_frenzy
+	_held_before_frenzy = &""
+	if not held.is_empty():
+		GameState.loadout.equip(held)
 
 
 func _on_state_transitioned(state: StringName) -> void:

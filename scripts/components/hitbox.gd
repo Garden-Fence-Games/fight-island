@@ -24,6 +24,9 @@ var damage_scale: float = 1.0
 ## buys both. Not an argument to `arm` because only the player ever moves it, and a parameter on
 ## every call site to say "unchanged" is noise.
 var reach_scale: float = 1.0
+## Set while the rainbow bird's power is on: every body this touches is thrown the way this attack
+## throws one and takes whatever health it has left. Null is an ordinary swing.
+var overwhelm: AttackData = null
 
 var _already_hit: Array[int] = []
 
@@ -126,6 +129,15 @@ func _physics_process(_delta: float) -> void:
 		_try_hit(area)
 
 
+## The finisher's push and poise, and exactly the health the body has left — not an enormous number,
+## so the damage figure over the body is the one it actually lost.
+func _overwhelm(info: HitInfo, hurtbox: Hurtbox) -> void:
+	info.stagger = maxf(info.stagger, overwhelm.stagger)
+	info.poise_damage = maxf(info.poise_damage, overwhelm.poise_damage)
+	if hurtbox.health != null:
+		info.damage = maxf(info.damage, hurtbox.health.current_health)
+
+
 func _try_hit(area: Area3D) -> void:
 	var hurtbox := area as Hurtbox
 	if hurtbox == null:
@@ -137,5 +149,7 @@ func _try_hit(area: Area3D) -> void:
 		return
 	_already_hit.append(id)
 	var info := HitInfo.new(attack, source, perfect, damage_scale)
+	if overwhelm != null:
+		_overwhelm(info, hurtbox)
 	if hurtbox.take_hit(info):
 		landed.emit(hurtbox.owner, info)
