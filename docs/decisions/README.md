@@ -18,4 +18,8 @@ from that note.
 | [0005](0005-docs-split-repo-zennotes.md) | What lives in the repo and what lives in ZenNotes |
 | [0006](0006-onready-over-node-exports.md) | `@onready` for a node's own children, not `@export` |
 | [0007](0007-sprint-hold-or-toggle.md) | Sprint is hold on a keyboard and toggle on a pad, per press |
+| [0008](0008-aim-assist-is-an-accessibility-setting.md) | Aim assist is an accessibility setting, soft by default, and it applies to the mouse |
+| [0009](0009-credits-beside-the-version-number.md) | The credits sit beside the version number, not on the title list |
+| [0010](0010-the-soundtrack-is-licensed.md) | Everything is synthesised, except the voices and the soundtrack |
+| [0011](0011-the-game-is-free.md) | The game is given away, and what that costs |
 | [0012](0012-all-rights-reserved.md) | All rights reserved, with third-party assets under their own terms |

@@ -121,6 +121,9 @@ cut from real footage.
 
 **Goal:** people can play it.
 
+**The game is free** — nothing sold and nothing bought inside it, which makes the Steam hundred a
+flat expense rather than an advance. See [0011](decisions/0011-the-game-is-free.md).
+
 - itch.io release: page, capsule art, description, both builds published by `butler` on tag
 - macOS notarisation resolved, or the limitation documented for players
 - **Then, if the 100 USD is spent:** Steamworks account, App ID, depots, a manual `steamcmd`

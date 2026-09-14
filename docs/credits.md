@@ -94,12 +94,15 @@ the footfalls, the wind-up, the gunshots, the stings, the death cry and the surf
 is the one thing a sine cannot do. The **soundtrack** is not: five tracks licensed from Epidemic
 Sound, and the only third-party content in the game that is neither CC0 nor ours.
 
-**The soundtrack is the one thing here that still has to be cleared.** Everything else in this
-document is CC0, MIT, SIL OFL or ours outright, and none of it cares what the game is or where it is
-sold. A subscription licence does — it is granted to a subscriber for a use, not to a file for ever,
-and the use here is a commercial game on itch.io and then Steam. That has to be confirmed against
-the terms of the actual subscription before release, and it is the kind of thing that is cheap to
-check now and expensive to discover afterwards.
+**The soundtrack is the one thing here with a term attached.** Everything else in this document is
+CC0, MIT, SIL OFL or ours outright, and none of it cares what the game is or how it is handed out. A
+subscription licence does: it is granted to a subscriber for a use, not to a file for ever.
+
+**The game is given away**, which settles the larger half of that question — nothing is sold, so no
+revenue term applies and nothing here has to be cleared for sale. What is left is narrower and still
+real: these tracks travel inside a build the player downloads rather than inside a video somebody
+streams, and a subscription is a thing that can lapse. Both are worth confirming against the terms
+of the actual subscription before release — cheap to check now, expensive to discover afterwards.
 
 ## Engine and tools
 
