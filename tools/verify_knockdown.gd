@@ -24,6 +24,9 @@ const KNOCKDOWN_PATIENCE: float = 6.0
 ## a little slack is the shape of the thing rather than a defect. A metre is not slack, it is a
 ## different place.
 const HURTBOX_DRIFT: float = 0.35
+## A recoil, as the gun tables it: a tenth of a second, and a nudge rather than a throw.
+const A_RECOIL: float = 0.10
+const A_RECOIL_PUSH: float = 2.0
 const SENT_SPRAWLING: float = 0.5
 ## The heaviest stagger figure the fists carry, and the push it buys. Written out rather than loaded
 ## off the uppercut, so a check measuring a knockdown does not quietly stop measuring one the day
@@ -64,6 +67,7 @@ func _run() -> void:
 	director.halt()
 	await _check_a_knockdown_ends_and_hands_the_body_back(director)
 	await _check_a_shot_kicks_the_arm_and_nothing_else()
+	await _check_a_knockdown_outranks_a_recoil()
 	_report()
 
 
@@ -126,6 +130,42 @@ func _check_a_shot_kicks_the_arm_and_nothing_else() -> void:
 ## standing when the blow landed, he gets up the way he actually fell, he is back on his feet in the
 ## time that get-up takes, and a body retired mid-fall does not come back out of the pool still
 ## falling.
+## Dying in the six frames after firing. The recoil owns `_physics_process` while it lasts, so a
+## knockdown started inside one used to be stranded: never advanced, and then killed outright when
+## the kick ran out and stopped the simulation it had no idea was now the whole body. The player
+## died standing frozen instead of falling — which is what a death looks like when the one thing
+## that sells it never happens.
+func _check_a_knockdown_outranks_a_recoil() -> void:
+	var player := get_tree().get_first_node_in_group(&"player") as Player
+	if player == null or player.ragdoll == null or not player.ragdoll.is_ready():
+		_fail("the arena has no player with a rigged skeleton, so the race cannot be staged")
+		return
+
+	player.ragdoll.kick(Vector3.BACK, A_RECOIL_PUSH, A_RECOIL)
+	if not player.ragdoll.is_kicking():
+		_fail("the recoil would not start, so nothing here is being tested")
+		return
+
+	# Inside the kick, which is the whole point: a frame later and the race is gone.
+	player.ragdoll.knock(Vector3.BACK, A_HEAVY_BLOW * Enemy.KNOCKDOWN.knock_speed)
+	if not player.ragdoll.is_running():
+		_fail("a killing blow during a recoil never started the fall at all")
+		player.ragdoll.stop()
+		return
+	if player.ragdoll.is_kicking():
+		_fail("the recoil outlived the knockdown, and it is the recoil that stops the simulation")
+
+	var waist := player.ragdoll.body_of(STILL_BONE)
+	for _index: int in SETTLE_FRAMES:
+		await get_tree().physics_frame
+	if waist != null and not waist.is_simulating_physics():
+		_fail("the hips stopped simulating during the fall, so the body is frozen upright")
+	if not player.ragdoll.is_running():
+		_fail("the fall ended within a few frames of starting, which is a fall that never happened")
+	player.ragdoll.stop()
+	await get_tree().physics_frame
+
+
 func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> void:
 	var farmer := director.spawner.spawn_at(load(FARMHAND) as EnemyData, SPARRING_SPOT)
 	if farmer == null:
