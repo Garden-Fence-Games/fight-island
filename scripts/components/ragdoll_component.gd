@@ -164,6 +164,12 @@ func kick(direction: Vector3, push: float, seconds: float) -> void:
 func knock(direction: Vector3, push: float, ceiling: float = 0.0) -> void:
 	if not is_ready() or _running:
 		return
+	# **A recoil gives way to a knockdown.** The kick is two bones twitching for a tenth of a second
+	# and it owns `_physics_process` while it lasts — so a knock started inside one is never
+	# advanced, and the kick running out then fades the simulator to nothing and stops the
+	# simulation this call is about to begin. Dying in the six frames after firing left the body
+	# standing frozen instead of falling.
+	_drop_the_kick()
 	_begin(ceiling)
 	_start_from_rest()
 	took_the_body.emit()
@@ -619,3 +625,13 @@ func _find_skeleton(root: Node) -> Skeleton3D:
 		if deeper != null:
 			return deeper
 	return null
+
+
+## Ends a recoil without letting it put the arm back, for a caller that is about to take the whole
+## body. The influence goes back up rather than down: what follows wants the simulation, not the
+## clip.
+func _drop_the_kick() -> void:
+	_kick_left = 0.0
+	_kick_lasts = 0.0
+	if _simulator != null:
+		_simulator.influence = 1.0
