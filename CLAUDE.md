@@ -5,7 +5,7 @@ Godot 4.7.2 · GDScript · 3D · Forward+ · Jolt Physics · macOS + Windows · 
 PVE wave-survival arena on an island. One player against waves of enemies, three weapons
 (fists, wooden stick, gun), three attacks each, and **the damage is decided by when you
 press, not by which button**. Health and stamina; stamina powers dodge, sprint and parry.
-Each cleared wave pays for exactly one upgrade among health, stamina, fists, stick, gun.
+Each cleared wave buys upgrades among health, stamina, fists, stick, gun — one early, more later.
 
 ## Hard rules
 
