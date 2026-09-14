@@ -26,6 +26,11 @@ const GET_UP_FRONT: StringName = &"get_up_front"
 var _phase: Phase = Phase.RISING
 var _remaining: float = 0.0
 var _clip: StringName = &""
+## Where the hurtbox sits on a standing man, and how far above his feet its shape is centred. Both
+## are read from the scene rather than written down here, so a rig whose chest moves takes its hit
+## volume with it.
+var _hurtbox_home := Vector3.ZERO
+var _hurtbox_lift: float = 0.0
 
 
 func enter(message: Dictionary) -> void:
@@ -40,6 +45,7 @@ func enter(message: Dictionary) -> void:
 		_phase = Phase.RISING
 		return
 	_phase = Phase.FALLING
+	_remember_the_hurtbox()
 	_rest_the_neck(true)
 	if not enemy.ragdoll.came_to_rest.is_connected(_on_came_to_rest):
 		enemy.ragdoll.came_to_rest.connect(_on_came_to_rest)
@@ -49,6 +55,9 @@ func enter(message: Dictionary) -> void:
 ## Whatever takes him out of here — a killing blow, a wave cleared, a body returned to the pool —
 ## has to hand the skeleton back, or it comes out of the pool still tumbling.
 func exit() -> void:
+	# Whatever takes him out of here — a kill, a wave cleared, a body pooled — must not leave the hit
+	# volume parked somewhere in the world.
+	_put_the_hurtbox_back()
 	# A dead man's neck stays at rest: he is still falling, and a corpse turning its head to follow
 	# the player is the one thing worse than a living man doing it lying down. `revive` wakes it.
 	_rest_the_neck(not enemy.is_alive())
@@ -66,6 +75,9 @@ func physics_update(delta: float) -> void:
 		# The body node is not what is moving — the bones are. Holding it still keeps the collider
 		# and the navigation agent out of the way until the tumble picks a place to stop.
 		enemy.apply_motion(Vector3.ZERO, 0.0, delta)
+		# The hurtbox is a child of that pinned node, so it has to be carried by hand or the man is
+		# hittable where he was standing and not where he is lying.
+		_carry_the_hurtbox()
 		return
 	_remaining -= delta
 	enemy.apply_motion(Vector3.ZERO, 0.0, delta)
@@ -97,6 +109,8 @@ func _on_came_to_rest() -> void:
 	var heading := enemy.ragdoll.settled_heading()
 	enemy.ragdoll.stop()
 	enemy.global_position = Vector3(landed.x, enemy.global_position.y, landed.z)
+	# The body has caught up, so the hurtbox goes back to being an ordinary child of it.
+	_put_the_hurtbox_back()
 	# Both clips lie with the head along the body's +Z, and a yaw θ sends +Z to (sin θ, 0, cos θ).
 	if not heading.is_zero_approx():
 		enemy.rotation.y = atan2(heading.x, heading.z)
@@ -120,3 +134,30 @@ func _rise_time(clip: StringName) -> float:
 	if player != null and player.has_animation(String(clip)):
 		return player.get_animation(String(clip)).length
 	return Enemy.KNOCKDOWN.rise_time
+
+
+## The hurtbox's own transform, before the tumble starts moving it about.
+func _remember_the_hurtbox() -> void:
+	if enemy.hurtbox == null:
+		return
+	_hurtbox_home = enemy.hurtbox.position
+	var shape := enemy.hurtbox.get_node_or_null(^"Shape") as Node3D
+	_hurtbox_lift = shape.position.y if shape != null else 0.0
+
+
+## Onto the hips, every physics frame the ragdoll is driving.
+##
+## The hips rather than the chest because a man on the ground has no chest height to speak of, and
+## the hips are the bone the ragdoll reports for everything else — where he landed, which way he
+## faces. Lowered by the shape's own offset so the capsule ends up **centred** on them rather than
+## standing on them.
+func _carry_the_hurtbox() -> void:
+	if enemy.hurtbox == null or enemy.ragdoll == null or not enemy.ragdoll.is_running():
+		return
+	var hips := enemy.ragdoll.settled_position()
+	enemy.hurtbox.global_position = Vector3(hips.x, hips.y - _hurtbox_lift, hips.z)
+
+
+func _put_the_hurtbox_back() -> void:
+	if enemy.hurtbox != null:
+		enemy.hurtbox.position = _hurtbox_home
