@@ -37,7 +37,12 @@ func apply_all(heal: bool) -> void:
 	var damage := 1.0
 	var cost := 1.0
 	var reach := 1.0
-	var held: StringName = player.weapon.id if player != null and player.weapon != null else &""
+	# From the loadout, not from `player.weapon`. This component is a child, so its `_ready` runs
+	# before its owner's — and on a resumed run the owner has not yet copied the carried weapon out
+	# of the loadout, so reading the field here would price every weapon track against the scene's
+	# exported fallback and skip the ones the player paid for.
+	var carried := GameState.loadout.weapon()
+	var held: StringName = carried.id if carried != null else &""
 	for track: UpgradeTrack in Upgrades.all():
 		var level := float(GameState.level_of(track))
 		if is_zero_approx(level):
