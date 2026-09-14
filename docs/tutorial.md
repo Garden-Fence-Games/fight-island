@@ -16,13 +16,27 @@ When the last one goes, **wave 1 starts at once** — the ordinary wave, off the
 wave after it. The island is empty while the lines are up: the wave director is halted, nothing
 spawns, and the player can already walk, swing and roll.
 
-## The first weapon
+## Every weapon explains itself
 
-**One more line, the first time a weapon goes in the bag:** *[weapon_next] to switch weapons* —
-`Tab` on a keyboard, RB on a pad. Before that moment the player holds nothing but their fists, so
-there was nothing to switch between and nothing to teach. It shows once a run, for its own
-`seconds`, on the same runs as the opening; a weapon picked up while the opening lines are still up
-waits for them to finish instead of cutting one off.
+**One line per weapon, the first time that weapon goes in the bag**, naming its own keys:
+
+| Weapon | Line |
+|---|---|
+| Stick | *[attack] to swing it — [weapon_next] to switch weapons* |
+| Gun | *[attack] to fire — walk over rounds to get more* |
+
+The lesson arrives with the thing it is about. A weapon the player is not holding is a weapon they
+cannot practise on: naming the fire key in the opening, while the player has nothing but fists and
+no gun exists anywhere on the island, is a sentence with nothing to attach to.
+
+**The stick carries the switch**, because it is the first thing the bag has to switch between: until
+it lands the player holds nothing but their fists. Nothing else in the game names the swap key, so
+`verify_tutorial` asserts the stick's line still does rather than trusting the copy.
+
+Each line shows **once a run per weapon**, for its own `seconds`, on the same runs as the opening —
+a retry goes straight to the fight. Both weapons drop on wave 1, so two can be found seconds apart:
+the second **queues** behind the first rather than replacing a line the player is still reading, and
+a weapon picked up while the opening lines are still up waits for them to finish.
 
 ## Why a clock and not the buttons
 
