@@ -20,6 +20,10 @@ const SINK_POLL: float = 0.1
 @export var config: WaveConfig = null
 
 var _screen: Control = null
+## Set the instant a death is seen, before any beat is waited out. A death outranks everything that
+## comes between waves: a merchant must not open over a corpse, and one that is already up is taken
+## down rather than allowed to win the race.
+var _dying: bool = false
 
 
 func _ready() -> void:
@@ -51,12 +55,13 @@ func _on_wave_cleared(wave: int, _reward: int) -> void:
 
 
 func _on_player_died() -> void:
+	_dying = true
 	_open_summary(false)
 
 
 func _open_merchant() -> void:
 	await _wait(DELAY)
-	if _screen != null:
+	if _screen != null or _dying:
 		return
 	var merchant := _open(MERCHANT_SCENE) as MerchantScreen
 	merchant.closed.connect(_on_screen_closed)
@@ -70,8 +75,14 @@ func _open_summary(victory: bool) -> void:
 	# the tree now would freeze him with his head above the water behind the screen.
 	while not victory and _player_is_sinking():
 		await _wait(SINK_POLL)
-	if _screen != null:
+	if _screen is RunSummary:
 		return
+	# A merchant that got here first is taken down, not deferred to. Returning instead is what left
+	# the one state a run cannot leave: no summary, no `end_run`, and `run.json` surviving to offer
+	# Continue into a player who is already dead.
+	if _screen != null:
+		_screen.queue_free()
+		_screen = null
 	GameState.end_run()
 	EventBus.run_ended.emit(victory)
 	var summary := _open(SUMMARY_SCENE) as RunSummary

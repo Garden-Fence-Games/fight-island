@@ -305,6 +305,12 @@ jobs:
       - name: Verify the update notice
         run: tools/run-check.sh res://tools/verify_update_check.tscn
 
+      # Two screens can be asked for in the same beat - a wave clock running out while the player is
+      # still going under. A death has to win that race, because a run that never reaches its
+      # summary is the one state the game cannot leave.
+      - name: Verify what comes up between waves
+        run: tools/run-check.sh res://tools/verify_run_flow.tscn
+
       # A path lookup in a hot body is a silent dependency on a scene's shape, and the day it
       # returns null it does so sixty times a second in the middle of a fight. Read off the source,
       # because what is being held is "nobody wrote this" and a profiler cannot tell a lookup that
