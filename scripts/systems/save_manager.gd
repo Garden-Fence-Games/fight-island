@@ -20,6 +20,11 @@ const PROGRESS_PATH: String = "user://progress.json"
 const VERSION: int = 1
 const VERSION_KEY: String = "version"
 
+## What a half-written file is called. A write lands here first and is renamed over the real path
+## only once it is closed, so an interruption costs the save being written and never the one already
+## on disk.
+const TEMP_SUFFIX: String = ".tmp"
+
 
 static func read_settings() -> Dictionary:
 	return read_versioned(SETTINGS_PATH)
@@ -72,43 +77,63 @@ static func write_versioned(path: String, data: Dictionary) -> bool:
 ## An empty dictionary for every failure — missing, unreadable, or not a JSON object. The caller
 ## has defaults and a warning is more use than a crash on a file the player owns.
 static func read_json(path: String) -> Dictionary:
-	if not FileAccess.file_exists(path):
-		return {}
-	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		push_warning("save: cannot read %s (%d)" % [path, FileAccess.get_open_error()])
-		return {}
-	var text := file.get_as_text()
-	file.close()
-	# An instance rather than `JSON.parse_string`, which logs an engine error of its own. A half
-	# written file is the player's to have, not a fault of the game, and one warning says it better
-	# than a parser stack trace does.
-	var json := JSON.new()
-	if json.parse(text) != OK:
-		push_warning("save: %s is not readable JSON (%s)" % [path, json.get_error_message()])
-		return {}
-	if not json.data is Dictionary:
-		push_warning("save: %s is not a JSON object" % path)
-		return {}
-	return json.data as Dictionary
+	# The real file first, then the sibling a rename never finished moving. A real file that parses
+	# **wins** even though the temporary one is newer: the only way both exist is a failed rename,
+	# and then the real file is the last save known to be whole. Losing the newest wave beats
+	# promoting a write that was never confirmed.
+	for candidate: String in [path, path + TEMP_SUFFIX]:
+		if not FileAccess.file_exists(candidate):
+			continue
+		var file := FileAccess.open(candidate, FileAccess.READ)
+		if file == null:
+			push_warning("save: cannot read %s (%d)" % [candidate, FileAccess.get_open_error()])
+			continue
+		var text := file.get_as_text()
+		file.close()
+		# An instance rather than `JSON.parse_string`, which logs an engine error of its own. A half
+		# written file is the player's to have, not a fault of the game, and one warning says it
+		# better than a parser stack trace does.
+		var json := JSON.new()
+		if json.parse(text) != OK:
+			push_warning(
+				"save: %s is not readable JSON (%s)" % [candidate, json.get_error_message()]
+			)
+			continue
+		if not json.data is Dictionary:
+			push_warning("save: %s is not a JSON object" % candidate)
+			continue
+		if candidate != path:
+			push_warning("save: %s recovered from an unfinished write" % path)
+		return json.data as Dictionary
+	return {}
 
 
+## Written beside the target and moved into place, never over it. `FileAccess.WRITE` truncates the
+## instant it opens, so writing in place means that between the open and the close the only copy on
+## disk is empty or half a file — and a run is written on every wave and every purchase, which is
+## forty-odd chances a run for a force quit to land inside that window.
 static func write_json(path: String, data: Dictionary) -> bool:
-	var file := FileAccess.open(path, FileAccess.WRITE)
+	var temporary := path + TEMP_SUFFIX
+	var file := FileAccess.open(temporary, FileAccess.WRITE)
 	if file == null:
-		push_warning("save: cannot write %s (%d)" % [path, FileAccess.get_open_error()])
+		push_warning("save: cannot write %s (%d)" % [temporary, FileAccess.get_open_error()])
 		return false
 	file.store_string(JSON.stringify(data, "\t", true))
 	file.close()
+	var error := DirAccess.rename_absolute(
+		ProjectSettings.globalize_path(temporary), ProjectSettings.globalize_path(path)
+	)
+	if error != OK:
+		push_warning("save: cannot move %s into place (%d)" % [path, error])
+		return false
 	return true
 
 
+## Both files, because a leftover temporary is a run that comes back from the dead: `read_json`
+## promotes a sibling when the real path is gone, and a deleted run is exactly that shape.
 static func erase(path: String) -> void:
-	if not FileAccess.file_exists(path):
-		return
-	var error := DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
-	if error != OK:
-		push_warning("save: cannot delete %s (%d)" % [path, error])
+	_remove(path)
+	_remove(path + TEMP_SUFFIX)
 
 
 ## Where an old file becomes a current one. Version 0 is everything written before the stamp
@@ -122,3 +147,11 @@ static func _migrate(path: String, data: Dictionary) -> Dictionary:
 		push_warning("save: %s was written by a newer build (v%d), ignoring it" % [path, stored])
 		return {}
 	return data
+
+
+static func _remove(path: String) -> void:
+	if not FileAccess.file_exists(path):
+		return
+	var error := DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	if error != OK:
+		push_warning("save: cannot delete %s (%d)" % [path, error])

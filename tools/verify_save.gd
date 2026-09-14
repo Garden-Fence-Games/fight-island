@@ -33,6 +33,7 @@ func _run() -> void:
 	_check_a_missing_file_is_not_a_run()
 	_check_a_corrupt_file_falls_back()
 	_check_a_truncated_file_falls_back()
+	_check_a_write_never_lands_on_the_old_file()
 	_check_a_newer_build_is_refused()
 	_check_settings_survive_the_version_stamp()
 	_check_a_finished_run_is_not_resumable()
@@ -123,6 +124,49 @@ func _check_a_truncated_file_falls_back() -> void:
 		_fail("a truncated file parsed as a run")
 	if GameState.load_run():
 		_fail("a truncated file loaded as a run")
+
+
+## A save is written beside the target and renamed over it, so an interruption costs the write and
+## never the file already there. Four things have to hold for that to be true, and the last two are
+## the ones that bite: a leftover sibling must not be preferred to a whole file, and erasing a run
+## must take the sibling with it or a deleted run walks back in.
+func _check_a_write_never_lands_on_the_old_file() -> void:
+	var temporary := SaveManager.RUN_PATH + SaveManager.TEMP_SUFFIX
+	SaveManager.erase(SaveManager.RUN_PATH)
+
+	SaveManager.write_json(SaveManager.RUN_PATH, {"seed": 11, "wave": 4})
+	if FileAccess.file_exists(temporary):
+		_fail("a finished write left its temporary file behind")
+
+	# A sibling nobody moved is a write that never completed. The whole file wins.
+	if not _write_raw(temporary, '{"seed": 99, "wave": 99}'):
+		return
+	var kept := SaveManager.read_json(SaveManager.RUN_PATH)
+	if int(kept.get("wave", -1)) != 4:
+		_fail("an unfinished write was preferred to the save already on disk")
+
+	# And the other way round: nothing whole at the real path, so the sibling is the run.
+	if not _write_raw(SaveManager.RUN_PATH, '{"seed": 12, "wave":'):
+		return
+	var recovered := SaveManager.read_json(SaveManager.RUN_PATH)
+	if int(recovered.get("wave", -1)) != 99:
+		_fail("a truncated file was not recovered from the write that never finished")
+
+	SaveManager.erase(SaveManager.RUN_PATH)
+	if FileAccess.file_exists(temporary):
+		_fail("a discarded run left a temporary behind, so it would come back on the next read")
+	if SaveManager.has_run():
+		_fail("a discarded run still reads as a run")
+
+
+func _write_raw(path: String, text: String) -> bool:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		_fail("could not write %s, which this check needs" % path)
+		return false
+	file.store_string(text)
+	file.close()
+	return true
 
 
 func _check_a_newer_build_is_refused() -> void:
