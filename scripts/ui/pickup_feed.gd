@@ -38,6 +38,7 @@ func _ready() -> void:
 	EventBus.rounds_scavenged.connect(_on_rounds_scavenged)
 	EventBus.weapon_found.connect(_on_weapon_found)
 	EventBus.coconut_taken.connect(_on_coconut_taken)
+	EventBus.rainbow_bird_taken.connect(_on_rainbow_bird_taken)
 
 
 ## Only money arriving. A purchase is a line the merchant screen already spells out in full, and a
@@ -61,6 +62,10 @@ func _on_weapon_found(id: StringName) -> void:
 ## counter that said "+50" after the second would be reporting a haul the player never had.
 func _on_coconut_taken(healed: float) -> void:
 	_announce(tr("HUD_FEED_COCONUT") % roundi(healed))
+
+
+func _on_rainbow_bird_taken(seconds: float) -> void:
+	_announce(tr("HUD_FEED_RAINBOW") % roundi(seconds))
 
 
 func _on_upgrade_purchased(track: UpgradeTrack, _level: int) -> void:

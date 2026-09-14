@@ -197,6 +197,13 @@ jobs:
       - name: Verify the coconuts
         run: tools/run-check.sh res://tools/verify_coconut.tscn
 
+      # The rainbow bird's power touches the shield, the speed, the weapon in hand and every punch at
+      # once, and any one of them left switched on after it ends is a bug the player keeps for the
+      # rest of the run. So this walks over a bird, checks each half of the power, and then checks
+      # each half is gone again — when the clock runs out and when the wave ends.
+      - name: Verify the rainbow bird
+        run: tools/run-check.sh res://tools/verify_frenzy.tscn
+
       # A kill's pay is thrown on the sand and walked over now, so the economy was tuned against a
       # payout that can be missed. This holds that it cannot: the coins add up to the body, the arc is
       # seen, near is enough, a full pocket leaves its round, and the end of a wave sweeps the rest.

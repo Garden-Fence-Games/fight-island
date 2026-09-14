@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://scripts/actors/player/player.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="2"]
@@ -25,6 +25,7 @@
 [ext_resource type="Script" path="res://scripts/components/footstep_dust_component.gd" id="24"]
 [ext_resource type="Script" path="res://scripts/components/upgrade_component.gd" id="21"]
 [ext_resource type="Script" path="res://scripts/components/hitscan.gd" id="22"]
+[ext_resource type="Script" path="res://scripts/components/frenzy_component.gd" id="27"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 height = 1.8
@@ -137,3 +138,6 @@ script = ExtResource("14")
 
 [node name="Upgrades" type="Node" parent="."]
 script = ExtResource("21")
+
+[node name="Frenzy" type="Node" parent="."]
+script = ExtResource("27")

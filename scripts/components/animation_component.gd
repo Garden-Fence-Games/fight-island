@@ -15,6 +15,9 @@ extends Node
 ## Emitted instead of logging, so a caller who does care can react without the build caring.
 signal clip_missing(state_name: StringName, clip: StringName)
 
+## The states `pace` speeds up.
+const LOCOMOTION: Array[StringName] = [&"Move", &"Sprint"]
+
 ## State node name to clip name. Explicit rather than a lowercase of the state, because `Move`
 ## plays `walk` and no rule bridges that pair. The clip names are the fixed ones listed in
 ## `docs/asset-pipeline.md`; the keys are the children of the `StateMachine`.
@@ -74,6 +77,10 @@ signal clip_missing(state_name: StringName, clip: StringName)
 ## `WeaponData`. It is also what lets a `_stick` set arrive with no code change at all.
 var clip_suffix: StringName = &"":
 	set = set_clip_suffix
+## What the locomotion clips are sped up by, on top of `clip_speeds`, so feet that cover the ground
+## twice as fast are seen to. Only walking and sprinting: an attack or a roll keeps its own timing.
+var pace: float = 1.0:
+	set = set_pace
 
 var _current_clip: StringName = &""
 var _current_speed: float = 1.0
@@ -119,6 +126,14 @@ func set_clip_suffix(suffix: StringName) -> void:
 	play_state(state_machine.current_name)
 
 
+func set_pace(value: float) -> void:
+	if is_equal_approx(value, pace):
+		return
+	pace = value
+	if state_machine != null and LOCOMOTION.has(state_machine.current_name):
+		play_state(state_machine.current_name)
+
+
 ## Hands the rig whichever stand-ins it has no clip of its own for.
 ##
 ## Into the AnimationPlayer's own library rather than added beside it as a second one: a library
@@ -158,6 +173,8 @@ func play_state(state_name: StringName) -> bool:
 		clip_missing.emit(state_name, clip)
 		return false
 	var speed: float = clip_speeds.get(state_name, 1.0)
+	if LOCOMOTION.has(state_name):
+		speed *= pace
 	# The speed is part of "which animation is playing": `Move` and `Sprint` share the walk cycle and
 	# differ only by it, so a check for the clip alone would leave a sprinting player strolling.
 	var same := clip == _current_clip and is_equal_approx(speed, _current_speed)

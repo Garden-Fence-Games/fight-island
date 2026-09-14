@@ -44,6 +44,8 @@ signal footstep_taken(wading: bool)
 ## them.
 ## A coconut was walked over, and how much of the bar it gave back.
 signal coconut_taken(healed: float)
+## The rainbow bird was walked over, and how many seconds its power lasts.
+signal rainbow_bird_taken(seconds: float)
 signal telegraph_began(where: Vector3, archetype: EnemyData)
 signal enemy_spawned(enemy: Node3D)
 ## The archetype travels with the death because the tally outlives the node that carried it.

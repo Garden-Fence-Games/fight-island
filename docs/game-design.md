@@ -252,6 +252,35 @@ climbs while the island is more generous than it was at wave 2.
 Whatever a wave does not spend dies with the wave. A wave cleared early handing its unused supply to
 the next one is the quiet way a ceiling stops meaning anything.
 
+## The rainbow bird
+
+A moment, not a build. Some waves put one bird on the sand that **never flies off**: it sits where it
+landed, shining every colour there is, somewhere the camera is pointing. Walking over it — no button,
+like a coconut — hands the player a short power:
+
+- **Nothing hurts.** Every blow is shrugged off, with no stagger. The sea still drowns: it is not a
+  blow, and invincibility has never covered it.
+- **Twice as fast**, walking and sprinting, and the stride is played faster to match.
+- **Fists only.** Whatever was in hand is put away and cannot be switched back to; it is in hand again
+  the moment the power ends. A weapon found meanwhile goes in the bag and waits too.
+- **Every punch kills and throws.** A jab lands with the push and poise of the fists' finisher and
+  takes whatever health the body has left — the damage figure is what it actually lost.
+- The player wears the bird's rainbow and glitter for the length of it, and the last seconds blink.
+
+It does not stack: while the power is on, a bird is left lying. It ends when its clock does or when
+the wave does, whichever comes first, and a bird nobody took leaves with the wave.
+
+| | |
+|---|---|
+| Chance per wave | 1 in 3, rolled at the bell |
+| First wave | 2 — never the first |
+| Lands | 10–50 s into the wave, 7–14 m from the player |
+| Lasts | 15 s, blinking over the last 2.5 |
+| Speed | ×2 |
+| Punch thrown like | the uppercut (`fist_uppercut.tres`) |
+
+With reduced flashing on, the glitter is off and the last seconds dim instead of blinking.
+
 ## The water
 
 Wading costs speed, for the player and for the enemies alike — full speed at the waterline, down to
