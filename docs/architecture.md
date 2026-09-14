@@ -502,8 +502,8 @@ modifier on it — so swapping a pirate into a farmer at revive would mean rebui
 that ever looked at the rig. `EnemyPool.bodies` maps an `EnemyData.id` to a scene of its own and
 `lease(id)` picks the shelf; everything absent from that map is made from `enemy_scene`, which is
 how anything on the farmer rig is made. The shared shelf holds thirty-two and each extra holds
-sixteen — `max_alive` tops out at fourteen, so sixteen covers a wave that rolled nothing else and
-still has bodies going into the ground.
+twenty — that is `max_alive` at its ceiling with room over, so a wave that rolled nothing else still
+has bodies going into the ground without the shelf growing.
 
 `WaveDirector.start_wave(n)` reads `WaveConfig`, emits `wave_started`, then **drip-feeds**: the
 count is how many arrive in total, `max_alive(n)` is how many the player faces at once, and the gap
