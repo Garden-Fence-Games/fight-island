@@ -138,7 +138,6 @@ nothing blocks. The ones with money or a deadline attached:
 
 | Decision | Gates | Default if nobody decides |
 |---|---|---|
-| Licence for the repository | the public itch.io release | all rights reserved on the code |
 | Apple Developer membership, ~99 USD/year | a macOS build that launches | buy it during M4 |
 | Steam Direct, 100 USD + 30 days | M5 | ship on itch.io first, decide after |
 | Music and SFX: CC0, commissioned, or bought | M4 | **decided** — SFX synthesised, five tracks licensed from Epidemic Sound; the subscription's terms still have to be confirmed to cover a commercial game |
