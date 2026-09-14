@@ -36,6 +36,9 @@ var _untouched: bool = true
 var _elapsed: float = 0.0
 var _rng := RandomNumberGenerator.new()
 var _health_seen: float = -1.0
+## Whether this wave still owes its guaranteed runner. Spent when the body is actually on the
+## island, not when it is rolled: a spawn that found nowhere to stand must not use it up.
+var _runner_owed: bool = false
 
 # A child, not an export: node exports do not resolve in a hand-written .tscn (ADR 0006).
 @onready var spawner: SpawnDirector = $SpawnDirector
@@ -88,6 +91,7 @@ func start_wave(index: int) -> void:
 	_untouched = true
 	_next_spawn_in = 0.0
 	_elapsed = 0.0
+	_runner_owed = config.elite != null and wave == config.elite_guaranteed_wave
 	_mark_the_hour()
 	GameState.fighting = true
 	EventBus.wave_started.emit(wave, _left_to_send)
@@ -130,19 +134,22 @@ func _send_one() -> void:
 	# Read now rather than at the top of the wave: a farmer who walks on at dusk is a dusk farmer,
 	# and one who arrived in daylight keeps the daylight he arrived with for the rest of his life.
 	var phase := GameState.day_phase as DayPhase
+	var rank := _rolled_elite()
 	var sent := spawner.spawn(
 		data,
 		config.health_multiplier(wave),
 		config.damage_multiplier(wave, phase),
 		config.speed_multiplier(wave),
 		config.windup_multiplier(wave, phase),
-		_rolled_elite()
+		rank
 	)
 	# Null means nowhere passed the rules this tick, not that the wave is short of a body. It stays
 	# owed and the next tick tries again.
 	if sent == null:
 		return
 	_left_to_send -= 1
+	if rank != null:
+		_runner_owed = false
 
 
 func _on_enemy_died(_enemy: Node3D, _archetype: StringName, _money: int) -> void:
@@ -178,12 +185,19 @@ func _on_player_damaged(current: float, _maximum: float) -> void:
 	_health_seen = current
 
 
-## Whether this one comes up an elite. Rolled per body rather than per wave, so a wave is never
-## uniformly worse — an elite is a moment inside a fight, not a different fight.
+## Whether this one comes up a runner. The guaranteed wave's is the first body sent; after that it
+## is rolled per body, so a runner is a moment inside a fight rather than a different fight.
 func _rolled_elite() -> EliteRank:
 	if config.elite == null:
 		return null
+	if _runner_owed:
+		return config.elite
 	return config.elite if _rng.randf() < config.elite_chance(wave) else null
+
+
+## Whether this wave still has its guaranteed runner to send. For the headless check.
+func owes_a_runner() -> bool:
+	return _runner_owed
 
 
 ## The hour and the rules of the day, together, because they are the same fact. Called every frame

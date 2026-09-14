@@ -25,6 +25,12 @@ func test_a_full_track_is_not_for_sale() -> void:
 	assert_int(Economy.upgrade_cost(-1)).is_equal(0)
 
 
+## One purchase after waves one to three, two after four to six, and one more every three waves on.
+func test_the_merchant_sells_one_more_every_three_waves() -> void:
+	for pair: Array in [[1, 1], [3, 1], [4, 2], [6, 2], [7, 3], [15, 5], [16, 6]]:
+		assert_int(Economy.purchases_after(pair[0])).is_equal(pair[1])
+
+
 func test_a_track_costs_what_its_levels_cost() -> void:
 	var summed := 0
 	for owned: int in Economy.LEVEL_CAP:

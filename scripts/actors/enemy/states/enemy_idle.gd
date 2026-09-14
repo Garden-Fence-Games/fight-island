@@ -30,6 +30,13 @@ func enter(_message: Dictionary) -> void:
 
 func physics_update(delta: float) -> void:
 	enemy.apply_motion(Vector3.ZERO, 0.0, delta)
+	# A runner waits for its own eyes and nothing else: no patience, and a crowd that noticed the
+	# fight does not send it running — only the player coming close does, or a blow.
+	if enemy.rank != null:
+		if enemy.notices_target():
+			enemy.rouse()
+			transition_to(enemy.pursuit_state())
+		return
 	if enemy.roused:
 		transition_to(&"Chase")
 		return

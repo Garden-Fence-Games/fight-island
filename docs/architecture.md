@@ -165,9 +165,10 @@ Custom `Resource` classes are the tuning surface. Changing a weapon never touche
   finished, so applying the table to it as a gain lands wherever the mastering happened to put it —
   which is how the soundtrack shipped at -46.6 dB, under the menu click. Per track rather than one
   average, because five masters six decibels apart otherwise step every time the track changes.
-- **`EliteRank`** — what being an elite is worth: the health, damage and money multipliers, and the
-  mesh scale and emission that make it legible. One instance on `WaveConfig`, shared by every body
-  that rolls it, because an elite is the *same scene* — multipliers rather than a second archetype
+- **`EliteRank`** — what makes a body a *runner*: how close the player gets before it bolts, how
+  fast it runs, how deep in the sea it slips under, what it pays when caught, and the mesh scale and
+  emission that make it legible. One instance on `WaveConfig`, shared by every body that rolls it,
+  because a runner is the *same scene* — a behaviour (`EnemyFlee`) rather than a second archetype
   is what keeps the difficulty curve from turning into an asset list.
 
 ## Autoloads — three, and why not four
@@ -266,7 +267,7 @@ the blow was a fist or a round.
 `Economy` owns the cost curve and nothing else. The balance lives on `GameState`, and a wave's
 reward lives on `WaveConfig` with the rest of that wave's figures — three homes, none of them
 duplicating another. The kill bonus is not there at all: it is `EnemyData.money`, per archetype,
-and an elite will carry a larger one on its own body the same way it carries scaled health.
+and a runner's flat pay is on its `EliteRank`.
 
 **The wallet listens.** The director pays out on the bus when a wave clears and each body pays out
 as it dies; neither knows a wallet exists. Money only moves through `earn` and `spend`, so nothing
@@ -514,8 +515,9 @@ starts the breather. The economy and the HUD are listeners — the director does
 **Every number comes from the resource**, the elite chance and the `EliteRank` it hands out
 included. A table split across two files is a table that starts disagreeing.
 
-The roll is per body, not per wave: a wave is never uniformly worse, an elite is a moment inside a
-fight. A null `WaveConfig.elite` switches the whole thing off, which is how the tutorial wave and
+The roll is per body, not per wave: a runner is a moment inside a fight. The one guaranteed wave
+owes its runner until a body actually lands on the island, so a spawn with nowhere to stand does not
+spend it. A null `WaveConfig.elite` switches the whole thing off, which is how the tutorial wave and
 the headless checks run the same director without ever meeting one.
 
 ## Day and night

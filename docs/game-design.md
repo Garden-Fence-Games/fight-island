@@ -7,12 +7,12 @@ exists, the tables here and those resources must agree, and they move in the sam
 
 You land alone on an island. Enemies come in waves. You have three things to fight with — your
 fists, a wooden stick you pick up, and a gun — and which one you hold matters far less than when
-you press the button. Every wave you clear pays for exactly one upgrade, and no run ever affords
-them all.
+you press the button. Every wave you clear lets you buy an upgrade — a few more as the run goes
+on — and no run ever affords them all.
 
 ## Core loop
 
-**Outer:** wave → fight → clear → reward → one upgrade from the merchant → five-second breather →
+**Outer:** wave → fight → clear → reward → upgrades from the merchant → five-second breather →
 next wave.
 
 **Inner:** approach → read the telegraph → dodge or parry → punish window → chain attack 1 into 2
@@ -21,7 +21,8 @@ into 3 → reset spacing.
 ## Design pillars
 
 1. **Timing over inventory.** Variety comes from nine attacks with windows, not from a bigger bag.
-2. **Scarcity of choice.** One purchase per wave. The interesting decision is what you give up.
+2. **Scarcity of choice.** A few purchases a wave, never everything. The interesting decision is what
+   you give up.
 3. **Readability.** One player, two archetypes and three weapons, all legible from **one fixed
    camera angle**. Every enemy shares a silhouette; only the texture and the behaviour change, and
    the world is only ever seen from one direction.
@@ -201,7 +202,8 @@ Parry is a **tap**, not a held stance. One defensive button, and all the difficu
 ## Coins and rounds
 
 **A kill's pay is thrown out of the body and walked over.** The coins add up to exactly what the body
-is worth — its money times its elite rank — split across **at most 6** coins, gold. One kill in
+is worth — its money, times what the finishing blow was worth — split across **at most 6** coins,
+gold; a runner throws its own twenty, one money each. One kill in
 **three** also throws rounds, silver, once the gun has been found: **one, two or three** of them,
 each count a third of the time, and each round its own piece on the sand. Both fly on
 an arc **1.4 to 2.2 m** high for **0.75 to 1.05 s** and land **0.6 to 2.2 m** from the body, so a
@@ -266,7 +268,7 @@ in different shirts would be decoration, not design.
 | | Farmhand | Pirate |
 |---|---|---|
 | Role | the swarm | the punishment |
-| Health | 45 | 70 |
+| Health | 45 | **135** — three farmhands, on every wave |
 | Damage | 8 | **22** |
 | Move speed | 3.4 m/s | 3.0 m/s |
 | Windup — the telegraph | 0.45 s | **0.80 s** |
@@ -355,11 +357,24 @@ Two global rules keep a crowd fair rather than unfair:
   strafe. Night widens it to 3, and that is the change a player feels rather than reads.
 - **Minimum 1.2 m separation** steering, so bodies never stack into an unreadable blob.
 
-## Elites
+## Runners
 
-From wave 4, any archetype can roll elite: the same scene with health ×2.0, damage ×1.4, scale
-×1.15, an emissive tint and 3× money. **No new model and no new texture** — an elite must read as
-"that one, but worse", instantly.
+The elite is a **runner**: the same scene, grown ×1.15 and glowing, that **does not fight**. It
+stands where it arrived. It notices the player from **5 m** — closer than anybody else, so it can be
+walked up on — and then runs straight away from them at **2.6 m/s**, under the player's 3.2 walk on
+every wave, so it can always be caught. It never takes an attack token, and a crowd noticing the
+fight beside it does not send it running: only the player's approach, or a blow, does.
+
+| | |
+|---|---|
+| Health | the archetype's own, like every body |
+| Pays when killed | **20** coins and **15** rounds (the rounds once the gun is found) |
+| Gets away | **0.6 m** deep in the sea it slips under over **1 s** — gone, nothing paid |
+| End of the wave | leaves with the rest, nothing paid |
+| When | exactly **one** on wave **3**; from wave **4**, each body has a flat **10 %** chance |
+
+**No new model and no new texture** — a runner must read as "that one, and it is running",
+instantly, and in greyscale.
 
 ## Waves
 
@@ -368,25 +383,31 @@ so `enemy_count` is a budget the island draws on to stay populated for that long
 emptied.
 
 ```
-enemy_count(n)   = 16 + floor(n * 1.2)                   # w1=17  w5=22  w10=28  w15=34
-max_alive(n)     = clamp(4 + floor(n * 0.8), 4, 16)
-hp_mult(n)       = 1.0 + 0.13 * (n - 1)                  # w15 = 2.82
+enemy_count(n)   = 18 + floor(n * 2.6)                   # w1=20  w5=31  w10=44  w15=57
+max_alive(n)     = clamp(4 + floor(n * 1.6), 4, 28)      # w1=5   w15=28
+hp_mult(n)       = 1.0                                   # every wave
 dmg_mult(n)      = 1.0 + 0.10 * (n - 1)                  # w15 = 2.40
 speed_mult(n)    = min(1.0 + 0.03 * (n - 1), 1.35)
 windup_mult(n)   = max(1.0 - 0.02 * (n - 1), 0.75)
-elite_chance(n)  = n < 4 ? 0.0 : min(0.10 + 0.05 * (n - 4), 0.40)
+elite_chance(n)  = n < 4 ? 0.0 : 0.10                    # plus exactly one runner on wave 3
 ```
+
+**The crowd is the difficulty.** A body is exactly as tough on wave fifteen as on wave one; what a
+late wave has is **more of them** — a roster three times the first wave's and nearly six times as
+many standing at once — and blows that land harder. The ceiling of **28** at once is the crowd
+budget: `tools/stress_enemies.tscn` keeps the physics well inside a frame at thirty bodies and the
+pool holds thirty-two. Measured by `tools/measure_waves.tscn`, the hit points standing on the island
+at wave fifteen are about seventy per cent of what they were when health grew, spread across far
+more bodies.
 
 The telegraph shortens with the waves but never drops below 0.75 of its base. An unreadable
 telegraph is not difficulty.
 
 **The roster is a budget that can be spent.** Once the island is full a body only enters when one
-falls, so what the budget costs is a rate of killing — `tools/measure_waves.tscn` measures it at a
-little over twenty bodies in ninety seconds, on the stick, at the levels the run affords. The
-figures above sit just above that: a wave ends early when the budget runs dry and nothing is
-standing, and outrunning a wave is something a good player should be able to do. It was
-`12 + floor(n * 6)` when a wave ran four minutes, which after the wave was cut to ninety seconds
-promised a hundred and two bodies at wave fifteen and delivered twenty-two.
+falls, so what the budget costs is a rate of killing — and with health no longer growing,
+`tools/measure_waves.tscn` puts the whole roster within reach on every wave. A wave ends early when
+the budget runs dry and nothing is standing, and outrunning a wave is something a good player should
+be able to do.
 
 **The crowd is not what hurts, and `max_alive` is not the damage dial.** `AttackTokens` lets two
 bodies commit at once and three at night, in **every wave of the run** — so what the player takes is
@@ -395,14 +416,12 @@ Both matter and they are not the same lever: incoming damage is carried by `dmg_
 mix below, and the crowd is what makes waves twelve to fifteen an endurance test rather than a
 harder version of wave six.
 
-**Health is raced against the weapon tracks, and it used to win.** `hp_mult` was `0.18` and the
-ceiling on `max_alive` was `14`, so the crowd stopped growing three waves before the run ended and a
-body took well over twice as long to fell at fifteen as at one. That is the same wave, slower —
-and the roster went on climbing past anything a player could physically reach, which is a budget
-written down and never spent. What the player puts out grows on a weapon track, a level at a time
-and only as far as a run affords, so health has to grow slower than the crowd does: the crowd is
-what the last waves are made of. The ceiling now sits where the formula lands on the final wave,
-which makes it a backstop rather than a brake.
+**Health does not grow, and that is the design rather than a missing curve.** A body that took twice
+as long to fell at fifteen as at one was the same wave, slower — and a roster that climbed past
+anything the player could reach was a budget written down and never spent. With health fixed,
+every blow the player learns to land on wave one kills the same man on wave fifteen, the weapon
+tracks are pure gain, and the difficulty is carried by the crowd, by `dmg_mult`, and by the
+telegraph shortening towards its floor.
 
 ### Composition
 
@@ -427,8 +446,8 @@ being one.
 
 **The mix is no longer a difficulty lever, and that is a consequence rather than a decision.** With
 one swarm archetype and one flat hazard there is nothing left for a band to escalate, so every wave
-from the fourth is composed identically and the whole of the curve is carried by `hp_mult`,
-`dmg_mult` and the crowd. If waves 12 to 15 should feel different from wave 6 in what they *send*
+from the fourth is composed identically and the whole of the curve is carried by `dmg_mult` and the
+crowd. If waves 12 to 15 should feel different from wave 6 in what they *send*
 rather than only in what it costs, the pirate's share has to climb — which is a decision about what
 he is, not a number to nudge.
 
@@ -445,8 +464,8 @@ off, and re-running it is how the next one starts.
 
 ### The intended shape
 
-Waves 1–3 teach. 4–7 add pressure through numbers. 8–11 introduce elites and force weapon
-rotation. 12–15 are an endurance test of the defensive kit.
+Waves 1–3 teach, and the third sends the first runner. 4–7 add pressure through numbers. 8–11 force
+weapon rotation. 12–15 are an endurance test of the defensive kit against the biggest crowds.
 
 Measured at the night pool, wave to wave, incoming damage steps by about 11 and 10 per cent through
 the teaching waves, by 17 where the pirate arrives at wave 4, and by 4 to 9 all the way to fifteen —
@@ -551,15 +570,16 @@ agree.
 ```
 wave_reward(n)      = 50 + 12 * (n - 1)                  # w1=50  w10=158  w15=218
 flawless_bonus      = +30 % if the wave was cleared without taking damage
-kill_bonus          = 2 per enemy, 6 per elite
-finisher_bonus      = ×2 on the body the third hit of a combo kills
+kill_bonus          = the archetype's money (2 farmhand, 8 pirate); a runner pays 20 flat
+finisher_bonus      = ×2 on the body the third hit of a combo kills (not on a runner)
+purchases(n)        = 1 + floor((n - 1) / 3)             # w1-3=1  w4-6=2  w7-9=3  w13-15=5
 upgrade_cost(level) = round_to_5(50 * pow(1.6, level))   # 50, 80, 130, 205, 330
 ```
 
 The finisher bonus is the one economic lever the player earns with their hands rather than with
-their patience. It multiplies, so an elite finished on the third hit pays `2 × 3 × 2 = 12` against a
-farmhand's ordinary 2 — and the only way to reach it is to chain twice, because a fresh attack always
-starts at the first hit.
+their patience. It multiplies, so a pirate finished on the third hit pays `8 × 2 = 16` against his
+ordinary 8 — and the only way to reach it is to chain twice, because a fresh attack always starts at
+the first hit.
 
 It lives on the attack, beside the damage multiplier for perfect timing, and **every weapon's third
 attack carries it**: `fist_uppercut`, `stick_overhead`, `gun_charged`. All three weapons therefore
@@ -568,15 +588,18 @@ already paid for in reach, stamina and ammunition.
 
 A note on what this rewards, since it is a real cost: lining the uppercut up on a nearly-dead body
 means holding the first two hits back, so the bonus asks the player to plan a kill rather than to
-mash one. That is the intended trade, and it is why the figure is ×2 rather than an elite's ×3 —
-enough to be worth aiming for, not enough to make finishing every body the only correct way to play.
+mash one. That is the intended trade, and it is why the figure is ×2 — enough to be worth aiming for,
+not enough to make finishing every body the only correct way to play.
 
 Fifteen waves with no flawless bonus earn **2 010** in wave rewards. Maxing a single track costs
 **795**, so the rewards alone afford two full tracks and change. That gap is the design.
 
-**The bodies pay for a third.** About twenty-five a wave are felled at two apiece, which is another
-**750** or so across a run and takes it to roughly three and a half tracks out of five — measured by
-`tools/measure_waves.tscn`, which counts what can physically be killed rather than what is sent.
+**The bodies pay for more of it now.** The bigger crowds put about forty a wave on the island at two
+apiece, which takes a run to roughly **four** tracks out of five — measured by
+`tools/measure_waves.tscn`, which counts what can physically be killed rather than what is sent, and
+before a single runner is caught. **The merchant sells one more upgrade a visit every three waves**,
+so the money has somewhere to go: one after waves one to three, two after four to six, five by the
+last three, and the same track may be bought more than once in a visit.
 `verify_waves` asserts the reward curve and not this total, because how many bodies a player fells
 is a fact about the player; the guard rail holds the *shape* — rewards flat, costs geometric — and
 the shape is what stops a run from buying everything.
@@ -612,7 +635,8 @@ the whole of the feature and the death is only where it stops.
 
 ### Upgrade tracks
 
-Level cap 5, one purchase per wave, bought from the merchant. Leftover money carries over.
+Level cap 5, bought from the merchant — one purchase a visit on waves 1 to 3 and one more every
+three waves after, see *Economy*. Leftover money carries over.
 
 **A weapon's track is not for sale until the weapon is in the bag.** Fifteen per cent more damage on
 something the player cannot swing yet is money spent on nothing — a purchase they would only

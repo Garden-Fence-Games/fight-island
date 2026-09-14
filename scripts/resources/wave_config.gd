@@ -10,33 +10,31 @@ extends Resource
 ## The roster is a budget the island draws on to stay populated for the wave's ninety seconds, not a
 ## queue to be emptied — `max_alive` is what the player actually faces at once.
 ##
-## **A budget nobody can spend is not a budget.** Once the island is full a body only enters when
-## one falls, so what the roster costs is a rate of killing, and `tools/measure_waves.tscn` puts
-## that at a little over twenty bodies a wave. The figures below sit just above it: a wave ends
-## early when the budget runs dry and nothing is standing, and outrunning a wave is something a
-## good player should be able to do rather than a number they can never reach.
-@export var base_count: int = 16
-@export var count_per_wave: float = 1.2
-@export var base_alive: int = 4
-@export var alive_per_wave: float = 0.8
-@export var fewest_alive: int = 4
-## **The crowd is not what hurts.** `AttackTokens` lets two bodies commit at once and three at
-## night, in every wave of the run, so a bigger crowd is more to walk through and more to see past
-## rather than more damage. It still climbs to the end: waves twelve to fifteen have nothing left
-## to learn, and what they have instead is somebody always in the way.
+## **The crowd is the difficulty.** A body is as tough on wave fifteen as on wave one — nothing on
+## this island grows its health — so what a late wave has is more of them: a bigger roster to get
+## through and more of it standing at once. `tools/measure_waves.tscn` holds the two against how
+## fast the player can actually fell a body.
 ##
-## **So the ceiling is a backstop and not a brake.** It sits where the formula lands on the final
-## wave: below that it would flatten the crowd before the run is over, which is the one thing the
-## last waves have, and it would do it quietly.
-@export var most_alive: int = 16
+## **A budget nobody can spend is not a budget.** Once the island is full a body only enters when
+## one falls, so what the roster costs is a rate of killing. A wave ends early when the budget runs
+## dry and nothing is standing, and outrunning a wave is something a good player should be able to
+## do rather than a number they can never reach.
+@export var base_count: int = 18
+@export var count_per_wave: float = 2.6
+@export var base_alive: int = 4
+@export var alive_per_wave: float = 1.6
+@export var fewest_alive: int = 4
+## **The ceiling is the crowd budget.** `tools/stress_enemies.tscn` measures the physics comfortably
+## inside a frame at thirty bodies, and the pool holds thirty-two ordinary bodies, so the most that
+## ever stand at once sits just under both — reached on the final wave, never flattening the crowd
+## before the run is over.
+@export var most_alive: int = 28
 
 @export_group("Scaling")
-## **Health is the one curve that is raced.** What the player puts out grows on the weapon tracks,
-## a level at a time and only as far as a run affords, so health growing faster than that does not
-## make a late wave harder — it makes the same wave longer, and a body nobody can fell in time is
-## budget the island never gets to spend. `tools/measure_waves.tscn` is where the two are held
-## against each other.
-@export var health_per_wave: float = 0.13
+## **Health does not scale.** A farmer on wave fifteen dies to the same blows as on wave one; the
+## waves are harder because there are more of them and they hit harder, never because they take
+## longer to fell. Zero is the design, not a placeholder.
+@export var health_per_wave: float = 0.0
 @export var damage_per_wave: float = 0.10
 @export var speed_per_wave: float = 0.03
 @export var speed_ceiling: float = 1.35
@@ -46,13 +44,17 @@ extends Resource
 @export var windup_floor: float = 0.75
 
 @export_group("Elites")
-## What an elite is worth. Null and none ever roll, which is what lets a tutorial wave or a
-## headless check run the same director with the feature switched off.
+## What a runner is. Null and none ever roll, which is what lets a tutorial wave or a headless check
+## run the same director with the feature switched off.
 @export var elite: EliteRank = null
+## The wave that sends exactly one runner, however the dice fall — so the player meets one before
+## the chance takes over.
+@export var elite_guaranteed_wave: int = 3
+## From this wave on, every body rolls for it at a flat chance.
 @export var elite_first_wave: int = 4
 @export var elite_base_chance: float = 0.10
-@export var elite_chance_per_wave: float = 0.05
-@export var elite_chance_ceiling: float = 0.40
+@export var elite_chance_per_wave: float = 0.0
+@export var elite_chance_ceiling: float = 0.10
 
 ## Clearing this wave is the victory. It lives here with the rest of the wave's figures rather than
 ## in the screen that announces it, so there is one place that knows how long a run is.

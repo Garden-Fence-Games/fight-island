@@ -9,6 +9,7 @@ extends Node
 
 const ARENA: String = "res://scenes/world/arena.tscn"
 const SUMMARY: String = "res://scenes/ui/run_summary.tscn"
+const MERCHANT_SCENE: String = "res://scenes/ui/merchant_screen.tscn"
 const SETTLE_FRAMES: int = 8
 
 var _failures: PackedStringArray = []
@@ -42,6 +43,7 @@ func _run() -> void:
 	_check_prices_follow_the_curve()
 	await _check_health_reaches_the_body()
 	_check_one_purchase_a_wave()
+	await _check_later_waves_sell_more()
 	_check_money_carries()
 	await _check_a_weapon_track_moves_the_swing()
 	await _check_the_summary_reads_the_run()
@@ -141,6 +143,49 @@ func _check_one_purchase_a_wave() -> void:
 		_fail("the next wave did not open the merchant again")
 
 
+## Wave four sells two, and the same track may be both of them. The screen stays open after the
+## first and closes after the second.
+func _check_later_waves_sell_more() -> void:
+	var stamina := Upgrades.find(&"stamina")
+	EventBus.wave_started.emit(4, 20)
+	GameState.earn(5000)
+	var level := GameState.level_of(stamina)
+	if GameState.purchases_left() != 2:
+		_fail("wave 4 sells %d upgrades, expected 2" % GameState.purchases_left())
+	var screen := (load(MERCHANT_SCENE) as PackedScene).instantiate() as MerchantScreen
+	add_child(screen)
+	await get_tree().process_frame
+	var card: UpgradeCard = null
+	for child: Node in screen.cards.get_children():
+		if (child as UpgradeCard).track == stamina:
+			card = child as UpgradeCard
+	if card == null:
+		_fail("the merchant has no stamina card")
+		screen.queue_free()
+		return
+	screen._on_card_pressed(card)
+	await get_tree().process_frame
+	if not is_instance_valid(screen) or screen.is_queued_for_deletion():
+		_fail("the merchant closed after the first of two purchases")
+		return
+	screen._on_card_pressed(card)
+	await get_tree().process_frame
+	if is_instance_valid(screen) and not screen.is_queued_for_deletion():
+		_fail("the merchant stayed open with its allowance spent")
+		screen.queue_free()
+	if GameState.level_of(stamina) != level + 2:
+		_fail(
+			(
+				"two purchases of the same track in one wave left it at %d"
+				% GameState.level_of(stamina)
+			)
+		)
+	if GameState.buy(Upgrades.find(&"health")):
+		_fail("a third purchase went through in a wave that sells two")
+	# Back to the second wave the checks after this one are written against.
+	EventBus.wave_started.emit(2, 6)
+
+
 func _check_money_carries() -> void:
 	var before := GameState.money
 	var stamina := Upgrades.find(&"stamina")
@@ -199,7 +244,9 @@ func _report() -> void:
 	for _index: int in SETTLE_FRAMES:
 		await get_tree().physics_frame
 	if _failures.is_empty():
-		print("merchant OK — prices, one a wave, money carries, and the body grows")
+		print(
+			"merchant OK — prices, one more a visit every three waves, money carries, and the body grows"
+		)
 		get_tree().quit(0)
 		return
 	for failure: String in _failures:

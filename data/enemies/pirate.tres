@@ -7,7 +7,7 @@
 script = ExtResource("1")
 id = &"pirate"
 display_name = "ENEMY_PIRATE"
-health = 70.0
+health = 135.0
 move_speed = 3.0
 poise = 25.0
 money = 8
