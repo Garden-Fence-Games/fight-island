@@ -757,7 +757,7 @@ scans it once. Measured on an M2 Pro at thirty bodies:
 
 That is 0.017% of the budget, so there is no cache here and there should not be one until that
 figure says otherwise — the same answer, for the same reason, as the spatial grid in
-[the crowd's cost](#the-crowds-cost) below.
+[measuring the crowd](#measuring-the-crowd) above.
 
 ### The emphasis budget
 
