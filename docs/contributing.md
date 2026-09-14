@@ -3,7 +3,7 @@
 ## Setup
 
 ```bash
-git clone git@github.com:pepito2t/fight-island.git
+git clone git@github.com:Garden-Fence-Games/fight-island.git
 cd fight-island
 git lfs install
 open -a Godot project.godot

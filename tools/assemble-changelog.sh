@@ -12,7 +12,7 @@ shopt -s nullglob
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FRAGMENTS="$ROOT/changelog.d"
 CHANGELOG="$ROOT/CHANGELOG.md"
-REPO_URL="https://github.com/pepito2t/fight-island"
+REPO_URL="https://github.com/Garden-Fence-Games/fight-island"
 
 # Keep a Changelog's own order, which is not alphabetical and is not the order things happen in.
 SECTIONS=(added changed deprecated removed fixed security)
