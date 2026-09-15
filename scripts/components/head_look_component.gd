@@ -68,8 +68,8 @@ func _build() -> void:
 	_body = get_parent() as Node3D
 	if _body == null:
 		return
-	_skeleton = _find_skeleton(_body)
-	_aim = _find_aim(_body)
+	_skeleton = Descend.first(_body, Skeleton3D) as Skeleton3D
+	_aim = Descend.child(_body, AimComponent) as AimComponent
 	_head = _skeleton.find_bone(String(bone_name)) if _skeleton != null else -1
 	if _skeleton == null or _head < 0:
 		return
@@ -137,22 +137,3 @@ func _look_direction() -> Vector3:
 	# Nothing to watch and nothing aimed means "look where the body looks", which costs no rotation.
 	var forward := -_body.global_transform.basis.z
 	return Vector3(forward.x, 0.0, forward.z).normalized()
-
-
-func _find_skeleton(root: Node) -> Skeleton3D:
-	for child: Node in root.get_children():
-		var found := child as Skeleton3D
-		if found != null:
-			return found
-		var deeper := _find_skeleton(child)
-		if deeper != null:
-			return deeper
-	return null
-
-
-func _find_aim(root: Node) -> AimComponent:
-	for child: Node in root.get_children():
-		var found := child as AimComponent
-		if found != null:
-			return found
-	return null

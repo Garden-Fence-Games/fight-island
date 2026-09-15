@@ -25,7 +25,7 @@ const POINTS: int = 200
 const NEAREST_SPAWN: float = 12.0
 ## And the other end of the ring, written out for the same reason. A body that arrives past this is
 ## one the player has to go and fetch: it notices at nine metres, so every extra metre out here is a
-## metre walked before anything happens, once per body, on a four-minute clock.
+## metre walked before anything happens, once per body, inside a ninety-second wave.
 const FURTHEST_SPAWN: float = 18.0
 ## How far past the ring a point the search offers may land.
 ##
@@ -65,7 +65,7 @@ const MOST_OF_THE_RING_IN_SHOT: float = 0.40
 ##
 ## The whole point: a wave has to arrive at the player. A body that waits to be walked up to is a
 ## body the player spends the wave fetching, and at eighteen metres and nine to notice that is most
-## of a four-minute wave spent walking.
+## of a ninety-second wave spent walking.
 const COMES_LOOKING_WITHIN: float = 12.0
 ## Where the body is parked for it: past its own notice radius, so the only thing that can move it
 ## is the patience running out.

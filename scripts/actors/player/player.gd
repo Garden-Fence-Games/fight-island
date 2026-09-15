@@ -69,7 +69,6 @@ var roll_cooldown: float = 0.0
 ## while the power is off.
 var _held_before_frenzy: StringName = &""
 
-var _body_materials: Array[StandardMaterial3D] = []
 var _stride_walked: float = 0.0
 var _chain_attack: AttackData = null
 var _chain_clock: float = -1.0
@@ -94,6 +93,8 @@ var visual: WeaponVisualComponent = get_node_or_null("WeaponVisual") as WeaponVi
 @onready var ragdoll: RagdollComponent = get_node_or_null("Ragdoll") as RagdollComponent
 @onready var frenzy: FrenzyComponent = get_node_or_null("Frenzy") as FrenzyComponent
 @onready var upgrades: UpgradeComponent = get_node_or_null(^"Upgrades") as UpgradeComponent
+@onready
+var materials: BodyMaterialsComponent = get_node_or_null(^"BodyMaterials") as BodyMaterialsComponent
 
 
 func _ready() -> void:
@@ -198,46 +199,15 @@ func locomotion_facing(movement: Vector3) -> Vector3:
 	return Vector3(-sin(target), 0.0, -cos(target))
 
 
-## Every material the body is drawn with, as copies this body owns. Whatever wants to tint the whole
-## silhouette — the drained colour while a chain is spent — goes through here.
+## The per-instance copies this body is drawn with, from the component that owns them.
 ##
-## **Copies, not the originals.** The rig's materials come out of the imported glTF and are
-## shared by every instance of it, so tinting one in place would drain the merchant and all three
-## farmers the day they use the same rig. A surface override is private to this mesh instance.
-##
-## Tinting `albedo_color` rather than replacing the material with `material_override`: albedo is
-## multiplied with the texture, so the character stays himself and merely goes the colour asked for.
-## An override would flatten a textured rig to a single block of paint.
-##
-## Built on first use, because the visual is an instanced scene and its meshes are not in the tree
-## when the player's own `_ready` runs.
+## Kept as a method rather than letting callers reach the node: `HitFeedback` asks the player for
+## its materials, and which child holds them is not something a system outside the body should
+## have to know.
 func body_materials() -> Array[StandardMaterial3D]:
-	if not _body_materials.is_empty():
-		return _body_materials
-	for mesh: MeshInstance3D in _mesh_instances(self):
-		for surface: int in mesh.get_surface_override_material_count():
-			var source := mesh.get_active_material(surface) as StandardMaterial3D
-			if source == null:
-				continue
-			var copy := source.duplicate() as StandardMaterial3D
-			mesh.set_surface_override_material(surface, copy)
-			_body_materials.append(copy)
-	return _body_materials
+	return materials.materials() if materials != null else []
 
 
-func _mesh_instances(root: Node) -> Array[MeshInstance3D]:
-	var found: Array[MeshInstance3D] = []
-	for child: Node in root.get_children():
-		var mesh := child as MeshInstance3D
-		if mesh != null:
-			found.append(mesh)
-		found.append_array(_mesh_instances(child))
-	return found
-
-
-## `on_foot` is what separates walking from every other way the body covers ground. A roll travels
-## too and it is not two steps, and an attack calls `halt` and travels none — so the two states that
-## actually walk say so, and nothing else has to know footfalls exist.
 func apply_motion(direction: Vector3, speed: float, delta: float, on_foot: bool = false) -> void:
 	var wading := Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH)
 	velocity.x = direction.x * speed * wading
