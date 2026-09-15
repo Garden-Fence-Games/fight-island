@@ -91,11 +91,11 @@ func _ready() -> void:
 	if host == null:
 		return
 	if animation_player == null:
-		animation_player = _find_animation_player(host)
+		animation_player = Descend.first(host, AnimationPlayer) as AnimationPlayer
 	if state_machine == null:
-		state_machine = _find_state_machine(host)
+		state_machine = Descend.first(host, StateMachine) as StateMachine
 	if ragdoll == null:
-		ragdoll = _find_ragdoll(host)
+		ragdoll = Descend.first(host, RagdollComponent) as RagdollComponent
 	if ragdoll != null:
 		ragdoll.took_the_body.connect(_let_go_of_the_rig)
 	_lend_the_missing_clips()
@@ -276,31 +276,3 @@ func _let_go_of_the_rig() -> void:
 	_current_speed = 1.0
 	if animation_player != null:
 		animation_player.stop()
-
-
-func _find_ragdoll(root: Node) -> RagdollComponent:
-	for child: Node in root.get_children():
-		var found := child as RagdollComponent
-		if found != null:
-			return found
-	return null
-
-
-## Depth-first: the importer buries the AnimationPlayer under the glTF scene root.
-func _find_animation_player(root: Node) -> AnimationPlayer:
-	for child: Node in root.get_children():
-		var found := child as AnimationPlayer
-		if found != null:
-			return found
-		var deeper := _find_animation_player(child)
-		if deeper != null:
-			return deeper
-	return null
-
-
-func _find_state_machine(root: Node) -> StateMachine:
-	for child: Node in root.get_children():
-		var found := child as StateMachine
-		if found != null:
-			return found
-	return null

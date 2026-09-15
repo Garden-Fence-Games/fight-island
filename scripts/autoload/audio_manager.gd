@@ -4,8 +4,7 @@ extends Node
 ## The subject of this game is timing, and the eye is on the enemy — not on the player, and not on
 ## the flash around their own fist. **A perfect hit has to be recognisable with the screen off.**
 ## That is what the five signatures are for, and it is why they were here before any audio asset
-## existed: a wave lasts six minutes, and a window the player can only see is a window they will
-## miss.
+## existed: a window the player can only see is a window they will miss.
 ##
 ## The signatures are one family with one idea in it: **the ring is the reward.** A normal hit is a
 ## thud that stops. A perfect hit is the same thud with a bright partial that keeps going. A late
@@ -565,8 +564,8 @@ func _parry(perfect: bool) -> AudioStreamWAV:
 ## with the top taken off it, and water is the same scuff wetter, brighter and twice as long, with
 ## the swell that makes it read as something displaced rather than something struck.
 ##
-## Deliberately the quietest things in the game. The player walks for six minutes a wave, and a
-## footfall that competes with the fight is a footfall that hides it.
+## Deliberately the quietest things in the game. A player walks for most of a wave, and a footfall
+## that competes with the fight is a footfall that hides it.
 func _step(wading: bool) -> AudioStreamWAV:
 	if not wading:
 		var sand := SoundBank.long_enough(0.014)
