@@ -100,7 +100,9 @@ func find_point() -> Vector3:
 		# metre, and a rule checked on the guess is a rule the answer does not have to obey.
 		if _too_close(standing):
 			continue
-		if not Ground.is_spawnable(world, standing, _player.global_position):
+		# The guess, not the snapped point: this asks whether the snap had to travel far, and
+		# handing it the answer makes the distance zero and the guard dead.
+		if not Ground.is_spawnable(world, guess, _player.global_position):
 			continue
 		if _in_view(camera, standing):
 			continue

@@ -53,6 +53,10 @@ static func can_walk_between(
 ##
 ## The snap is measured flat: the height a spawn point is handed is a guess, and holding it to the
 ## centimetre would reject perfectly good ground for being a metre too high.
+##
+## **Hand it the point you wanted, not the one you already snapped.** The whole first half of this
+## is *how far the snap had to travel* — give it an answer that is already on the mesh and the
+## distance is zero, the sea is never rejected, and only `can_walk_between` is doing any work.
 static func is_spawnable(
 	world: World3D, point: Vector3, toward: Vector3, tolerance := SNAP_TOLERANCE
 ) -> bool:

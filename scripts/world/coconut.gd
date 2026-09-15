@@ -59,6 +59,11 @@ var _falling: float = 0.0
 var _landed: bool = false
 var _lying_for: float = 0.0
 var _pulsing: float = 0.0
+## How much of the glow is left as the coconut rots away. Kept rather than written straight onto the
+## light: the pulse writes the same property from `_process`, the physics step runs first, and the
+## last writer of a frame is the one the eye gets — so a fade that set the light directly was
+## overwritten before anything was drawn and the light never dimmed at all.
+var _dimming: float = 1.0
 
 @onready var view: MeshInstance3D = get_node_or_null("Mesh") as MeshInstance3D
 @onready var lamp: OmniLight3D = get_node_or_null("Glow") as OmniLight3D
@@ -104,10 +109,10 @@ func _breathe(delta: float) -> void:
 	_pulsing = fposmod(_pulsing + delta * PULSE_HZ, 1.0)
 	var swell := 1.0 + sin(_pulsing * TAU) * PULSE_DEPTH
 	if lamp != null:
-		lamp.light_energy = LAMP_ENERGY * swell
+		lamp.light_energy = LAMP_ENERGY * swell * _dimming
 	var material := view.get_surface_override_material(0) if view != null else null
 	if material != null:
-		material.emission_energy_multiplier = GLOW_ENERGY * swell
+		material.emission_energy_multiplier = GLOW_ENERGY * swell * _dimming
 
 
 ## Accelerating rather than linear, because a coconut does not descend. The curve is the square of
@@ -155,8 +160,8 @@ func _fade() -> void:
 		var material := view.get_surface_override_material(0)
 		if material != null:
 			material.albedo_color.a = share
-	if lamp != null:
-		lamp.light_energy = LAMP_ENERGY * share
+	# Handed to the pulse rather than written here — see `_dimming`.
+	_dimming = share
 
 
 func _heals() -> float:

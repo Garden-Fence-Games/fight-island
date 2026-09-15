@@ -166,7 +166,7 @@ func _sand_under(palm: Transform3D, player: Node3D) -> Vector3:
 		var out := _rng.randf_range(0.0, data.lands_within)
 		var guess := palm.origin + Vector3(cos(angle), 0.0, sin(angle)) * out
 		var standing := Ground.closest_point(world, guess)
-		if Ground.is_spawnable(world, standing, player.global_position):
+		if Ground.is_spawnable(world, guess, player.global_position):
 			return standing
 	return Vector3.INF
 

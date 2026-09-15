@@ -53,7 +53,6 @@ splash_scene = ExtResource("28")
 [node name="AttackTokens" type="Node" parent="."]
 script = ExtResource("4")
 melee_tokens = 2
-ranged_tokens = 1
 
 [node name="Player" parent="." instance=ExtResource("1")]
 

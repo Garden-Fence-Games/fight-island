@@ -34,6 +34,9 @@ const CROWD_BUDGET_MS: float = 33.0
 const MAP_SYNC_FRAMES: int = 120
 const PERF_SAMPLES: int = 120
 
+## Set once the source scan has run, so a scan that found no files cannot pass silently.
+var _scanned: bool = false
+
 var _failures: PackedStringArray = []
 var _arena: Node3D = null
 var _player: Player = null
@@ -64,6 +67,9 @@ func _run() -> void:
 	_check_the_island_is_baked()
 	_check_the_enemy_carries_an_agent()
 	_check_where_nobody_can_stand()
+	_check_nobody_hands_it_its_own_answer()
+	if not _scanned:
+		_fail("the source scan never ran, so it proved nothing")
 	_check_the_route_bends_around_the_boulder()
 	await _check_the_farmer_walks_around_it()
 	await _check_a_crowd_fits_in_a_frame()
@@ -118,6 +124,56 @@ func _check_where_nobody_can_stand() -> void:
 		_fail("the inside of a boulder should not be spawnable")
 	if Ground.is_spawnable(world, Vector3(0.0, 0.0, 160.0), fight):
 		_fail("open sea should not be spawnable")
+
+
+## **Nobody may hand `is_spawnable` a point they already snapped.**
+##
+## Half of what it does is ask how far the snap had to travel — give it a point that is already on
+## the mesh and that distance is zero, so the sea is never rejected and only the walkability half is
+## doing any work. Every production caller did exactly that, and the guard sat dead in four files.
+##
+## Read out of the source rather than exercised, because the failure is invisible from outside: the
+## wrong call still returns a usable point, just one dragged to the nearest shore from a guess that
+## should have been thrown away.
+func _check_nobody_hands_it_its_own_answer() -> void:
+	for path: String in _scripts("res://scripts"):
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file == null:
+			continue
+		var snapped := PackedStringArray()
+		var line_number := 0
+		for line: String in file.get_as_text().split("\n"):
+			line_number += 1
+			var trimmed := line.strip_edges()
+			if trimmed.begins_with("var ") and trimmed.contains("Ground.closest_point("):
+				snapped.append(trimmed.trim_prefix("var ").get_slice(" ", 0).get_slice(":", 0))
+				continue
+			if not trimmed.contains("Ground.is_spawnable("):
+				continue
+			var handed := (
+				trimmed.get_slice("Ground.is_spawnable(", 1).get_slice(",", 1).strip_edges()
+			)
+			if snapped.has(handed):
+				_fail(
+					(
+						(
+							"%s:%d hands is_spawnable the point it already snapped, so its sea guard "
+							+ "cannot fail"
+						)
+						% [path, line_number]
+					)
+				)
+	_scanned = true
+
+
+func _scripts(directory: String) -> PackedStringArray:
+	var found := PackedStringArray()
+	for name: String in DirAccess.get_directories_at(directory):
+		found.append_array(_scripts(directory.path_join(name)))
+	for name: String in DirAccess.get_files_at(directory):
+		if name.ends_with(".gd"):
+			found.append(directory.path_join(name))
+	return found
 
 
 ## A straight line here runs through three and a half metres of stone. Anything the navigation mesh
