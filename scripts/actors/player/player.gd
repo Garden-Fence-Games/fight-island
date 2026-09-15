@@ -356,19 +356,33 @@ func _on_hurt(info: HitInfo) -> void:
 		var parry := machine.current as PlayerParry
 		if parry != null:
 			parry.resolve(info)
+			# **A parry that was not perfect is still a hit taken.** Only the perfect window negates
+			# the blow; late halves it and anything past that takes it whole. Returning here without
+			# writing the blow down left the body to fall by whatever hit it last — a jab from the
+			# other side of the wave, or on a run where everything else was parried, nothing at all.
+			if not info.negated:
+				_remember_the_blow(info)
 			return
 	if health != null and health.is_invulnerable():
 		return
-	# Taking a hit is the loudest thing that happens to the player and the only one they did not
-	# choose, so it spends from the same budget every blow they land does — see `Emphasis`. Here
-	# rather than in `Hurt`, because a blow with no stagger still arrived.
-	# Kept for the fall. A body has to go down the way it was hit, and by the time the health
-	# component has decided this was the last one the blow that threw it is gone.
+	_remember_the_blow(info)
+	if machine != null and info.stagger > 0.0:
+		machine.current.transition_to(&"Hurt", {"stagger": info.stagger})
+
+
+## What the blow was, kept for everything that reads it after the fact.
+##
+## Taking a hit is the loudest thing that happens to the player and the only one they did not
+## choose, so it spends from the same budget every blow they land does — see `Emphasis`. Here rather
+## than in `Hurt`, because a blow with no stagger still arrived.
+##
+## The direction and the push are kept for the fall: a body has to go down the way it was hit, and
+## by the time the health component has decided this was the last one, the blow that threw it is
+## gone.
+func _remember_the_blow(info: HitInfo) -> void:
 	last_hit_from = info.direction
 	last_hit_push = info.stagger
 	Emphasis.spend(Emphasis.for_hurt())
-	if machine != null and info.stagger > 0.0:
-		machine.current.transition_to(&"Hurt", {"stagger": info.stagger})
 
 
 ## Three direct keys and a wheel. The wheel only ever offers what has been found, so a player who

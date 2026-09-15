@@ -38,8 +38,12 @@ func resolve(info: HitInfo) -> void:
 		return
 	if _elapsed <= LATE_END:
 		info.damage *= LATE_REDUCTION
+		# The blow is written down as what it became, not as what it was thrown as. A late parry
+		# takes the weight out of it as well as the damage, and whoever reads this afterwards — the
+		# fall, the shake — has to see the hit that actually landed.
+		info.stagger = LATE_STAGGER
 		EventBus.parry_late.emit()
-		transition_to(&"Hurt", {"stagger": LATE_STAGGER})
+		transition_to(&"Hurt", {"stagger": info.stagger})
 		return
 	transition_to(&"Hurt", {"stagger": info.stagger})
 
