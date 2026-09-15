@@ -169,7 +169,12 @@ static func _restore_default(action: String, device: Device) -> void:
 
 static func _store(action: String, device: Device, event: InputEvent) -> void:
 	var stored := SaveManager.read_json(PATH)
-	var entry: Dictionary = stored.get(action, {})
+	# The third reader of this file, and `apply` and `reset_device` both already refuse an entry
+	# that is not a Dictionary. Assigning one into a typed local is a hard fault, and it happens
+	# *after* `_replace` has changed the InputMap — so the player saw the new key take effect and
+	# lost it on the next launch, with nothing said.
+	var held: Variant = stored.get(action, {})
+	var entry: Dictionary = held if held is Dictionary else {}
 	entry[_device_key(device)] = _to_json(event)
 	stored[action] = entry
 	SaveManager.write_json(PATH, stored)

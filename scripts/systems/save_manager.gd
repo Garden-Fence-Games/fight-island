@@ -155,3 +155,52 @@ static func _remove(path: String) -> void:
 	var error := DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	if error != OK:
 		push_warning("save: cannot delete %s (%d)" % [path, error])
+
+
+## A number out of a value the player could have edited.
+##
+## JSON hands back a float, or a String, or — on a file somebody opened in a text editor — an
+## object or a list. `int()` has **no constructor** for those two: it does not return zero, it
+## faults, and the fault takes the whole restore with it. Every read of a stored file goes through
+## here, so a wrong shape costs one field and not the run.
+static func as_int(value: Variant, fallback: int) -> int:
+	if value is float or value is int or value is bool:
+		return int(value)
+	if value is String or value is StringName:
+		return String(value).to_int()
+	return fallback
+
+
+static func as_float(value: Variant, fallback: float) -> float:
+	if value is float or value is int or value is bool:
+		return float(value)
+	if value is String or value is StringName:
+		return String(value).to_float()
+	return fallback
+
+
+static func as_bool(value: Variant, fallback: bool) -> bool:
+	if value is bool or value is float or value is int:
+		return bool(value)
+	return fallback
+
+
+## A name out of a stored key. JSON has no StringName, and a String key would never answer a lookup
+## that takes one — but a list or an object is not a name either, and `StringName()` faults on them.
+static func as_name(value: Variant, fallback: StringName) -> StringName:
+	if value is StringName:
+		return value
+	if value is String:
+		return StringName(value)
+	if value is float or value is int or value is bool:
+		return StringName(str(value))
+	return fallback
+
+
+## Whether a stored value can be read as a number at all. For the fields a caller cannot do without:
+## present but unreadable is the same as absent, and falling back would invent a run rather than
+## refuse one.
+static func is_number(value: Variant) -> bool:
+	if value is float or value is int or value is bool:
+		return true
+	return (value is String or value is StringName) and String(value).is_valid_float()

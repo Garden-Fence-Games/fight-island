@@ -34,6 +34,7 @@ func _run() -> void:
 	_check_a_corrupt_file_falls_back()
 	_check_a_truncated_file_falls_back()
 	_check_a_write_never_lands_on_the_old_file()
+	_check_a_wrong_shape_costs_one_field()
 	_check_a_newer_build_is_refused()
 	_check_settings_survive_the_version_stamp()
 	_check_a_finished_run_is_not_resumable()
@@ -167,6 +168,56 @@ func _write_raw(path: String, text: String) -> bool:
 	file.store_string(text)
 	file.close()
 	return true
+
+
+## A file the player can open in a text editor can hold anything, and the shapes that hurt are not
+## the missing ones — those every reader already handles. It is a container where a number belongs:
+## `int()` has no constructor for a Dictionary or an Array, so it **faults**, and the fault takes
+## the whole restore with it rather than one field.
+##
+## `run_stats.gd` documents the intended behaviour in as many words — *anything missing or of the
+## wrong type falls back to a fresh tally's value* — and did not have it.
+func _check_a_wrong_shape_costs_one_field() -> void:
+	SaveManager.write_json(
+		SaveManager.RUN_PATH,
+		{
+			"seed": {},
+			"wave": [],
+			"money": {"nope": 1},
+			"wave_in_progress": [],
+			"upgrades": {"fists": []},
+			"stats": {"waves_cleared": {}, "seconds": []},
+			"loadout": {"equipped": [], "rounds": {}, "found": [{}]}
+		}
+	)
+	# The seed and the wave are the two fields a run cannot do without, so a shape that gives
+	# neither is not a run — but it has to be *refused*, not faulted on.
+	if GameState.load_run():
+		_fail("a run whose every field is the wrong shape loaded as a run")
+
+	# And one bad field among good ones costs that field alone.
+	SaveManager.write_json(
+		SaveManager.RUN_PATH,
+		{
+			"seed": 99,
+			"wave": 4,
+			"money": [],
+			"stats": {"waves_cleared": 3, "seconds": {}},
+			"loadout": {"equipped": "gun", "found": ["gun"], "rounds": []}
+		}
+	)
+	if not GameState.load_run():
+		_fail("one field of the wrong shape refused a run the rest of which was readable")
+		return
+	if GameState.wave != 4:
+		_fail("the wave was lost to a bad field beside it")
+	if GameState.money != 0:
+		_fail("money of the wrong shape came back as %d, not the fallback" % GameState.money)
+	if GameState.stats.waves_cleared != 3:
+		_fail("a good tally field was lost to a bad one beside it")
+	if GameState.loadout.equipped != &"gun":
+		_fail("the carried weapon was lost to a bad field beside it")
+	GameState.end_run()
 
 
 func _check_a_newer_build_is_refused() -> void:

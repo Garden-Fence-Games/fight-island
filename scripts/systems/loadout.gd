@@ -32,12 +32,16 @@ static func from_dict(data: Dictionary) -> Loadout:
 	if stored is Array:
 		for id: Variant in stored as Array:
 			# JSON has no StringName, and a String key would never answer `owns`.
-			bag.found.append(StringName(id))
-	bag.equipped = StringName(str(data.get("equipped", Arsenal.STARTING)))
+			var named := SaveManager.as_name(id, &"")
+			if not named.is_empty():
+				bag.found.append(named)
+	bag.equipped = SaveManager.as_name(data.get("equipped"), Arsenal.STARTING)
 	if not bag.owns(bag.equipped):
 		bag.equipped = Arsenal.STARTING
-	var held := int(data.get("magazine", 0)) + int(data.get("reserve", 0))
-	bag.rounds = maxi(int(data.get("rounds", held)), 0)
+	var held := (
+		SaveManager.as_int(data.get("magazine"), 0) + SaveManager.as_int(data.get("reserve"), 0)
+	)
+	bag.rounds = maxi(SaveManager.as_int(data.get("rounds"), held), 0)
 	var ranged := bag._ranged()
 	if ranged != null:
 		bag.rounds = mini(bag.rounds, ranged.ammo_cap)
