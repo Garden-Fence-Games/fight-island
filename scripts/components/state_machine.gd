@@ -48,10 +48,20 @@ func _on_transition_requested(to: StringName, message: Dictionary) -> void:
 	_enter(next, message)
 
 
+## **A state may leave from inside its own `enter`**, and several do — a dodge with no stamina, a
+## hurt with no stagger, a state that finds the thing it was entered for already gone. That
+## re-enters this function while this call is still on the stack.
+##
+## So the announcement is guarded. Without it the nested call moved `current_name` out from under
+## the outer one, which then announced the **inner** state a second time and the outer state never
+## at all — so anything listening for what the body is doing heard a state it was already told about
+## and missed one entirely.
 func _enter(next: State, message: Dictionary) -> void:
 	if current != null:
 		current.exit()
 	current = next
 	current_name = next.name
 	next.enter(message)
+	if current != next:
+		return
 	transitioned.emit(current_name)
