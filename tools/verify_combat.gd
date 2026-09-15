@@ -88,6 +88,7 @@ func _run() -> void:
 	await _check_parry_negates()
 	await _check_a_parry_that_missed_is_a_hit_taken()
 	await _check_enemy_closes_and_hits()
+	await _check_the_token_pool_refuses_and_gives_back()
 	_check_noticing_is_possible_at_all()
 	await _check_a_farmer_waits_until_he_notices()
 	await _check_walking_up_to_him_starts_the_chase()
@@ -663,6 +664,62 @@ func _report() -> void:
 ## The rule that makes every other rule here matter. A notice radius at or past the distance the
 ## spawn search keeps bodies away from the player means every farmer arrives already awake, and
 ## nothing below would fail — the feature would simply not exist, silently.
+## **The one rule that keeps a crowd a fight.** Only so many bodies may commit at once and the rest
+## circle — the pool's own docstring says that without it a wave *stops being a fight and becomes an
+## unreadable pile*. Nothing ever asked it for one token too many, and nothing ever watched one come
+## back.
+##
+## Both failures are silent and neither is visible in a diff: a cap that never refuses puts all
+## twenty-eight bodies of a late wave on the player at once, and a token never released leaks until
+## nobody can swing and the wave stands around doing nothing.
+func _check_the_token_pool_refuses_and_gives_back() -> void:
+	var pool := get_tree().get_first_node_in_group(&"attack_tokens") as AttackTokens
+	if pool == null:
+		_fail("the arena has no attack token pool, so the crowd rule is not being tested")
+		return
+
+	var holders: Array[Node] = []
+	for index: int in pool.melee_tokens + 1:
+		var holder := Node.new()
+		holder.name = "Claimant%d" % index
+		add_child(holder)
+		holders.append(holder)
+
+	# Counted as "somebody was turned away", not as an exact tally: the sparring partner in this
+	# arena may already hold one, and what must be true is that the pool says no — not that it says
+	# no at a particular number.
+	var taken := 0
+	var refused := false
+	for holder: Node in holders:
+		if pool.claim(holder):
+			taken += 1
+		else:
+			refused = true
+	if not refused:
+		_fail(
+			(
+				"%d fresh bodies all got a token from a pool of %d, so a crowd commits as one"
+				% [holders.size(), pool.melee_tokens]
+			)
+		)
+	if taken > pool.melee_tokens:
+		_fail("a pool of %d handed out %d" % [pool.melee_tokens, taken])
+
+	# Asking twice is not asking again. A body already committed re-claims every frame it swings.
+	if not pool.claim(holders[0]):
+		_fail("a body that already holds a token was refused its own")
+
+	# And letting go has to let somebody else in, or the pool leaks until nobody can swing.
+	pool.release(holders[0])
+	if not pool.claim(holders[holders.size() - 1]):
+		_fail("a token was let go of and the next body still could not have it")
+
+	for holder: Node in holders:
+		pool.release(holder)
+		holder.queue_free()
+	await get_tree().process_frame
+
+
 func _check_noticing_is_possible_at_all() -> void:
 	var radius := _enemy.data.notice_radius
 	if radius >= NEAREST_SPAWN:
