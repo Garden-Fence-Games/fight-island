@@ -31,7 +31,6 @@ const COLUMNS: PackedStringArray = [
 	"earned",
 	"spent",
 	"bought",
-	"level",
 ]
 const CLEARED: StringName = &"cleared"
 const DIED: StringName = &"died"
@@ -50,8 +49,11 @@ var _seconds: float = 0.0
 ## charged to either wave's clock.
 var _fighting: bool = false
 var _outcome: StringName = ABANDONED
-var _bought: StringName = &""
-var _level: int = 0
+## Every purchase of the wave, as `track:level`, in the order they were made. **Not the last one**:
+## the merchant sells one more upgrade every three waves and stays open until the allowance is
+## spent, so from wave 4 a scalar here threw away everything but the final card — and what an
+## upgrade pass most wants to read is which tracks a player takes *together*.
+var _bought: PackedStringArray = []
 ## What the tally read when this wave opened. Every figure in the row is measured from here.
 var _opened_with: Dictionary[StringName, int] = {}
 
@@ -117,8 +119,7 @@ func _on_wave_started(wave: int, enemies: int) -> void:
 	_seconds = 0.0
 	_fighting = true
 	_outcome = ABANDONED
-	_bought = &""
-	_level = 0
+	_bought = []
 	_opened_with = _tally()
 
 
@@ -142,8 +143,7 @@ func _on_player_died() -> void:
 func _on_upgrade_purchased(track: UpgradeTrack, level: int) -> void:
 	if track == null:
 		return
-	_bought = track.id
-	_level = level
+	_bought.append("%s:%d" % [track.id, level])
 
 
 func _tally() -> Dictionary[StringName, int]:
@@ -187,8 +187,7 @@ func _flush() -> void:
 				str(gained.get(&"perfect_parries", 0)),
 				str(gained.get(&"earned", 0)),
 				str(gained.get(&"spent", 0)),
-				String(_bought),
-				str(_level),
+				" ".join(_bought),
 			]
 		)
 	)
