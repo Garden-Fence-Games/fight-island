@@ -436,7 +436,7 @@ func _on_hurt(info: HitInfo) -> void:
 	# blow is still identifiable.
 	last_hit_from = info.direction
 	rouse()
-	_poise_window = 2.0
+	_poise_window = KNOCKDOWN.poise_window
 	poise_left -= info.poise_damage
 	var broke := poise_left <= 0.0 and data != null
 	if broke:
