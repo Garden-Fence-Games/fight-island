@@ -35,6 +35,17 @@ const REQUIRED_ACTIONS: PackedStringArray = [
 	"debug_give_money",
 ]
 
+## The version each export preset stamps into the platform's own metadata.
+##
+## macOS keeps two, Windows keeps two, and every one of them is a string the player can read in a
+## file browser long after the download is gone.
+const PRESET_VERSION_KEYS: PackedStringArray = [
+	"application/short_version",
+	"application/version",
+	"application/file_version",
+	"application/product_version",
+]
+
 const REQUIRED_LAYERS: PackedStringArray = [
 	"world",
 	"player_body",
@@ -108,8 +119,11 @@ func _init() -> void:
 				"layer %d is %s, expected %s" % [index + 1, actual, REQUIRED_LAYERS[index]]
 			)
 
-	if ProjectSettings.get_setting("application/config/version", "") == "":
+	var version := str(ProjectSettings.get_setting("application/config/version", ""))
+	if version == "":
 		failures.append("application/config/version is not set")
+	else:
+		failures.append_array(_stale_preset_versions(version))
 
 	for setting: String in REQUIRED_FOR_EXPORT:
 		if bool(ProjectSettings.get_setting(setting, false)) != REQUIRED_FOR_EXPORT[setting]:
@@ -129,8 +143,16 @@ func _init() -> void:
 	if failures.is_empty():
 		print(
 			(
-				"project config OK — %d actions, %d layers, %d settings the exports need"
-				% [REQUIRED_ACTIONS.size(), REQUIRED_LAYERS.size(), REQUIRED_FOR_EXPORT.size()]
+				(
+					"project config OK — %d actions, %d layers, %d settings the exports need, "
+					+ "version %s everywhere"
+				)
+				% [
+					REQUIRED_ACTIONS.size(),
+					REQUIRED_LAYERS.size(),
+					REQUIRED_FOR_EXPORT.size(),
+					ProjectSettings.get_setting("application/config/version", "")
+				]
 			)
 		)
 		quit(0)
@@ -175,4 +197,40 @@ func _raw_layer_numbers(directory: String) -> PackedStringArray:
 					% [path, line_number, default]
 				)
 			)
+	return found
+
+
+## Every export preset field that stamps a version other than `application/config/version`.
+##
+## `project.godot` is the documented source of truth, but nothing reads it at export time: each
+## preset carries its own copy, and Godot writes the preset's copy into the bundle. 1.0.0 shipped a
+## macOS build that introduced itself as 0.1.0 — the presets still held the number they were born
+## with, and no diff, no log and no test said so.
+func _stale_preset_versions(version: String) -> PackedStringArray:
+	var presets := ConfigFile.new()
+	var error := presets.load("res://export_presets.cfg")
+	if error != OK:
+		return PackedStringArray(["export_presets.cfg would not parse (error %d)" % error])
+
+	var found: PackedStringArray = []
+	var checked := 0
+	for section: String in presets.get_sections():
+		if not section.ends_with(".options"):
+			continue
+		var preset_name := str(presets.get_value(section.trim_suffix(".options"), "name", section))
+		for key: String in PRESET_VERSION_KEYS:
+			if not presets.has_section_key(section, key):
+				continue
+			checked += 1
+			var stamped := str(presets.get_value(section, key, ""))
+			if stamped != version:
+				found.append(
+					(
+						"%s stamps %s as %s but project.godot says %s"
+						% [preset_name, key, stamped, version]
+					)
+				)
+
+	if checked == 0:
+		found.append("no export preset stamps a version — did the preset keys move?")
 	return found
