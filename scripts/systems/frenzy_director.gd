@@ -87,7 +87,7 @@ func _somewhere_visible(player: Node3D) -> Vector3:
 		var reach := _rng.randf_range(data.nearest, data.furthest)
 		var guess := player.global_position + Vector3(cos(angle), 0.0, sin(angle)) * reach
 		var standing := Ground.closest_point(world, guess)
-		if not Ground.is_spawnable(world, standing, player.global_position):
+		if not Ground.is_spawnable(world, guess, player.global_position):
 			continue
 		if fallback == Vector3.INF:
 			fallback = standing
