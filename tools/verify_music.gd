@@ -67,6 +67,7 @@ func _run() -> void:
 	await get_tree().physics_frame
 
 	_check_every_track_was_measured()
+	_check_a_new_run_deals_a_new_order()
 	_check_every_layer_is_the_same_length()
 	_check_the_bed_only_ever_rises()
 	await _check_the_breather_is_silent_and_a_crowd_is_not()
@@ -113,6 +114,44 @@ func _check_every_track_was_measured() -> void:
 					% [track.title, track.as_recorded]
 				)
 			)
+
+
+## **A run's soundtrack order belongs to that run.** The bag is shuffled once, from the run's seed,
+## so a recording of one run has the same music twice — but it was latching at boot, against the
+## seed the title screen happened to hold, and `begin_run` re-randomises afterwards with nothing
+## watching. Every run dealt the same five tracks in the same order, for ever.
+func _check_a_new_run_deals_a_new_order() -> void:
+	var playlist := load(AudioManager.PLAYLIST) as MusicPlaylist
+	if playlist == null or playlist.playable().size() < 3:
+		_fail("there are not enough tracks for an order to differ")
+		return
+
+	var kept := GameState.run_seed
+	var first := _order(playlist, 101)
+	var second := _order(playlist, 202)
+	var again := _order(playlist, 101)
+	GameState.run_seed = kept
+
+	if first == second:
+		_fail("two runs dealt the same order, so the shuffle is not the run's")
+	if first != again:
+		_fail("the same seed dealt two different orders, so a resumed run would change its music")
+
+
+## The order a given seed deals.
+##
+## The bag is drained first: a refill is what re-reads the seed, and a bag part-used would hand back
+## what the previous seed dealt. Draining then drawing is the only way to see a whole fresh round.
+func _order(playlist: MusicPlaylist, seed_value: int) -> PackedStringArray:
+	var how_many := playlist.playable().size()
+	for _index: int in how_many:
+		playlist.draw()
+	GameState.run_seed = seed_value
+	var drawn := PackedStringArray()
+	for _index: int in how_many:
+		var track := playlist.draw()
+		drawn.append(track.title if track != null else "")
+	return drawn
 
 
 func _check_every_layer_is_the_same_length() -> void:

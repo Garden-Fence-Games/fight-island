@@ -14,6 +14,8 @@ extends Node
 
 const RUN_SCENE: String = "res://scenes/main/main.tscn"
 const TRACK: String = "res://data/upgrades/stamina.tres"
+## A second card: a late wave buys more than one, and the order they arrive in is the finding.
+const SECOND_TRACK: String = "res://data/upgrades/health.tres"
 ## Waves the fake run fights. Two, because one wave cannot tell a difference from a total.
 const FIRST: int = 1
 const SECOND: int = 2
@@ -48,6 +50,7 @@ func _run() -> void:
 	_check_a_wave_is_a_row_with_every_column_named()
 	_check_the_figures_are_that_waves_own()
 	_check_a_purchase_is_filed_under_the_wave_that_paid_for_it()
+	_check_every_purchase_of_a_wave_is_kept()
 	_check_a_death_is_recorded_where_it_happened()
 	_check_a_wave_nobody_finished_is_still_a_row()
 	_check_the_header_is_written_once_however_many_runs_arrive()
@@ -140,11 +143,40 @@ func _check_a_purchase_is_filed_under_the_wave_that_paid_for_it() -> void:
 	if rows.size() != 3:
 		_fail("a purchase should not change the row count, got %d lines" % rows.size())
 		return
-	_same("what wave one bought", _value(rows[1], "bought"), String(track.id))
-	_same("the level it reached", _value(rows[1], "level"), str(A_LEVEL))
+	_same("what wave one bought", _value(rows[1], "bought"), "%s:%d" % [track.id, A_LEVEL])
 	# The row the player *spends* it in owes nothing: one purchase per wave is the whole economy,
 	# and a track credited twice would read as one bought every wave.
 	_same("what wave two bought", _value(rows[2], "bought"), "")
+
+
+## **A wave buys more than one card.** The merchant sells one more every three waves and stays open
+## until the allowance is spent, so from wave 4 a single field here threw away everything but the
+## last one — and what an upgrade pass most wants to read is which tracks a player takes *together*.
+func _check_every_purchase_of_a_wave_is_kept() -> void:
+	var track := load(TRACK) as UpgradeTrack
+	var other := load(SECOND_TRACK) as UpgradeTrack
+	if track == null or other == null:
+		_fail("there are not two tracks to buy in one visit")
+		return
+	_erase()
+	var recorder := _armed()
+	_fight(FIRST, A_CROWD, FIRST_KILLS)
+	EventBus.wave_cleared.emit(FIRST, 50)
+	GameState.upgrade_purchased.emit(track, A_LEVEL)
+	GameState.upgrade_purchased.emit(other, 1)
+	_fight(SECOND, ANOTHER_CROWD, SECOND_KILLS)
+	EventBus.wave_cleared.emit(SECOND, 62)
+	recorder.free()
+
+	var rows := _rows()
+	if rows.size() != 3:
+		_fail("two purchases in one visit should still be one row, got %d lines" % rows.size())
+		return
+	_same(
+		"what a wave with two purchases bought",
+		_value(rows[1], "bought"),
+		"%s:%d %s:1" % [track.id, A_LEVEL, other.id]
+	)
 
 
 func _check_a_death_is_recorded_where_it_happened() -> void:
