@@ -40,6 +40,21 @@ static func last_used() -> InputBindings.Device:
 	return _last
 
 
+## The pad that was answering is gone. Whether anything changed.
+##
+## A controller that is unplugged sends no input event, so nothing moved `_last` and every badge in
+## the game went on printing pad glyphs for hardware that is not there — the exact failure this
+## class exists to prevent, arrived from the other direction. Asked rather than assumed: a second
+## pad still connected is still a pad, and only an empty hand falls back to the keyboard.
+static func forget_a_lost_pad() -> bool:
+	if _last != InputBindings.Device.GAMEPAD:
+		return false
+	if not Input.get_connected_joypads().is_empty():
+		return false
+	_last = InputBindings.Device.KEYBOARD
+	return true
+
+
 ## Whether the device changed. Called from the bus for every event there is, so it is written to be
 ## cheap and to say no quickly.
 static func notice(event: InputEvent) -> bool:
