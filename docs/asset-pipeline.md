@@ -541,6 +541,29 @@ The component lends a stand-in **only** for a name the rig has no clip of, so ex
 hand-authored `aim_gun` or `parry` retires the generated one on the spot — nothing to delete,
 no flag to flip. The check asserts that from both ends, so the day the rig grows its own it says so.
 
+## The application icon
+
+`icon.png` is built, not drawn. `tools/build-icon.sh` rasterises `assets/logo/fight_island_logo_1.svg`,
+**trims it to its own extent**, centres it on a rounded square in the menu's ground colour, and
+writes the 1024² PNG both export presets point at — macOS builds the `.icns` from it and Windows the
+`.ico`.
+
+```bash
+tools/build-icon.sh          # rewrite icon.png
+tools/build-icon.sh 0.9 /tmp/try.png   # a different fill, somewhere harmless
+```
+
+The trim is the part that matters. The logo sits at about five sixths of its own viewBox and
+off-centre inside it, so a fill fraction applied to the file as a whole produces a mark far smaller
+than it reads on paper, pushed to one side — which is exactly what shipped in 1.0.0, and why the
+dock showed mostly empty ground.
+
+**It used to be a Godot scene and no longer is.** That version needed a real rendering context:
+`--headless` cannot rasterise an SVG and silently wrote an icon with **no mark on it**, while opening
+the scene in the editor ran a `@tool` script ending in `quit()` and closed the editor on whoever
+tried. It needs `rsvg-convert` and ImageMagick, both of which a machine that ships builds already
+has and neither of which opens a window.
+
 ## Textures
 
 PNG sources in `art-source/textures/`. Imported as **VRAM Compressed** for 3D albedo and
