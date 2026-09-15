@@ -124,6 +124,8 @@ func _init() -> void:
 				)
 			)
 
+	failures.append_array(_raw_layer_numbers("res://scripts"))
+
 	if failures.is_empty():
 		print(
 			(
@@ -137,3 +139,40 @@ func _init() -> void:
 	for failure: String in failures:
 		printerr(failure)
 	quit(1)
+
+
+## Every `@export_flags_3d_physics` in `scripts/` that spells its default as a number.
+##
+## The layer names above are checked on one side of the coupling only: rename or renumber a layer
+## and this file is edited in the same breath, every consumer that reads `PhysicsLayers.BIT_*`
+## follows, and anything holding a literal quietly starts colliding with something else. No error,
+## no log line — the gun simply stops hitting people.
+##
+## Scenes are not scanned: the editor writes those numbers itself and they are not ours to keep in
+## a constant.
+func _raw_layer_numbers(directory: String) -> PackedStringArray:
+	var found: PackedStringArray = []
+	for name: String in DirAccess.get_directories_at(directory):
+		found.append_array(_raw_layer_numbers(directory.path_join(name)))
+	for name: String in DirAccess.get_files_at(directory):
+		if not name.ends_with(".gd"):
+			continue
+		var path := directory.path_join(name)
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file == null:
+			continue
+		var line_number := 0
+		for line: String in file.get_as_text().split("\n"):
+			line_number += 1
+			if not line.contains("@export_flags_3d_physics"):
+				continue
+			var default := line.get_slice("=", 1).strip_edges()
+			if default.is_empty() or not default.is_valid_int():
+				continue
+			found.append(
+				(
+					"%s:%d writes a physics layer as %s — name it through PhysicsLayers"
+					% [path, line_number, default]
+				)
+			)
+	return found
