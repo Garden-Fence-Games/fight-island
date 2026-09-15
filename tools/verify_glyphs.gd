@@ -41,6 +41,7 @@ func _run() -> void:
 	InputBindings.apply()
 	_check_the_hand_decides()
 	_check_a_stick_at_rest_is_not_a_hand()
+	_check_an_unplugged_pad_gives_the_hand_back()
 	_check_every_action_has_a_glyph_on_both_devices()
 	await _check_a_menu_follows_the_hand()
 	await _check_a_prompt_never_names_the_other_device()
@@ -100,6 +101,27 @@ func _check_a_stick_at_rest_is_not_a_hand() -> void:
 ##
 ## The list is gathered from the menus and the tutorial data rather than typed here, so a row added
 ## to a screen tomorrow is covered without anyone remembering this check exists.
+## Unplugging is the one device change that arrives as **no input at all**, so nothing notices it
+## the way everything else is noticed — and every badge in the game went on printing pad glyphs for
+## hardware that had left the room. That is the failure this whole class exists to prevent, reached
+## from the other side.
+func _check_an_unplugged_pad_gives_the_hand_back() -> void:
+	var pad := InputEventJoypadButton.new()
+	pad.button_index = JOY_BUTTON_A
+	pad.pressed = true
+	Devices.notice(pad)
+	if Devices.last_used() != InputBindings.Device.GAMEPAD:
+		_fail("a pad press did not read as a pad, so this check proves nothing")
+		return
+	if not Devices.forget_a_lost_pad():
+		_fail("the last pad left and the glyphs kept naming it")
+	if Devices.last_used() != InputBindings.Device.KEYBOARD:
+		_fail("with no pad connected the hand should be the keyboard's")
+	# And it says no when there is nothing to give back, rather than flipping on every unplug.
+	if Devices.forget_a_lost_pad():
+		_fail("a keyboard hand was changed again by a pad leaving")
+
+
 func _check_every_action_has_a_glyph_on_both_devices() -> void:
 	for action: String in _actions_shown_on_screen():
 		for device: int in [InputBindings.Device.KEYBOARD, InputBindings.Device.GAMEPAD]:
