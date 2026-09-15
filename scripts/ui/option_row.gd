@@ -45,6 +45,11 @@ const KNOB_SLIDE: float = 0.12
 var _segments: Array[ColorRect] = []
 var _knob_settled: bool = false
 
+## Whether the press that owns the pointer landed on the meter. Without it, a press the row
+## correctly turned down — on the label, on the name of the setting — still handed the pointer the
+## value as soon as the mouse moved, and the first movement ran the volume to zero.
+var _dragging: bool = false
+
 @onready var title: Label = $Row/Title
 @onready var slider: HBoxContainer = $Row/Slider
 @onready var slider_value: Label = $Row/Slider/Value
@@ -90,20 +95,29 @@ func _gui_input(event: InputEvent) -> void:
 func _mouse_sets_the_meter(event: InputEvent) -> bool:
 	var button := event as InputEventMouseButton
 	var motion := event as InputEventMouseMotion
-	var at := Vector2.ZERO
-	if button != null and button.button_index == MOUSE_BUTTON_LEFT and button.pressed:
-		at = button.position
-	elif motion != null and (motion.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
-		# Dragging past the ends is still dragging: once the press has landed on the meter the
-		# pointer owns it, which is what makes running the volume to zero one movement.
-		at = motion.position
-	else:
-		return false
 	# In this row's own space, which is what a `_gui_input` position is in. `segment_box.position`
 	# is relative to its container, and using it directly put the meter somewhere near the label —
 	# so a click on the name of the setting ran the volume to zero.
 	var meter := Rect2(segment_box.global_position - global_position, segment_box.size)
-	if button != null and not meter.grow(SEGMENT_HEIGHT).has_point(at):
+	var at := Vector2.ZERO
+	if button != null and button.button_index == MOUSE_BUTTON_LEFT:
+		if not button.pressed:
+			_dragging = false
+			return false
+		if not meter.grow(SEGMENT_HEIGHT).has_point(button.position):
+			# A press that missed also *ends* any ownership the last one had: whatever the pointer
+			# is doing now, it did not start on the meter.
+			_dragging = false
+			return false
+		_dragging = true
+		at = button.position
+	elif motion != null and _dragging and (motion.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+		# Dragging past the ends is still dragging: once the press has landed on the meter the
+		# pointer owns it, which is what makes running the volume to zero one movement. **Once it
+		# has landed on it** — the press is what grants that ownership, and a press the row already
+		# turned down must not be able to claim it on the next mouse move.
+		at = motion.position
+	else:
 		return false
 	_write_number(_value_under(at.x, meter))
 	return true
