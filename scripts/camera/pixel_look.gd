@@ -64,7 +64,15 @@ func _render_callback(_type: int, render_data: RenderData) -> void:
 		return
 	# Asked every frame rather than told, the way every setting is read: switching it off in the
 	# options leaves the effect on the camera doing nothing, and switching it back on needs nothing.
-	if not bool(Settings.get_value(SETTING)):
+	var wanted := bool(Settings.get_value(SETTING))
+	# **And the buffer goes with it.** Returning here spares the two dispatches and nothing else:
+	# the renderer has already run its depth prepass in normal-roughness mode and allocated a
+	# full-screen target for a callback that never reads it, at 1080p, whether one farmer is on
+	# screen or thirty. The renderer reads this when it prepares a frame, so the change lands on the
+	# next one — one frame of a buffer nobody wanted, against a menu toggle nobody is watching.
+	if needs_normal_roughness != wanted:
+		needs_normal_roughness = wanted
+	if not wanted:
 		return
 	var buffers := render_data.get_render_scene_buffers() as RenderSceneBuffersRD
 	var scene := render_data.get_render_scene_data() as RenderSceneDataRD
