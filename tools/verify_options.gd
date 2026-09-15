@@ -158,6 +158,22 @@ func _check_a_slider_answers_the_mouse() -> void:
 	if not is_equal_approx(float(Settings.get_value(&"audio_sfx")), held):
 		_fail("clicking the row's label moved the volume, and the label is not the meter")
 
+	# And **the press is what grants the drag**. A press the row just turned down must not be able
+	# to claim the value on the next mouse move: the whole row is a Button, so the pointer is still
+	# held, and one movement used to run the volume to zero from a click on the name of the setting.
+	row._gui_input(_drag_to(origin + Vector2(2.0, 1.0)))
+	if not is_equal_approx(float(Settings.get_value(&"audio_sfx")), held):
+		_fail("a drag that began on the label took the volume anyway")
+
+	# A drag that *did* begin on the meter still owns it, including past the end of the blocks.
+	row._gui_input(_click_at(origin + Vector2(meter.size.x * 0.5, 1.0)))
+	row._gui_input(_drag_to(origin + Vector2(-40.0, 1.0)))
+	if not is_equal_approx(float(Settings.get_value(&"audio_sfx")), row.minimum):
+		_fail(
+			"a drag that began on the meter stopped owning it past the end, which is one movement"
+		)
+	Settings.set_value(&"audio_sfx", held)
+
 
 func _click_at(spot: Vector2) -> InputEventMouseButton:
 	var click := InputEventMouseButton.new()
@@ -165,6 +181,14 @@ func _click_at(spot: Vector2) -> InputEventMouseButton:
 	click.pressed = true
 	click.position = spot
 	return click
+
+
+## A move with the left button still down, which is what a drag is made of.
+func _drag_to(spot: Vector2) -> InputEventMouseMotion:
+	var motion := InputEventMouseMotion.new()
+	motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+	motion.position = spot
+	return motion
 
 
 func _check_bindings_are_listed() -> void:
