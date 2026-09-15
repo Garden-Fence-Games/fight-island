@@ -51,8 +51,65 @@ func _run() -> void:
 	# Last, and it puts the bag back: it empties the loadout to ask its question, and every check
 	# above it buys.
 	_check_the_merchant_sells_only_what_is_carried()
+	_check_a_new_run_starts_from_nothing()
 	_put_the_run_back()
 	_report()
+
+
+## **What is bought belongs to one run.** It carries wave to wave and it dies with the run — that is
+## the shape the whole economy rests on: no run ever affords all five tracks, and a run that
+## inherited the last one's levels would make the first purchase of every later session meaningless.
+##
+## `begin_run` clears five fields to make that true, and nothing asserted any of them. Eleven checks
+## call it as setup and would all keep passing if one line stopped clearing, right up until a player
+## started wave 1 with a gun and two levels of stamina.
+##
+## Asserted **field by field**, so a failure says which line stopped clearing rather than that
+## something is not fresh.
+func _check_a_new_run_starts_from_nothing() -> void:
+	EventBus.wave_started.emit(7, 8)
+	GameState.earn(100000)
+	GameState.loadout.find_weapon(&"gun")
+	GameState.loadout.equip(&"gun")
+	var track := Upgrades.find(&"stamina")
+	if track == null or not GameState.buy(track):
+		_fail("nothing could be bought, so there is nothing to prove does not carry")
+		return
+	if GameState.money <= 0 or GameState.level_of(track) <= 0:
+		_fail("the setup did not leave a run with money and a level in it")
+		return
+
+	GameState.begin_run()
+
+	if GameState.money != 0:
+		_fail("a new run opened holding %d from the last one" % GameState.money)
+	if GameState.level_of(track) != 0:
+		_fail(
+			"a new run opened with %s already at level %d" % [track.id, GameState.level_of(track)]
+		)
+	if GameState.loadout.equipped != Arsenal.STARTING:
+		_fail("a new run opened with %s in hand" % GameState.loadout.equipped)
+	if GameState.loadout.owns(&"gun"):
+		_fail("a new run opened with the last one's gun in the bag")
+	if GameState.wave != 0:
+		_fail("a new run opened on wave %d" % GameState.wave)
+	# The two purchase counters, read through the only thing that uses them, and compared against the
+	# wave's own allowance rather than a number: what must hold is that **nothing is already spent**,
+	# and the allowance is the wave's business rather than the reset's.
+	#
+	# **This one cannot fail on its own today**, and it is kept anyway. `purchases_left` reads the
+	# count only when `_bought_in_wave` matches the current wave, and a fresh run is on wave 0, so
+	# the wave assertion above already covers both counters. Removing either line leaves this quiet.
+	# It earns its place the day the reset order changes — which is exactly the day nobody would
+	# think to add it.
+	var allowance := Economy.purchases_after(GameState.wave)
+	if GameState.purchases_left() != allowance:
+		_fail(
+			(
+				"a new run opened with %d of its %d purchases already spent"
+				% [allowance - GameState.purchases_left(), allowance]
+			)
+		)
 
 
 func _put_the_run_back() -> void:
