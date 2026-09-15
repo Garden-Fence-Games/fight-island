@@ -2,13 +2,12 @@ class_name MusicBed
 extends Node
 ## Three loops on the MusicDuck bus, lifted by how much trouble the player is in.
 ##
-## The only pacing tool the game has between waves. A wave is six minutes and the fighting is not
-## evenly spread through it; what the bed does is make the difference audible before the player has
-## counted anybody — the island filling up should be a thing you feel arriving rather than a number
-## you read off the HUD.
+## The only pacing tool the game has between waves. The fighting is not evenly spread through a
+## wave, and what the bed does is make that audible before the player has counted anybody — the
+## island filling up should be a thing you feel arriving rather than a number you read off the HUD.
 ##
-## **Pressure is bodies on the island, not time.** A wave that has run five of its six minutes is
-## not a tense wave if nobody is left, and a wave thirty seconds in with eight farmers closing is.
+## **Pressure is bodies on the island, not time.** A wave almost over is not a tense wave if nobody
+## is left, and a wave thirty seconds in with eight farmers closing is.
 ## Measured against what the wave formula allows at once rather than against a constant, so the bed
 ## means the same thing at wave 1 and at wave 15.
 ##

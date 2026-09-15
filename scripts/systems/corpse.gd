@@ -47,7 +47,7 @@ func assemble(copy: Node3D, living: RagdollComponent, field: CorpseField) -> voi
 	_field = field
 	add_child(copy)
 	copy.transform = Transform3D.IDENTITY
-	_skeleton = _skeleton_in(copy)
+	_skeleton = Descend.first(copy, Skeleton3D) as Skeleton3D
 	if _skeleton == null:
 		return
 	_skeleton_home = _skeleton.get_parent()
@@ -167,14 +167,3 @@ func _make_the_hurtbox() -> void:
 	_hurtbox.add_child(shape)
 	add_child(_hurtbox)
 	_hurtbox.global_position = where()
-
-
-func _skeleton_in(node: Node) -> Skeleton3D:
-	var found := node as Skeleton3D
-	if found != null:
-		return found
-	for child: Node in node.get_children():
-		var deeper := _skeleton_in(child)
-		if deeper != null:
-			return deeper
-	return null

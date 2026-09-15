@@ -112,7 +112,7 @@ func _show_colours(on: bool) -> void:
 func _dress(material: ShaderMaterial) -> void:
 	if visual == null:
 		return
-	for mesh: MeshInstance3D in _meshes(visual):
+	for mesh: MeshInstance3D in Descend.meshes(visual):
 		mesh.material_overlay = material
 
 
@@ -138,13 +138,3 @@ func _strength() -> float:
 
 func _reduce_flashing() -> bool:
 	return bool(Settings.get_value(&"access_reduce_flashing"))
-
-
-func _meshes(root: Node) -> Array[MeshInstance3D]:
-	var found: Array[MeshInstance3D] = []
-	for child: Node in root.get_children():
-		var mesh := child as MeshInstance3D
-		if mesh != null:
-			found.append(mesh)
-		found.append_array(_meshes(child))
-	return found

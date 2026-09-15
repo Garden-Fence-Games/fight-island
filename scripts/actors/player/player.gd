@@ -207,7 +207,7 @@ func locomotion_facing(movement: Vector3) -> Vector3:
 func body_materials() -> Array[StandardMaterial3D]:
 	if not _body_materials.is_empty():
 		return _body_materials
-	for mesh: MeshInstance3D in _mesh_instances(self):
+	for mesh: MeshInstance3D in Descend.meshes(self):
 		for surface: int in mesh.get_surface_override_material_count():
 			var source := mesh.get_active_material(surface) as StandardMaterial3D
 			if source == null:
@@ -218,19 +218,6 @@ func body_materials() -> Array[StandardMaterial3D]:
 	return _body_materials
 
 
-func _mesh_instances(root: Node) -> Array[MeshInstance3D]:
-	var found: Array[MeshInstance3D] = []
-	for child: Node in root.get_children():
-		var mesh := child as MeshInstance3D
-		if mesh != null:
-			found.append(mesh)
-		found.append_array(_mesh_instances(child))
-	return found
-
-
-## `on_foot` is what separates walking from every other way the body covers ground. A roll travels
-## too and it is not two steps, and an attack calls `halt` and travels none — so the two states that
-## actually walk say so, and nothing else has to know footfalls exist.
 func apply_motion(direction: Vector3, speed: float, delta: float, on_foot: bool = false) -> void:
 	var wading := Water.drag_at(global_position.y, PlayableArea.WADE_DEPTH)
 	velocity.x = direction.x * speed * wading

@@ -8,8 +8,8 @@ extends EnemyState
 ## sees them, and distance carries information again.
 ##
 ## **But waiting for ever is not a fight either.** A body that nobody walks up to stands there for
-## the whole wave, and a player who wants one has to go and get it: on a four-minute wave with a
-## dozen bodies spread around them, that is most of the wave spent walking. So the waiting is a
+## the whole wave, and a player who wants one has to go and get it: with a dozen bodies spread
+## around them, that is most of a ninety-second wave spent walking. So the waiting is a
 ## grace period rather than a state — long enough to be read, short enough that the island always
 ## comes to the player in the end.
 
