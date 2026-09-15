@@ -23,6 +23,12 @@ yourself. They are not installed today, and nothing is blocked by that.
 `application/config/version` in `project.godot` is the source of truth. `0.MAJOR.MINOR` until
 release, `1.0.0` at launch. Git tags are `v0.3.0`.
 
+Source of truth is not the same as sole copy: each export preset stamps its own version into the
+platform's metadata — `application/short_version` and `application/version` on macOS,
+`application/file_version` and `application/product_version` on Windows — and Godot writes *those*
+into the bundle. `tools/verify_project_config.gd` fails when any of the four disagrees with
+`project.godot`, so bumping the version means editing `export_presets.cfg` in the same commit.
+
 `CHANGELOG.md` follows Keep a Changelog and holds released versions only. The entries for the next
 release sit one per file in `changelog.d/`, and the release pull request runs
 
@@ -201,7 +207,8 @@ being reversible: a build on itch.io has been downloaded by the time anybody not
 
 ## Release checklist
 
-- [ ] Version bumped in `project.godot`, `tools/assemble-changelog.sh` run and its deletions committed
+- [ ] Version bumped in `project.godot` **and in the four `export_presets.cfg` fields**,
+      `tools/assemble-changelog.sh` run and its deletions committed
 - [ ] No debug actions in the release build, no `print` in hot paths
 - [ ] Both platforms launched from a **clean** machine
 - [ ] Save migration tested from the previous version
