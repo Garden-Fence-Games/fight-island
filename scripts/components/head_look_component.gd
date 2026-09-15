@@ -47,6 +47,10 @@ var watching: Node3D = null
 var resting: bool = false
 
 var _skeleton: Skeleton3D = null
+## The head's index on this skeleton, resolved once when the rig is found. `find_bone` takes a
+## String, so asking per frame also built one out of the StringName every frame — on every body in
+## the game, thirty-one of them at the crowd budget.
+var _head: int = -1
 var _aim: AimComponent = null
 var _modifier: LookAtModifier3D = null
 var _target: Node3D = null
@@ -66,7 +70,8 @@ func _build() -> void:
 		return
 	_skeleton = _find_skeleton(_body)
 	_aim = _find_aim(_body)
-	if _skeleton == null or _skeleton.find_bone(String(bone_name)) < 0:
+	_head = _skeleton.find_bone(String(bone_name)) if _skeleton != null else -1
+	if _skeleton == null or _head < 0:
 		return
 
 	var target := Node3D.new()
@@ -107,10 +112,9 @@ func _process(_delta: float) -> void:
 		return
 	if not _target.is_inside_tree() or not _skeleton.is_inside_tree():
 		return
-	var head := _skeleton.find_bone(String(bone_name))
-	if head < 0:
+	if _head < 0:
 		return
-	var origin := _skeleton.global_transform * _skeleton.get_bone_global_pose(head).origin
+	var origin := _skeleton.global_transform * _skeleton.get_bone_global_pose(_head).origin
 	_target.global_position = origin + _look_direction() * reach
 
 
