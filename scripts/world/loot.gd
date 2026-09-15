@@ -28,6 +28,15 @@ const SILVER: Color = Color(0.86, 0.88, 0.92)
 
 static var _flare_texture: Texture2D = null
 static var _metal: Dictionary[int, StandardMaterial3D] = {}
+## The body each kind wears, and the quad its flare is drawn on. Shared, because nothing writes to
+## them: a coin's mesh is the same object for every coin ever thrown.
+##
+## **The flare's material is deliberately not here.** Every piece twinkles on its own clock and
+## writes `albedo_color` each frame, so one shared material would have every coin on the island
+## flicker in step — the defect this repository has already met twice, in the hitboxes and again in
+## the impact flares.
+static var _shape: Dictionary[int, Mesh] = {}
+static var _flare_quad: QuadMesh = null
 
 var kind: Kind = Kind.COIN
 ## Money for a coin, rounds for a round.
@@ -207,24 +216,11 @@ func _resting_height() -> float:
 func _build() -> void:
 	_body = MeshInstance3D.new()
 	_body.name = "Body"
-	if kind == Kind.COIN:
-		var coin := CylinderMesh.new()
-		coin.top_radius = 0.16
-		coin.bottom_radius = 0.16
-		coin.height = 0.045
-		coin.radial_segments = 16
-		coin.rings = 1
-		_body.mesh = coin
-		# Stood on its edge, so the spin shows the face and then the rim.
-		_body.rotation_degrees = Vector3(90.0, 0.0, 0.0)
-	else:
-		var shell := CapsuleMesh.new()
-		shell.radius = 0.065
-		shell.height = 0.34
-		shell.radial_segments = 10
-		shell.rings = 2
-		_body.mesh = shell
-		_body.rotation_degrees = Vector3(0.0, 0.0, 90.0)
+	_body.mesh = _shape_for(kind)
+	# A coin is stood on its edge, so the spin shows the face and then the rim.
+	_body.rotation_degrees = (
+		Vector3(90.0, 0.0, 0.0) if kind == Kind.COIN else Vector3(0.0, 0.0, 90.0)
+	)
 	_body.material_override = _metal_for(kind)
 	_body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# The spin turns the holder, so a coin stood on its edge turns about the vertical.
@@ -234,9 +230,7 @@ func _build() -> void:
 	_spin.add_child(_body)
 	_flare = MeshInstance3D.new()
 	_flare.name = "Flare"
-	var quad := QuadMesh.new()
-	quad.size = Vector2.ONE * data.flare_size
-	_flare.mesh = quad
+	_flare.mesh = _quad_for(data.flare_size)
 	_flare_material = StandardMaterial3D.new()
 	_flare_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_flare_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -248,6 +242,40 @@ func _build() -> void:
 	_flare.material_override = _flare_material
 	_flare.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_flare)
+
+
+## The body a kind wears, built once. A mesh nobody writes to is one object, however many pieces
+## are on the sand.
+static func _shape_for(which: Kind) -> Mesh:
+	if _shape.has(which):
+		return _shape[which]
+	var built: Mesh = null
+	if which == Kind.COIN:
+		var coin := CylinderMesh.new()
+		coin.top_radius = 0.16
+		coin.bottom_radius = 0.16
+		coin.height = 0.045
+		coin.radial_segments = 16
+		coin.rings = 1
+		built = coin
+	else:
+		var shell := CapsuleMesh.new()
+		shell.radius = 0.065
+		shell.height = 0.34
+		shell.radial_segments = 10
+		shell.rings = 2
+		built = shell
+	_shape[which] = built
+	return built
+
+
+## The quad every flare is drawn on. One size for all of them, off the same `LootData`.
+static func _quad_for(side: float) -> QuadMesh:
+	if _flare_quad != null and is_equal_approx(_flare_quad.size.x, side):
+		return _flare_quad
+	_flare_quad = QuadMesh.new()
+	_flare_quad.size = Vector2.ONE * side
+	return _flare_quad
 
 
 ## Polished metal, one material per kind shared by every piece of it. Metallic with a low roughness
