@@ -32,9 +32,6 @@ extends Node
 ## one-shot does not want a live synthesiser it can starve, and a waveform built once is a waveform
 ## that sounds the same every time — which is the whole point of a signature.
 
-## How many flat sounds may overlap. A chain into a parry into a hit is three, and locomotion now
-## shares this pool — a sprint puts a footfall in it every fifth of a second. Raised so that a
-## running player can never be the reason a perfect parry finds no voice.
 ## The rate, the ramp and the seam live with the signal work now. Named here as well because the
 ## checks ask this class what the game sounds like, and a check that had to know which file a
 ## sample rate moved to would be a check that breaks when it moves again.
@@ -42,6 +39,9 @@ const MIX_RATE: int = SoundBank.MIX_RATE
 const RAMP: float = SoundBank.RAMP
 const SURF_SEAM: float = SoundBank.SURF_SEAM
 
+## How many flat sounds may overlap. A chain into a parry into a hit is three, and locomotion now
+## shares this pool — a sprint puts a footfall in it every fifth of a second. Raised so that a
+## running player can never be the reason a perfect parry finds no voice.
 const VOICES: int = 12
 ## How many sounds may come from somewhere. Three farmers may commit at once at night, and a body
 ## can go down while they do.
@@ -72,8 +72,6 @@ const CRY_SECONDS: float = 0.66
 const CRY_FROM: float = 430.0
 const CRY_TO: float = 150.0
 
-## The partial the perfect window adds, and how long it rings. **The same in every impact family**:
-## it is the signature, and a player who learns it on fists has learnt it on the gun.
 ## **The whole game is in A minor**, and that is not decoration — it is what stops two sounds that
 ## arrive together from grinding. It was already mostly true and nobody had written it down: the bed
 ## is stacked fifths on A, the perfect parry is a bell on A and E, the perfect signature is E, and
@@ -86,6 +84,8 @@ const CRY_TO: float = 150.0
 const A: float = 440.0
 const C: float = 523.25
 const E: float = 659.25
+## The partial the perfect window adds, and how long it rings. **The same in every impact family**:
+## it is the signature, and a player who learns it on fists has learnt it on the gun.
 const PERFECT_PARTIAL: float = 1320.0
 const PERFECT_RING: float = 0.13
 ## The body of a blow, per weapon. Pitch, how long it rings, and how much contact grain rides on top

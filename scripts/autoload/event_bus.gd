@@ -35,6 +35,10 @@ signal parry_late
 ## A foot went down, and whether it went down in water. Carried because the surf and the sand are
 ## two sounds, and the only thing that knows which is the body that just covered the ground.
 signal footstep_taken(wading: bool)
+## A coconut was walked over, and how much of the bar it gave back.
+signal coconut_taken(healed: float)
+## The rainbow bird was walked over, and how many seconds its power lasts.
+signal rainbow_bird_taken(seconds: float)
 ## A farmer has begun committing, and where he is standing. **The position is the whole point**: a
 ## wind-up the player cannot see is the one they most need to hear, so this is the one sound in the
 ## game that has to arrive from a direction. It carries a point rather than the body, because by the
@@ -42,10 +46,6 @@ signal footstep_taken(wading: bool)
 ## The archetype rides along for the same reason. A farmhand's wind-up and a pirate's must not sound
 ## alike: the pirate is the one that hurts most, and sound is half the warning the design gives
 ## them.
-## A coconut was walked over, and how much of the bar it gave back.
-signal coconut_taken(healed: float)
-## The rainbow bird was walked over, and how many seconds its power lasts.
-signal rainbow_bird_taken(seconds: float)
 signal telegraph_began(where: Vector3, archetype: EnemyData)
 signal enemy_spawned(enemy: Node3D)
 ## The archetype travels with the death because the tally outlives the node that carried it.
@@ -55,7 +55,6 @@ signal hitstop_requested(duration: float)
 ## it by the player's own setting, and a player who has turned shake off is not asking for less of
 ## it, they are asking for none.
 signal shake_requested(strength: float)
-## A wave has begun, and how many bodies it will send in total.
 ## The counter is open. The one moment in a run where nothing is trying to kill the player, and it
 ## had no sound at all — a screen arriving in silence reads as the game having stopped rather than
 ## as the fight having paused.
@@ -63,6 +62,7 @@ signal merchant_opened
 ## The run is over, and which way. Separate from `player_died` because a victory and a death are the
 ## same screen and the opposite feeling, and the only thing that can say so is a sound.
 signal run_ended(victory: bool)
+## A wave has begun, and how many bodies it will send in total.
 signal wave_started(wave: int, enemies: int)
 ## The last of them is down. The reward travels with it so the economy can stay a listener rather
 ## than something the director has to know about.

@@ -131,9 +131,3 @@ static func _pack(transforms: Array[Transform3D]) -> PackedFloat32Array:
 		data[base + 10] = basis.z.z
 		data[base + 11] = origin.z
 	return data
-
-# ------------------------------------------------------------------------------------- authored
-
-## The six boulders that are placed rather than scattered. Lifted out so the scatter can keep its
-## distance from them: a palm growing out of a rock formation is the sort of thing only a machine
-## would ever do.
