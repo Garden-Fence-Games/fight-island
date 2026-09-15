@@ -147,10 +147,11 @@ and sprawling: the blow's own `Stagger` figure becomes a push, and a blow that b
 single blow that sends a pirate sprawling**, which is a large part of why the stick is the answer
 to him — but every other blow still rocks him and still leaves him open.
 
-The three figures that turn a `Stagger` number into a knockdown — the push per point of it
-(12 m/s), the broken-poise multiplier (1.8) and the ceiling below — are one `KnockdownData` in
-`data/combat/knockdown.tres`. They are the same conversion for every attack in the game, which is
-why they are one resource rather than another column on the table above.
+The figures that turn a `Stagger` number into a knockdown — the push per point of it (12 m/s), the
+broken-poise multiplier (1.8), the ceiling below, and how long a spent poise meter stays spent
+before it refills (**2 s**) — are one `KnockdownData` in `data/combat/knockdown.tres`. They are the
+same conversion for every attack in the game, which is why they are one resource rather than another
+column on the table above.
 
 **All three weapons are in**, exactly as tabled above. `tools/verify_combat.tscn` asserts the fists'
 damage, the perfect multiplier, both chain-window boundaries, the chain lockout and the parry
