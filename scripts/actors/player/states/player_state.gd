@@ -15,7 +15,8 @@ func _ready() -> void:
 
 ## The interrupts a grounded, non-committed state always accepts, in priority order.
 func try_common_transitions() -> bool:
-	if player.stamina != null and Input.is_action_just_pressed(&"dodge"):
+	var may_roll := player.stamina != null and player.roll_cooldown <= 0.0
+	if may_roll and Input.is_action_just_pressed(&"dodge"):
 		if player.stamina.try_spend(DODGE_COST):
 			transition_to(&"Dodge")
 			return true
