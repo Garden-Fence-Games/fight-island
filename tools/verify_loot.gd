@@ -41,6 +41,7 @@ func _run() -> void:
 	await _check_near_is_close_enough()
 	await _check_a_full_pocket_refuses_a_round()
 	await _check_the_end_of_a_wave_loses_nothing()
+	await _check_a_piece_builds_almost_nothing()
 	_put_the_run_back()
 	_report()
 
@@ -98,6 +99,50 @@ func _check_the_sweep_beats_the_merchant() -> void:
 
 
 ## A death on the bus throws the body's money out as coins, and a round when the gun is carried.
+## **What a piece costs to build**, which is the one allocation path left inside a fight: the two
+## pools exist so nothing is constructed mid-wave, and loot was not in either. The runner on wave 3
+## pays thirty-five pieces in a single call, in the frame the kill is meant to land.
+##
+## Asserted as a property rather than timed. A stopwatch here would measure this machine and would
+## pass or fail by the weather; what has to stay true is that a second coin points at the first
+## coin's mesh instead of building one of its own.
+##
+## And the flare's material must go the other way — **each piece needs its own**, because every one
+## of them writes `albedo_color` on its own twinkle. Sharing it is the defect this repository has
+## already met in the hitboxes and again in the impact flares, so the check holds both directions at
+## once.
+func _check_a_piece_builds_almost_nothing() -> void:
+	_clear()
+	var body := Node3D.new()
+	_arena.add_child(body)
+	body.global_position = _player.global_position + AWAY
+	EventBus.enemy_died.emit(body, &"farmhand", 6)
+	await get_tree().physics_frame
+
+	var coins := _pieces(Loot.Kind.COIN)
+	if coins.size() < 2:
+		_fail("a body worth 6 threw %d coins, and this needs two to compare" % coins.size())
+		return
+	var first := coins[0].get_node_or_null(^"Spin/Body") as MeshInstance3D
+	var second := coins[1].get_node_or_null(^"Spin/Body") as MeshInstance3D
+	if first == null or second == null:
+		_fail("a coin has no body to look at")
+		return
+	if first.mesh != second.mesh:
+		_fail("two coins carry two meshes, so every piece of a payout builds its own")
+
+	var one := coins[0].get_node_or_null(^"Flare") as MeshInstance3D
+	var two := coins[1].get_node_or_null(^"Flare") as MeshInstance3D
+	if one == null or two == null:
+		_fail("a coin has no flare to look at")
+		return
+	if one.mesh != two.mesh:
+		_fail("two flares carry two quads, and nothing writes to a quad")
+	if one.material_override != null and one.material_override == two.material_override:
+		_fail("two coins share one flare material, so they twinkle in step")
+	_clear()
+
+
 func _check_a_kill_throws_its_pay() -> void:
 	_clear()
 	GameState.loadout = Loadout.new()
