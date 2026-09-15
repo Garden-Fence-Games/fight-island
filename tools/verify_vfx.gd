@@ -126,6 +126,14 @@ func _check_a_perfect_hit_is_a_different_effect() -> void:
 		return
 	plain.play(Vector3.ZERO, false)
 	perfect.play(Vector3.ZERO, true)
+	# **Two impacts, two materials.** A `StandardMaterial3D` in a scene is one object shared by every
+	# instance of it unless the scene says otherwise, and the pool warms eight of these — so a
+	# perfect hit anywhere recoloured every flare on the island, and one flare fading out took the
+	# rest with it. The coconut's material carries `resource_local_to_scene` for exactly this reason.
+	var plain_material := plain.flare.material_override
+	var perfect_material := perfect.flare.material_override
+	if plain_material != null and plain_material == perfect_material:
+		_fail("two pooled impacts share one flare material, so one recolours the other")
 	var differences := 0
 	if perfect.debris.amount > plain.debris.amount:
 		differences += 1
