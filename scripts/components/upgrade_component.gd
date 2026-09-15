@@ -8,13 +8,22 @@ extends Node
 ## again — on a purchase, on a weapon swap, and on a player who walked back into the arena with a
 ## run already under way.
 
+## What the bought levels come to, for the body to do with as it likes. **Emitted rather than
+## written**: health, stamina and reach belong to components this one can find by name, but a damage
+## multiplier and a stamina cost belong to whoever is swinging — and naming that owner was the one
+## place in `scripts/components/` where a component knew what carried it, in the file whose own
+## docstring claims it does not.
+##
+## The same shape `FrenzyComponent` already uses for the same problem.
+signal applied(damage: float, stamina_cost: float)
+
 var _base_max_health: float = 0.0
 var _base_max_stamina: float = 0.0
 var _base_regen: float = 0.0
 
-@onready var health: HealthComponent = get_parent().get_node_or_null("Health")
-@onready var stamina: StaminaComponent = get_parent().get_node_or_null("Stamina")
-@onready var player: Player = get_parent() as Player
+@onready var health: HealthComponent = get_node_or_null(^"../Health") as HealthComponent
+@onready var stamina: StaminaComponent = get_node_or_null(^"../Stamina") as StaminaComponent
+@onready var hitbox: Hitbox = get_node_or_null(^"../Hitbox") as Hitbox
 
 
 func _ready() -> void:
@@ -61,11 +70,9 @@ func apply_all(heal: bool) -> void:
 	if stamina != null:
 		stamina.set_max_stamina(max_stamina)
 		stamina.regen_per_second = regen
-	if player != null:
-		player.damage_multiplier = damage
-		player.stamina_cost_multiplier = cost
-	if player != null and player.hitbox != null:
-		player.hitbox.reach_scale = reach
+	if hitbox != null:
+		hitbox.reach_scale = reach
+	applied.emit(damage, cost)
 
 
 func _on_upgrade_purchased(track: UpgradeTrack, _level: int) -> void:

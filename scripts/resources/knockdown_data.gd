@@ -27,3 +27,10 @@ extends Resource
 ## `get_up_back` and `get_up_front`, and a rise lasts the length of whichever is playing — this is
 ## the stand-in for a body that has neither, and the rest pose is what it stands up in.
 @export var rise_time: float = 0.7
+## How long a body's poise stays spent before it refills. The meter is what turns a run of small
+## hits into a knockdown, so this is the window in which they have to arrive — long enough that a
+## chain counts as one beating, short enough that a man left alone recovers.
+##
+## It was a bare `2.0` in `Enemy._on_hurt` while every other figure of the same conversion lived
+## here, which put one balance number out of a designer's reach and out of `docs/game-design.md`.
+@export var poise_window: float = 2.0

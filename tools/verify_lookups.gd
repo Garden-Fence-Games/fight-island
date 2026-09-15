@@ -34,6 +34,10 @@ const LOOKUPS: Array[String] = [
 ## that says the same thing less clearly.
 const ALLOWED: Array[String] = ["res://scripts/components/state_machine.gd"]
 
+## Where a component lives, and the classes that are actors rather than parts.
+const COMPONENTS: String = "res://scripts/components"
+const ACTORS: PackedStringArray = ["Player", "Enemy"]
+
 var _failures: PackedStringArray = []
 var _searched: int = 0
 ## How many lines were actually looked at. A parser that silently returns nothing is the one way
@@ -48,6 +52,7 @@ func _ready() -> void:
 func _run() -> void:
 	for root: String in ROOTS:
 		_walk(root)
+	_check_no_component_names_its_owner()
 	if _searched == 0:
 		_fail("no per-frame body was found at all, so nothing was searched")
 	if _lines == 0:
@@ -61,6 +66,45 @@ func _run() -> void:
 			)
 		)
 	_report()
+
+
+## **A component may not type the thing that carries it.** `docs/architecture.md` opens on the rule
+## — behaviour is assembled from components that neither know nor care who owns them — and
+## `UpgradeComponent` broke it while its own docstring claimed to follow it, which is the shape that
+## survives review: a file that reads as evidence the rule holds.
+##
+## Naming an actor is fine; `AimComponent` casts a **target** to `Enemy` and should. What is not
+## fine is casting the parent or the owner, because that is the compile-time dependency that stops a
+## merchant, an ally or a second body from carrying the same component.
+func _check_no_component_names_its_owner() -> void:
+	for name: String in DirAccess.get_files_at(COMPONENTS):
+		if not name.ends_with(".gd"):
+			continue
+		var path := COMPONENTS.path_join(name)
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file == null:
+			continue
+		var number := 0
+		for line: String in file.get_as_text().split("\n"):
+			number += 1
+			var code := line.strip_edges()
+			if code.begins_with("#"):
+				continue
+			for owner_word: String in ["get_parent()", "owner"]:
+				if not code.contains(owner_word):
+					continue
+				for actor: String in ACTORS:
+					if code.contains("as %s" % actor):
+						_fail(
+							(
+								(
+									"%s:%d types what carries it as %s, and a component is not owed an "
+									+ "owner"
+								)
+								% [path, number, actor]
+							)
+						)
+	_searched += 1
 
 
 func _walk(directory: String) -> void:
