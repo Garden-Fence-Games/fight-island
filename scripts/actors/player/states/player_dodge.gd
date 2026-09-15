@@ -13,6 +13,10 @@ const DURATION: float = 0.55
 const DISTANCE: float = 3.2
 const IFRAME_START: float = 0.05
 const IFRAME_LENGTH: float = 0.30
+## The beat after the roll in which another cannot start. Long enough, with the roll's own
+## vulnerable tail, to be about as long as a farmhand's committed swing — so a player who answers
+## everything with a roll can actually be caught.
+const COOLDOWN: float = 0.15
 
 var _elapsed: float = 0.0
 var _direction: Vector3 = Vector3.ZERO
@@ -39,6 +43,7 @@ func physics_update(delta: float) -> void:
 	var speed := DISTANCE / DURATION
 	player.apply_motion(_direction, speed, delta)
 	if _elapsed >= DURATION:
+		player.roll_cooldown = COOLDOWN
 		transition_to(&"Idle")
 
 

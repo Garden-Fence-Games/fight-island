@@ -50,6 +50,21 @@ var stamina_cost_multiplier: float = 1.0
 ## power must survive a purchase or a swap it did not cause.
 var speed_multiplier: float = 1.0
 
+## Counts down after a roll ends, and no roll may start while it does.
+##
+## **This is what makes the roll's own recovery real.** The invulnerability covers 0.05 s to 0.35 s
+## of a 0.55 s roll, so its last fifth of a second is vulnerable on purpose — and rolling again the
+## instant it ended opened the next set of frames exactly where that window was, so the weakness the
+## table describes could never be met.
+##
+## Not a second gate on stamina. A perfect parry refunds more than it costs, so a player who reads
+## well earns stamina; without this, that reward buys uninterrupted invulnerability, and the parry
+## ends up funding the thing that makes the parry unnecessary.
+##
+## On the body rather than in `Dodge`, like the chain lockout: a clock kept by the state it is meant
+## to outlive dies with it.
+var roll_cooldown: float = 0.0
+
 ## What was in hand when the rainbow bird's power began, so it is in hand again when it ends. Empty
 ## while the power is off.
 var _held_before_frenzy: StringName = &""
@@ -58,6 +73,7 @@ var _body_materials: Array[StandardMaterial3D] = []
 var _stride_walked: float = 0.0
 var _chain_attack: AttackData = null
 var _chain_clock: float = -1.0
+
 var _lockout_clock: float = 0.0
 var _press_age: float = INF
 var _sprint_toggle: bool = false
@@ -110,6 +126,8 @@ func _process(delta: float) -> void:
 		_lockout_clock = maxf(_lockout_clock - delta, 0.0)
 		if is_zero_approx(_lockout_clock):
 			EventBus.chain_ready.emit()
+	if roll_cooldown > 0.0:
+		roll_cooldown = maxf(roll_cooldown - delta, 0.0)
 	if _chain_clock >= 0.0:
 		_chain_clock += delta
 		if _chain_attack == null or _chain_clock > _chain_attack.chain_window.y:

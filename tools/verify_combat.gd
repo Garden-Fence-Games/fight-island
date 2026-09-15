@@ -82,6 +82,7 @@ func _run() -> void:
 	await _check_a_dodge_through_a_swing_takes_nothing()
 	await _check_a_dodge_that_starts_too_late_takes_everything()
 	_check_a_roll_outlasts_its_own_invulnerability()
+	await _check_a_roll_cannot_cover_its_own_recovery()
 	await _check_a_sprint_runs_out()
 	await _check_parry_negates()
 	await _check_a_parry_that_missed_is_a_hit_taken()
@@ -284,6 +285,42 @@ func _check_a_roll_outlasts_its_own_invulnerability() -> void:
 				% [PlayerDodge.IFRAME_LENGTH, LEAST_INVULNERABILITY]
 			)
 		)
+
+
+## **The roll's vulnerable tail has to be reachable.** Its invulnerability runs to
+## `IFRAME_START + IFRAME_LENGTH` of a `DURATION`-long roll, so the rest of it is exposed on purpose
+## — and a second roll starting the instant the first ends opens new frames exactly over that
+## window, which makes the weakness the table describes impossible to meet.
+##
+## Measured as a gap in seconds rather than as a flag, because that is what an enemy has to hit: the
+## tail plus the cooldown has to be worth something against a committed swing.
+func _check_a_roll_cannot_cover_its_own_recovery() -> void:
+	var exposed := PlayerDodge.DURATION - (PlayerDodge.IFRAME_START + PlayerDodge.IFRAME_LENGTH)
+	var gap := exposed + PlayerDodge.COOLDOWN
+	if gap < LEAST_INVULNERABILITY:
+		_fail(
+			(
+				(
+					"between two rolls a player is open for %.2f s, and a farmer's blow is active "
+					+ "for %.2f s — a gap shorter than the blow cannot be punished"
+				)
+				% [gap, LEAST_INVULNERABILITY]
+			)
+		)
+
+	# And the gate is real, not just tabled. Rolled once, the next one has to be refused.
+	_player.machine.current.transition_to(&"Idle")
+	_player.roll_cooldown = 0.0
+	if _player.stamina != null:
+		_player.stamina.refund(_player.stamina.max_stamina)
+	_player.machine.current.transition_to(&"Dodge")
+	await _advance(PlayerDodge.DURATION + 0.02)
+	if _player.roll_cooldown <= 0.0:
+		_fail(
+			"a finished roll left no cooldown behind, so the next one can start on the same frame"
+		)
+	if _player.machine.current_name == &"Dodge":
+		_fail("the player was still rolling after the roll's own duration")
 
 
 ## Sprinting has to end on its own. The design rests on it: a walking player cannot break away from
