@@ -84,6 +84,7 @@ func _run() -> void:
 	_check_a_roll_outlasts_its_own_invulnerability()
 	await _check_a_roll_cannot_cover_its_own_recovery()
 	await _check_a_sprint_runs_out()
+	await _check_a_state_that_leaves_on_arrival_is_announced_once()
 	await _check_parry_negates()
 	await _check_a_parry_that_missed_is_a_hit_taken()
 	await _check_enemy_closes_and_hits()
@@ -394,6 +395,56 @@ func _reset_player() -> void:
 	_player.consume_press()
 	if _player.stamina != null:
 		_player.stamina.refund(_player.stamina.max_stamina)
+
+
+## **A state may leave from inside its own `enter`.** Pulling the trigger on an empty gun is the
+## everyday case: `Attack` enters, finds no round, and goes straight back to `Idle` — re-entering
+## the machine while the first call is still on the stack.
+##
+## The announcement is what breaks. The nested call moves `current_name` out from under the outer
+## one, so the outer call announced the **inner** state a second time and the outer state never at
+## all. Anything listening for what the body is doing — the animation, the HUD — heard a state it
+## had already been told about and missed one entirely.
+func _check_a_state_that_leaves_on_arrival_is_announced_once() -> void:
+	_player.machine.current.transition_to(&"Idle")
+	await get_tree().physics_frame
+	# Borrowed and put back: every check after this one fights with whatever is in hand.
+	var held := GameState.loadout.equipped
+	var rounds := GameState.loadout.rounds
+	GameState.loadout.find_weapon(&"gun")
+	GameState.loadout.equip(&"gun")
+	GameState.loadout.rounds = 0
+	await get_tree().physics_frame
+	if _player.stamina != null:
+		_player.stamina.refund(_player.stamina.max_stamina)
+
+	var heard: Array[StringName] = []
+	var listener := func(named: StringName) -> void: heard.append(named)
+	_player.machine.transitioned.connect(listener)
+	_player.machine.current.transition_to(&"Attack", {"index": 0})
+	await get_tree().physics_frame
+	_player.machine.transitioned.disconnect(listener)
+
+	if _player.machine.current_name != &"Idle":
+		_fail(
+			"a trigger pulled on an empty gun left the player in %s" % _player.machine.current_name
+		)
+	if heard.size() != 1:
+		_fail(
+			(
+				(
+					"leaving a state from inside its own enter announced %d transitions, and one thing "
+					+ "happened: %s"
+				)
+				% [heard.size(), ", ".join(heard)]
+			)
+		)
+	elif heard[0] != &"Idle":
+		_fail("the machine announced %s and the player is in Idle" % heard[0])
+	GameState.loadout.rounds = rounds
+	GameState.loadout.equip(held)
+	_player.machine.current.transition_to(&"Idle")
+	await get_tree().physics_frame
 
 
 func _check_parry_negates() -> void:
