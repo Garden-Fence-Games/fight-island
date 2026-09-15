@@ -92,6 +92,7 @@ var visual: WeaponVisualComponent = get_node_or_null("WeaponVisual") as WeaponVi
 @onready var animation: AnimationComponent = get_node_or_null("Animation") as AnimationComponent
 @onready var ragdoll: RagdollComponent = get_node_or_null("Ragdoll") as RagdollComponent
 @onready var frenzy: FrenzyComponent = get_node_or_null("Frenzy") as FrenzyComponent
+@onready var upgrades: UpgradeComponent = get_node_or_null(^"Upgrades") as UpgradeComponent
 @onready
 var materials: BodyMaterialsComponent = get_node_or_null(^"BodyMaterials") as BodyMaterialsComponent
 
@@ -114,6 +115,12 @@ func _ready() -> void:
 	if dust != null:
 		dust.walking_speed = MOVE_SPEED
 		dust.sprinting_speed = SPRINT_SPEED
+	if upgrades != null:
+		upgrades.applied.connect(_on_upgrades_applied)
+		# Asked for, not waited for. A component's `_ready` runs before its owner's, so the first
+		# answer was emitted into an empty room; applying again is how this one hears it. Safe to
+		# repeat by design — the component reads its base values once and works from those.
+		upgrades.apply_all(false)
 	if frenzy != null:
 		frenzy.started.connect(_on_frenzy_started)
 		frenzy.ended.connect(_on_frenzy_ended)
@@ -418,6 +425,14 @@ func _frenzy_is_on() -> bool:
 
 
 ## Twice as fast, and fists only: whatever was in hand is put away until the power ends.
+## What the upgrade component worked out, kept where the swinging happens. It applies once in its
+## own `_ready`, which runs before this one — so the first answer is asked for here rather than
+## waited for.
+func _on_upgrades_applied(damage: float, stamina_cost: float) -> void:
+	damage_multiplier = damage
+	stamina_cost_multiplier = stamina_cost
+
+
 func _on_frenzy_started(data: FrenzyData) -> void:
 	speed_multiplier = data.speed_multiplier
 	_held_before_frenzy = GameState.loadout.equipped
