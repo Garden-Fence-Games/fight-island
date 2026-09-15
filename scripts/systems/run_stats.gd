@@ -19,13 +19,13 @@ var _kills: Dictionary = {}
 ## half-written file costs the player their numbers rather than their run.
 static func from_dict(data: Dictionary) -> RunStats:
 	var stats := RunStats.new()
-	stats.waves_cleared = int(data.get("waves_cleared", stats.waves_cleared))
-	stats.ended_on_wave = int(data.get("ended_on_wave", stats.ended_on_wave))
-	stats.seconds = float(data.get("seconds", stats.seconds))
-	stats.money_earned = int(data.get("money_earned", stats.money_earned))
-	stats.money_spent = int(data.get("money_spent", stats.money_spent))
-	stats.perfect_hits = int(data.get("perfect_hits", stats.perfect_hits))
-	stats.perfect_parries = int(data.get("perfect_parries", stats.perfect_parries))
+	stats.waves_cleared = SaveManager.as_int(data.get("waves_cleared"), stats.waves_cleared)
+	stats.ended_on_wave = SaveManager.as_int(data.get("ended_on_wave"), stats.ended_on_wave)
+	stats.seconds = SaveManager.as_float(data.get("seconds"), stats.seconds)
+	stats.money_earned = SaveManager.as_int(data.get("money_earned"), stats.money_earned)
+	stats.money_spent = SaveManager.as_int(data.get("money_spent"), stats.money_spent)
+	stats.perfect_hits = SaveManager.as_int(data.get("perfect_hits"), stats.perfect_hits)
+	stats.perfect_parries = SaveManager.as_int(data.get("perfect_parries"), stats.perfect_parries)
 	var kills: Variant = data.get("kills", {})
 	if kills is Dictionary:
 		for archetype: Variant in kills as Dictionary:

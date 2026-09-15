@@ -39,6 +39,7 @@ func _run() -> void:
 	await _check_a_slider_answers_the_mouse()
 	_check_bindings_are_listed()
 	_check_a_rebind_moves_the_map()
+	_check_a_hand_edited_bindings_file_still_saves()
 	await _check_a_capture_does_not_outlive_its_row()
 	_restore_settings()
 	_report()
@@ -217,6 +218,30 @@ func _check_a_rebind_moves_the_map() -> void:
 	InputBindings.reset_device(InputBindings.Device.KEYBOARD)
 	if InputMap.action_has_event(action, event):
 		_fail("the reset left the rebound key in the map")
+
+
+## `bindings.json` is a file the player can open, and `apply` and `reset_device` are both written
+## to survive an entry that is not a Dictionary. `_store` is the third reader of it and was not —
+## and it runs *after* the InputMap has already changed, so a fault there let the player see the new
+## key take effect and lose it on the next launch, with nothing said.
+func _check_a_hand_edited_bindings_file_still_saves() -> void:
+	var kept := SaveManager.read_json(InputBindings.PATH)
+	var action := "move_left"
+	# The shape the other two readers are explicitly written to skip.
+	SaveManager.write_json(InputBindings.PATH, {action: 5})
+	var event := InputEventKey.new()
+	event.physical_keycode = KEY_F9
+	InputBindings.bind(action, event)
+	var stored := SaveManager.read_json(InputBindings.PATH)
+	var entry: Variant = stored.get(action)
+	if not entry is Dictionary or (entry as Dictionary).is_empty():
+		_fail("a rebind over a hand-edited entry never reached the disk, so it dies on next launch")
+	InputBindings.reset_device(InputBindings.Device.KEYBOARD)
+	if kept.is_empty():
+		SaveManager.erase(InputBindings.PATH)
+	else:
+		SaveManager.write_json(InputBindings.PATH, kept)
+	InputBindings.apply()
 
 
 ## A row that is listening for a key and then stops being on screen, or stops being the row the

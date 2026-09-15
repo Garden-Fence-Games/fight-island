@@ -233,20 +233,26 @@ func restore(data: Dictionary) -> bool:
 	if not data.has("seed") or not data.has("wave"):
 		return false
 	var stored_seed: Variant = data["seed"]
-	run_seed = stored_seed.to_int() if stored_seed is String else int(stored_seed)
-	wave = maxi(int(data["wave"]), 0)
-	wave_in_progress = bool(data.get("wave_in_progress", false))
-	money = maxi(int(data.get("money", 0)), 0)
-	_bought_in_wave = int(data.get("bought_in_wave", -1))
+	# The two a run cannot do without. Present but unreadable is the same as absent — falling back
+	# here would invent a fresh run over the player's, which is worse than refusing to load.
+	if not SaveManager.is_number(stored_seed) or not SaveManager.is_number(data["wave"]):
+		return false
+	run_seed = SaveManager.as_int(stored_seed, 0)
+	wave = maxi(SaveManager.as_int(data["wave"], 0), 0)
+	wave_in_progress = SaveManager.as_bool(data.get("wave_in_progress"), false)
+	money = maxi(SaveManager.as_int(data.get("money"), 0), 0)
+	_bought_in_wave = SaveManager.as_int(data.get("bought_in_wave"), -1)
 	# A save from when one purchase was the whole allowance has no count: that wave's one was spent.
 	var made_default := 1 if _bought_in_wave >= 0 else 0
-	_bought_this_wave = maxi(int(data.get("bought_this_wave", made_default)), 0)
+	_bought_this_wave = maxi(SaveManager.as_int(data.get("bought_this_wave"), made_default), 0)
 	upgrade_levels = {}
 	var levels: Variant = data.get("upgrades", {})
 	if levels is Dictionary:
 		for id: Variant in levels as Dictionary:
 			# JSON has no StringName, and a String key would never answer `level_of`.
-			upgrade_levels[StringName(id)] = int((levels as Dictionary)[id])
+			var named := SaveManager.as_name(id, &"")
+			if not named.is_empty():
+				upgrade_levels[named] = SaveManager.as_int((levels as Dictionary)[id], 0)
 	var tally: Variant = data.get("stats", {})
 	stats = RunStats.from_dict(tally as Dictionary if tally is Dictionary else {})
 	var bag: Variant = data.get("loadout", {})
