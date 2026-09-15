@@ -11,6 +11,8 @@ extends Node
 const ARENA: String = "res://scenes/world/arena.tscn"
 const CONFIG: String = "res://data/waves/standard.tres"
 ## Long enough for a shortened wave to run its day and its night, with room for refused points.
+## Enough to be damage and far too little to kill.
+const A_SCRATCH: float = 1.0
 const WAVE_PATIENCE: float = 12.0
 ## A wave is four minutes of real time, which is not a thing a headless check can sit through. The
 ## cycle is shrunk to this and the proportions of its phases are kept, so what is checked is the
@@ -122,6 +124,7 @@ func _run() -> void:
 	# Last, because it leaves a body standing for twelve seconds and every check above it leases
 	# from the same pool.
 	await _check_a_wave_comes_to_the_player()
+	await _check_one_hit_costs_the_flawless_bonus()
 	_put_the_run_back()
 	_report()
 
@@ -442,6 +445,52 @@ func _check_the_formulas_match_the_table() -> void:
 	rng.seed = 1
 	if band != null and band.pick(rng) == null:
 		_fail("a band should still pick an archetype when only some of them exist")
+
+
+## **The first hit of a run counts.** The director measures the flawless bonus by watching the
+## player's health fall, and it had nothing to compare the first fall against: the event that would
+## have primed it is emitted while the player is still readying its own children, before this
+## director exists to hear it. So one blow — the first of the run, the one every player takes — was
+## swallowed, and a wave they were hit in still paid the bonus.
+func _check_one_hit_costs_the_flawless_bonus() -> void:
+	var config := _director.config
+	var player := get_tree().get_first_node_in_group(&"player") as Player
+	if player == null or player.health == null:
+		_fail("there is no player to hit, so the bonus cannot be measured")
+		return
+	player.health.current_health = player.health.max_health
+	_cleared.clear()
+	_director.config = _shortened(config, A_QUICK_WAVE)
+	_director.start_wave(1)
+	await get_tree().physics_frame
+
+	# One blow, the first of the run, announced the way the health component announces every one.
+	player.health.current_health = maxf(player.health.max_health - A_SCRATCH, 1.0)
+	player.health.health_changed.emit(player.health.current_health, player.health.max_health)
+	await get_tree().physics_frame
+
+	var waited := 0.0
+	while _cleared.is_empty() and waited < WAVE_PATIENCE:
+		await get_tree().physics_frame
+		waited += 1.0 / 60.0
+	if _cleared.is_empty():
+		_fail("the wave never ended, so nothing was paid either way")
+		return
+	var paid: int = _cleared[0][1]
+	var hit := config.reward_for(1, false)
+	var untouched := config.reward_for(1, true)
+	if hit == untouched:
+		_fail("the flawless bonus pays the same as being hit, so this check proves nothing")
+		return
+	if paid != hit:
+		_fail(
+			(
+				"a wave the player was hit in paid %d, and %d is what a wave they were hit in pays"
+				% [paid, hit]
+			)
+		)
+	player.health.current_health = player.health.max_health
+	_director.config = config
 
 
 ## The whole loop, once: bodies arrive to fill the island, never more than the table allows at a

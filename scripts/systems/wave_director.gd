@@ -89,6 +89,7 @@ func start_wave(index: int) -> void:
 	_left_to_send = config.enemy_count(wave)
 	_running = true
 	_untouched = true
+	_health_seen = _health_now()
 	_next_spawn_in = 0.0
 	_elapsed = 0.0
 	_runner_owed = config.elite != null and wave == config.elite_guaranteed_wave
@@ -179,6 +180,20 @@ func _finish_the_wave() -> void:
 ## Flawless means untouched, and the bus only carries the health that resulted — so a drop is what
 ## a hit looks like from here. Healing between waves must not read as one, hence the comparison
 ## rather than a bare signal.
+## The player's health as the wave opens, so the first blow of it has something to be measured
+## against.
+##
+## Read here rather than waited for. `player_damaged` carries heals as well as hits — hence the
+## comparison below — and the event that would have primed this is emitted while the player is still
+## readying its own children, before this director exists to hear it. So the first hit of a run was
+## swallowed by the guard, and a wave the player was hit in still paid the flawless bonus.
+func _health_now() -> float:
+	var body := get_tree().get_first_node_in_group(&"player") as Player
+	if body == null or body.health == null:
+		return -1.0
+	return body.health.current_health
+
+
 func _on_player_damaged(current: float, _maximum: float) -> void:
 	if _health_seen >= 0.0 and current < _health_seen:
 		_untouched = false
