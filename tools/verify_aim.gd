@@ -43,6 +43,11 @@ var _failures: PackedStringArray = []
 var _arena: Node3D = null
 var _player: Player = null
 var _kept_run: Dictionary = {}
+## `Settings.set_value` writes through to `user://settings.json` on the spot, and this check moves
+## aim assist five times. Left alone it exits with the file saying "strong" — on a developer's
+## machine that is their setting silently changed, and in CI every check scheduled after this one
+## runs against an assist nobody chose.
+var _kept_assist: Variant = null
 
 
 func _ready() -> void:
@@ -55,6 +60,7 @@ func _run() -> void:
 	# saved run at boot, so a developer who has picked the gun up would start this check holding
 	# it — and every damage figure below is the fists'.
 	_kept_run = SaveManager.read_json(SaveManager.RUN_PATH)
+	_kept_assist = Settings.get_value(&"gameplay_aim_assist")
 	GameState.begin_run()
 	add_child(_arena)
 	# Wave 1 belongs to the tutorial now, and a lesson holding it open would leave this check
@@ -84,6 +90,7 @@ func _run() -> void:
 	await _check_the_assist_cannot_reach_past_what_is_in_hand()
 	await _check_a_dead_body_stops_being_a_target()
 	_put_the_run_back()
+	_put_the_assist_back()
 	_report()
 
 
@@ -474,6 +481,11 @@ func _stand_the_tutorial_down(arena: Node) -> void:
 	var tutorial := arena.get_node_or_null(^"TutorialDirector") as TutorialDirector
 	if tutorial != null:
 		tutorial.stand_down()
+
+
+func _put_the_assist_back() -> void:
+	if _kept_assist != null:
+		Settings.set_value(&"gameplay_aim_assist", _kept_assist)
 
 
 func _put_the_run_back() -> void:
