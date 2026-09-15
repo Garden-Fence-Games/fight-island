@@ -106,6 +106,19 @@ signal input_device_changed(device: int)
 signal bindings_changed
 
 
+func _ready() -> void:
+	# Unplugging is the one device change that arrives as no input at all, so it cannot be noticed
+	# the way every other one is.
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
+
+
 func _input(event: InputEvent) -> void:
 	if Devices.notice(event):
+		input_device_changed.emit(Devices.last_used())
+
+
+func _on_joy_connection_changed(_device: int, connected: bool) -> void:
+	if connected:
+		return
+	if Devices.forget_a_lost_pad():
 		input_device_changed.emit(Devices.last_used())
