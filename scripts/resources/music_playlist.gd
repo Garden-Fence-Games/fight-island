@@ -16,7 +16,11 @@ var _bag: Array[int] = []
 ## How many tracks the current bag was dealt from. A playlist that grew or shrank invalidates the
 ## bag; a bag merely part-used does not, and confusing the two refilled it on every single draw.
 var _bag_for: int = 0
-var _seeded: bool = false
+## The run this bag was dealt for, or -1 before the first deal. A boolean here latched at boot and
+## never let go: `AudioManager` builds the jukebox in its own `_ready`, so the first deal happens
+## against whatever seed the title screen had, and `begin_run` re-randomises the seed afterwards
+## with nothing watching. Every run got the same soundtrack order, for ever.
+var _seeded_from: int = -1
 var _rng := RandomNumberGenerator.new()
 
 
@@ -52,13 +56,13 @@ func draw(avoid: MusicTrack = null) -> MusicTrack:
 
 ## Back to a full bag, in a fresh order.
 ##
-## Seeded **once**, from the run, so a recording of one run has the same soundtrack twice — and only
-## once, because re-seeding at every refill would deal the same order every round, which is a
+## Seeded **once per run**, so a recording of one run has the same soundtrack twice — and only once
+## within it, because re-seeding at every refill would deal the same order every round, which is a
 ## shuffle that shuffles to the same thing.
 func _refill(count: int) -> void:
-	if not _seeded:
+	if _seeded_from != GameState.run_seed:
 		_rng.seed = GameState.run_seed + count
-		_seeded = true
+		_seeded_from = GameState.run_seed
 	_bag_for = count
 	_bag.clear()
 	for index: int in count:
