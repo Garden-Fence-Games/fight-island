@@ -16,6 +16,12 @@ extends Node
 ## Whatever run is on this machine is put back at the end.
 ## Run: godot --headless --path . res://tools/verify_weapons.tscn
 
+## The least a weapon on the ground may measure across and still survive the pixel filter. The
+## carved stick was 0.09 — about one fat pixel at seventeen metres — and a run went past it twice.
+const THICK_ENOUGH: float = 0.15
+## How many drawn frames the lamp is watched over. Enough that `_process` has certainly run on a
+## pickup added this frame, so the reading is the breath's rather than the scene's opening value.
+const BREATHS_SAMPLED: int = 10
 const ARENA: String = "res://scenes/world/arena.tscn"
 const FARMHAND: String = "res://data/enemies/farmhand.tres"
 const SETTLE_FRAMES: int = 8
@@ -56,6 +62,7 @@ func _run() -> void:
 	await _check_a_pickup_hands_the_weapon_over()
 	await _check_a_weapon_owed_from_an_earlier_wave_still_arrives()
 	await _check_the_gun_on_the_ground_is_the_gun()
+	await _check_a_weapon_on_the_ground_can_be_found()
 	_check_every_track_names_a_weapon_that_turns_up()
 	_put_the_run_back()
 	_report()
@@ -370,6 +377,64 @@ func _clear_the_ground(pickups: PickupDirector) -> void:
 ## What is asserted is that the pickup **borrows the rig's mesh** rather than that it looks like any
 ## particular thing: the number of triangles and the size are read off the rig at run time, so a
 ## regunned player moves the pickup with him and this check goes on holding the pair together.
+## **Both weapons can be picked out of the sand**, which is a different question from whether the
+## gun is the gun and is the one that was never asked.
+##
+## A stick is a bar of brown on sand and a revolver a palm of dark metal, under a camera fixed
+## seventeen metres up and behind a filter that quantises the frame to fat pixels. The old carved
+## stick was nine centimetres across — about one of those pixels — and both were walked past for a
+## whole run. The coconut had this exact problem and its answer is the one copied here, so this
+## check is `verify_coconut`'s, asked of the two weapons: light **on** the thing, a lamp under it,
+## and no billboard, because a billboard renders as the square it is.
+func _check_a_weapon_on_the_ground_can_be_found() -> void:
+	var pickups := _arena.get_node_or_null("PickupDirector") as PickupDirector
+	if pickups == null:
+		return
+	for id: StringName in [&"stick", &"gun"]:
+		var weapon := Arsenal.find(id)
+		var dropped := pickups.drop(weapon) if weapon != null else null
+		if dropped == null:
+			_fail("nowhere on the island would take a %s" % id)
+			continue
+		await get_tree().physics_frame
+		var view := dropped.get_node_or_null(^"Mesh") as MeshInstance3D
+		var glow := (
+			view.get_surface_override_material(0) as StandardMaterial3D if view != null else null
+		)
+		if glow == null or not glow.emission_enabled or glow.emission_energy_multiplier <= 0.0:
+			_fail("the %s does not light itself — it cannot be picked out of the sand" % id)
+		# **Sampled over several drawn frames, never one.** The pulse writes this every `_process`, so
+		# a single reading catches either the scene's opening value or the breath's, depending on
+		# whether `_process` has run on a node added this frame — which is how this check passed for
+		# one weapon and failed for the other on the same dark lamp. The dimmest it ever gets is the
+		# honest question, and a lamp driven to nothing answers zero on every frame.
+		var lamp := dropped.get_node_or_null(^"Glow") as OmniLight3D
+		var dimmest := INF
+		for _frame: int in BREATHS_SAMPLED:
+			await get_tree().process_frame
+			dimmest = minf(dimmest, lamp.light_energy if lamp != null else 0.0)
+		if lamp == null or dimmest <= 0.0:
+			_fail("the %s throws no light on the sand it lies on" % id)
+		for node: Node in dropped.get_children():
+			var quad := node as MeshInstance3D
+			if quad != null and quad.mesh is QuadMesh:
+				_fail("the %s carries a quad — a billboard reads as a square, not as a glow" % id)
+		# Thin enough to vanish is the whole complaint, so the cross-section is held as well as the
+		# length. Measured on the **transformed** bounds and at its thinnest: a bar tipped onto its
+		# corner is as findable as its narrowest face, which is the one the filter eats.
+		if view != null and view.mesh != null:
+			var lies := (view.transform * view.mesh.get_aabb()).size
+			var across := minf(lies.x, minf(lies.y, lies.z))
+			if across < THICK_ENOUGH:
+				_fail(
+					(
+						"the %s is %.2f m across, and %.2f is the least that survives the filter"
+						% [id, across, THICK_ENOUGH]
+					)
+				)
+		dropped.queue_free()
+
+
 func _check_the_gun_on_the_ground_is_the_gun() -> void:
 	var pickups := _arena.get_node_or_null("PickupDirector") as PickupDirector
 	if pickups == null:
@@ -403,20 +468,18 @@ func _check_the_gun_on_the_ground_is_the_gun() -> void:
 	# carved placeholder read as a stick. Borrowing the mesh without clearing that override leaves
 	# the gun lying there the same colour as the stick, which is most of what was wrong to begin
 	# with — and the triangle count above passes happily while it happens.
-	for surface: int in view.get_surface_override_material_count():
-		if view.get_surface_override_material(surface) != null:
-			_fail(
-				(
-					(
-						"the gun on the ground is repainted by the pickup's own override on surface %d, "
-						+ "so it is the gun wearing the stick's colour"
-					)
-					% surface
-				)
-			)
+	#
+	# The pickup does now carry an override of its own, to make the thing glow, so "no override at
+	# all" has stopped being the way to ask. **The texture is** — it is the one thing the stick's
+	# brown wood does not have and cannot fake, so holding the paint to the rig's own texture is the
+	# same question with the answer that survived the glow.
 	var worn := view.get_active_material(0) as StandardMaterial3D
 	if worn == null or worn.albedo_texture == null:
 		_fail("the gun on the ground carries no painted texture, and the rig's gun does")
+	elif worn.albedo_texture != _the_rigs_guns_paint():
+		_fail(
+			"the gun on the ground is painted with something other than the rig gun's own texture"
+		)
 
 	# Standing where the director put it rather than buried or hovering. The mesh comes out of the
 	# rig in the space it was modelled in, so a pickup that forgot to recentre it reads as a gun
@@ -480,6 +543,16 @@ func _check_every_track_names_a_weapon_that_turns_up() -> void:
 
 ## The mesh the player rig carries, read straight out of the model rather than through the pickup,
 ## so the two are compared rather than one being asked about itself.
+## The texture the rig's own gun is drawn with, which is what "wearing its own paint" means once the
+## pickup is allowed a material of its own. Null when the rig carries no gun to read.
+func _the_rigs_guns_paint() -> Texture2D:
+	var mesh := _the_rigs_gun()
+	if mesh == null:
+		return null
+	var worn := mesh.surface_get_material(0) as StandardMaterial3D
+	return worn.albedo_texture if worn != null else null
+
+
 func _the_rigs_gun() -> Mesh:
 	var packed := load(WeaponPickup.RIG) as PackedScene
 	if packed == null:

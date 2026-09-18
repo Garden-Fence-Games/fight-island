@@ -830,6 +830,11 @@ Two rules follow from it, and both are checked:
   The question is asked at `WeaponPickup.RESTING_HEIGHT` on both sides: asking about the air a metre
   over a weapon accepts ground the weapon itself is off the bottom of the frame on, which is how one
   drop in two hundred was going missing.
+- **And in shot is not the same as findable.** Both weapons carry an emissive body and a small lamp,
+  the coconut's answer to the same problem — a small object on pale sand under a fixed camera and a
+  filter that quantises the frame to fat pixels. `verify_weapons` holds the light, and holds the
+  narrowest face of each to `THICK_ENOUGH`, because a bar thinner than a pixel is not there whatever
+  the framing says.
 
 The merchant is a screen rather than a body, so the third of issue #39's placement rules has
 nothing to bind.
