@@ -16,6 +16,20 @@ extends Area3D
 const RESTING_HEIGHT: float = 0.3
 ## Turns per second, so the thing reads as an object to be taken rather than as scenery.
 const SPIN: float = 1.2
+## **It carries its own light, and that is not decoration.** A stick is a bar of brown on sand and a
+## revolver is a palm of dark metal, both under a camera fixed seventeen metres up, through a filter
+## that quantises the frame to fat pixels. They landed in shot every time and were walked past
+## anyway. The coconut had the same problem and the same answer: an emissive body with a lit rim,
+## and a small lamp that spills onto the sand it is lying on, both breathing together.
+##
+## The figures live here rather than in `data/`, which is where the coconut keeps its own — a
+## pickup's resource carries what it does, and how bright it is belongs to the thing that draws it.
+const PULSE_HZ: float = 0.8
+const PULSE_DEPTH: float = 0.16
+## What the lamp and the body sit at when the breath is at rest, so the pulse has something to
+## return to that a later edit of the scene cannot drift.
+const LAMP_ENERGY: float = 2.4
+const GLOW_ENERGY: float = 0.55
 ## Where a weapon's look comes from: **the rig that already carries it.** The gun is modelled into
 ## the player's skeleton, because that is how `idle_gun` and `walk_gun` were authored — so the thing
 ## lying on the sand is that same mesh rather than a second model of the same object. Two models of
@@ -43,14 +57,16 @@ static var _borrowed_scale: Dictionary[StringName, Vector3] = {}
 ## past anyway, which is how the gun came to be "not on the map". The carved shape it replaced is
 ## 0.84 m, so everything borrowed is brought to the same reading and a weapon on the ground looks
 ## like a thing to pick up before it looks like a scale model of itself.
-@export var reads_at: float = 0.8
+@export var reads_at: float = 1.0
 ## The localisation key of the line above it, with `{0}` for the glyph that takes it.
 @export var prompt_key: String = "PICKUP_TAKE"
 
 var _player_inside: bool = false
+var _pulsing: float = 0.0
 
 @onready var label: Label3D = get_node_or_null("Prompt") as Label3D
 @onready var view: MeshInstance3D = get_node_or_null("Mesh") as MeshInstance3D
+@onready var lamp: OmniLight3D = get_node_or_null("Glow") as OmniLight3D
 
 
 func _ready() -> void:
@@ -67,6 +83,19 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	rotate_y(SPIN * delta)
+	_breathe(delta)
+
+
+## The light, swelling and settling. Brightness rather than size, and slowly: a thing that changes
+## size reads as coming closer, and a pulse fast enough to read as an alarm competes with a wind-up.
+func _breathe(delta: float) -> void:
+	_pulsing = fposmod(_pulsing + delta * PULSE_HZ, 1.0)
+	var swell := 1.0 + sin(_pulsing * TAU) * PULSE_DEPTH
+	if lamp != null:
+		lamp.light_energy = LAMP_ENERGY * swell
+	var material := view.get_surface_override_material(0) if view != null else null
+	if material is StandardMaterial3D:
+		(material as StandardMaterial3D).emission_energy_multiplier = GLOW_ENERGY * swell
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -98,6 +127,7 @@ func _wear_the_weapons_own_shape() -> void:
 	# like. The mesh brings its own material, which is the one the rig is drawn with.
 	for surface: int in view.get_surface_override_material_count():
 		view.set_surface_override_material(surface, null)
+	_light_its_own_paint()
 	# The mesh comes out in the space it was modelled in, at whatever scale the rig node carries, and
 	# its origin is wherever the modeller left it — so it is scaled back, tipped over, and recentred
 	# on its own bounds rather than trusted to be centred already.
@@ -108,6 +138,31 @@ func _wear_the_weapons_own_shape() -> void:
 	var sized := _read_at_arms_length(turned.scaled(grown), borrowed)
 	var middle := sized * borrowed.get_aabb().get_center()
 	view.transform = Transform3D(sized, Vector3(0.0, RESTING_HEIGHT, 0.0) - middle)
+
+
+## A borrowed weapon glows in **its own paint**, not in a wash laid over it.
+##
+## The rig's material is duplicated rather than edited — it is shared with the player's own gun, and
+## lighting that one would set the weapon in his hand glowing for the rest of the run. The paint
+## becomes the emission through `emission_texture`, so what lifts off the sand is the gun the artist
+## drew and not an orange gun-shaped smear. `verify_weapons` holds it to that.
+func _light_its_own_paint() -> void:
+	if view == null:
+		return
+	for surface: int in view.mesh.get_surface_count() if view.mesh != null else 0:
+		var worn := view.get_active_material(surface) as StandardMaterial3D
+		if worn == null:
+			continue
+		var lit := worn.duplicate() as StandardMaterial3D
+		lit.rim_enabled = true
+		lit.rim = 0.7
+		lit.rim_tint = 0.4
+		lit.emission_enabled = true
+		lit.emission = Color.WHITE
+		lit.emission_texture = worn.albedo_texture
+		lit.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
+		lit.emission_energy_multiplier = GLOW_ENERGY
+		view.set_surface_override_material(surface, lit)
 
 
 ## The same lie-down, grown or shrunk until its longest side is `reads_at`. Measured on the mesh's
