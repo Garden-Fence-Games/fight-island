@@ -396,11 +396,19 @@ func release_token() -> void:
 
 ## The push is the attack's own stagger figure and the direction is the way the blow travelled.
 ## Both are passed rather than looked up: by the time the body reacts, the swing is over.
-func stagger(duration: float, from: Vector3 = Vector3.ZERO, push: float = 0.0) -> void:
+##
+## `sprawling` is what decides between the two reactions the design names — off, he is rocked where
+## he stands; on, the physics takes him. Passed rather than inferred from `push`, because every
+## attack in the game carries a stagger figure and inferring it from one meant every hit threw him.
+func stagger(
+	duration: float, from: Vector3 = Vector3.ZERO, push: float = 0.0, sprawling: bool = false
+) -> void:
 	if machine == null or not is_alive():
 		return
 	release_token()
-	machine.current.transition_to(&"Stagger", {"duration": duration, "from": from, "push": push})
+	machine.current.transition_to(
+		&"Stagger", {"duration": duration, "from": from, "push": push, "sprawling": sprawling}
+	)
 
 
 func is_alive() -> bool:
@@ -441,13 +449,13 @@ func _on_hurt(info: HitInfo) -> void:
 	var broke := poise_left <= 0.0 and data != null
 	if broke:
 		poise_left = data.poise
-	# **Every hit throws him**, and every hit therefore opens the next one — that is what makes a
-	# combo a combo rather than three swings at a man who is already walking away. Poise no longer
-	# decides *whether* he reacts, only how hard: a blow that breaks it sends him sprawling, one
-	# that does not rocks him where he stands and leaves him open all the same.
+	# **Every hit opens the next one** — that is what makes a combo a combo rather than three swings
+	# at a man who is already walking away. Poise decides only *how* he reacts: a blow that breaks it
+	# sends him sprawling, one that does not rocks him where he stands and leaves him open all the
+	# same. Throwing him on both is what put the finisher's target metres away before it landed.
 	var push := info.stagger * (KNOCKDOWN.broken_poise_push if broke else 1.0)
 	last_hit_push = push
-	stagger(maxf(info.stagger, 0.4), info.direction, push)
+	stagger(maxf(info.stagger, 0.4), info.direction, push, broke)
 
 
 func _on_died() -> void:

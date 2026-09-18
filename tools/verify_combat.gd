@@ -75,6 +75,7 @@ func _run() -> void:
 	await _check_hit_lands()
 	await _check_perfect_hits_harder()
 	await _check_chain_window()
+	await _check_a_whole_chain_lands_on_one_body()
 	await _check_a_finished_chain_locks_out_attacking()
 	await _check_stopping_early_costs_nothing()
 	await _check_a_perfect_finisher_waits_less()
@@ -367,6 +368,45 @@ func _check_a_sprint_runs_out() -> void:
 
 ## A farmer's swing, applied where he stands rather than by walking him into range: this is about
 ## what the hurtbox does with a blow, not about whether he can reach.
+## **All three attacks of a chain land on the same body.**
+##
+## The one thing every other check here is arranged not to ask. `_damage_from` and
+## `_spend_the_chain` both call `_place_enemy_in_front`, which teleports the farmer back to a metre
+## away and resets his state before each measured swing — so a finisher that could never reach a
+## man the first two blows had thrown was measured against a man who had been put back. That is
+## exactly the bug this guards: every hit used to send him into a full tumble, and the third swung
+## through the space he left.
+##
+## Run without touching him between the blows, which is the only way the question gets asked.
+func _check_a_whole_chain_lands_on_one_body() -> void:
+	_place_enemy_in_front()
+	if _player.stamina != null:
+		_player.stamina.refund(_player.stamina.max_stamina)
+	await _advance(0.2)
+	var landed: Array[int] = []
+	var listener := func(
+		_target: Node3D, _damage: float, _perfect: bool, attack: AttackData
+	) -> void:
+		for index: int in _player.weapon.chain_length():
+			if _player.weapon.attack_at(index) == attack:
+				landed.append(index)
+	EventBus.attack_landed.connect(listener)
+	for index: int in _player.weapon.chain_length():
+		var attack := _player.weapon.attack_at(index)
+		_player.machine.current.transition_to(&"Attack", {"index": index, "perfect": false})
+		await _advance(attack.windup + attack.active + attack.recovery + 0.05)
+	EventBus.attack_landed.disconnect(listener)
+	for index: int in _player.weapon.chain_length():
+		if landed.has(index):
+			continue
+		_fail(
+			(
+				"attack %d of the fist chain never landed on the man the blows before it hit"
+				% (index + 1)
+			)
+		)
+
+
 func _swing_at_the_player() -> void:
 	_player.hurtbox.take_hit(HitInfo.new(_enemy.data.attack, _enemy, false, 1.0))
 

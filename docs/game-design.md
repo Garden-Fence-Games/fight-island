@@ -123,14 +123,14 @@ is shown rather than hidden for the same reason the merchant shows a locked card
 
 | Weapon | # | Attack | Damage | Stamina | Windup | Active | Recovery | Chain window | Perfect window | Perfect × | Range | Arc | Stagger | Poise |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Fists | 1 | Jab | 8 | 6 | 0.12 | 0.08 | 0.22 | 0.10–0.45 | 0.33–0.45 | ×1.35 | 1.4 m | 70° | 0.10 | 10 |
-| Fists | 2 | Cross | 12 | 9 | 0.16 | 0.09 | 0.28 | 0.12–0.45 | 0.33–0.45 | ×1.35 | 1.5 m | 70° | 0.15 | 12 |
+| Fists | 1 | Jab | 8 | 6 | 0.12 | 0.08 | 0.22 | 0.10–0.45 | 0.33–0.45 | ×1.35 | 1.4 m | 70° | 0.10 | 6 |
+| Fists | 2 | Cross | 12 | 9 | 0.16 | 0.09 | 0.28 | 0.12–0.45 | 0.33–0.45 | ×1.35 | 1.5 m | 70° | 0.15 | 7 |
 | Fists | 3 | Uppercut | 20 | 14 | 0.28 | 0.12 | 0.50 | — | — | ×1.35 | 1.6 m | 60° | 0.60 | 20 |
-| Stick | 1 | Backhand | 14 | 10 | 0.20 | 0.12 | 0.30 | 0.14–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.15 | 15 |
-| Stick | 2 | Return | 18 | 12 | 0.22 | 0.12 | 0.34 | 0.16–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.20 | 18 |
+| Stick | 1 | Backhand | 14 | 10 | 0.20 | 0.12 | 0.30 | 0.14–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.15 | 7 |
+| Stick | 2 | Return | 18 | 12 | 0.22 | 0.12 | 0.34 | 0.16–0.50 | 0.38–0.50 | ×1.35 | 2.4 m | 120° | 0.20 | 7 |
 | Stick | 3 | Overhead | 30 | 18 | 0.45 | 0.14 | 0.65 | — | — | ×1.35 | 2.6 m | 45° | 0.90 | 35 |
-| Gun | 1 | Single shot | 22 | 0 | 0.10 | hitscan | 0.35 | 0.08–0.40 | 0.28–0.40 | ×1.25 | 25 m | 2° | 0.10 | 8 |
-| Gun | 2 | Double tap | 2 × 16 | 0 | 0.08 | hitscan | 0.55 | 0.10–0.45 | 0.33–0.45 | ×1.25 | 22 m | 3° | 0.15 | 8 |
+| Gun | 1 | Single shot | 22 | 0 | 0.10 | hitscan | 0.35 | 0.08–0.40 | 0.28–0.40 | ×1.25 | 25 m | 2° | 0.10 | 6 |
+| Gun | 2 | Double tap | 2 × 16 | 0 | 0.08 | hitscan | 0.55 | 0.10–0.45 | 0.33–0.45 | ×1.25 | 22 m | 3° | 0.15 | 6 |
 | Gun | 3 | Charged shot | 55 | 12 | 0.70 charge | hitscan | 0.60 | — | — | ×1.50 | 30 m | 1° | 1.10 | 30 |
 
 A finisher has no windows of its own: the press that produced it was timed against the previous
@@ -139,13 +139,24 @@ attack's recovery, and its perfect multiplier applies to that press.
 **Poise** is what a hit takes off an enemy's stagger meter — 15 on a farmhand, 25 on a pirate. It had been in the resources since M1 with no row here, which is the drift this
 document exists to prevent, so it is tabled now.
 
-**Poise no longer decides whether an enemy reacts, only how hard.** Every hit that lands throws
-him, and therefore opens the next one — that is what makes a combo a combo rather than three swings
-at a man who is already walking away. What breaking his poise buys is the difference between rocked
-and sprawling: the blow's own `Stagger` figure becomes a push, and a blow that broke poise pushes
-**1.8×** as hard. Read the two poise numbers against that: **the stick's overhead is the only
-single blow that sends a pirate sprawling**, which is a large part of why the stick is the answer
-to him — but every other blow still rocks him and still leaves him open.
+**Poise does not decide whether an enemy reacts, only how.** Every hit that lands interrupts him
+and therefore opens the next one — that is what makes a combo a combo rather than three swings at a
+man who is already walking away. What breaking his poise buys is the difference between **rocked**
+and **sprawling**: a blow that leaves poise standing holds him where he is, and one that breaks it
+hands his body to the physics, thrown at the blow's own `Stagger` figure times **1.8**.
+
+**The poise column is a budget, and the finisher is what spends it.** A chain's first two blows
+never break poise on either archetype; the third always does. That is not a coincidence in the
+numbers, it is the rule they are chosen to satisfy — 6 + 7 < 15 and 6 + 7 + 20 ≥ 25 for the fists,
+and the same shape for the stick and the gun. Get it wrong and the combo eats itself: blows one and
+two throw the man out of the arc, and the finisher — the slowest wind-up and the narrowest arc in
+its chain — swings through the space he left. That is exactly what shipped, and
+`tools/verify_combat.tscn` now runs a whole chain against one body without putting him back between
+blows.
+
+Read the numbers against that: two blows in the game break a pirate's poise on their own, the
+stick's **overhead** (35) and the gun's **charged shot** (30), which is a large part of why the
+stick is the answer to him — but every other blow still rocks him and still leaves him open.
 
 The figures that turn a `Stagger` number into a knockdown — the push per point of it (12 m/s), the
 broken-poise multiplier (1.8), the ceiling below, and how long a spent poise meter stays spent

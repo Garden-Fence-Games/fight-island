@@ -32,6 +32,13 @@ const SENT_SPRAWLING: float = 0.5
 ## off the uppercut, so a check measuring a knockdown does not quietly stop measuring one the day
 ## somebody retunes the attack.
 const A_HEAVY_BLOW: float = 0.6
+## A light blow that still breaks poise, for the question a bound on one throw cannot answer: is the
+## push the blow's own, or the same push every time? The cross's stagger figure, four times under
+## the uppercut's.
+const A_LIGHT_SPRAWL: float = 0.15
+## How much further the heavy blow has to carry him. Four times the push ought to be far more than
+## this; a metre is only enough to say the two blows are not the same blow.
+const FURTHER_BY: float = 1.0
 ## How far the measured rise may sit from the figure the resource carries. Generous — this is here
 ## to prove the state reads that figure at all, not to time it to the frame.
 const RISE_SLACK: float = 0.4
@@ -68,6 +75,7 @@ func _run() -> void:
 	await _check_a_knockdown_ends_and_hands_the_body_back(director)
 	await _check_a_shot_kicks_the_arm_and_nothing_else()
 	await _check_a_knockdown_outranks_a_recoil()
+	await _check_a_heavier_blow_throws_him_further(director)
 	_report()
 
 
@@ -193,7 +201,7 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 
 	# The heaviest thing the fists can throw, from a direction of its own so the push is not a
 	# rounding error on the way he happens to be facing.
-	farmer.stagger(A_HEAVY_BLOW, Vector3.FORWARD, A_HEAVY_BLOW)
+	farmer.stagger(A_HEAVY_BLOW, Vector3.FORWARD, A_HEAVY_BLOW, true)
 	await get_tree().physics_frame
 	if not farmer.ragdoll.is_running():
 		_fail("a farmer took an uppercut and the physics never took his body")
@@ -315,7 +323,7 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 	# while the physics still has it must not come back out of the pool still falling. Waiting for
 	# the first knockdown to end and only then retiring would assert an invariant that had already
 	# made itself true.
-	farmer.stagger(A_HEAVY_BLOW, Vector3.FORWARD, A_HEAVY_BLOW)
+	farmer.stagger(A_HEAVY_BLOW, Vector3.FORWARD, A_HEAVY_BLOW, true)
 	await get_tree().physics_frame
 	if not farmer.ragdoll.is_running():
 		_fail("the second knockdown never started, so nothing below was measured")
@@ -331,6 +339,73 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 	if farmer.ragdoll.is_running():
 		_fail("a body retired mid-tumble came back out of the pool still falling")
 	farmer.retire()
+
+
+## Whether the throw is the blow's at all.
+##
+## A bound on how far one body travels cannot answer this: every wrong version of the code throws a
+## man some fixed distance, and a fixed distance passes any single bound you pick. Two blows four
+## times apart in push have to carry him visibly different distances — otherwise the tumble is
+## reading a constant, whatever constant that happens to be.
+##
+## `verify_corpses` asks the same question of the **dead**, whose fall `EnemyDead` starts. This one
+## asks it of a man who is getting up again, which is a different line in a different state — and
+## since only a broken poise sprawls him, it is the only check that still runs that line at all.
+func _check_a_heavier_blow_throws_him_further(director: WaveDirector) -> void:
+	var light := await _thrown_by(director, A_LIGHT_SPRAWL)
+	var heavy := await _thrown_by(director, A_HEAVY_BLOW)
+	if light < 0.0 or heavy < 0.0:
+		return
+	if heavy - light < FURTHER_BY:
+		_fail(
+			(
+				(
+					"a push of %.2f carried him %.1f m and one of %.2f carried him %.1f m, so the "
+					% [A_LIGHT_SPRAWL, light, A_HEAVY_BLOW, heavy]
+				)
+				+ "tumble is not reading the blow"
+			)
+		)
+
+
+## How far one sprawl carries a living farmer, measured on the hips while the physics still has him.
+##
+## The hips rather than the body node: that node is pinned where he was standing for the whole
+## tumble and only catches up once he settles, so anything read off it during the fall is the spot
+## he left. Negative when no body could be stood up.
+func _thrown_by(director: WaveDirector, push: float) -> float:
+	var farmer := director.spawner.spawn_at(load(FARMHAND) as EnemyData, SPARRING_SPOT)
+	if farmer == null:
+		_fail("the pool would not lease a farmhand to throw")
+		return -1.0
+	for _index: int in SETTLE_FRAMES:
+		await get_tree().physics_frame
+	if farmer.ragdoll == null or not farmer.ragdoll.is_ready():
+		_fail("the farmer carries no ragdoll, so no blow can throw him anywhere")
+		farmer.retire()
+		return -1.0
+	farmer.passive = true
+	await get_tree().physics_frame
+	var stood := farmer.global_position
+	farmer.stagger(A_HEAVY_BLOW, Vector3.FORWARD, push, true)
+	await get_tree().physics_frame
+	if not farmer.ragdoll.is_running():
+		_fail("a push of %.2f broke his poise and the physics never took his body" % push)
+		farmer.passive = false
+		farmer.retire()
+		return -1.0
+	# The furthest he gets, not where he ends: a body that rolls back down a dune ends nearer than
+	# the blow carried him, and it is the carry being measured.
+	var furthest := 0.0
+	var waited := 0.0
+	while farmer.ragdoll.is_running() and waited < KNOCKDOWN_PATIENCE:
+		await get_tree().physics_frame
+		waited += 1.0 / 60.0
+		var at := farmer.ragdoll.settled_position()
+		furthest = maxf(furthest, Vector2(at.x - stood.x, at.z - stood.z).length())
+	farmer.passive = false
+	farmer.retire()
+	return furthest
 
 
 func _fail(message: String) -> void:
