@@ -15,8 +15,10 @@ extends EnemyState
 ## **Getting up takes as long as the clip.** `KnockdownData.rise_time` was the stand-in for a clip
 ## that did not exist, and it said so; now it only answers for a rig that carries neither.
 ##
-## A hit that finds no rig to throw falls back to the stand-still stagger this state used to be, so
-## a capsule, a headless check and a farmer whose skeleton failed to resolve all still work.
+## **Most hits never get here at all.** Only a blow that broke his poise sends him down; everything
+## else is rocked where he stands, which is this state with no tumble in it. A hit that finds no rig
+## to throw takes the same path, so a capsule, a headless check and a farmer whose skeleton failed
+## to resolve all still work.
 
 enum Phase { FALLING, RISING }
 
@@ -40,7 +42,8 @@ func enter(message: Dictionary) -> void:
 	_remaining = float(message.get("duration", 0.5))
 	var push: float = float(message.get("push", 0.0)) * Enemy.KNOCKDOWN.knock_speed
 	var from: Vector3 = message.get("from", Vector3.ZERO)
-	if push <= 0.0 or enemy.ragdoll == null or not enemy.ragdoll.is_ready():
+	var sprawling: bool = bool(message.get("sprawling", false))
+	if not sprawling or push <= 0.0 or enemy.ragdoll == null or not enemy.ragdoll.is_ready():
 		# Rocked where he stands. A get-up here would lie a standing man down to stand him up again.
 		_phase = Phase.RISING
 		return

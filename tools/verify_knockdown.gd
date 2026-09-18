@@ -193,7 +193,7 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 
 	# The heaviest thing the fists can throw, from a direction of its own so the push is not a
 	# rounding error on the way he happens to be facing.
-	farmer.stagger(A_HEAVY_BLOW, Vector3.FORWARD, A_HEAVY_BLOW)
+	farmer.stagger(A_HEAVY_BLOW, Vector3.FORWARD, A_HEAVY_BLOW, true)
 	await get_tree().physics_frame
 	if not farmer.ragdoll.is_running():
 		_fail("a farmer took an uppercut and the physics never took his body")
@@ -315,7 +315,7 @@ func _check_a_knockdown_ends_and_hands_the_body_back(director: WaveDirector) -> 
 	# while the physics still has it must not come back out of the pool still falling. Waiting for
 	# the first knockdown to end and only then retiring would assert an invariant that had already
 	# made itself true.
-	farmer.stagger(A_HEAVY_BLOW, Vector3.FORWARD, A_HEAVY_BLOW)
+	farmer.stagger(A_HEAVY_BLOW, Vector3.FORWARD, A_HEAVY_BLOW, true)
 	await get_tree().physics_frame
 	if not farmer.ragdoll.is_running():
 		_fail("the second knockdown never started, so nothing below was measured")
