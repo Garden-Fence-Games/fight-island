@@ -27,6 +27,10 @@ var _pictures: Array[MeshInstance3D] = []
 var _hurtbox: CorpseHurtbox = null
 var _resting: bool = false
 var _rested_at: Vector3 = Vector3.ZERO
+## What the body occupies once it is still, in world metres. A man lying down is two metres of him
+## and a third of a metre of hip, so a sphere about the hips is the wrong shape to ask "are you
+## standing on this" with — it reaches over his head and stops short of his boots.
+var _rested_box: AABB = AABB()
 var _field: CorpseField = null
 
 
@@ -77,6 +81,21 @@ func where() -> Vector3:
 	return ragdoll.settled_position()
 
 
+## Whether feet at `feet` are near enough to this body to disturb it.
+##
+## **Asked before waking, which is the whole point.** Waking puts the skeleton back in the tree and
+## restarts the tumble, and a body nobody can reach must not pay that to be pushed by nothing.
+## Resting, the answer is its own bounds — the picture is exact and already built. Still moving, the
+## bones are in the tree and `push_near` will sort out which of them are close, so the hips and a
+## body's width are gate enough.
+func reaches(feet: Vector3) -> bool:
+	if _resting:
+		return _rested_box.grow(_field.trample_reach).has_point(feet)
+	var apart := where() - feet
+	var near := _field.body_radius + _field.trample_reach
+	return Vector2(apart.x, apart.z).length() < near and absf(apart.y) < near
+
+
 ## A foot at `feet` moving at `velocity` walks into the body.
 func trample(feet: Vector3, velocity: Vector3) -> void:
 	if ragdoll == null or not ragdoll.is_ready():
@@ -85,7 +104,11 @@ func trample(feet: Vector3, velocity: Vector3) -> void:
 	if flat.length() < _field.trample_speed:
 		return
 	_wake()
-	var shove := flat * _field.trample_share + Vector3.UP * _field.trample_lift
+	# The lift is a share of the shove rather than a figure of its own, so a body crossed slowly is
+	# nudged and one crossed at a run is thrown. A constant lift meant the slowest contact the field
+	# would admit still picked the body up as hard as a sprint did.
+	var along := flat * _field.trample_share
+	var shove := along + Vector3.UP * along.length() * _field.trample_lift
 	ragdoll.push_near(feet + Vector3.UP * 0.3, shove, _field.trample_reach)
 
 
@@ -122,6 +145,7 @@ func _on_ragdoll_came_to_rest() -> void:
 	_rested_at = ragdoll.settled_position()
 	_hurtbox.global_position = _rested_at
 	_bake()
+	_measure_the_picture()
 	_skeleton_home.remove_child(_skeleton)
 	set_physics_process(false)
 	_resting = true
@@ -142,6 +166,24 @@ func _bake() -> void:
 		_pictures[index].mesh = baked
 		_pictures[index].global_transform = skinned.global_transform
 		_pictures[index].visible = true
+
+
+## What the baked picture occupies, merged across its meshes. Read once, here, rather than every
+## frame the player walks near: it is a still picture and it does not move again until something
+## wakes it.
+func _measure_the_picture() -> void:
+	_rested_box = AABB()
+	var found := false
+	for picture: MeshInstance3D in _pictures:
+		if picture.mesh == null or not picture.visible:
+			continue
+		var here := picture.global_transform * picture.mesh.get_aabb()
+		_rested_box = here if not found else _rested_box.merge(here)
+		found = true
+	if not found:
+		# Nothing baked, so fall back to something that is at least the right place: a body's width
+		# about the hips, which is the gate this replaced.
+		_rested_box = AABB(_rested_at, Vector3.ZERO).grow(_field.body_radius)
 
 
 ## The body's own copy of what it wears. The dying enemy's materials are per instance and that
