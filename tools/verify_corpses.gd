@@ -49,6 +49,17 @@ const STRUCK_PATIENCE: float = 2.0
 ## Calling it "shoved" and holding it to three tenths was the check describing an outcome the game
 ## does not promise.
 const DISTURBED: float = 0.05
+## How far clear of the body the walk-past is staged, on top of his own half-width and the whole of
+## `trample_reach`. Small: the point is to sit just outside everything that could legitimately be
+## touched, because just outside is where the sphere that replaced it was still reaching.
+const WELL_CLEAR_OF_HIM: float = 0.2
+## A pace and a span for the walk-past. Faster than `trample_speed` so the field is certainly
+## looking, and long enough that a wake would have happened several times over.
+const WALKING_PACE: float = 3.0
+const WALK_PAST_FRAMES: int = 30
+## Slower than the old `trample_speed` of 1.0, which is what made a body walked over at this pace
+## report nothing at all.
+const A_SLOW_WALK: float = 0.6
 ## More bodies than the field will hold, so the ceiling has to do something.
 const PAST_THE_CEILING: int = 6
 ## The player's own death, which is the same physics and the same failure modes.
@@ -110,6 +121,8 @@ func _run() -> void:
 	await _check_a_resting_corpse_keeps_no_skeleton()
 	await _check_a_struck_corpse_bleeds_and_moves_and_is_not_a_hit()
 	await _check_walking_into_a_corpse_shoves_it()
+	await _check_walking_past_one_leaves_it_asleep()
+	await _check_a_slow_walk_still_moves_a_body()
 	await _check_the_pile_has_a_ceiling()
 	await _check_a_heavier_blow_throws_him_further()
 	await _check_the_player_goes_down_too()
@@ -417,6 +430,84 @@ func _check_walking_into_a_corpse_shoves_it() -> void:
 			(
 				"a corpse walked into moved %.2f m — the player walks through it"
 				% corpse.where().distance_to(before)
+			)
+		)
+
+
+## **A body nobody is standing on is not woken.**
+##
+## Approached **across** him, never along him, and that is the whole construction. A man lying down
+## is two metres one way and a little over half a metre the other, so a sphere about his hips is the
+## wrong shape to ask "are you near this body" with: down his length it stops short of his boots,
+## and across him it reaches a metre into empty sand. The old gate was that sphere — anything within
+## `body_radius + trample_reach` — and `Corpse.trample` woke what it admitted *before* `push_near`
+## asked whether a bone was inside `trample_reach` to push. So a pass across a body woke it to push
+## nothing, every time.
+##
+## Where the body actually is is measured here off its own meshes, by `_box_of`, so this does not
+## ask the gate to confirm itself.
+##
+## It is not cosmetic: waking puts a `Skeleton3D` back in the tree and restarts a ten-second tumble,
+## and `Corpse` exists precisely so a pile of forty-eight costs one still picture each.
+func _check_walking_past_one_leaves_it_asleep() -> void:
+	_field.clear_field()
+	var corpse := await _kill_one(Vector3(3.0, 0.0, -9.0))
+	if corpse == null:
+		return
+	if not corpse.is_resting():
+		_fail("the corpse never settled, so there is no sleep to be left in")
+		return
+	var box := _box_of(corpse)
+	if box.size == Vector3.ZERO:
+		_fail("the corpse baked no picture, so there is nothing to measure his width against")
+		return
+	# Out past his narrow side — where he is slimmest is where a sphere about his hips overreaches
+	# furthest, and it is the only bearing on which the two gates disagree.
+	var middle := box.get_center()
+	var across_x := box.size.x <= box.size.z
+	var half := (box.size.x if across_x else box.size.z) * 0.5
+	var out := half + _field.trample_reach + WELL_CLEAR_OF_HIM
+	var feet := middle + (Vector3.RIGHT if across_x else Vector3.BACK) * out
+	feet.y = middle.y
+	for _frame: int in WALK_PAST_FRAMES:
+		_field.trample_near(feet, Vector3(0.0, 0.0, WALKING_PACE))
+		await get_tree().physics_frame
+	if not corpse.is_resting():
+		_fail(
+			(
+				(
+					"a pass %.2f m clear of his own %.2f m width woke him — the field is waking bodies "
+					% [out, half * 2.0]
+				)
+				+ "it cannot reach, and every one costs a skeleton back in the tree"
+			)
+		)
+
+
+## **And walking is enough to disturb one.** The shove was refused outright below `trample_speed`,
+## so a player crossing a body at anything under a metre a second passed through it with nothing
+## happening at all — no contact, no push, a man walking through a corpse.
+func _check_a_slow_walk_still_moves_a_body() -> void:
+	_field.clear_field()
+	var corpse := await _kill_one(Vector3(-4.0, 0.0, -9.0))
+	if corpse == null:
+		return
+	var before := corpse.where()
+	var feet := before - Vector3(0.4, 0.25, 0.0)
+	for _frame: int in SHOVE_PATIENCE:
+		if corpse.where().distance_to(before) >= DISTURBED:
+			break
+		corpse.trample(feet, Vector3(A_SLOW_WALK, 0.0, 0.0))
+		feet.x += A_SLOW_WALK / 60.0
+		await get_tree().physics_frame
+	if corpse.where().distance_to(before) < DISTURBED:
+		_fail(
+			(
+				(
+					"a body walked over at %.1f m/s moved %.2f m — under that pace the player passes "
+					% [A_SLOW_WALK, corpse.where().distance_to(before)]
+				)
+				+ "straight through it"
 			)
 		)
 

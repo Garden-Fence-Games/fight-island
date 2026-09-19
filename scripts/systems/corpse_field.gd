@@ -27,10 +27,17 @@ extends Node3D
 ## way, because `Hitscan` looks past corpses.
 @export var body_radius: float = 0.8
 ## Walking into a body: how fast the player must be moving before it counts, what share of their
-## speed the body is shoved at, how much of a lift, and how far from their feet a limb is caught.
-@export var trample_speed: float = 1.0
+## speed the body is shoved at, the lift **as a share of that shove**, and how far from their feet a
+## limb is caught.
+##
+## `trample_speed` is barely more than standing still on purpose. It used to be a metre a second,
+## which is under half of walking pace — so a player crossing a body slowly went through it with
+## nothing happening at all, no contact and no push. It is now only there to keep a stationary
+## player from doing work, and the shove is proportional the whole way down rather than switched on
+## at a threshold.
+@export var trample_speed: float = 0.2
 @export var trample_share: float = 0.9
-@export var trample_lift: float = 0.6
+@export var trample_lift: float = 0.2
 @export var trample_reach: float = 0.8
 ## Striking a body: how hard it is thrown along the blow in metres per second, how much of that goes
 ## upward, how far from the hips a limb is caught, and how much further a perfect blow throws it.
@@ -54,14 +61,25 @@ func _physics_process(_delta: float) -> void:
 		_walker = get_tree().get_first_node_in_group(&"player") as CharacterBody3D
 		if _walker == null:
 			return
-	var feet := _walker.global_position
-	var velocity := _walker.velocity
+	trample_near(_walker.global_position, _walker.velocity)
+
+
+## Every body the feet at `feet`, moving at `velocity`, are close enough to disturb.
+##
+## **Public because the headless check drives it.** Steering a real player past a body makes the
+## measurement depend on which node's `_physics_process` ran first that frame, which is how a check
+## reports the weather instead of the code.
+##
+## Each body is asked whether it can be reached rather than measured against a sphere around its
+## hips. The sphere admitted anything within `body_radius + trample_reach` and `Corpse.trample` then
+## woke it before `push_near` found there was no bone inside `trample_reach` to push — so walking
+## near the pile put a `Skeleton3D` back in the tree for every body in 1.6 m and pushed none of
+## them.
+func trample_near(feet: Vector3, velocity: Vector3) -> void:
 	if Vector2(velocity.x, velocity.z).length() < trample_speed:
 		return
-	var near := body_radius + trample_reach
 	for corpse: Corpse in _laid:
-		var apart := corpse.where() - feet
-		if Vector2(apart.x, apart.z).length() < near and absf(apart.y) < near:
+		if corpse.reaches(feet):
 			corpse.trample(feet, velocity)
 
 

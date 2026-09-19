@@ -113,3 +113,7 @@ scripts/systems/hit_feedback.gd|if duration <= 0.0 or not bool(Settings.get_valu
 scripts/world/weapon_pickup.gd|const LAMP_ENERGY: float = 2.4|const LAMP_ENERGY: float = 0.0|verify_weapons
 scripts/world/weapon_pickup.gd|const GLOW_ENERGY: float = 0.55|const GLOW_ENERGY: float = 0.0|verify_weapons
 scenes/world/weapon_pickup.tscn|size = Vector3(0.18, 0.18, 1.3)|size = Vector3(0.09, 0.09, 1.1)|verify_weapons
+
+# Walking near the pile must not wake what it cannot reach, and walking slowly must still disturb a
+# body. Both were measured caught before they were written down.
+scripts/systems/corpse_field.gd|@export var trample_speed: float = 0.2|@export var trample_speed: float = 1.0|verify_corpses
