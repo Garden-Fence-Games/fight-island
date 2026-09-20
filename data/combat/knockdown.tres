@@ -9,3 +9,4 @@ broken_poise_push = 1.8
 fall_ceiling = 4.0
 rise_time = 0.7
 poise_window = 2.0
+rock_share = 0.75

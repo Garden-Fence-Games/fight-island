@@ -46,6 +46,19 @@ const RISE_SLACK: float = 0.4
 ## **This one does not scale with the figure**, and that is the point: a bound derived from the
 ## number being checked passes for every number, including a rise set to half a minute.
 const LONGEST_SENSIBLE_RISE: float = 2.0
+## A blow that leaves his poise standing: the fists' jab, and the stagger figure it carries. Written
+## out rather than loaded off the attack for the same reason the heavy blow above is.
+const A_ROCKING_BLOW: float = 0.10
+## The stagger it buys. `Enemy._on_hurt` floors every blow at this, so it is what a jab actually
+## gets rather than its own figure.
+const A_ROCKING_STAGGER: float = 0.4
+## How far a rocked man has to have given ground for the blow to have moved him at all. He is not
+## thrown, so this is centimetres rather than metres — but a man held at a dead stop covers the six
+## of them his own separation steering finds and no more, which is what this bound is under.
+const GAVE_GROUND: float = 0.10
+## The state a rocked man is in, and the longest the check waits for him to leave it.
+const ROCKED_STATE: StringName = &"Stagger"
+const ROCKING_PATIENCE: float = 2.0
 ## The gun, the shot fired to measure its recoil, and the joint the measurement is read off.
 const GUN: StringName = &"gun"
 const SHOT: int = 0
@@ -76,6 +89,7 @@ func _run() -> void:
 	await _check_a_shot_kicks_the_arm_and_nothing_else()
 	await _check_a_knockdown_outranks_a_recoil()
 	await _check_a_heavier_blow_throws_him_further(director)
+	await _check_a_rocked_man_gives_ground(director)
 	_report()
 
 
@@ -408,6 +422,54 @@ func _thrown_by(director: WaveDirector, push: float) -> float:
 	return furthest
 
 
+## The other half of a poise that held: he is not thrown, and he is not a statue either.
+##
+## **Nothing else in this folder would catch the freeze.** Every check here measures a body the
+## physics has taken, and a rocked man is precisely the one the physics never touches — so the day
+## `EnemyStagger` pinned him at `Vector3.ZERO` with no clip to play, every knockdown check went on
+## passing while every jab in the game landed on a man who did not move.
+##
+## Measured while he is still in the state: the frame he leaves it he starts chasing the player, and
+## a chase would pass this bound on its own.
+func _check_a_rocked_man_gives_ground(director: WaveDirector) -> void:
+	var farmer := director.spawner.spawn_at(load(FARMHAND) as EnemyData, SPARRING_SPOT)
+	if farmer == null:
+		_fail("the pool would not lease a farmhand to rock")
+		return
+	for _index: int in SETTLE_FRAMES:
+		await get_tree().physics_frame
+	farmer.passive = true
+	await get_tree().physics_frame
+	var stood := farmer.global_position
+	# `sprawling` false is the whole point: his poise held, so nothing hands the body over.
+	farmer.stagger(A_ROCKING_STAGGER, Vector3.FORWARD, A_ROCKING_BLOW, false)
+	await get_tree().physics_frame
+	if farmer.ragdoll != null and farmer.ragdoll.is_running():
+		_fail("a blow that left his poise standing still threw his body to the physics")
+		farmer.passive = false
+		farmer.retire()
+		return
+	var given := 0.0
+	var waited := 0.0
+	while farmer.machine.current_name == ROCKED_STATE and waited < ROCKING_PATIENCE:
+		await get_tree().physics_frame
+		waited += 1.0 / 60.0
+		var at := farmer.global_position
+		given = maxf(given, Vector2(at.x - stood.x, at.z - stood.z).length())
+	farmer.passive = false
+	farmer.retire()
+	if given < GAVE_GROUND:
+		_fail(
+			(
+				(
+					"a blow of %.2f rocked him and moved him %.2f m, under the %.2f m that says he "
+					% [A_ROCKING_BLOW, given, GAVE_GROUND]
+				)
+				+ "felt it — a rocked man with nothing to play and nothing moving him is a statue"
+			)
+		)
+
+
 func _fail(message: String) -> void:
 	_failures.append("knockdown check FAILED — " + message)
 
@@ -419,7 +481,8 @@ func _report() -> void:
 				"knockdown OK — a heavy blow throws a farmer, the tumble ends, the body follows his "
 				+ "hips, he gets up the way he fell with the clip lined up on the ragdoll and his "
 				+ "eyes off the player, he is up again in the time the get-up takes, and a body "
-				+ "retired mid-fall comes back out of the pool standing"
+				+ "retired mid-fall comes back out of the pool standing — and a blow his poise "
+				+ "survived still moves him"
 			)
 		)
 		get_tree().quit(0)
