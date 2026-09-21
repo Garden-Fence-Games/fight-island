@@ -142,8 +142,12 @@ document exists to prevent, so it is tabled now.
 **Poise does not decide whether an enemy reacts, only how.** Every hit that lands interrupts him
 and therefore opens the next one — that is what makes a combo a combo rather than three swings at a
 man who is already walking away. What breaking his poise buys is the difference between **rocked**
-and **sprawling**: a blow that leaves poise standing holds him where he is, and one that breaks it
-hands his body to the physics, thrown at the blow's own `Stagger` figure times **1.8**.
+and **sprawling**: a blow that breaks poise hands his body to the physics, thrown at the blow's own
+`Stagger` figure times **1.8**, and one that leaves poise standing keeps him on his feet — rocked
+back **three quarters** of the ground the same blow would have thrown him across, fading to nothing
+over the stagger. That last figure is a stopgap wearing a balance number's clothes: the rig carries
+no hit reaction, so until the animation pass writes one, giving ground is the only thing a blow that
+did not break poise has to show for itself.
 
 **The poise column is a budget, and the finisher is what spends it.** A chain's first two blows
 never break poise on either archetype; the third always does. That is not a coincidence in the
@@ -159,8 +163,9 @@ stick's **overhead** (35) and the gun's **charged shot** (30), which is a large 
 stick is the answer to him — but every other blow still rocks him and still leaves him open.
 
 The figures that turn a `Stagger` number into a knockdown — the push per point of it (12 m/s), the
-broken-poise multiplier (1.8), the ceiling below, and how long a spent poise meter stays spent
-before it refills (**2 s**) — are one `KnockdownData` in `data/combat/knockdown.tres`. They are the
+broken-poise multiplier (1.8), the share of that push a rocked man gives ground at (**0.75**), the
+ceiling below, and how long a spent poise meter stays spent before it refills (**2 s**) — are one
+`KnockdownData` in `data/combat/knockdown.tres`. They are the
 same conversion for every attack in the game, which is why they are one resource rather than another
 column on the table above.
 
@@ -391,6 +396,11 @@ against a rock, caught on a slope — he is taken back after **four times the at
 figure**, so a jab that tips a man over does not put him down for as long as an uppercut does. An
 enemy with no rig, or one whose skeleton did not resolve, falls back to standing still for the
 attack's stagger duration, which is what this state used to be.
+
+**A man whose poise held is rocked, not frozen.** Nothing animates him — the rig carries no hit
+reaction, and the animation falls through to a stopped player — and nothing throws him either, so
+without the ground he gives he would absorb a jab standing perfectly still. He gives it along the
+blow's own direction and is planted again by the time he is open.
 
 Two global rules keep a crowd fair rather than unfair:
 

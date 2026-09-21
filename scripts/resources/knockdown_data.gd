@@ -34,3 +34,14 @@ extends Resource
 ## It was a bare `2.0` in `Enemy._on_hurt` while every other figure of the same conversion lived
 ## here, which put one balance number out of a designer's reach and out of `docs/game-design.md`.
 @export var poise_window: float = 2.0
+## What a rocked man gives of the ground a sprawling one is thrown across.
+##
+## **A rocked man is nobody's to move.** Only a broken poise hands the body to the physics;
+## everything else is held by the state itself, and until this figure existed it was held at a dead
+## stop — no tumble, and the rig carries no hit reaction to play instead, so every jab landed on a
+## statue. Giving ground is what the blow has to show for itself until the animation pass writes
+## that clip.
+##
+## A share of the throw rather than a speed of its own, so retuning `knock_speed` carries the flinch
+## with it instead of leaving two figures to drift apart.
+@export var rock_share: float = 0.75

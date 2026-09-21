@@ -19,6 +19,12 @@ extends EnemyState
 ## else is rocked where he stands, which is this state with no tumble in it. A hit that finds no rig
 ## to throw takes the same path, so a capsule, a headless check and a farmer whose skeleton failed
 ## to resolve all still work.
+##
+## **Rocked is still moved.** Nothing animates a man whose poise held — the rig carries no hit
+## reaction, so the animation falls through to a stopped player — and nothing throws him either,
+## which left the common case of every jab and every cross landing on a statue. So the state gives
+## ground on the blow's behalf, fading across the stagger, until the animation pass writes the clip
+## that should be doing this instead.
 
 enum Phase { FALLING, RISING }
 
@@ -33,12 +39,21 @@ var _clip: StringName = &""
 ## volume with it.
 var _hurtbox_home := Vector3.ZERO
 var _hurtbox_lift: float = 0.0
+## Which way a rocked man gives ground, how fast the blow started him, and the stagger that shove
+## fades across. All three stay at nothing for a body the physics has and for a get-up — a man
+## standing back up slides nowhere.
+var _give_ground := Vector3.ZERO
+var _rock_peak: float = 0.0
+var _rock_span: float = 0.0
 
 
 func enter(message: Dictionary) -> void:
 	if enemy.hitbox != null:
 		enemy.hitbox.disarm()
 	_clip = &""
+	_give_ground = Vector3.ZERO
+	_rock_peak = 0.0
+	_rock_span = 0.0
 	_remaining = float(message.get("duration", 0.5))
 	var push: float = float(message.get("push", 0.0)) * Enemy.KNOCKDOWN.knock_speed
 	var from: Vector3 = message.get("from", Vector3.ZERO)
@@ -46,6 +61,7 @@ func enter(message: Dictionary) -> void:
 	if not sprawling or push <= 0.0 or enemy.ragdoll == null or not enemy.ragdoll.is_ready():
 		# Rocked where he stands. A get-up here would lie a standing man down to stand him up again.
 		_phase = Phase.RISING
+		_rock(from, push)
 		return
 	_phase = Phase.FALLING
 	_remember_the_hurtbox()
@@ -83,7 +99,7 @@ func physics_update(delta: float) -> void:
 		_carry_the_hurtbox()
 		return
 	_remaining -= delta
-	enemy.apply_motion(Vector3.ZERO, 0.0, delta)
+	enemy.apply_motion(_give_ground, _ground_given(), delta)
 	if _remaining <= 0.0:
 		transition_to(enemy.pursuit_state())
 
@@ -123,6 +139,33 @@ func _on_came_to_rest() -> void:
 	# Re-asked rather than assumed: the state is the same, but what it wants played has changed.
 	if enemy.animation != null:
 		enemy.animation.refresh()
+
+
+## The shove a blow that left his poise standing has to show for itself.
+##
+## **Nothing else moves him.** A sprawling man is thrown by the simulator; a rocked one is held by
+## this state, and the rig carries no hit reaction to play over the top. Held at a dead stop he
+## absorbed a jab without so much as leaning, which read as a man ignoring the blow rather than
+## eating it.
+##
+## The direction is the blow's own, flattened — a hit travelling into him carries him the way it was
+## already going.
+func _rock(direction: Vector3, push: float) -> void:
+	var flat := Vector3(direction.x, 0.0, direction.z)
+	if flat.is_zero_approx() or push <= 0.0 or _remaining <= 0.0:
+		return
+	_give_ground = flat.normalized()
+	_rock_peak = push * Enemy.KNOCKDOWN.rock_share
+	_rock_span = _remaining
+
+
+## The shove fading to nothing across the stagger it started in: fastest the instant the blow lands,
+## planted again by the time he is open. A get-up asks this too and is told zero, which is the
+## answer — a man finding his feet does not slide across the sand while he does it.
+func _ground_given() -> float:
+	if _rock_span <= 0.0:
+		return 0.0
+	return _rock_peak * clampf(_remaining / _rock_span, 0.0, 1.0)
 
 
 ## The neck stops watching the player for as long as he is down, and picks it back up on his feet.
