@@ -73,8 +73,8 @@ Human-facing project notes live in **ZenNotes**, not only in this repo:
 `~/Documents/ZenNotes/inbox/Garden Fence/Fight Island/`.
 
 Notes are **French**, with `title` / `tags` / `dateCreated` frontmatter and bare
-`[[wikilinks]]`. Tags are `[projet, garden-fence]`. Match the tone of the `inbox/tmbk/Folio/` and
-`inbox/tmbk/MasterJAM/` notes.
+`[[wikilinks]]`. Tags are `[projet, garden-fence]`. They follow the vault standard,
+`~/Documents/ZenNotes/inbox/Standard de documentation.md` — see ADR 0013.
 
 The split: **`docs/` says how and how much; ZenNotes says where we are and why.** A ZenNotes
 note may state an intention — *"les vagues doublent la pression toutes les cinq vagues"* — but

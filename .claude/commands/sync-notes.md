@@ -9,15 +9,15 @@ Refresh the Fight Island notes in ZenNotes so they stop lying about where the pr
    landed since the notes were last touched.
 3. Read the hub note at
    `~/Documents/ZenNotes/inbox/Garden Fence/Fight Island/Fight Island.md`, in particular
-   its `## Où en est le projet` section.
-4. Read `Documentation/Décisions à trancher.md` and check whether any listed question has since
-   been answered — a closed question becomes an ADR in `docs/decisions/` and its line is
-   **deleted** from the note.
+   its `## État` section.
+4. Read the hub's `## Décisions à trancher` section and check whether any listed question has
+   since been answered — a closed question becomes an ADR in `docs/decisions/` and its line is
+   **deleted** from the section.
 
 Then propose edits. Rules:
 
-- French, matching the tone of the sibling `Folio/` and `MasterJAM/` folders: prose-first,
-  opinionated, short.
+- French, following `~/Documents/ZenNotes/inbox/Standard de documentation.md`: rule plus
+  reason, present tense, tables over prose, no history.
 - **No numbers.** Balance values live in `docs/game-design.md` and `data/*.tres`. A note may
   state an intention, never a coefficient.
 - Keep the frontmatter (`title`, `tags`, `dateCreated`) untouched.

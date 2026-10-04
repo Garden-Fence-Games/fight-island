@@ -57,18 +57,18 @@ These are where this document earns its keep.
 
 | Change | Update in the same PR | Update in ZenNotes |
 |---|---|---|
-| Any balance value | `docs/game-design.md` **and** the `.tres` | only if the *intention* changed → `Contenu et équilibrage` |
-| New weapon, attack, upgrade track, enemy behaviour | `docs/game-design.md` | `Le jeu` |
-| New autoload, component, `Resource` class, physics layer | `docs/architecture.md` | `Architecture` |
+| Any balance value | `docs/game-design.md` **and** the `.tres` | only if the *intention* changed → `Fight Island - Produit` |
+| New weapon, attack, upgrade track, enemy behaviour | `docs/game-design.md` | `Fight Island - Produit` |
+| New autoload, component, `Resource` class, physics layer | `docs/architecture.md` | `Fight Island - Technique` |
 | New or renamed input action | `docs/input-map.md` **and** `project.godot` | — |
-| New asset or third-party source | `docs/credits.md`, and `asset-pipeline.md` if the process changed | `Assets et pipeline` only if the pipeline changed |
-| A style or naming rule | `docs/conventions.md` | `Conventions` |
-| Export preset, signing, Steam, versioning | `docs/build-and-release.md`, a fragment in `changelog.d/` | `Build et Distribution` |
+| New asset or third-party source | `docs/credits.md`, and `asset-pipeline.md` if the process changed | `Fight Island - Technique`, section Assets, only if the pipeline changed |
+| A style or naming rule | `docs/conventions.md` | `Fight Island - Technique`, section Conventions |
+| Export preset, signing, Steam, versioning | `docs/build-and-release.md`, a fragment in `changelog.d/` | `Fight Island - Exploitation` |
 | Anything under `scripts/`, `scenes/`, `data/` or `assets/` | one fragment in `changelog.d/` — **enforced by CI**, or the label `no changelog` | — |
-| A milestone completed or re-scoped | `docs/roadmap.md` | hub note, `## Où en est le projet` |
-| An open question **closed** | new ADR in `docs/decisions/` | delete the line from `Décisions à trancher` |
-| A new open question | — | add to `Décisions à trancher`, with a recommended default |
-| Anything that changes the one-line answer to "where is this project at?" | `README.md` status | hub note, `## Où en est le projet` |
+| A milestone completed or re-scoped | `docs/roadmap.md` | hub note, `## État` |
+| An open question **closed** | new ADR in `docs/decisions/` | delete the line from the hub's `## Décisions à trancher` |
+| A new open question | — | add to the hub's `## Décisions à trancher`, with a recommended default |
+| Anything that changes the one-line answer to "where is this project at?" | `README.md` status | hub note, `## État` |
 
 **The entry goes in `changelog.d/`, never in `CHANGELOG.md`.** One file per change, named
 `<section>-<slug>.md`, holding the bullet exactly as it should read. `changelog.d/README.md` has the
