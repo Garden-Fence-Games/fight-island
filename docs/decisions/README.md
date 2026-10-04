@@ -5,9 +5,9 @@ One short file per decision that would otherwise be re-argued every few months. 
 Format: `# NNNN — Title`, then **Status** (Accepted · Proposed · Superseded), **Date**,
 **Context**, **Decision**, **Consequences**, **Alternatives rejected**.
 
-A decision closes by a written record here — not by a conversation. When an entry in the ZenNotes
-note *Décisions à trancher* is settled, it becomes a file in this folder and its line is deleted
-from that note.
+A decision closes by a written record here — not by a conversation. When an entry in the *Décisions à trancher*
+section of the ZenNotes hub is settled, it becomes a file in this folder and its line is deleted
+from that section.
 
 | # | Decision |
 |---|---|
@@ -23,3 +23,4 @@ from that note.
 | [0010](0010-the-soundtrack-is-licensed.md) | Everything is synthesised, except the voices and the soundtrack |
 | [0011](0011-the-game-is-free.md) | The game is given away, and what that costs |
 | [0012](0012-all-rights-reserved.md) | All rights reserved, with third-party assets under their own terms |
+| [0013](0013-zennotes-documentation-standard.md) | ZenNotes follows the shared documentation standard |

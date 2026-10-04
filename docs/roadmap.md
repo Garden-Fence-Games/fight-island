@@ -133,7 +133,7 @@ flat expense rather than an advance. See [0011](decisions/0011-the-game-is-free.
 
 ## Open decisions
 
-These are tracked in ZenNotes under *Décisions à trancher*, each with a recommended default so
+These are tracked in the ZenNotes hub, section *Décisions à trancher*, each with a recommended default so
 nothing blocks. The ones with money or a deadline attached:
 
 | Decision | Gates | Default if nobody decides |

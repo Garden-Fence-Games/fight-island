@@ -1,6 +1,6 @@
 # 0005 — What lives in the repo and what lives in ZenNotes
 
-**Status:** Accepted
+**Status:** Accepted — note structure and tone amended by [0013](0013-zennotes-documentation-standard.md)
 **Date:** 2026-09-11
 
 ## Context
